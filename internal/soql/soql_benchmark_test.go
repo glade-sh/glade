@@ -73,3 +73,23 @@ func benchmarkSOQLOrg(records int) storage.OrgState {
 	org.Objects["Account"] = object
 	return org
 }
+
+// BenchmarkParseAndExecuteGatedAccountPrefix measures the Account Name prefix
+// LIKE shape that returns index (Name) order without ORDER BY.
+func BenchmarkParseAndExecuteGatedAccountPrefix(b *testing.B) {
+	for _, size := range []int{1000, 10000} {
+		org := benchmarkSOQLOrg(size)
+		b.Run(fmt.Sprintf("rows%d", size), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				result, err := ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Name LIKE 'Account%'")
+				if err != nil {
+					b.Fatal(err)
+				}
+				if result.Rows != size {
+					b.Fatalf("rows = %d", result.Rows)
+				}
+			}
+		})
+	}
+}

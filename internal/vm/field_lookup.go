@@ -15,6 +15,9 @@ func (vm *VM) lookupFieldForReceiver(typeName, fieldName string, preferDependenc
 			return Field{}, "", false
 		}
 		if field, ok := vm.lookupFieldInMapWithOptions(class.Fields, fieldName, preferDependency); ok {
+			if vm.coverage != nil {
+				vm.coverProperty(field, runtimeClassName(class))
+			}
 			return field, runtimeClassName(class), true
 		}
 		typeName = vm.resolvedSuperClassName(class)
@@ -25,6 +28,9 @@ func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bo
 	if vm.currentClass != "" && (strings.EqualFold(typeName, vm.currentClass) || vm.isSubclass(typeName, vm.currentClass)) {
 		if class, ok := vm.classEntry(vm.currentClass); ok {
 			if field, ok := vm.lookupFieldInMapWithOptions(class.Fields, fieldName, vm.currentMethod.Dependency); ok {
+				if vm.coverage != nil {
+					vm.coverProperty(field, runtimeClassName(class))
+				}
 				return field, runtimeClassName(class), true
 			}
 		}
@@ -59,6 +65,9 @@ func (vm *VM) lookupStaticFieldForReceiver(typeName, fieldName string, preferDep
 					}
 					if field.Value.Kind == "" {
 						field.Value = defaultValue(field.Type, field.InitialValue)
+					}
+					if vm.coverage != nil {
+						vm.coverProperty(field, runtimeClassName(class))
 					}
 					return field, runtimeClassName(class), true
 				}

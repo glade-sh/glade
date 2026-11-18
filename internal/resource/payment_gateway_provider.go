@@ -42,7 +42,7 @@ func applyPaymentGatewayProviders(org *storage.OrgState, p project.Project, read
 				}
 				if record.MetadataSourceUnit == oldUnit {
 					record.MetadataSourceUnit = newUnit
-					object.Records[id] = record
+					object.PutRecord(id, record)
 				}
 			}
 			org.Objects[kind] = *object
@@ -105,7 +105,7 @@ func applyPaymentGatewayProviders(org *storage.OrgState, p project.Project, read
 			record.Fields = maps.Clone(record.Fields)
 			record.Fields["Body"] = storage.StringValue(string(adapterBody))
 			record.Fields["LengthWithoutComments"] = storage.IntegerValue(int64(len(adapterBody)))
-			classes.Records[adapter] = record
+			classes.PutRecord(adapter, record)
 			org.Objects["ApexClass"] = *classes
 		}
 		if adapter == "" {
@@ -115,18 +115,18 @@ func applyPaymentGatewayProviders(org *storage.OrgState, p project.Project, read
 			continue
 		}
 		seen[id] = true
-		object.Records[id] = storage.Record{ID: id, Object: "PaymentGatewayProvider", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "PaymentGatewayProvider", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
 			"Id": storage.IDValue(id), "DeveloperName": storage.StringValue(name), "MasterLabel": storage.StringValue(strings.TrimSpace(source.Label)),
 			"Comments": storage.StringValue(source.Comments), "IdempotencySupported": storage.StringValue(source.Idempotency),
 			"NamespacePrefix": storage.NullValue(), "ApexAdapterId": storage.IDValue(adapter),
-		}}
+		}})
 		org.Objects["PaymentGatewayProvider"] = *object
 	}
 	if existing, ok := org.Objects["PaymentGatewayProvider"]; ok && existing.Records != nil {
 		object, _ := storage.EnsureMutableObjectRecords(org, "PaymentGatewayProvider")
 		for id, record := range object.Records {
 			if record.MetadataSourceUnit == sourceUnit && !seen[id] {
-				delete(object.Records, id)
+				object.DeleteRecord(id)
 			}
 		}
 		org.Objects["PaymentGatewayProvider"] = *object
@@ -147,7 +147,7 @@ func applyPaymentGatewayProviders(org *storage.OrgState, p project.Project, read
 				record.Fields = maps.Clone(record.Fields)
 				record.Fields["Body"] = storage.StringValue(string(body))
 				record.Fields["LengthWithoutComments"] = storage.IntegerValue(int64(len(body)))
-				object.Records[id] = record
+				object.PutRecord(id, record)
 				changed = true
 				continue
 			}
@@ -159,7 +159,7 @@ func applyPaymentGatewayProviders(org *storage.OrgState, p project.Project, read
 				}
 			}
 			if !referenced {
-				delete(object.Records, id)
+				object.DeleteRecord(id)
 				changed = true
 			}
 		}
@@ -182,10 +182,10 @@ func projectPaymentAdapterClass(org *storage.OrgState, name, sourceUnit string, 
 	id := metadataRecordIDForIdentity(*object, func(r storage.Record) bool {
 		return !r.System.IsDeleted && r.MetadataSourceUnit == sourceUnit && strings.EqualFold(r.Fields["Name"].String, name) && r.Fields["NamespacePrefix"].String == ""
 	})
-	object.Records[id] = storage.Record{ID: id, Object: "ApexClass", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
+	object.PutRecord(id, storage.Record{ID: id, Object: "ApexClass", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
 		"Id": storage.IDValue(id), "Name": storage.StringValue(name), "NamespacePrefix": storage.NullValue(),
 		"Body": storage.StringValue(string(body)), "ApiVersion": storage.DecimalValue("65.0"), "LengthWithoutComments": storage.IntegerValue(int64(len(body))),
-	}}
+	}})
 	org.Objects["ApexClass"] = *object
 	storage.RebuildObjectIndexes(org, "ApexClass")
 	return id

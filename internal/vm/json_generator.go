@@ -8,6 +8,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func newJSONGenerator(pretty bool) Value {
@@ -617,7 +618,14 @@ func jsonPlatformScalarFromValue(value Value) (any, bool) {
 		typeName = rest
 	}
 	switch typeName {
-	case "Date", "Datetime", "URL", "UUID":
+	case "Date":
+		if days, ok := datePreGregorian(value); ok {
+			// JSON writes the proleptic Gregorian label of the real instant
+			// (native CalDate: Date 1500-01-01 serializes as 1500-01-10).
+			return time.Unix(days*86400, 0).UTC().Format("2006-01-02"), true
+		}
+		return text.Text, true
+	case "Datetime", "URL", "UUID":
 		return text.Text, true
 	case "Time":
 		if clock, err := parseTimeText(text.Text); err == nil {

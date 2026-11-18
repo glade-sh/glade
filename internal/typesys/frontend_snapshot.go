@@ -279,6 +279,9 @@ func WriteFrontendSnapshot(w io.Writer, index Index, artifacts *BuildArtifacts) 
 // identity is derived from those captured bytes, so a later live edit changes
 // the next load's identity instead of requiring another full source reread.
 func WriteFrontendSnapshotRecords(w io.Writer, index Index, artifacts *BuildArtifacts) error {
+	if index.Volatile() || (artifacts != nil && artifacts.Volatile()) {
+		return ErrVolatileGeneration
+	}
 	if err := validateCapturedFrontendGeneration(index, artifacts); err != nil {
 		return err
 	}
@@ -551,7 +554,7 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		}
 		if dep.Project == nil {
 			if dep.ArtifactPath != "" {
-				appendArtifactDependency(&expectedSchema, dep)
+				appendArtifactDependency(&expectedSchema, p.ReadFile, dep)
 			}
 			continue
 		}

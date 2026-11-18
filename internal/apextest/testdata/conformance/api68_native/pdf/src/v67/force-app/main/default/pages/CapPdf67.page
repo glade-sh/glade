@@ -1,0 +1,6 @@
+<apex:page renderAs="pdf" showHeader="false" sidebar="false" applyHtmlTag="false">
+ <html lang="en"><head><title>S68 PDF capture</title></head><body>
+  <h1>Capture heading</h1><p>Capture paragraph.</p>
+  <table><thead><tr><th scope="col">Name</th></tr></thead><tbody><tr><td>Example</td></tr></tbody></table>
+ </body></html>
+</apex:page>

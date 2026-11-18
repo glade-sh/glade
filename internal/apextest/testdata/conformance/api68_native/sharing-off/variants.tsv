@@ -1,0 +1,6 @@
+variant	api	upfront
+vbase68	68.0	true
+vbase67	67.0	true
+vsetoff	68.0	true
+vseton	68.0	false
+vreason	68.0	true

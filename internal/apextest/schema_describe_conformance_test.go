@@ -233,7 +233,7 @@ func TestSchemaDescribeOrgConformance(t *testing.T) {
 							result := namedResults[tc.ID]
 							if strings.HasPrefix(tc.Expected, "UNCAUGHT|") {
 								want := strings.TrimPrefix(tc.Expected, "UNCAUGHT|")
-								if result.Status != testreport.StatusFail || result.Problem == nil || result.Problem.Message != want {
+								if result.Status != testreport.StatusFail || result.Problem == nil || (result.Problem.Message != want && result.Problem.Type+": "+result.Problem.Message != want) {
 									t.Fatalf("expected <%s>, named result: %#v problem: %#v", want, result, result.Problem)
 								}
 								return

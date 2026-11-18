@@ -15,18 +15,18 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
+SHARDS = {'apextest': 16, 'sema': 2, 'lwc-compile': 12, 'visualforce': 8, 'gladecli': 2, 'vm': 3}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.
     'pr-tests': 'full-suite',
     'workflow-lint': 'workflow-lint', 'site': 'site',
     'test-binaries': 'test-binaries', 'test-binaries-apextest': 'test-binaries', 'lwc-vf': 'lwc-compile and visualforce shards', 'vet': 'vet', 'apextest': 'apextest',
-    'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
-    'visualforce-history': 'visualforce-history', 'gladecli': 'gladecli',
-    'gladecli-history': 'gladecli-history', 'vm': 'vm', 'vm-history': 'vm-history',
+    # One CI history job refreshes every package's history; locally each package has its own refresh step.
+    'history': 'apextest, lwc-compile, visualforce, gladecli, vm and sema history refreshes', 'gladecli': 'gladecli',
+    'vm': 'vm',
     'node-integration': 'node-integration', 'nested-sources': 'nested-sources',
-    'sema': 'sema', 'sema-history': 'sema-history',
+    'sema': 'sema',
     'server-and-playground': 'server-and-playground', 'server-process-builder': 'server-process-builder', 'test': 'test',
     'smoke-runtime': 'smoke-runtime', 'smoke-distribution': 'smoke-distribution',
     'leak-scan': 'leak-scan',
@@ -175,7 +175,10 @@ class Runner:
         self.command('workflow-lint', ['bash','-c', f'scripts/ci-gofmt.sh && {g} lane workflow-lint && scripts/ci-actionlint.sh'], prerequisites=[go, (bool(shutil.which('actionlint')), 'actionlint')])
         self.command('vet', [g,'local-release-lane','vet'], prerequisites=[go])
         # LEAK_SCAN_RANGE selects the diff (default: the last commit); LEAK_SCAN_DENYLIST passes through from the environment.
-        self.command('leak-scan', ['bash','scripts/leak-scan.sh','--range', os.environ.get('LEAK_SCAN_RANGE','HEAD~1..HEAD')])
+        # A local run cannot see the private denylist secret, so an unset or empty LEAK_SCAN_DENYLIST opts out of
+        # the denylist check with a warning, the same way a fork pull request does in CI; a set denylist is enforced.
+        self.command('leak-scan', ['bash','scripts/leak-scan.sh','--range', os.environ.get('LEAK_SCAN_RANGE','HEAD~1..HEAD')],
+                     env={'LEAK_SCAN_ALLOW_EMPTY_DENYLIST': '0' if os.environ.get('LEAK_SCAN_DENYLIST') else '1'})
         self.command('node-integration', [g,'node-integration'], prerequisites=[go,node,lwc,candidate])
         self.command('server-and-playground', [g,'lane','server-and-playground'], prerequisites=[go,node,lwc,candidate,runtime,browser])
         self.command('server-process-builder', [g,'lane','server-process-builder'], prerequisites=[go])

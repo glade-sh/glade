@@ -11,5 +11,5 @@ func (p *formulaParser) customPermissionGranted(name string) bool {
 	if userID == "" {
 		userID = storage.DefaultUserID
 	}
-	return storage.CustomPermissionGranted(p.org, userID, fields, name)
+	return storage.CustomPermissionGrantedWhere(p.org, userID, fields, name, p.assignmentActive)
 }

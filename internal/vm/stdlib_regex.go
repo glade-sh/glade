@@ -1,8 +1,11 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/dlclark/regexp2"
 )
@@ -100,13 +103,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		receiver.Fields["hitEnd"] = Bool(hitEnd)
-		receiver.Fields["requireEnd"] = Bool(false)
+		matcherSetRequireEnd(receiver, false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
-		receiver.Fields["requireEnd"] = Bool(requiresEnd)
+		matcherSetRequireEnd(receiver, requiresEnd)
 		receiver.Fields["index"] = Int(int64(region.endByte))
 		return Bool(true), receiver, true, true, nil
 	case "lookingAt":
@@ -122,13 +125,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		receiver.Fields["hitEnd"] = Bool(hitEnd)
-		receiver.Fields["requireEnd"] = Bool(false)
+		matcherSetRequireEnd(receiver, false)
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
-		receiver.Fields["requireEnd"] = Bool(requiresEnd)
+		matcherSetRequireEnd(receiver, requiresEnd)
 		receiver.Fields["index"] = Int(int64(indices[1]))
 		return Bool(true), receiver, true, true, nil
 	case "find":
@@ -152,6 +155,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			// K002: find(start) resets the region before starting its search.
 			receiver.Fields["regionStart"] = Int(0)
 			receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input)))
+			receiver.Fields["index"] = Int(0)
 			region, err = matcherRegion(receiver, input)
 			if err != nil {
 				return Null, receiver, false, true, err
@@ -170,23 +174,36 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if startByte > region.endByte {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
-			receiver.Fields["requireEnd"] = Bool(false)
+			// Java returns false here without searching, so hitEnd and
+			// requireEnd keep what the last search left.
 			return Bool(false), receiver, true, true, nil
 		}
-		indices, hitEnd, requiresEnd, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
+		indices, hitEnd, requiresEnd, probe, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
 		if indices == nil {
+			// Java keeps `last` (the end of the previous match) after a failed
+			// search and searches again from it, with whatever pattern is then
+			// current; only `first` is cleared.
+			if groups, ok := receiver.Fields["groups"]; ok && groups.Kind == ValueList && len(groups.List) >= 2 && groups.List[1].Kind == ValueInt && groups.List[1].Int >= 0 {
+				receiver.Fields["index"] = groups.List[1]
+			}
 			matcherClearMatch(receiver)
-			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			receiver.Fields["hitEnd"] = Bool(hitEnd)
-			receiver.Fields["requireEnd"] = Bool(false)
+			matcherSetRequireEnd(receiver, false)
+			if probe != nil {
+				source, _ := matcherOriginalRegexSource(receiver)
+				receiver.Fields["requireEndText"] = String(probe.text)
+				receiver.Fields["requireEndStart"] = Int(int64(probe.start))
+				receiver.Fields["requireEndEnd"] = Int(int64(probe.endRune))
+				receiver.Fields["requireEndSource"] = String(source)
+			}
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)
 		receiver.Fields["hitEnd"] = Bool(hitEnd)
-		receiver.Fields["requireEnd"] = Bool(requiresEnd)
+		matcherSetRequireEnd(receiver, requiresEnd)
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
@@ -374,6 +391,9 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
 		}
+		if method == "requireEnd" {
+			matcherResolveRequireEnd(receiver)
+		}
 		return Bool(matcherBoolField(receiver, method, false)), receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {
@@ -420,19 +440,22 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	if match == nil {
 		return input, nil
 	}
-	var namedGroups map[string]int
-	if strings.HasPrefix(name, "Matcher.") {
-		namedGroups = map[string]int{}
-		for index, number := range plan.publicGroupNumbers {
-			groupName := plan.re.GroupNameFromNumber(number)
-			if groupName != fmt.Sprint(number) {
-				namedGroups[groupName] = index
-			}
+	namedGroups := map[string]int{}
+	for index, number := range plan.publicGroupNumbers {
+		groupName := plan.re.GroupNameFromNumber(number)
+		if groupName != fmt.Sprint(number) {
+			namedGroups[groupName] = index
 		}
 	}
 	segments, err := parseJavaReplacementWithNames(name, args[0].Text, plan.publicGroupCount(), namedGroups)
 	if err != nil {
-		if strings.HasPrefix(name, "Matcher.") {
+		var groupErr *stringReplacementGroupError
+		var syntaxErr *javaReplacementSyntaxError
+		switch {
+		case errors.As(err, &groupErr) && !strings.HasPrefix(name, "Matcher."):
+			// String routes report the group index with an Index out of Bounds prefix.
+			return "", err
+		case errors.As(err, &groupErr), errors.As(err, &syntaxErr):
 			return "", matcherReplacementError(args[0].Text, err)
 		}
 		return "", fmt.Errorf("%s %w", name, err)
@@ -512,4 +535,77 @@ func expandRegexp2PlanReplacement(plan *regexp2Plan, match *regexp2.Match, segme
 		out.WriteString(group.String())
 	}
 	return out.String()
+}
+
+// writeRegexObjectText prints Pattern and Matcher the way the native runtime
+// does: the wrapped java.util.regex object's own toString.
+func writeRegexObjectText(w *textWriter, v Value) bool {
+	switch v.Type {
+	case "Pattern":
+		source, ok := v.Fields["source"]
+		if !ok || source.Kind != ValueString {
+			return false
+		}
+		w.WriteString("Pattern:[delegate=Pattern[")
+		w.WriteString(source.Text)
+		w.WriteString("]]")
+		return true
+	case "Matcher":
+		source, ok := v.Fields["patternSource"]
+		if !ok || source.Kind != ValueString {
+			return false
+		}
+		input := v.Fields["input"]
+		start, end := v.Fields["regionStart"], v.Fields["regionEnd"]
+		if input.Kind != ValueString || start.Kind != ValueInt || end.Kind != ValueInt {
+			return false
+		}
+		last := ""
+		if groups := v.Fields["groups"]; groups.Kind == ValueList && len(groups.List) >= 2 && groups.List[0].Kind == ValueInt && groups.List[1].Kind == ValueInt {
+			units := utf16.Encode([]rune(input.Text))
+			from, to := int(groups.List[0].Int), int(groups.List[1].Int)
+			if from >= 0 && from <= to && to <= len(units) {
+				last = string(utf16.Decode(units[from:to]))
+			}
+		}
+		w.WriteString("Matcher:[delegate=Matcher[pattern=")
+		w.WriteString(source.Text)
+		w.WriteString(" region=")
+		w.WriteString(strconv.FormatInt(start.Int, 10))
+		w.WriteString(",")
+		w.WriteString(strconv.FormatInt(end.Int, 10))
+		w.WriteString(" lastmatch=")
+		w.WriteString(last)
+		w.WriteString("]]")
+		return true
+	}
+	return false
+}
+
+// matcherSetRequireEnd records a known requireEnd and drops any deferred probe.
+func matcherSetRequireEnd(receiver Value, value bool) {
+	receiver.Fields["requireEnd"] = Bool(value)
+	for _, key := range []string{"requireEndText", "requireEndStart", "requireEndEnd", "requireEndSource"} {
+		delete(receiver.Fields, key)
+	}
+}
+
+// matcherResolveRequireEnd computes the requireEnd a failed find deferred. A
+// failed find after a search that read an end assertion keeps requireEnd true
+// in Java, but the observer behind it is costly and most callers never ask.
+func matcherResolveRequireEnd(receiver Value) {
+	text, ok := receiver.Fields["requireEndText"]
+	if !ok || text.Kind != ValueString {
+		return
+	}
+	start, okStart := receiver.Fields["requireEndStart"]
+	end, okEnd := receiver.Fields["requireEndEnd"]
+	source, okSource := receiver.Fields["requireEndSource"]
+	value := false
+	if okStart && okEnd && okSource && start.Kind == ValueInt && end.Kind == ValueInt && source.Kind == ValueString {
+		if plan, err := compileRegexp2PlanForInput("Pattern.compile", source.Text, text.Text); err == nil {
+			value = plan.failedFindRequiresEnd(text.Text, int(start.Int), int(end.Int))
+		}
+	}
+	matcherSetRequireEnd(receiver, value)
 }

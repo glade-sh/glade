@@ -1,0 +1,28 @@
+{"api": "62.0", "debug": ["OBS|ks_a|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|113"], "error": "", "id": "ks_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_a|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|113"], "error": "", "id": "ks_a", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_add_account", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_add_account", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_add_custom", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_add_custom", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_addall", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_addall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_b|{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, owner__c, ownerid, systemmodstamp, ...}|123"], "error": "", "id": "ks_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_b|{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, owner__c, ownerid, systemmodstamp, ...}|123"], "error": "", "id": "ks_b", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_clear|ok"], "error": "", "id": "ks_clear", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_clear|ok"], "error": "", "id": "ks_clear", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_copy|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id,ownerid"], "error": "", "id": "ks_copy", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_copy|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id,ownerid"], "error": "", "id": "ks_copy", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_copy_add|15|{a_b__c, aaa_added, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_copy_add", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_copy_add|15|{a_b__c, aaa_added, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_copy_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_iter|id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid,"], "error": "", "id": "ks_iter", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_iter|id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid,"], "error": "", "id": "ks_iter", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_remove|ok"], "error": "", "id": "ks_remove", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_remove|ok"], "error": "", "id": "ks_remove", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_removeall|ok"], "error": "", "id": "ks_removeall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_removeall|ok"], "error": "", "id": "ks_removeall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_retain|ok"], "error": "", "id": "ks_retain", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_retain|ok"], "error": "", "id": "ks_retain", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_set_ops", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_set_ops", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

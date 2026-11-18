@@ -188,7 +188,7 @@ func (vm *VM) applyAutoResponseActivities(engine *dml.Engine, records []storage.
 		object := vm.Org.Objects["Task"]
 		if id, task, ok := storage.LookupRecordByID(object.Records, saved[0].ID); ok {
 			task.Fields["IsClosed"] = storage.BooleanValue(true)
-			object.Records[id] = task
+			object.PutRecord(id, task)
 			vm.Org.Objects["Task"] = object
 		}
 	}

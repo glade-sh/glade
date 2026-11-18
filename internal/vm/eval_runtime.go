@@ -15,6 +15,37 @@ import (
 )
 
 func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
+	vm.heapEvalSeq++
+	if expr.Pos > 0 {
+		// Name the call token for the frame the callee pushes. Arguments and
+		// receivers evaluate first and restore this value as they return.
+		previous := vm.callPos
+		vm.callPos = expr.Pos
+		value, err := vm.evalExpr(expr, result)
+		vm.callPos = previous
+		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
+			value = vm.stampDatetimeWeekTerm(value)
+		}
+		return value, err
+	}
+	value, err := vm.evalExpr(expr, result)
+	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
+		value = vm.stampDatetimeWeekTerm(value)
+	}
+	return value, err
+}
+
+// stampDatetimeWeekTerm records the construction-time locale term in a Datetime
+// the first time an expression yields it.
+func (vm *VM) stampDatetimeWeekTerm(value Value) Value {
+	if value.Type != "Datetime" || value.projectClass || value.classInstance {
+		return value
+	}
+	value.datetimeWeekTerm = uint8(calendarWeekTerm(vm.currentUserInfoField("LocaleSidKey", "en_US")))
+	return value
+}
+
+func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 	switch expr.Kind {
 	case ir.ExprLiteral:
 		return parseLiteral(expr.Value)
@@ -50,6 +81,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if expr.Operator == "||" && left.Kind == ValueBool && left.Bool {
 			return Bool(true), nil
+		}
+		if vm.coverage != nil && expr.Right.StartPos > 0 {
+			vm.coverOperand(expr.Right.StartPos)
 		}
 		right, err := vm.eval(*expr.Right, result)
 		if err != nil {
@@ -127,6 +161,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			if conditionValue {
 				selected, other = other, selected
 			}
+			if vm.coverage != nil {
+				vm.coverOperand(selected.StartPos)
+			}
 			value, err := vm.eval(selected, result)
 			if err != nil {
 				return Null, err
@@ -144,6 +181,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			emptyInlineQuery := expr.Args[0].Kind == ir.ExprSOQL && left.Kind == ValueList && len(left.List) == 0
 			if left.Kind != ValueNull && !emptyInlineQuery {
 				return left, nil
+			}
+			if vm.coverage != nil {
+				vm.coverOperand(expr.Args[1].StartPos)
 			}
 			return vm.eval(expr.Args[1], result)
 		}
@@ -390,6 +430,14 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return value, err
 			}
 		}
+		if inlineQueryLocator {
+			// Salesforce compiles an inline query, so the dynamic-string bind
+			// scope rules do not apply. databaseQueryHandle consumes the mark.
+			vm.inlineQueryLocatorCall = true
+			value, err := vm.call(callee, args, namedArgs, result)
+			vm.inlineQueryLocatorCall = false
+			return value, err
+		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
 		return vm.executeInlineSOQL(expr.Value, result)
@@ -609,6 +657,12 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			}
 			return Bool(equal), nil
 		}
+		if equal, handled := signedDoubleZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
+		if equal, handled := signedDoubleIntegerZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
 		equal, err := vm.apexEquals(left, right, result)
 		if err != nil {
 			return Null, err
@@ -675,6 +729,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 	}
 	if left.Kind == ValueList && right.Kind == ValueList {
 		if len(left.List) != len(right.List) {
+			return false, nil
+		}
+		if valueScaleDiffers(left, right) {
 			return false, nil
 		}
 		for i := range left.List {
@@ -873,6 +930,9 @@ func mapNumericValueIdentityDiffers(left, right Value) bool {
 // equality/hash policy as membership. Preserve raw comparison for primitive,
 // mixed-type, changed-hash and other unobserved declaration shapes.
 func (vm *VM) apexSetsEqual(left, right Value, result *Result) (bool, error) {
+	if valueScaleDiffers(left, right) {
+		return false, nil
+	}
 	if left.Equal(right) {
 		return true, nil
 	}

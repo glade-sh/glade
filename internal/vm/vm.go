@@ -18,11 +18,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -306,10 +308,10 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 	if !method.IsStatic {
 		return Null, fmt.Errorf("@future method %s must be static", method.Name)
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	if err := vm.incrementLimit("futureCalls", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("futureCalls", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) != len(method.Params) {
@@ -548,7 +550,7 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if vm == nil || strings.TrimSpace(name) == "" {
 		return false
 	}
-	if _, ok := vm.classEntry(name); ok {
+	if _, ok := vm.classEntryRaw(name); ok {
 		return true
 	}
 	if _, ok := lookupGeneratedPlatformType(strings.ToLower(name)); ok {
@@ -832,7 +834,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		}
 		if complete {
 			if existing.Records == nil {
-				existing.Records = make(map[storage.ID]storage.Record)
+				existing.SetRecords(make(map[storage.ID]storage.Record))
 				org.Objects[definition.APIName] = existing
 			}
 			return
@@ -840,7 +842,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		org.ClearRuntimeSchemaStamp()
 		existing.Definition = existing.Definition.Clone()
 		if existing.Records == nil {
-			existing.Records = make(map[storage.ID]storage.Record)
+			existing.SetRecords(make(map[storage.ID]storage.Record))
 		}
 		if existing.Definition.Fields == nil {
 			existing.Definition.Fields = definition.Fields
@@ -893,14 +895,14 @@ func (vm *VM) recordApexClassRecord(className string) storage.ID {
 		return fallbackID
 	}
 	vm.recordIsolationJournalMutation("ApexClass", fallbackID, storage.Record{}, false)
-	object.Records[fallbackID] = storage.Record{
+	object.PutRecord(fallbackID, storage.Record{
 		ID:     fallbackID,
 		Object: "ApexClass",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(localName),
 			"NamespacePrefix": apexClassNamespaceValue(namespace),
 		},
-	}
+	})
 	vm.Org.Objects["ApexClass"] = object
 	return fallbackID
 }
@@ -957,7 +959,13 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 		if name, ok := vm.orgObjectNameForKeyPrefix(prefix); ok {
 			return name, true
 		}
-		if owner := storage.StandardKeyPrefixOwner(prefix); owner != "" {
+		owner := storage.StandardKeyPrefixOwner(prefix)
+		// A lazy org installs an object with the prefix the unique assignment
+		// gives it, which can differ from the catalog prefix.
+		if spreadOwner := vm.Org.SpreadKeyPrefixOwner(prefix); spreadOwner != "" {
+			owner = spreadOwner
+		}
+		if owner != "" {
 			if name, ok := vm.lazyStandardObject(owner); ok {
 				return name, true
 			}
@@ -971,7 +979,11 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 // prefix is prefix. One pass keeps the smallest matching name, which is the
 // object a scan of the sorted names would reach first.
 func (vm *VM) orgObjectNameForKeyPrefix(prefix string) (string, bool) {
-	objects := vm.Org.Objects
+	return orgObjectNameForKeyPrefix(vm.Org, prefix)
+}
+
+func scanOrgObjectNameForKeyPrefix(objects map[string]storage.ObjectState, prefix string) (string, bool) {
+	keyPrefixScans.Add(1)
 	name, found := "", false
 	for candidate := range objects {
 		if found && candidate >= name {
@@ -1134,6 +1146,61 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	return parsed.UTC(), nil
 }
 
+// julianWallClock returns the wall clock of a civil date and time as a UTC
+// instant on the calendar the native Datetime builders use: java.util's
+// GregorianCalendar, which reads a civil date before 1582-10-15 as Julian.
+// Native dth_DthHash_T_i27 (surf_collections_strings): newInstanceGmt(Date,
+// Time) and valueOfGmt for 1582-10-14 23:59:59.999 land ten days after the
+// proleptic Gregorian instant of the same civil date. Dates from the cutover
+// on use the Gregorian calendar, so the helper changes nothing there.
+func julianWallClock(year, month, day, hour, minute, second, millisecond int) time.Time {
+	days := hybridDays(year, month, day)
+	clock := (int64(hour)*3600+int64(minute)*60+int64(second))*1000 + int64(millisecond)
+	return time.UnixMilli(days*86400000 + clock).UTC()
+}
+
+// gregorianCutover is 1582-10-15T00:00:00Z, the first instant of the Gregorian calendar.
+var gregorianCutover = time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC)
+
+// julianReadInstant shifts a pre-cutover instant by whole days so the proleptic
+// Gregorian fields of the result are the hybrid-calendar civil fields of the
+// original. The Datetime readers (year, month, day, date, format, text and
+// their Gmt forms) call it, so they read back the civil date the builders
+// (julianWallClock) were given. Instants from the cutover on come back
+// unchanged. The time of day and the instant itself (getTime, hashCode,
+// comparison, JSON) are not affected.
+func julianReadInstant(t time.Time) time.Time {
+	if !t.Before(gregorianCutover) {
+		return t
+	}
+	unix := t.UTC().Unix()
+	days := unix / 86400
+	if unix%86400 < 0 {
+		days--
+	}
+	year, month, day := hybridCivil(days)
+	if year < 1 {
+		return t
+	}
+	midnight := time.Unix(days*86400, 0).UTC()
+	return t.Add(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Sub(midnight))
+}
+
+// julianDayNumber is the Julian-calendar civil date to day number conversion.
+func julianDayNumber(year, month, day int) int {
+	a := (14 - month) / 12
+	y := year + 4800 - a
+	m := month + 12*a - 3
+	return day + (153*m+2)/5 + 365*y + y/4 - 32083
+}
+
+// datetimeFromCapturedLocalParts builds a Datetime from civil parts the way the
+// native builders do, with the Julian reading of pre-cutover dates.
+func datetimeFromCapturedLocalParts(year, month, day, hour, minute, second, millisecond int, zoneID string) (time.Time, error) {
+	wall := julianWallClock(year, month, day, hour, minute, second, millisecond)
+	return datetimeFromLocalParts(wall.Year(), int(wall.Month()), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), wall.Nanosecond()/int(time.Millisecond), zoneID)
+}
+
 func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond int, zoneID string) (time.Time, error) {
 	canonical, offset, ok := parseFixedTimeZoneID(zoneID)
 	if ok {
@@ -1146,7 +1213,9 @@ func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond 
 		}
 		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
 	}
-	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond, false), nil
+	// Native dt03 (surf_datetime_locale): an ambiguous local time takes the
+	// post-transition (standard-time) occurrence, as valueOf does.
+	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond, true), nil
 }
 
 func datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, second, millisecond int) (time.Time, error) {
@@ -1189,17 +1258,17 @@ func datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, seco
 }
 
 func datetimeValueOfLocalClock(value time.Time, zoneID string) (time.Time, error) {
-	// Native user-zone rows 061/062 observe the String valueOf overload,
-	// not newInstance or parse. Keep those constructors' overlap choice.
+	// A repeated civil time resolves to the later instant, as newInstance does
+	// (surf_datetime_locale dt03 and dg01: Los Angeles, Sydney, Auckland, Adelaide).
 	if zoneID == "America/Los_Angeles" {
-		if zone, ok := supportedNamedTimeZone(zoneID); ok {
-			return zone.instantFromLocal(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, true), nil
+		if _, ok := supportedNamedTimeZone(zoneID); ok {
+			return datetimeFromCapturedLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
 		}
 	}
 	if zoneID == "Pacific/Kiritimati" {
 		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
 	}
-	return datetimeFromLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
+	return datetimeFromCapturedLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
 }
 
 func addMonthsClamped(value time.Time, months int) time.Time {
@@ -1443,6 +1512,12 @@ func parseDateParseTextForLocale(text, locale string) (time.Time, error) {
 		// layout does not apply to these locales, so there is no fallback.
 		return parseDateParseFields(text, grammar.date, 2, 1, 3, grammar.zeroTwoDigit)
 	}
+	if locale == "ja_JP" && dateParseMonthFirstFullYear.MatchString(strings.TrimSpace(text)) {
+		// Native dt02 (surf_datetime_locale): a ja_JP user's Date.parse rejects
+		// the month-first m/d/yyyy form that en_US accepts. Two-digit years
+		// have no row and keep the legacy grammar.
+		return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
+	}
 	if !apexYearPivotCaptured(locale) {
 		return parseDateParseTextLegacy(text)
 	}
@@ -1470,6 +1545,8 @@ func parseDateParseTextLegacy(text string) (time.Time, error) {
 
 // Date.parse and Datetime.parse field grammars. Month and day take one or two
 // digits; the year token follows parseApexYearToken.
+var dateParseMonthFirstFullYear = regexp.MustCompile(`^\d{1,2}/\d{1,2}/\d{4}$`)
+
 var (
 	dateParseSlashPattern     = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+)$`)
 	dateParseDashPattern      = regexp.MustCompile(`^(\d+)-(\d{1,2})-(\d{1,2})$`)
@@ -1489,16 +1566,19 @@ type dayFirstParseGrammar struct {
 }
 
 var (
-	dayFirstDotDate       = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+)$`)
-	dayFirstDotDatetime   = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+), (\d{1,2}):(\d{2})$`)
-	dayFirstSlashDate     = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+)$`)
-	dayFirstSlashDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+), (\d{1,2}):(\d{2})$`)
-	dayFirstSpaceDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+) (\d{1,2}):(\d{2})$`)
-	dayFirstParseGrammars = map[string]dayFirstParseGrammar{
+	dayFirstDotDate     = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+)$`)
+	dayFirstDotDatetime = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSlashDate   = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+)$`)
+	// surf_datetime_locale dt02: an en_GB user's Date.parse accepts unpadded
+	// day and month ("3/8/2026" is 3 August).
+	dayFirstSlashDateLoose = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+)$`)
+	dayFirstSlashDatetime  = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSpaceDatetime  = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+) (\d{1,2}):(\d{2})$`)
+	dayFirstParseGrammars  = map[string]dayFirstParseGrammar{
 		"de_DE": {date: dayFirstDotDate, datetime: dayFirstDotDatetime, zeroTwoDigit: true},
 		"no":    {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
 		"no_NO": {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
-		"en_GB": {date: dayFirstSlashDate, datetime: dayFirstSlashDatetime},
+		"en_GB": {date: dayFirstSlashDateLoose, datetime: dayFirstSlashDatetime},
 		"fr_FR": {date: dayFirstSlashDate, datetime: dayFirstSpaceDatetime},
 	}
 )
@@ -1796,6 +1876,9 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 		}
 		if zone, ok := supportedNamedTimeZone(zoneID); ok {
 			_, name := zone.displayNameAt(value)
+			if name == "" {
+				return "", unsupportedCallError("Datetime.format long zone name " + zoneID)
+			}
 			return name, nil
 		}
 		return zoneLabel, nil
@@ -2013,7 +2096,19 @@ type modeledTimeZone struct {
 	standardDisplayName string
 	daylightDisplayName string
 	daylightRule        string
+	// historicBeforeYear, when set, reads the zone's real offset history for
+	// instants before that UTC year, as the native TimeZone does (native
+	// dth_DthTz_T_tz_*, surf_collections_strings: Kolkata 1900 is +05:21:10,
+	// Los Angeles June 1905 is PST, Adelaide January 1970 is +09:30). Before
+	// the first recorded transition the zone keeps its standard offset.
+	historicBeforeYear int
+	// historicNames names offsets the zone held in the past that are neither its
+	// standard nor its daylight offset (native TzDisp: Kolkata 1943 is IDT, India
+	// Daylight Time, at +06:30).
+	historicNames map[time.Duration]historicZoneName
 }
+
+type historicZoneName struct{ label, display string }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// Owned API62/67/68 factory/offset/display/format snapshots, January/July2026.
@@ -2022,7 +2117,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// display name was not observable at capture and mirrors Europe/Berlin.
 	"Africa/Johannesburg": {id: "Africa/Johannesburg", standardOffset: 2 * time.Hour, standardLabel: "SAST", standardDisplayName: "South Africa Standard Time"},
 	"Australia/Brisbane":  {id: "Australia/Brisbane", standardOffset: 10 * time.Hour, standardLabel: "AEST", standardDisplayName: "Australian Eastern Standard Time"},
-	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
+	"America/Los_Angeles": {id: "America/Los_Angeles", historicBeforeYear: 2008, standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
 	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
 	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
 	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
@@ -2034,13 +2129,19 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/Paris":        {id: "Europe/Paris", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
-	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
+	"Asia/Kolkata":        {id: "Asia/Kolkata", historicBeforeYear: 2008, historicNames: map[time.Duration]historicZoneName{6*time.Hour + 30*time.Minute: {"IDT", "India Daylight Time"}, 5*time.Hour + 21*time.Minute + 10*time.Second: {"IST", "India Standard Time"}}, standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	// Asia/Singapore: stdlib_core_c14 String (API 62.0, 67.0) observed the +0800 offset; label and display name captured 2026-11-06 (scratch org, API 68.0 anonymous).
 	"Asia/Singapore":    {id: "Asia/Singapore", standardOffset: 8 * time.Hour, standardLabel: "SGT", standardDisplayName: "Singapore Time"},
 	"Asia/Tokyo":        {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
 	"Pacific/Honolulu":  {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
 	"Pacific/Pago_Pago": {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
-	"Australia/Sydney":  {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
+	// Owned API 62/67 dh01 and dg01 (surf_datetime_locale): offsets, labels and
+	// the ambiguous and skipped civil times. Display names were not captured, so
+	// getDisplayName and the long zone pattern stay unsupported for these three.
+	"Asia/Kathmandu":     {id: "Asia/Kathmandu", standardOffset: 5*time.Hour + 45*time.Minute, standardLabel: "NPT"},
+	"Australia/Adelaide": {id: "Australia/Adelaide", historicBeforeYear: 2008, standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", standardDisplayName: "Australian Central Standard Time (South Australia)", daylightDisplayName: "Australian Central Daylight Time (South Australia)", daylightRule: "sydney"},
+	"Pacific/Auckland":   {id: "Pacific/Auckland", standardOffset: 12 * time.Hour, daylightOffset: 13 * time.Hour, standardLabel: "NZST", daylightLabel: "NZDT", daylightRule: "auckland"},
+	"Australia/Sydney":   {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
@@ -2086,10 +2187,10 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 	return offsetValue, nil
 }
 
-func (vm *VM) timeZoneDisplayName(receiver Value) Value {
+func (vm *VM) timeZoneDisplayName(receiver Value) (Value, error) {
 	idValue := receiver.Fields["id"]
 	if idValue.Kind != ValueString {
-		return idValue
+		return idValue, nil
 	}
 	offset := time.Duration(0)
 	longName := "Pacific Standard Time"
@@ -2102,11 +2203,17 @@ func (vm *VM) timeZoneDisplayName(receiver Value) Value {
 			}
 		} else if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
 			offset, longName = location.displayNameAt(vm.fakeNow)
+			if longName == "" {
+				return Null, unsupportedCallError("TimeZone.getDisplayName " + locationValue.Text)
+			}
 		}
 	} else if offsetValue := receiver.Fields["offsetMillis"]; offsetValue.Kind == ValueInt {
 		offset = time.Duration(offsetValue.Int) * time.Millisecond
 	}
-	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text))
+	// The long zzzz name of Adelaide carries a region suffix that
+	// TimeZone.getDisplayName does not (native TzDisp).
+	longName = strings.TrimSuffix(longName, " (South Australia)")
+	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text)), nil
 }
 
 func formatTimeZoneDisplayOffset(offset time.Duration) string {
@@ -2120,15 +2227,124 @@ func formatTimeZoneDisplayOffset(offset time.Duration) string {
 }
 
 func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
+	if offset, label, ok := zone.historicOffsetAt(instant); ok {
+		return offset, label
+	}
 	if zone.daylightRule == "" || !zone.isDaylight(instant.UTC()) {
 		return zone.standardOffset, zone.standardLabel
 	}
 	return zone.daylightOffset, zone.daylightLabel
 }
 
+// historicLocation is the real zone data behind a zone that reads its history.
+func (zone modeledTimeZone) historicLocation() *time.Location {
+	if zone.historicBeforeYear == 0 {
+		return nil
+	}
+	if cached, ok := historicLocations.Load(zone.id); ok {
+		return cached.(*time.Location)
+	}
+	location, err := time.LoadLocation(zone.id)
+	if err != nil {
+		return nil
+	}
+	historicLocations.Store(zone.id, location)
+	return location
+}
+
+var historicLocations sync.Map
+
+func (zone modeledTimeZone) historicOffsetAt(instant time.Time) (time.Duration, string, bool) {
+	if zone.historicBeforeYear == 0 || instant.UTC().Year() >= zone.historicBeforeYear {
+		return 0, "", false
+	}
+	location := zone.historicLocation()
+	if location == nil {
+		return 0, "", false
+	}
+	local := instant.In(location)
+	start, _ := local.ZoneBounds()
+	name, seconds := local.Zone()
+	offset := time.Duration(seconds) * time.Second
+	if start.IsZero() {
+		// Before the first recorded transition (local mean time) the native
+		// zone keeps its standard offset.
+		return zone.standardOffset, zone.standardLabel, true
+	}
+	switch {
+	case offset == zone.standardOffset:
+		return offset, zone.standardLabel, true
+	case zone.daylightRule != "" && offset == zone.daylightOffset:
+		return offset, zone.daylightLabel, true
+	}
+	if named, ok := zone.historicNames[offset]; ok {
+		return offset, named.label, true
+	}
+	return offset, name, true
+}
+
+// historicOffsetsNear lists the distinct offsets the zone had within two days
+// of a wall-clock time, so a local time resolves against the real transitions.
+// beforeFirstTransition reports an instant before the first recorded offset
+// change of a zone that reads its history.
+func (zone modeledTimeZone) beforeFirstTransition(instant time.Time) bool {
+	location := zone.historicLocation()
+	if location == nil {
+		return false
+	}
+	start, _ := instant.In(location).ZoneBounds()
+	return start.IsZero()
+}
+
+// formatGMTOffsetLabel renders an offset as GMT-8 or GMT+5:30.
+func formatGMTOffsetLabel(offset time.Duration) string {
+	sign := "+"
+	if offset < 0 {
+		sign, offset = "-", -offset
+	}
+	minutes := int(offset / time.Minute)
+	if minutes%60 == 0 {
+		return fmt.Sprintf("GMT%s%d", sign, minutes/60)
+	}
+	return fmt.Sprintf("GMT%s%d:%02d", sign, minutes/60, minutes%60)
+}
+
+func (zone modeledTimeZone) historicOffsetsNear(wall time.Time) []time.Duration {
+	if zone.historicBeforeYear == 0 || wall.Year() >= zone.historicBeforeYear {
+		return nil
+	}
+	location := zone.historicLocation()
+	if location == nil {
+		return nil
+	}
+	var offsets []time.Duration
+	seen := map[time.Duration]bool{}
+	end := wall.Add(48 * time.Hour)
+	for at := wall.Add(-48 * time.Hour); !at.After(end); {
+		offset, _, _ := zone.historicOffsetAt(at)
+		if !seen[offset] {
+			seen[offset] = true
+			offsets = append(offsets, offset)
+		}
+		_, boundary := at.In(location).ZoneBounds()
+		if boundary.IsZero() {
+			break
+		}
+		at = boundary
+	}
+	return offsets
+}
+
 func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, string) {
 	offset, _ := zone.offsetAt(instant)
-	if zone.daylightRule != "" && zone.isDaylight(instant.UTC()) && zone.daylightDisplayName != "" {
+	if named, ok := zone.historicNames[offset]; ok {
+		if _, _, history := zone.historicOffsetAt(instant); history {
+			return offset, named.display
+		}
+	}
+	// Daylight follows the offset in force, so the display name uses the same
+	// history as the offset (LA 2006-03-20 is Pacific Standard Time).
+	if zone.daylightRule != "" && offset == zone.daylightOffset && zone.daylightDisplayName != "" {
 		return offset, zone.daylightDisplayName
 	}
 	return offset, zone.standardDisplayName
@@ -2139,6 +2355,11 @@ func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, ho
 	offsets := []time.Duration{zone.standardOffset}
 	if zone.daylightRule != "" && zone.daylightOffset != zone.standardOffset {
 		offsets = append(offsets, zone.daylightOffset)
+	}
+	for _, offset := range zone.historicOffsetsNear(local) {
+		if offset != zone.standardOffset && offset != zone.daylightOffset {
+			offsets = append(offsets, offset)
+		}
 	}
 	var matches []time.Time
 	for _, offset := range offsets {
@@ -2169,6 +2390,10 @@ func (zone modeledTimeZone) isDaylight(instant time.Time) bool {
 		start := time.Date(year, time.March, lastWeekdayOfMonth(year, time.March, time.Sunday), 1, 0, 0, 0, time.UTC)
 		end := time.Date(year, time.October, lastWeekdayOfMonth(year, time.October, time.Sunday), 1, 0, 0, 0, time.UTC)
 		return !instant.Before(start) && instant.Before(end)
+	case "auckland":
+		start := localRuleTransitionUTC(year, time.September, lastWeekdayOfMonth(year, time.September, time.Sunday), 2, zone.standardOffset)
+		end := localRuleTransitionUTC(year, time.April, nthWeekdayOfMonth(year, time.April, time.Sunday, 1), 3, zone.daylightOffset)
+		return !instant.Before(start) || instant.Before(end)
 	case "sydney":
 		start := localRuleTransitionUTC(year, time.October, nthWeekdayOfMonth(year, time.October, time.Sunday, 1), 2, zone.standardOffset)
 		end := localRuleTransitionUTC(year, time.April, nthWeekdayOfMonth(year, time.April, time.Sunday, 1), 3, zone.daylightOffset)
@@ -2755,7 +2980,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 		return finiteMathResult(callee, math.Sqrt(n), args[0])
 	case "Math.cbrt":
-		return finiteMathResult(callee, math.Cbrt(n), args[0])
+		return finiteMathResult(callee, stablemath.CbrtStable(n), args[0])
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Invalid argument")
@@ -2765,27 +2990,27 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Invalid argument")
 		}
-		return finiteMathResult(callee, math.Asin(n), args[0])
+		return finiteMathResult(callee, stablemath.AsinStable(n), args[0])
 	case "Math.atan":
-		return finiteMathResult(callee, math.Atan(n), args[0])
+		return finiteMathResult(callee, stablemath.AtanStable(n), args[0])
 	case "Math.cos":
-		return finiteMathResult(callee, math.Cos(n), args[0])
+		return finiteMathResult(callee, stablemath.CosStable(n), args[0])
 	case "Math.sin":
-		return finiteMathResult(callee, math.Sin(n), args[0])
+		return finiteMathResult(callee, stablemath.SinStable(n), args[0])
 	case "Math.tan":
 		return finiteMathResult(callee, mathTan(n), args[0])
 	case "Math.cosh":
 		return finiteMathResult(callee, mathCosh(n), args[0])
 	case "Math.sinh":
-		return finiteMathResult(callee, math.Sinh(n), args[0])
+		return finiteMathResult(callee, stablemath.SinhStable(n), args[0])
 	case "Math.tanh":
-		return finiteMathResult(callee, math.Tanh(n), args[0])
+		return finiteMathResult(callee, stablemath.TanhStable(n), args[0])
 	case "Math.exp":
-		return finiteMathResult(callee, math.Exp(n), args[0])
+		return finiteMathResult(callee, stablemath.ExpStable(n), args[0])
 	case "Math.log":
-		return finiteMathResult(callee, math.Log(n), args[0])
+		return finiteMathResult(callee, stablemath.LogStable(n), args[0])
 	case "Math.log10":
-		return finiteMathResult(callee, math.Log10(n), args[0])
+		return finiteMathResult(callee, stablemath.Log10Stable(n), args[0])
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -2865,9 +3090,9 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		}
 		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
-		return finiteDoubleResult(callee, math.Pow(left, right))
+		return finiteDoubleResult(callee, stablemath.PowStable(left, right))
 	case "Math.atan2":
-		return finiteMathResult(callee, math.Atan2(left, right), args...)
+		return finiteMathResult(callee, stablemath.Atan2Stable(left, right), args...)
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -3021,10 +3246,10 @@ func mathAcos(x float64) float64 {
 	if abs >= 0.5 {
 		z = (1 - abs) * 0.5
 	}
-	p := z * mathPolynomial(z,
+	p := float64(z * mathPolynomial(z,
 		1.66666666666666657415e-01, -3.25565818622400915405e-01,
 		2.01212532134862925881e-01, -4.00555345006794114027e-02,
-		7.91534994289814532176e-04, 3.47933107596021167570e-05)
+		7.91534994289814532176e-04, 3.47933107596021167570e-05))
 	q := mathPolynomial(z, 1,
 		-2.40339491173441421878e+00, 2.02094576023350569471e+00,
 		-6.88283971605453293030e-01, 7.70381505559019352791e-02)
@@ -3050,7 +3275,7 @@ func mathCosh(x float64) float64 {
 		return x
 	}
 	if x < 0.5*math.Ln2 {
-		t := math.Expm1(x)
+		t := stablemath.Expm1Stable(x)
 		w := 1 + t
 		if x < 0x1p-55 {
 			return w
@@ -3100,7 +3325,7 @@ func mathExp(x float64) float64 {
 			k = int(float64(invLn2*x) + math.Copysign(0.5, x))
 		}
 		hi = x - float64(float64(k)*ln2High)
-		lo = float64(k) * ln2Low
+		lo = float64(float64(k) * ln2Low)
 		x = hi - lo
 	} else if absHigh < 0x3e300000 {
 		return 1 + x
@@ -3125,7 +3350,7 @@ func mathTan(x float64) float64 {
 	// Keep Go's existing large-argument reduction. The fdlibm kernel and
 	// split-pi reduction below cover the small and medium arguments.
 	if abs > 0x1p19*(math.Pi/2) || math.IsNaN(x) {
-		return math.Tan(x)
+		return stablemath.TanStable(x)
 	}
 	y, tail, n := mathTanReduce(x)
 	mode := 1
@@ -3153,7 +3378,7 @@ func mathTanReduce(x float64) (float64, float64, int) {
 	n := int(float64(abs*invPiOver2) + 0.5)
 	fn := float64(n)
 	r := abs - float64(fn*piOver2A)
-	w := fn * piOver2AT
+	w := float64(fn * piOver2AT)
 	y := r - w
 	if ix < 0x4002d97c {
 		if ix == 0x3ff921fb {
@@ -3166,14 +3391,14 @@ func mathTanReduce(x float64) (float64, float64, int) {
 		difference := exponent - int((math.Float64bits(y)>>52)&0x7ff)
 		if difference > 16 {
 			t := r
-			w = fn * piOver2B
+			w = float64(fn * piOver2B)
 			r = t - w
 			w = float64(fn*piOver2BT) - ((t - r) - w)
 			y = r - w
 			difference = exponent - int((math.Float64bits(y)>>52)&0x7ff)
 			if difference > 49 {
 				t = r
-				w = fn * piOver2C
+				w = float64(fn * piOver2C)
 				r = t - w
 				w = float64(fn*piOver2CT) - ((t - r) - w)
 				y = r - w
@@ -3208,10 +3433,10 @@ func mathTanKernel(x, y float64, mode int) float64 {
 		1.33333333333201242699e-01, 2.18694882948595424599e-02,
 		3.59207910759131235356e-03, 5.88041240820264096874e-04,
 		7.81794442939557092300e-05, -1.85586374855275456654e-05)
-	v := z * mathPolynomial(w,
+	v := float64(z * mathPolynomial(w,
 		5.39682539762260521377e-02, 8.86323982359930005737e-03,
 		1.45620945432529025516e-03, 2.46463134818469906812e-04,
-		7.14072491382608190305e-05, 2.59073051863633712884e-05)
+		7.14072491382608190305e-05, 2.59073051863633712884e-05))
 	s := z * x
 	r = y + float64(z*(float64(s*(r+v))+y))
 	r += float64(3.33333333333334091986e-01 * s)
@@ -3365,7 +3590,14 @@ func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) 
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
-	vm.materializeLazyStandardSpread()
+	if vm.eagerGlobalDescribe {
+		vm.materializeLazyStandardSpread()
+	} else {
+		// The map reads names only: installed objects plus the ones a lazy
+		// spread still owes (buildSchemaGlobalDescribe). A token installs its
+		// object when something reads it.
+		vm.installPresenceReadSpreadObjects()
+	}
 	vm.ensureMetadataCacheGeneration()
 	key := vm.globalDescribeAvailabilityKey()
 	if vm.globalDescribeVersionCaches != nil {
@@ -3393,18 +3625,28 @@ func (vm *VM) buildSchemaGlobalDescribe() Value {
 	if vm.Org == nil {
 		return out
 	}
-	names := make([]string, 0, len(vm.Org.Objects))
+	// Installed plus owed names are the object set of the completed spread
+	// among the objects the shape allows (storage.SpreadOwedObjectNames), so
+	// the map is the one a completed org builds.
+	owed := storage.SpreadOwedObjectNames(vm.Org)
+	names := make([]string, 0, len(vm.Org.Objects)+len(owed))
 	seen := make(map[string]bool, cap(names))
-	for name := range vm.Org.Objects {
+	add := func(name string) {
 		if !vm.allowsStandardObject(name) {
-			continue
+			return
 		}
 		key := strings.ToLower(strings.TrimSpace(name))
 		if key == "" || seen[key] {
-			continue
+			return
 		}
 		names = append(names, name)
 		seen[key] = true
+	}
+	for name := range vm.Org.Objects {
+		add(name)
+	}
+	for _, name := range owed {
+		add(name)
 	}
 	sort.Strings(names)
 	for _, name := range names {
@@ -3552,6 +3794,12 @@ func locationNewInstance(args []Value) (Value, error) {
 }
 
 func locationString(location Value) string {
+	var w textWriter
+	writeLocationText(&w, location)
+	return w.String()
+}
+
+func writeLocationText(w *textWriter, location Value) {
 	_, latitude, hasLatitude := objectFieldValue(location, "latitude")
 	_, longitude, hasLongitude := objectFieldValue(location, "longitude")
 	if !hasLatitude {
@@ -3560,7 +3808,11 @@ func locationString(location Value) string {
 	if !hasLongitude {
 		longitude = Null
 	}
-	return "System.Location[getLatitude=" + latitude.String() + ";getLongitude=" + longitude.String() + ";]"
+	w.WriteString("System.Location[getLatitude=")
+	latitude.writeText(w)
+	w.WriteString(";getLongitude=")
+	longitude.writeText(w)
+	w.WriteString(";]")
 }
 
 func newDomainFromHostname(hostname string) Value {
@@ -3767,9 +4019,11 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	lat2 := rightLat * math.Pi / 180
 	dLat := (rightLat - leftLat) * math.Pi / 180
 	dLon := (rightLon - leftLon) * math.Pi / 180
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	sinLat := stablemath.SinStable(dLat / 2)
+	sinLon := stablemath.SinStable(dLon / 2)
+	a := float64(sinLat*sinLat) + float64(float64(float64(stablemath.CosStable(lat1)*stablemath.CosStable(lat2))*sinLon)*sinLon)
 	a = math.Max(0, math.Min(1, a))
-	angle := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	angle := 2 * stablemath.Atan2Stable(math.Sqrt(a), math.Sqrt(1-a))
 	distance := radius * angle
 	return decimalAsDouble(Decimal(distance)), nil
 }
@@ -4494,6 +4748,10 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 		return "", false
 	}
+	// A gated stub class is never nested in the current top-level class (its
+	// top is a gated namespace the source would have named), so only the
+	// search across every class below can select one. Bind its candidates.
+	vm.bindGatedPlatformClassesNamed(typeName)
 	var unique string
 	for _, entry := range vm.classNameSearchEntries() {
 		if !strings.HasSuffix(entry.Lower, suffix) {
@@ -4559,7 +4817,7 @@ func (vm *VM) classNameSearchEntries() []classNameSearchEntry {
 		return vm.classNameSearchCache
 	}
 	classNames := make([]string, 0, len(vm.Classes))
-	for name := range vm.ClassEntries() {
+	for name := range vm.classEntriesRaw() {
 		classNames = append(classNames, name)
 	}
 	sort.Strings(classNames)
@@ -4618,6 +4876,7 @@ func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") {
 		return "", false
 	}
+	vm.bindGatedPlatformClassesNamed(typeName)
 	typeKey := strings.ToLower(typeName)
 	if vm.onlyNestedTypeCache != nil {
 		if cached, ok := vm.onlyNestedTypeCache[typeKey]; ok {
@@ -4693,6 +4952,10 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 		}
 	}
 	if !strings.Contains(typeName, ".") {
+		// Gated stub enums of this simple name were entries before the gate.
+		// A bind keeps the suffix memo as it would have been (see
+		// bindGatedPlatformClass).
+		vm.bindGatedPlatformClassesNamed(typeName)
 		if vm.enumSuffixLookup == nil {
 			vm.rebuildEnumSuffixLookup()
 		}
@@ -4707,18 +4970,28 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
-	for _, class := range vm.ClassEntries() {
+	vm.enumSuffixBuilt = true
+	// Map order must not decide the answer: a project enum beats a platform
+	// enum of the same bare name, and ties go to the smaller class name.
+	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}
 		name := class.Name
 		if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot+1 < len(name) {
 			key := canonicalClassLookupKey(name[dot+1:])
-			if _, exists := vm.enumSuffixLookup[key]; !exists {
+			if current, exists := vm.enumSuffixLookup[key]; !exists || enumSuffixPreferred(class, current.Class) {
 				vm.enumSuffixLookup[key] = enumClassLookup{Class: class, OK: true}
 			}
 		}
 	}
+}
+
+func enumSuffixPreferred(candidate, current Class) bool {
+	if candidate.PlatformType != current.PlatformType {
+		return !candidate.PlatformType
+	}
+	return candidate.Name < current.Name
 }
 
 func isLikelyEnumValueText(text string) bool {

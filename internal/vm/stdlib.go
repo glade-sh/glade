@@ -575,6 +575,10 @@ func stringStatic(callee string, args []Value) (Value, error) {
 }
 
 func (vm *VM) stringJoin(args []Value, result *Result) (Value, error) {
+	if len(args) == 2 && args[1].Kind == ValueNull && args[0].Kind != ValueNull {
+		// Native cs07 (surf_collections_strings): a null separator.
+		return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if len(args) != 2 || args[1].Kind != ValueString {
 		return Null, fmt.Errorf("String.join expects List, Set, or Iterable and separator String")
 	}
@@ -821,6 +825,12 @@ func patternMatches(args []Value) (Value, error) {
 	plan, err := compileRegexp2PlanForInputWithException("Pattern.matches", pattern, input, "StringException")
 	if err != nil {
 		return Null, err
+	}
+	if matched, ok, err := plan.matchesLoneSurrogateInput(input); ok {
+		if err != nil {
+			return Null, newRegexSyntaxError("StringException", pattern, err)
+		}
+		return Bool(matched), nil
 	}
 	match, err := plan.matchStartingAt(input, 0, utf8.RuneCountInString(input), true)
 	if err != nil {
@@ -1569,6 +1579,13 @@ func parseJavaReplacement(callee, replacement string, groupCount int) ([]javaRep
 	return parseJavaReplacementWithNames(callee, replacement, groupCount, nil)
 }
 
+// javaReplacementSyntaxError carries the description java.util.regex.Matcher
+// reports for a malformed replacement string.
+type javaReplacementSyntaxError struct{ description string }
+
+func (e *javaReplacementSyntaxError) Error() string { return e.description }
+
+// parseJavaReplacementWithNames follows Matcher.appendExpandedReplacement.
 func parseJavaReplacementWithNames(callee, replacement string, groupCount int, namedGroups map[string]int) ([]javaReplacementSegment, error) {
 	var segments []javaReplacementSegment
 	var literal strings.Builder
@@ -1579,67 +1596,78 @@ func parseJavaReplacementWithNames(callee, replacement string, groupCount int, n
 		segments = append(segments, javaReplacementSegment{literal: literal.String(), group: -1})
 		literal.Reset()
 	}
+	isNameChar := func(c byte) bool {
+		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+	}
 	for i := 0; i < len(replacement); i++ {
 		ch := replacement[i]
 		if ch == '\\' {
-			if i+1 >= len(replacement) {
-				return nil, fmt.Errorf("replacement trailing escape")
-			}
-			next := replacement[i+1]
-			if next == '$' {
-				literal.WriteByte('$')
-				i++
-				continue
-			}
-			literal.WriteByte(next)
 			i++
+			if i >= len(replacement) {
+				return nil, &javaReplacementSyntaxError{"character to be escaped is missing"}
+			}
+			_, size := utf8.DecodeRuneInString(replacement[i:])
+			literal.WriteString(replacement[i : i+size])
+			i += size - 1
 			continue
 		}
-		if ch == '$' {
-			if i+1 >= len(replacement) {
-				return nil, fmt.Errorf("replacement missing group reference after $")
+		if ch != '$' {
+			literal.WriteByte(ch)
+			continue
+		}
+		i++
+		if i >= len(replacement) {
+			return nil, &javaReplacementSyntaxError{"Illegal group reference: group index is missing"}
+		}
+		next := replacement[i]
+		group := -1
+		if next == '{' {
+			if namedGroups == nil {
+				return nil, unsupportedCallError(callee + " replacement named group references")
 			}
-			next := replacement[i+1]
-			if next == '{' {
-				end := strings.IndexByte(replacement[i+2:], '}')
-				if namedGroups == nil || end < 0 {
-					return nil, unsupportedCallError(callee + " replacement named group references")
-				}
-				name := replacement[i+2 : i+2+end]
-				group, ok := namedGroups[name]
-				if !ok {
-					return nil, fmt.Errorf("No group with name {%s}", name)
-				}
-				flushLiteral()
-				segments = append(segments, javaReplacementSegment{group: group})
-				i += end + 2
-				continue
+			i++
+			start := i
+			for i < len(replacement) && isNameChar(replacement[i]) {
+				i++
 			}
+			name := replacement[start:i]
+			if name == "" {
+				return nil, &javaReplacementSyntaxError{"named capturing group has 0 length name"}
+			}
+			if i >= len(replacement) || replacement[i] != '}' {
+				return nil, &javaReplacementSyntaxError{"named capturing group is missing trailing '}'"}
+			}
+			if name[0] >= '0' && name[0] <= '9' {
+				return nil, &javaReplacementSyntaxError{"capturing group name {" + name + "} starts with digit character"}
+			}
+			number, ok := namedGroups[name]
+			if !ok {
+				return nil, &javaReplacementSyntaxError{"No group with name {" + name + "}"}
+			}
+			group = number
+		} else {
 			if next < '0' || next > '9' {
-				return nil, fmt.Errorf("replacement invalid group reference")
+				return nil, &javaReplacementSyntaxError{"Illegal group reference"}
 			}
-			group := int(next - '0')
-			if group > groupCount {
-				return nil, &stringReplacementGroupError{group: group}
-			}
-			i += 1
+			group = int(next - '0')
 			for i+1 < len(replacement) {
-				next = replacement[i+1]
-				if next < '0' || next > '9' {
+				digit := replacement[i+1]
+				if digit < '0' || digit > '9' {
 					break
 				}
-				candidate := group*10 + int(next-'0')
-				if candidate > groupCount {
+				candidate := group*10 + int(digit-'0')
+				if groupCount < candidate {
 					break
 				}
 				group = candidate
 				i++
 			}
-			flushLiteral()
-			segments = append(segments, javaReplacementSegment{group: group})
-			continue
+			if group > groupCount {
+				return nil, &stringReplacementGroupError{group: group}
+			}
 		}
-		literal.WriteByte(ch)
+		flushLiteral()
+		segments = append(segments, javaReplacementSegment{group: group})
 	}
 	flushLiteral()
 	return segments, nil
@@ -2492,6 +2520,11 @@ func stringStaticStripAll(args []Value) (Value, error) {
 }
 
 func stringRegexReplace(name, text string, args []Value, all bool) (string, error) {
+	for _, arg := range args {
+		if arg.Kind == ValueNull {
+			return "", newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
+	}
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
 	}
@@ -2621,6 +2654,11 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
@@ -2726,6 +2764,11 @@ func patternSplit(source string, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
 	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
 	}
@@ -2739,6 +2782,11 @@ func patternSplit(source string, args []Value) ([]string, error) {
 func patternSplitValue(pattern Value, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
@@ -3013,34 +3061,17 @@ func isEscapedRegexByte(source string, index int) bool {
 }
 
 func javaRegexQuoteEscapesToGo(source string) (string, error) {
-	if !strings.Contains(source, `\Q`) && !strings.Contains(source, `\E`) {
-		return normalizeJavaRegexEscapesForGo(source), nil
+	return normalizeJavaRegexEscapesForGo(javaRegexRemoveQuoting(source)), nil
+}
+
+// javaRegexRemoveQuoting rewrites \Q...\E into escaped literals before the
+// pattern is parsed, as Pattern does, so every later index and the x flag see
+// the quoted text as ordinary characters.
+func javaRegexRemoveQuoting(source string) string {
+	if !strings.Contains(source, `\Q`) {
+		return source
 	}
-	var out strings.Builder
-	for i := 0; i < len(source); {
-		if strings.HasPrefix(source[i:], `\Q`) {
-			i += len(`\Q`)
-			end := strings.Index(source[i:], `\E`)
-			if end < 0 {
-				out.WriteString(regexp.QuoteMeta(source[i:]))
-				return normalizeJavaRegexEscapesForGo(out.String()), nil
-			}
-			out.WriteString(regexp.QuoteMeta(source[i : i+end]))
-			i += end + len(`\E`)
-			continue
-		}
-		if strings.HasPrefix(source[i:], `\E`) {
-			return "", fmt.Errorf("Java regex quote escapes")
-		}
-		if source[i] == '\\' && i+1 < len(source) {
-			out.WriteString(source[i : i+2])
-			i += 2
-			continue
-		}
-		out.WriteByte(source[i])
-		i++
-	}
-	return normalizeJavaRegexEscapesForGo(out.String()), nil
+	return string(javaRemoveQEQuoting([]rune(source)))
 }
 
 // Salesforce's Java regex accepts an escaped underscore as a literal
@@ -3497,7 +3528,9 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 			}
 			end := strings.IndexByte(pattern[i+1:], '}')
 			if end < 0 {
-				return "", fmt.Errorf("String.format unmatched '{' in format pattern")
+				// Native cs05 (surf_collections_strings): a StringException that
+				// quotes the whole raw pattern; quotes, backslashes, newlines and non-ASCII are not escaped (fm01, fm02).
+				return "", newExceptionError("System.StringException", "Unmatched '{' braces in message \""+pattern+"\"")
 			}
 			token := strings.TrimSpace(pattern[i+1 : i+1+end])
 			replacement, err := formatStringTokenCached(token, args, display, displayCache)
@@ -3997,10 +4030,19 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		if equal, handled := datetimeMethodEquals(receiver, args[0]); handled {
 			return Bool(equal), true, nil
 		}
+		if equal, handled := signedDoubleZeroEqual(receiver, args[0]); handled {
+			return Bool(equal), true, nil
+		}
 		return Bool(receiver.Equal(args[0])), true, nil
 	case "hashCode":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.hashCode expects 0 arguments")
+		}
+		if receiver.Kind == ValueDecimal {
+			// Decimal.hashCode() is Double.hashCode of the value (cs13): 1.5 and
+			// 1.50 agree, 0.00 is 0.
+			bits := math.Float64bits(receiver.Decimal)
+			return Int(int64(int32(bits ^ bits>>32))), true, nil
 		}
 		return Int(int64(valueHashCode(receiver))), true, nil
 	case "clone":
@@ -4064,14 +4106,36 @@ func javaStringHashCodeExact(text string) int32 {
 }
 
 func valueHashCode(value Value) int32 {
+	return valueHashCodeEnv(hashEnv{}, value)
+}
+
+func valueHashCodeEnv(env hashEnv, value Value) int32 {
 	value = value.currentMapKeySet()
+	// An Id hashes its 18-character text, whether it was written as 15 or 18.
+	if text, ok := typedIDValueText(value); ok {
+		return javaStringHashCode(displayIDText(text))
+	}
 	switch value.Kind {
 	case ValueNull:
 		return 0
 	case ValueInt:
+		// An Integer hashes as itself; a Long folds its two halves (cs19).
+		if !strings.EqualFold(value.Type, "Long") && value.Int >= math.MinInt32 && value.Int <= math.MaxInt32 {
+			return int32(value.Int)
+		}
 		return int32(value.Int ^ (value.Int >> 32))
 	case ValueDecimal:
-		return javaStringHashCode(strconv.FormatFloat(value.Decimal, 'f', -1, 64))
+		// A Double hashes as Java Double.hashCode, which keeps +0.0 and -0.0
+		// apart (signed_double_zero_operations c02-c04). Only a real Decimal
+		// takes the BigDecimal path below.
+		if isFloatBackedDecimal(value) {
+			bits := math.Float64bits(value.Decimal)
+			return int32(bits ^ bits>>32)
+		}
+		// Native hs rows (surf_collections_strings cs13-cs14): a Decimal inside a
+		// List, Set or SObject field hashes as java.math.BigDecimal, so 1.5 and
+		// 1.50 differ.
+		return javaBigDecimalHashCode(value)
 	case ValueBool:
 		if value.Bool {
 			return 1231
@@ -4082,13 +4146,13 @@ func valueHashCode(value Value) int32 {
 	case ValueList:
 		hash := int32(1)
 		for _, item := range value.List {
-			hash = 31*hash + valueHashCode(item)
+			hash = 31*hash + valueHashCodeEnv(env, item)
 		}
 		return hash
 	case ValueSet:
 		parts := make([]int, 0, len(value.Set))
 		for _, item := range value.Set {
-			parts = append(parts, int(valueHashCode(item)))
+			parts = append(parts, int(valueHashCodeEnv(env, item)))
 		}
 		sort.Ints(parts)
 		hash := int32(1)
@@ -4104,12 +4168,12 @@ func valueHashCode(value Value) int32 {
 		sort.Strings(keys)
 		hash := int32(1)
 		for _, key := range keys {
-			hash += valueHashCode(mapStoredKey(value, key)) ^ valueHashCode(value.Map[key])
+			hash += valueHashCodeEnv(env, mapStoredKey(value, key)) ^ valueHashCodeEnv(env, value.Map[key])
 		}
 		return hash
 	case ValueObject:
 		if sObjectValueType(value.Type) {
-			return sObjectHashCode(value, make(map[uint64]bool))
+			return sObjectHashCodeEnv(env, value, make(map[uint64]bool))
 		}
 		// Equal SObjectType and SObjectField tokens share a hash (org capture
 		// schema_token_hash); equality ignores case, so the hash does too.
@@ -4145,6 +4209,9 @@ func valueHashCode(value Value) int32 {
 				// same hash even when their source spellings differ.
 				return javaStringHashCode(canonicalTypeValueIdentity(typeName))
 			}
+		}
+		if hash, ok := platformTemporalHashCode(env, value); ok {
+			return hash
 		}
 		if platformScalarObject(value.Type) {
 			if text, ok := platformScalarValue(value); ok {
@@ -4196,6 +4263,15 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 			return Null, true, fmt.Errorf("Id.toString expects 0 arguments")
 		}
 		return String(displayIDText(idText)), true, nil
+	case "hashcode":
+		// Native cs15: an Id hashes its 18-character text.
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.hashCode expects 0 arguments")
+		}
+		if len(idText) == 15 && validateApexIDShape(idText) == nil {
+			return Int(int64(javaStringHashCode(apexIDTo18(idText)))), true, nil
+		}
+		return Int(int64(javaStringHashCode(idText))), true, nil
 	case "to15":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.to15 expects 0 arguments")
@@ -4264,7 +4340,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "equals", "to15", "getsobjecttype":
+	case "equals", "to15", "getsobjecttype", "hashcode":
 	default:
 		return false
 	}
@@ -4493,12 +4569,10 @@ func decimalValueOfText(text string) (Value, error) {
 	if !ok {
 		return value, nil
 	}
-	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
-	rounded, err := roundRatToScaleUnchecked("Decimal.valueOf", rat, scale, "HALF_EVEN")
-	if err != nil {
-		return Null, err
+	out, ok := decimalRound33Wide(rat, true)
+	if !ok {
+		return Null, fmt.Errorf("Decimal.valueOf value cannot be represented")
 	}
-	out := decimalFromRat(rounded, scale)
 	if math.IsInf(out.Decimal, 0) {
 		out.Decimal = parsed
 	}
@@ -4563,4 +4637,49 @@ func sigmaFollowedByCased(runes []rune, at int) bool {
 		return sigmaCased(runes[i])
 	}
 	return false
+}
+
+// platformTemporalHashCode follows the native Date, Datetime and Time rows
+// (surf_collections_strings cs19, cs22-cs32): a Date hashes as Long.hashCode of
+// its UTC milliseconds, a Datetime as that hash XOR a calendar term, and a Time
+// as its milliseconds of day.
+//
+// The calendar term is partly FITTED, not derived: a fitted base plus the
+// Calendar week term of the user's locale (see hashEnv.calendarTerm). It matches
+// 13 distinct instants, a nonzero millisecond, three time zones and 15 locales
+// at APIs 62.0 and 67.0. KNOWN GAP: locales without a region, and regions
+// outside the captured set, are unverified.
+func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
+	if value.Kind != ValueObject || value.classInstance || value.projectClass {
+		return 0, false
+	}
+	long := func(millis int64) int32 { return int32(millis ^ (millis >> 32)) }
+	switch {
+	case strings.EqualFold(value.Type, "Date"):
+		if days, ok := datePreGregorian(value); ok {
+			// The hash is Long.hashCode of the real instant of a Julian civil date.
+			return long(days * 86400000), true
+		}
+		date, err := parsePlatformDate(value)
+		if err != nil {
+			return 0, false
+		}
+		return long(date.UnixMilli()), true
+	case strings.EqualFold(value.Type, "Datetime"):
+		instant, err := parsePlatformDatetime(value)
+		if err != nil {
+			return 0, false
+		}
+		if value.datetimeWeekTerm != 0 {
+			return long(instant.UnixMilli()) ^ calendarHashBase ^ int32(value.datetimeWeekTerm), true
+		}
+		return long(instant.UnixMilli()) ^ env.calendarTerm(), true
+	case strings.EqualFold(value.Type, "Time"):
+		clock, err := parsePlatformTime(value)
+		if err != nil {
+			return 0, false
+		}
+		return int32(clock.Milliseconds()), true
+	}
+	return 0, false
 }

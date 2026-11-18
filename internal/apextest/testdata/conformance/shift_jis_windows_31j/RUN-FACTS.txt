@@ -1,0 +1,6 @@
+capture: EncodingUtil.urlEncode and urlDecode under Shift-JIS and Windows-31J
+route: anonymous Apex (sf apex run --api-version)
+apis: 62.0 67.0 (the two APIs return the same rows)
+rows: encode rows hold one code point and its escaped bytes; decode rows hold escaped bytes and the code points they decode to
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch Developer edition org, 1 day, deleted after the run)

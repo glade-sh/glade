@@ -1,0 +1,7 @@
+capture: elastic-enabled
+org: the packaging org (Developer Edition, max API 68.0)
+setting: enableAsyncApexElasticExecutions=true deployed via ApexSettings
+route: anonymous Apex batch + OrgLimits; org setting applies to all classes
+results: DailyAsyncApexElasticExecutions appears at 0/250000; with asyncApexExecutionsOverride=250 the standard ceiling is 250 and the elastic ceiling is 500
+note: the elastic feature was enabled on the pkg dev org; a small batch completed 2/2, no throttling was induced
+truncated debug logs: none

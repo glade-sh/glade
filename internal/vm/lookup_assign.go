@@ -2526,9 +2526,10 @@ func (vm *VM) lookupPathFromHop(root Value, parts []string, hops int) (Value, er
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
 				value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 				value = coerceDottedSObjectBooleanNull(current, value, canonicalPart, definition, fieldDef)
-				// Preserve the supplied COUNT snapshot on trigger records. Other
-				// rollup operations retain their existing read path until captured.
-				triggerCountSnapshot := isTriggerSObject(current) && strings.EqualFold(fieldDef.SummaryOperation, "count")
+				// Preserve the supplied COUNT and SUM snapshot on trigger records
+				// (review_round7: a mixed upsert's parent trigger reads the held
+				// values in memory). MIN and MAX never had a live read path.
+				triggerCountSnapshot := isTriggerSObject(current) && (strings.EqualFold(fieldDef.SummaryOperation, "count") || strings.EqualFold(fieldDef.SummaryOperation, "sum"))
 				if fieldDef.Type == storage.FieldSummary && !triggerCountSnapshot && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)

@@ -1,0 +1,1 @@
+try { for (String s : new List<String>()) { } Integer n = Database.countQuery('SELECT COUNT() FROM Account WHERE Name = :s'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

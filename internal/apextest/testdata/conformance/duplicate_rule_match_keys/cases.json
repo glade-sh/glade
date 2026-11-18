@@ -1,0 +1,176 @@
+{
+ "rules": {
+  "Kone": {
+   "object": "Contact",
+   "filter": "",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    }
+   ]
+  },
+  "Ktwo": {
+   "object": "Contact",
+   "filter": "",
+   "items": [
+    {
+     "field": "LastName",
+     "method": "LastName"
+    }
+   ]
+  },
+  "Kthree": {
+   "object": "Contact",
+   "filter": "1 AND 2",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "LastName",
+     "method": "LastName"
+    }
+   ]
+  },
+  "Kfour": {
+   "object": "Contact",
+   "filter": "1 AND 2 AND 3",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "LastName",
+     "method": "LastName"
+    },
+    {
+     "field": "Email",
+     "method": "Exact"
+    }
+   ]
+  },
+  "Kfive": {
+   "object": "Contact",
+   "filter": "1 AND 2",
+   "items": [
+    {
+     "field": "LastName",
+     "method": "LastName"
+    },
+    {
+     "field": "Email",
+     "method": "Exact"
+    }
+   ]
+  },
+  "Ksix": {
+   "object": "Contact",
+   "filter": "1 AND 2",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "Email",
+     "method": "Exact"
+    }
+   ]
+  },
+  "Kseven": {
+   "object": "Contact",
+   "filter": "1 AND 2 AND 3",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "LastName",
+     "method": "LastName"
+    },
+    {
+     "field": "Phone",
+     "method": "Phone"
+    }
+   ]
+  },
+  "Keight": {
+   "object": "Contact",
+   "filter": "(1 AND 2) OR 3",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "LastName",
+     "method": "LastName"
+    },
+    {
+     "field": "Email",
+     "method": "Exact"
+    }
+   ]
+  },
+  "Knine": {
+   "object": "Lead",
+   "filter": "1 AND 2 AND 3",
+   "items": [
+    {
+     "field": "FirstName",
+     "method": "FirstName"
+    },
+    {
+     "field": "LastName",
+     "method": "LastName"
+    },
+    {
+     "field": "Company",
+     "method": "CompanyName"
+    }
+   ]
+  },
+  "KtenCity": {
+   "object": "Account",
+   "filter": "1 AND 2",
+   "items": [
+    {
+     "field": "Name",
+     "method": "CompanyName"
+    },
+    {
+     "field": "BillingCity",
+     "method": "City"
+    }
+   ]
+  },
+  "KtenZip": {
+   "object": "Account",
+   "filter": "1 AND 2",
+   "items": [
+    {
+     "field": "Name",
+     "method": "CompanyName"
+    },
+    {
+     "field": "BillingPostalCode",
+     "method": "Exact"
+    }
+   ]
+  },
+  "Standard_Contact_Match_Rule_v1_1": {
+   "object": "Contact",
+   "filter": "",
+   "items": []
+  },
+  "Standard_Lead_Match_Rule_v1_0": {
+   "object": "Lead",
+   "filter": "",
+   "items": []
+  }
+ }
+}

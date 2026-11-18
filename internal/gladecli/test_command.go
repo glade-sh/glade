@@ -205,6 +205,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("trace", "").
 		String("services", "").
 		String("junit", "").
+		Bool("code-coverage", "").
+		Bool("synchronous", "").
+		String("coverage-gate", "").
 		String("limit-mode", "").
 		String("limit-profile", "").
 		String("limit-queries", "").
@@ -346,6 +349,16 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
+	coverageGate, err := testreport.ParseCoverageGate(parsed.String("coverage-gate"))
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	codeCoverage := parsed.Bool("code-coverage") || coverageGate != ""
+	if parsed.Bool("synchronous") && !codeCoverage {
+		// The flag shapes only the coverage report; without coverage it would
+		// do nothing and still ask a test server for a field it may not know.
+		return testreport.Run{}, errors.New("--synchronous requires --code-coverage or --coverage-gate; it shapes the coverage report and does not change how tests run")
+	}
 	progressMode = progressModeFromArgs(args, progressMode)
 	if servicesPath != "" {
 		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
@@ -386,6 +399,22 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	lastFailed = parsed.Bool("last-failed")
 	wizard = parsed.Bool("wizard")
 	debug = parsed.Bool("debug")
+	if coverageGate == testreport.CoverageGateRunLocalTests {
+		// The RunLocalTests rule is org-wide: it needs every local test's
+		// coverage, so a partial selection would fail a passing project.
+		for _, partial := range []struct {
+			set  bool
+			name string
+		}{
+			{strings.TrimSpace(filter) != "", "--filter"}, {className != "", "--class"}, {methodName != "", "--method"},
+			{classFile != "", "--class-file"}, {shardCount > 0, "--shard-count"}, {strings.TrimSpace(changedSince) != "", "--changed-since"},
+			{lastFailed, "--last-failed"}, {watchMode, "--watch"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if partial.set {
+				return testreport.Run{}, fmt.Errorf("--coverage-gate RunLocalTests needs every local test; it cannot be combined with %s (use RunSpecifiedTests for a selection)", partial.name)
+			}
+		}
+	}
 	if parsed.String("debounce") != "" {
 		parsedDebounce, err := time.ParseDuration(parsed.String("debounce"))
 		if err != nil {
@@ -667,6 +696,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		TimeoutSource:         timeoutOpts.TimeoutSource,
 		NoDiskCache:           noCache,
 		PerfCounters:          perfEnabled,
+		CodeCoverage:          codeCoverage,
+		CoverageGate:          coverageGate,
+		CoverageSynchronous:   parsed.Bool("synchronous"),
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {
@@ -780,6 +812,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			return writeResult(result, reason)
 		}
+	}
+
+	if gcFloorRouteEligible(daemonMode, watchMode, debug, connectMode) {
+		startTestGCFloorIfEnabled()
 	}
 
 	if daemonMode {
@@ -1441,7 +1477,7 @@ func writeTestJSONEnvelopeWithStop(w io.Writer, result testreport.Run, junitPath
 		Tests:       flattenTestCases(result),
 		Artifacts:   artifacts,
 		Suggestions: testreport.NextCommands(summary),
-		Data:        result,
+		Data:        testreport.NativePerTestRows(result),
 	})
 }
 

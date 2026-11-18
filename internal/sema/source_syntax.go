@@ -28,12 +28,16 @@ func sourceSyntaxDiagnostics(typ typesys.TypeSymbol, body string, bodyOffset int
 	}
 	if anonymous {
 		// C040: the source restriction belongs to anonymous SOQL, not named Apex.
-		ignored := newSemaIgnoredText(body)
-		for _, match := range anonymousSystemModeQueryPattern.FindAllStringIndex(code, -1) {
-			if !ignored.inSOQLLiteral(match[0]) {
-				continue
+		matches := anonymousSystemModeQueryPattern.FindAllStringIndex(code, -1)
+		if len(matches) != 0 {
+			for _, query := range semaSOQLLiterals(body, newSemaCodeSpans(body)) {
+				for _, match := range matches {
+					if match[0] < query.queryOffset || match[1] > query.queryOffset+len(query.text) {
+						continue
+					}
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_SOURCE_SYNTAX", Message: "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.", File: typ.File, Range: semaRange(source, bodyOffset+match[0], bodyOffset+match[1])})
+				}
 			}
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_SOURCE_SYNTAX", Message: "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.", File: typ.File, Range: semaRange(source, bodyOffset+match[0], bodyOffset+match[1])})
 		}
 	}
 	return diagnostics

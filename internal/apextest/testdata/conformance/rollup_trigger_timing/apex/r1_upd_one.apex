@@ -1,0 +1,10 @@
+RtParent__c p = new RtParent__c(Name = 'r3');
+insert p;
+RtChild__c c = new RtChild__c(Name = 'c1', Amount__c = 10, Included__c = true, Parent__c = p.Id);
+insert c;
+RtLog.reset();
+c.Amount__c = 30;
+update c;
+String t = RtLog.take();
+RtParent__c q = [SELECT Count__c, SumAmt__c, MinAmt__c, MaxAmt__c, FiltSum__c, FiltCount__c FROM RtParent__c WHERE Id = :p.Id];
+System.debug('OBS|upd1|T=' + t + '|P=' + RtFmt.of(q));

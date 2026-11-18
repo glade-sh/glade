@@ -1,0 +1,19 @@
+# rollup-summary full native observations
+
+## API 62.0
+### rolltest [istest @62.0]
+method=observe outcome=Fail time=821ms
+message=System.AssertException: Assertion Failed: OBS|{"events":["AFTER_INSERT=0|0|0.00|0.00|null|null|null|null","AFTER_UPDATE=4|3|60.00|40.00|10.00|30.00|10.00|30.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00","AFTER_UNDELETE=3|3|80.00|80.00|30.00|50.00|30.00|50.00"],"afterStop":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterUndeleteFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterDeleteFresh":"3|3|80.00|80.00|30.00|50.00|30.00|50.00","afterUpdateFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterInsertFresh":"4|3|60.00|40.00|10.00|30.00|10.00|30.00","afterInsertHeld":"null|null|null|null|null|null|null|null","startFresh":"0|0|0.00|0.00|null|null|null|null","start":"null|null|null|null|null|null|null|null"}
+stack=Class.RollSummaryTest.observe: line 22, column 1
+
+### rollanon [anonymous @62.0]
+debug=[18]|DEBUG|OBS|{"events":["AFTER_INSERT=0|0|0.00|0.00|null|null|null|null","AFTER_UPDATE=4|3|60.00|40.00|10.00|30.00|10.00|30.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00","AFTER_UNDELETE=3|3|80.00|80.00|30.00|50.00|30.00|50.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00"],"afterUndeleteFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterDeleteFresh":"3|3|80.00|80.00|30.00|50.00|30.00|50.00","afterUpdateFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterInsertFresh":"4|3|60.00|40.00|10.00|30.00|10.00|30.00","afterInsertHeld":"null|null|null|null|null|null|null|null","startFresh":"0|0|0.00|0.00|null|null|null|null","start":"null|null|null|null|null|null|null|null"}
+
+## API 67.0
+### rolltest [istest @67.0]
+method=observe outcome=Fail time=892ms
+message=System.AssertException: Assertion Failed: OBS|{"events":["AFTER_INSERT=0|0|0.00|0.00|null|null|null|null","AFTER_UPDATE=4|3|60.00|40.00|10.00|30.00|10.00|30.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00","AFTER_UNDELETE=3|3|80.00|80.00|30.00|50.00|30.00|50.00"],"afterStop":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterUndeleteFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterDeleteFresh":"3|3|80.00|80.00|30.00|50.00|30.00|50.00","afterUpdateFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterInsertFresh":"4|3|60.00|40.00|10.00|30.00|10.00|30.00","afterInsertHeld":"null|null|null|null|null|null|null|null","startFresh":"0|0|0.00|0.00|null|null|null|null","start":"null|null|null|null|null|null|null|null"}
+stack=Class.RollSummaryTest.observe: line 22, column 1
+
+### rollanon [anonymous @67.0]
+debug=[18]|DEBUG|OBS|{"events":["AFTER_INSERT=0|0|0.00|0.00|null|null|null|null","AFTER_UPDATE=4|3|60.00|40.00|10.00|30.00|10.00|30.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00","AFTER_UNDELETE=3|3|80.00|80.00|30.00|50.00|30.00|50.00","AFTER_DELETE=4|3|100.00|80.00|20.00|50.00|30.00|50.00"],"afterUndeleteFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterDeleteFresh":"3|3|80.00|80.00|30.00|50.00|30.00|50.00","afterUpdateFresh":"4|3|100.00|80.00|20.00|50.00|30.00|50.00","afterInsertFresh":"4|3|60.00|40.00|10.00|30.00|10.00|30.00","afterInsertHeld":"null|null|null|null|null|null|null|null","startFresh":"0|0|0.00|0.00|null|null|null|null","start":"null|null|null|null|null|null|null|null"}

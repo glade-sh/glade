@@ -113,7 +113,7 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 	// Native T/U/V controls: test-only allowance, evaluated in publish chunks.
 	quotaExceeded := false
 	for recordIndex, record := range records {
-		if vm.testContext != nil && !quotaExceeded && recordIndex%200 == 0 {
+		if vm.testContext != nil && recordIndex%200 == 0 {
 			eligible := 0
 			for _, candidate := range records[recordIndex:min(recordIndex+200, len(records))] {
 				if vm.platformEventCanEnqueue(candidate) {
@@ -121,6 +121,11 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 				}
 			}
 			quotaExceeded = vm.testContext.PlatformEventPublishes+eligible >= 500
+			if quotaExceeded {
+				// A refused chunk still counts: a later publish stays refused
+				// (test_boundary_edges pe_after_stop).
+				vm.testContext.PlatformEventPublishes += eligible
+			}
 		}
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
@@ -420,6 +425,10 @@ func eventBusGetOperationID(args []Value) (Value, error) {
 func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Value, error) {
 	switch len(args) {
 	case 2:
+		// NATIVE EventBus.publishWithAccessLevel null access level apex_release_gates/org.tsv anonymous 62.0 67.0
+		if args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Argument 2 cannot be null")
+		}
 		if !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}

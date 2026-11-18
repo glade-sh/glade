@@ -24,6 +24,7 @@ var flowFaultCreateCodes = map[string]bool{
 	"REQUIRED_FIELD_MISSING":            true,
 	"FIELD_CUSTOM_VALIDATION_EXCEPTION": true,
 	"DUPLICATE_VALUE":                   true,
+	"DUPLICATES_DETECTED":               true,
 }
 
 func flowCreateFaultText(code, text string) string {
@@ -97,7 +98,7 @@ func (e *Engine) flowCreateTypedFault(err error) error {
 // single-record update has a captured text (native E07 and R07).
 func (e *Engine) flowUpdateError(failure, cause error, ids []storage.ID) error {
 	var rejected dmlError
-	if len(ids) != 1 || !errors.As(cause, &rejected) || rejected.code != "STRING_TOO_LONG" {
+	if len(ids) != 1 || !errors.As(cause, &rejected) || (rejected.code != "STRING_TOO_LONG" && rejected.code != "DUPLICATES_DETECTED") {
 		return &flowElementFault{err: failure}
 	}
 	return &flowElementFault{err: failure, message: flowRecordsFaultText("update", ids, rejected.code, rejected.message), verb: "update", code: rejected.code, text: rejected.message, inTest: e.flowFaultInTest(), current: e.flowFaultCurrentAPI()}
@@ -201,6 +202,16 @@ func (e *Engine) flowLookupFault(lookup storage.FlowRecordLookup) error {
 	return &flowElementFault{err: failure, message: "This error occurred when the flow tried to look up records: " + text + ". " + flowFaultReferenceLink, verb: "look up", text: text, inTest: e.flowFaultInTest(), current: e.flowFaultCurrentAPI()}
 }
 
+// flowApexActionVerb marks the failure of an Apex action inside a
+// record-triggered flow (native rows flowApexThrow and flowCallout).
+const flowApexActionVerb = "apex action"
+
+// savedRowFailure reports the captured failures whose singleton save returns a
+// row error: a duplicate-rule rejection and an Apex action failure.
+func (f *flowElementFault) savedRowFailure() bool {
+	return f.code == "DUPLICATES_DETECTED" || f.verb == flowApexActionVerb
+}
+
 const flowUnhandledGeneric = "An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information."
 
 // flowUnhandledTriggerError is the failure of a record-triggered after-save
@@ -208,14 +219,22 @@ const flowUnhandledGeneric = "An unhandled fault has occurred while processing t
 // connector. Native R08, R11, R14, R16 and R17 (APIs 62.0 and 67.0, anonymous
 // and deliver routes): the statement fails with the element's own status code
 // and text, except a failed Get Records, which reports the generic fault. A
-// delete or a lookup adds an Error ID outside tests.
+// delete, a lookup or a duplicate-rule rejection (rows in
+// automation_residual_paths) adds an Error ID outside tests.
 func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (error, bool) {
 	if !fault.unhandledCaptured() {
 		return nil, false
 	}
 	errorID := ""
-	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up") {
+	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up" || fault.code == "DUPLICATES_DETECTED") {
 		errorID = " Error ID: 0-0 (0)"
+	}
+	if fault.verb == flowApexActionVerb {
+		if !fault.inTest {
+			errorID = " Error ID: 0-0 (0)"
+		}
+		message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+fault.text+"\n"+errorID)
+		return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message), saved: true}, true
 	}
 	if fault.verb == "look up" {
 		message := processFailureMessage(rule, "<b>An unhandled fault has occurred in this flow</b><br>"+flowUnhandledGeneric+errorID)
@@ -227,7 +246,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 		detail = fault.message
 	}
 	message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+detail+errorID)
-	return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message)}, true
+	return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message), saved: fault.savedRowFailure()}, true
 }
 
 // FlowUnhandledDetail is the FlowException message that Flow.Interview.start
@@ -235,7 +254,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 // for these elements: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
-	if !errors.As(err, &fault) || !fault.unhandledCaptured() {
+	if !errors.As(err, &fault) || !fault.unhandledCaptured() || fault.verb == flowApexActionVerb {
 		return "", false
 	}
 	if !fault.inTest {
@@ -262,5 +281,8 @@ func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == "" {
 		return false
 	}
-	return f.verb != "create" || f.code == "STRING_TOO_LONG"
+	if f.verb == flowApexActionVerb {
+		return true
+	}
+	return f.verb != "create" || f.code == "STRING_TOO_LONG" || f.code == "DUPLICATES_DETECTED"
 }

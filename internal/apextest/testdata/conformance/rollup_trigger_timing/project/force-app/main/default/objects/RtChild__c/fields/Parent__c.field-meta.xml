@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Parent__c</fullName>
+    <label>Parent</label>
+    <referenceTo>RtParent__c</referenceTo>
+    <relationshipLabel>Rt Children</relationshipLabel>
+    <relationshipName>RtChildren</relationshipName>
+    <type>MasterDetail</type>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+</CustomField>

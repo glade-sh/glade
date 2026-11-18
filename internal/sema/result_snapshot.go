@@ -43,10 +43,11 @@ type ResultSnapshot struct {
 }
 
 type resultSnapshotJSON struct {
-	Project     typesys.ProjectInfo      `json:"project"`
-	Summary     Summary                  `json:"summary"`
-	Diagnostics []diagnostic.Diagnostic  `json:"diagnostics"`
-	Types       map[string]TypeReference `json:"types"`
+	ReceiverTriviaDiagnostic bool                     `json:"receiverTriviaDiagnostic,omitempty"`
+	Project                  typesys.ProjectInfo      `json:"project"`
+	Summary                  Summary                  `json:"summary"`
+	Diagnostics              []diagnostic.Diagnostic  `json:"diagnostics"`
+	Types                    map[string]TypeReference `json:"types"`
 }
 
 // SnapshotResult captures all serializable semantic output without retaining
@@ -63,10 +64,11 @@ func (snapshot ResultSnapshot) Result() Result {
 func (snapshot ResultSnapshot) MarshalJSON() ([]byte, error) {
 	result := snapshot.result
 	return json.Marshal(resultSnapshotJSON{
-		Project:     result.Project,
-		Summary:     result.Summary,
-		Diagnostics: result.Diagnostics,
-		Types:       result.Types,
+		ReceiverTriviaDiagnostic: result.ReceiverTriviaDiagnostic,
+		Project:                  result.Project,
+		Summary:                  result.Summary,
+		Diagnostics:              result.Diagnostics,
+		Types:                    result.Types,
 	})
 }
 
@@ -76,18 +78,20 @@ func (snapshot *ResultSnapshot) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	snapshot.result = cloneResult(Result{
-		Project:     decoded.Project,
-		Summary:     decoded.Summary,
-		Diagnostics: decoded.Diagnostics,
-		Types:       decoded.Types,
+		ReceiverTriviaDiagnostic: decoded.ReceiverTriviaDiagnostic,
+		Project:                  decoded.Project,
+		Summary:                  decoded.Summary,
+		Diagnostics:              decoded.Diagnostics,
+		Types:                    decoded.Types,
 	})
 	return nil
 }
 
 func cloneResult(result Result) Result {
 	cloned := Result{
-		Project: result.Project,
-		Summary: result.Summary,
+		ReceiverTriviaDiagnostic: result.ReceiverTriviaDiagnostic,
+		Project:                  result.Project,
+		Summary:                  result.Summary,
 	}
 	if result.Diagnostics != nil {
 		cloned.Diagnostics = make([]diagnostic.Diagnostic, len(result.Diagnostics))

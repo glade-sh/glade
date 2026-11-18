@@ -1,0 +1,2 @@
+public class MxLog { public static String seen = ''; public static String mode = ''; public static Boolean fired = false; public static void reset(String m) { seen = ''; mode = m; fired = false; }
+ public static String fmt(MxP__c p) { return p.Cnt__c + '/' + p.Sm__c + '/' + p.Mx__c; } }

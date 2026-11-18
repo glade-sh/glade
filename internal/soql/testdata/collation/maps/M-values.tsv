@@ -1,0 +1,31 @@
+label	codepoints	char
+00	U+00C9	É
+01	U+4E2D	中
+02	U+0062	b
+03	U+0063 U+006F U+006F U+0070	coop
+04	U+00E5	å
+05	U+0041	A
+06	U+03B1	α
+07	U+0030	0
+08	U+00E1	á
+09	U+00E9	é
+0a	U+005F	_
+0b	U+0063 U+006F U+002D U+006F U+007A	co-oz
+0c	U+00F1	ñ
+0d	U+00E6	æ
+0e	U+0021	!
+0f	U+0039	9
+0g	U+00F6	ö
+0h	U+042F	Я
+0i	U+00E4	ä
+0j	U+00C4	Ä
+0k	U+00F8	ø
+0l	U+0025	%
+0m	U+007A	z
+0n	U+0061	a
+0o	U+005A	Z
+0p	U+00DF	ß
+0q	U+002D	-
+0r	U+002E	.
+0s	U+0061 U+0061	aa
+0t	U+0061 U+0020 U+0062	a b

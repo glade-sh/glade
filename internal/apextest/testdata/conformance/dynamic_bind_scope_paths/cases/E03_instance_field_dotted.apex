@@ -1,0 +1,1 @@
+try { H423 h = new H423(); List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :h.f'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

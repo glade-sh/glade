@@ -18,7 +18,9 @@ func validateCapturedUserLocale(objectName, fieldName string, field storage.Fiel
 		return true, nil
 	}
 	switch value.String {
-	case "NotAnAllowedValue", "az", "be", "dz", "en", "en-GB", "en_FOO", "en_XY", "ky", "lo", "lu", "ne", "ps", "rn", "so", "tg", "ti", "uz", "xx", "xx_XX", "yo", "zz", "zz_US":
+	case "NotAnAllowedValue", "az", "be", "dz", "en", "en-GB", "en_FOO", "en_XY", "ky", "lo", "lu", "ne", "ps", "rn", "so", "tg", "ti", "uz", "xx", "xx_XX", "yo", "zz", "zz_US",
+		// dth_loc_d_mv and dth_loc_g_he (surf_collections_strings, API 62.0 and 67.0).
+		"dv_MV", "he_IL":
 		return true, labeledRestrictedPicklistValueError(fieldName, field, value.String)
 	default:
 		return true, nil

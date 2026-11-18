@@ -1,0 +1,9 @@
+capture: r-share-ro
+started: 2026-11-12T18:03:34Z
+finished: 2026-11-12T18:04:40Z
+apis: 62.0 67.0
+routes: istes
+cases: 5
+sf: @salesforce/cli/2.157.8
+cases.tsv sha256: 2d8d854fb7b8a3fa
+mode: live

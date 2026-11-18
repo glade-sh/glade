@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -9,8 +10,12 @@ import (
 // the country, locale and time zone a scratch definition country implies (org
 // captures scratch_country_locale_no, _de and _gb, API 62 and 67). Per-user
 // test settings are applied separately and may override the user's values.
-func applyScratchCountryOrg(org *storage.OrgState, root string) {
-	country, defaults, ok := project.ScratchCountryDefaults(root)
+func applyScratchCountryOrg(org *storage.OrgState, root string, inputs ...*inputview.View) {
+	var v *inputview.View
+	if len(inputs) > 0 {
+		v = inputs[0]
+	}
+	country, defaults, ok := project.ScratchCountryDefaultsWithInputs(v, root)
 	if !ok || org == nil {
 		return
 	}
@@ -20,7 +25,7 @@ func applyScratchCountryOrg(org *storage.OrgState, root string) {
 		record.Fields["Country"] = storage.StringValue(country)
 		record.Fields["DefaultLocaleSidKey"] = storage.StringValue(defaults.Locale)
 		record.Fields["TimeZoneSidKey"] = storage.StringValue(defaults.TimeZone)
-		organizations.Records[id] = record
+		organizations.PutRecord(id, record)
 	}
 	org.Objects["Organization"] = organizations
 	users := org.Objects["User"]
@@ -28,7 +33,7 @@ func applyScratchCountryOrg(org *storage.OrgState, root string) {
 		if record, found := users.Records[id]; found {
 			record = record.Clone()
 			record.Fields["Country"] = storage.StringValue(country)
-			users.Records[id] = record
+			users.PutRecord(id, record)
 		}
 	}
 	org.Objects["User"] = users
@@ -43,11 +48,11 @@ func ApplyScratchCountryAnonymousOrg(org *storage.OrgState, p project.Project) {
 	if org == nil {
 		return
 	}
-	if _, _, ok := project.ScratchCountryDefaults(p.Root); !ok {
+	if _, _, ok := project.ScratchCountryDefaultsWithInputs(p.Inputs(), p.Root); !ok {
 		return
 	}
-	applyScratchCountryOrg(org, p.Root)
-	user := project.ScratchCountryUserDefaults(p.Root, p.Test.User)
+	applyScratchCountryOrg(org, p.Root, p.Inputs())
+	user := project.ScratchCountryUserDefaultsWithInputs(p.Inputs(), p.Root, p.Test.User)
 	users := org.Objects["User"]
 	for _, id := range []storage.ID{"005-local-user", storage.ID(storage.DefaultUserID)} {
 		record, found := users.Records[id]
@@ -63,7 +68,7 @@ func ApplyScratchCountryAnonymousOrg(org *storage.OrgState, p project.Project) {
 				record.Fields[field] = storage.StringValue(value)
 			}
 		}
-		users.Records[id] = record
+		users.PutRecord(id, record)
 		org.Objects["User"] = users
 		return
 	}

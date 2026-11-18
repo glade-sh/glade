@@ -1,0 +1,10 @@
+id	route	file
+pe01	istest	Pe01FailNoEventsTest
+pe02	istest	Pe02FailBeforeStopTest
+pe03	istest	Pe03FailThenDeliverTest
+pe04	istest	Pe04DeliverThenFailTest
+pe05	istest	Pe05FailMixedEventsTest
+pe06	istest	Pe06FailThenRepublishTest
+pe07	istest	Pe07FailCdcTest
+pe08	istest	Pe08FailMixedCdcTest
+pe09	istest	Pe09DeliverPlacementsTest

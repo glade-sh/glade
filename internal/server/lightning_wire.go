@@ -257,6 +257,11 @@ func apexWireActionError(action *vm.UIActionError, className, methodName string,
 }
 
 func orgStateEqual(left, right storage.OrgState) bool {
+	// A call that wrote nothing leaves the working org identical to the server
+	// org; the structural check proves that without serializing either one.
+	if left.PersistedFieldsIdentical(right) {
+		return true
+	}
 	leftBytes, leftErr := json.Marshal(left)
 	rightBytes, rightErr := json.Marshal(right)
 	if leftErr != nil || rightErr != nil {
@@ -1981,6 +1986,9 @@ func defaultPicklistValueName(field storage.Field, _ string) string {
 
 func findChildObjectForRelationship(org *storage.OrgState, parentObjectName string, relation storage.Relationship) (string, storage.ObjectState, bool) {
 	for name, object := range org.Objects {
+		if org.SuppressesSpreadObject(name) {
+			continue
+		}
 		field, ok := object.Definition.Fields[relation.Field]
 		if !ok || field.Type != storage.FieldReference {
 			continue

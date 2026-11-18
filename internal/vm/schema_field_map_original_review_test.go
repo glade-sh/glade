@@ -109,7 +109,7 @@ func TestSchemaFieldMapOriginalMutationConformance(t *testing.T) {
 					if result.Status != testreport.StatusPass {
 						t.Errorf("%s %s %v", api, result.MethodName, result.Problem)
 					}
-				} else if result.Status == testreport.StatusPass || result.Problem == nil || !strings.Contains(result.Problem.Message, "FinalException") {
+				} else if result.Status == testreport.StatusPass || result.Problem == nil || !strings.Contains(result.Problem.Type+": "+result.Problem.Message, "System.FinalException: Collection is read-only") {
 					t.Errorf("%s %s expected FinalException: %v", api, result.MethodName, result.Problem)
 				}
 			}

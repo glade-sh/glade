@@ -1,0 +1,126 @@
+api	method	observation
+55.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+55.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+55.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+55.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+55.0	d5_05_account_no_name	EX System.SecurityException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name]
+55.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+55.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+55.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+55.0	d5_08_ins_def	ok
+55.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+55.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+55.0	d5_11_ins_user_open	ok
+55.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+56.0	d5_05_account_no_name	EX System.SecurityException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name]
+56.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+56.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+56.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+56.0	d5_08_ins_def	ok
+56.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+56.0	d5_11_ins_user_open	ok
+56.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+57.0	d5_05_account_no_name	EX System.SecurityException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name]
+57.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+57.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+57.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+57.0	d5_08_ins_def	ok
+57.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+57.0	d5_11_ins_user_open	ok
+57.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+58.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+58.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+58.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+58.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+58.0	d5_08_ins_def	ok
+58.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+58.0	d5_11_ins_user_open	ok
+58.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+59.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+59.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+59.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+59.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+59.0	d5_08_ins_def	ok
+59.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+59.0	d5_11_ins_user_open	ok
+59.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+60.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+60.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+60.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+60.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+60.0	d5_08_ins_def	ok
+60.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+60.0	d5_11_ins_user_open	ok
+60.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+61.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+61.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+61.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+61.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+61.0	d5_08_ins_def	ok
+61.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+61.0	d5_11_ins_user_open	ok
+61.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+62.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+62.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+62.0	d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	d5_08_ins_def	ok
+62.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	d5_11_ins_user_open	ok
+62.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_01_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_02_upd_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_03_dbins_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_04_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  fieldNames: Secret__c:(Secret__c);
+67.0	d5_05_account_no_name	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+67.0	d5_05b_account_no_name_def	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+67.0	d5_06_query_user	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	d5_07_dynquery_user	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	d5_08_ins_def	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_09_ups_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_10_list_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	d5_11_ins_user_open	ok
+67.0	d5_12_ins_user_outside	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+62.0	anonymous:u7_static_se	compiled
+62.0	anonymous:u7_static_user	compiled
+66.0	anonymous:u7_static_se	compiled
+66.0	anonymous:u7_static_user	compiled
+67.0	anonymous:u7_static_se	compile 1:19 WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.
+67.0	anonymous:u7_static_user	compiled
+68.0	anonymous:u7_static_se	compile 1:19 WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.
+68.0	anonymous:u7_static_user	compiled

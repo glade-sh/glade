@@ -1,0 +1,10 @@
+String b = Limits.getSoslQueries() + '/' + Limits.getFindSimilarCalls();
+Search.query('FIND {copper} RETURNING Account(Id)');
+String a1 = Limits.getSoslQueries() + '/' + Limits.getFindSimilarCalls();
+Test.startTest();
+String s0 = Limits.getSoslQueries() + '/' + Limits.getFindSimilarCalls();
+Search.query('FIND {copper} RETURNING Account(Id)');
+String s1 = Limits.getSoslQueries() + '/' + Limits.getFindSimilarCalls();
+Test.stopTest();
+String z = Limits.getSoslQueries() + '/' + Limits.getFindSimilarCalls();
+obs = b + '>' + a1 + '>' + s0 + '>' + s1 + '>' + z;

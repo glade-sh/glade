@@ -29,7 +29,9 @@ glade test --project .
 `glade check` parses and type-checks the project. `glade test` discovers
 `@IsTest` classes and runs them locally. Add `--json` for machine-readable
 output and `--junit reports/glade-junit.xml` for CI reports. Create the
-`reports/` directory first on a fresh runner.
+`reports/` directory first on a fresh runner. Add `--code-coverage` for Apex
+code coverage, or `--coverage-gate RunLocalTests` to apply the 75% deployment
+rule; see [CODE_COVERAGE.md](CODE_COVERAGE.md).
 
 `glade doctor` must report `Ready.` for Apex check and test. If the parser is
 unavailable, install a C compiler and rebuild or reinstall a parser-capable

@@ -22,3 +22,19 @@ func flowActionInputDMLResults(op string, results []dml.Result, err error) ([]dm
 	}
 	return failures, true
 }
+
+// singleFlowRecordFailureResults turns a record-triggered flow's rejected save
+// (a duplicate-rule rejection or an Apex action failure; native rows in
+// automation_residual_paths) into the row error of the one record that the
+// statement saved. Other flow failures, and multi-row saves, keep their
+// earlier error path.
+func singleFlowRecordFailureResults(op string, results []dml.Result, err error) []dml.Result {
+	failure, ok := dml.FlowSavedRecordFailureResult(err)
+	if !ok || (op != "insert" && op != "update") || len(results) != 1 || !results[0].Success {
+		return nil
+	}
+	if op == "update" {
+		failure.ID = results[0].ID
+	}
+	return []dml.Result{failure}
+}

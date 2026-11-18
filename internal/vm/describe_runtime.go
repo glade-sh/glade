@@ -31,6 +31,8 @@ type describeCacheKey struct {
 	API68CapturedShape          bool
 	API68NamedRoute             bool
 	AnonymousFieldPolicy        bool
+	PlainDeveloperNamed         bool
+	PlainDeveloperProjection    bool
 }
 
 // childRelationshipCache memoizes parent-object -> child relationship describe
@@ -411,8 +413,12 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	namedOnly := storage.StandardFeatureHasNamedOnlyFields(name)
 	namedSource := vm.featureNamedSource(name)
 	anonymousPolicy := vm.anonymousFieldPolicyScope() && (vm.ordinaryCustomPermissionObject(name) || hasAdminFLSStandardFields(name))
+	plainDeveloperAccount := strings.EqualFold(name, "Account") && vm.plainDeveloperDescribe(name)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
+		if plainDeveloperAccount && strings.EqualFold(fieldName, "IsCustomerPortal") && !storage.StandardFieldPolicyPreservesConfiguredField(definition, fieldName) {
+			continue
+		}
 		apiName := field.APIName
 		if strings.TrimSpace(apiName) == "" {
 			apiName = fieldName
@@ -483,6 +489,14 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		}
 		token := vm.sObjectFieldToken(name, fieldName)
 		vm.addSObjectFieldMapEntry(&fieldsMap, name, fieldName, token)
+	}
+	if plainDeveloperAccount && vm.plainDeveloperNamedDescribe(name) {
+		if _, exists := storage.ResolveFieldName(definition, "", "Tier"); !exists {
+			field := plainDeveloperTierField()
+			token := vm.sObjectFieldTokenFromField(name, field)
+			token.Fields["__plainDeveloperTier"] = Bool(true)
+			vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
+		}
 	}
 	return fieldsMap
 }
@@ -925,6 +939,12 @@ func (vm *VM) storeGlobalDescribeCacheEntry(entry Value) {
 	// baseline retains the raw map's identity. Only raw app/module writes may
 	// update that cache. Typed holders already have private identities.
 	if isGlobalDescribeMap(entry) && vm.Org != nil && vm.Org.Namespace != "" {
+		return
+	}
+	// A write to a global describe view never reaches a fresh
+	// getGlobalDescribe(): chained clear leaves it whole (review_round11
+	// gw_chained_clear), as do key-set writes (review_round10 g_gd_remove).
+	if isGlobalDescribeMap(entry) {
 		return
 	}
 	if cached, ok := vm.globalDescribeCacheEntry(entry.Ref); ok {
@@ -2029,6 +2049,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	fieldName, ok = storage.ResolveFieldName(definition, namespace, fieldName)
 	if !ok {
 		fieldName = requestedFieldName
+		if strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "Tier") && vm.plainDeveloperNamedDescribe(objectName) {
+			return vm.describePlainDeveloperTier(objectName)
+		}
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
 			field := fieldKeyIdDescribeFacets(definition, systemField)
@@ -2226,6 +2249,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	customMetadataFieldDescribeFlags(&desc, definition, field, namedMetadata)
 	field.PicklistValues = vm.userLocaleDescribeValues(objectName, field)
 	values := field.PicklistValues
+	if vm.plainDeveloperDescribe(objectName) && desc.Fields["accessible"].Bool {
+		if captured, ok := plainDeveloperPicklist(objectName, field); ok {
+			values = captured
+		}
+	}
 	if profile, major, named, known := vm.standardAPI68Context(); known && major == 68 && named && storage.StandardAPI68DescribeAccessRule(profile, objectName, field.APIName) == "explicit_read" && !vm.standardAPI68ExplicitFieldRead(objectName, field.APIName) {
 		// The added picklist was observed only after an explicit field grant.
 		values = nil
@@ -2366,6 +2394,10 @@ func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
 	key.OmitPermissionViewAllFields = vm.omitPermissionViewAllFields(objectName)
 	key.FeatureAPIVersion = vm.featureDescribeVersion(objectName)
 	key.FeatureNamedSource = vm.featureNamedSource(objectName)
+	key.PlainDeveloperProjection = vm.plainDeveloperDescribe(objectName)
+	if key.PlainDeveloperProjection && strings.EqualFold(objectName, "Account") {
+		key.PlainDeveloperNamed = vm.plainDeveloperNamedDescribe(objectName)
+	}
 	_, major, named, known := vm.standardAPI68Context()
 	key.API68CapturedShape = known && major == 68
 	key.API68NamedRoute = key.API68CapturedShape && named
@@ -2441,6 +2473,10 @@ func (vm *VM) permissionViewAllFieldsHidden(objectName, field string) bool {
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {
 	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(strings.TrimSpace(fieldName)))
+	key.PlainDeveloperProjection = vm.plainDeveloperDescribe(objectName)
+	if key.PlainDeveloperProjection && strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "Tier") {
+		key.PlainDeveloperNamed = vm.plainDeveloperNamedDescribe(objectName)
+	}
 	_, major, named, known := vm.standardAPI68Context()
 	key.API68CapturedShape = known && major == 68
 	key.API68NamedRoute = key.API68CapturedShape && named
@@ -2553,12 +2589,44 @@ func appendUniqueStringFold(values []string, value string) []string {
 	return append(values, value)
 }
 
+// describePlainDeveloperTier preserves the captured descriptor on tokens that
+// cross the named helper boundary, without modifying shared cache templates.
+func (vm *VM) describePlainDeveloperTier(objectName string) (Value, error) {
+	desc, err := vm.buildSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
+	if err != nil {
+		return desc, err
+	}
+	fields := make(map[string]Value, len(desc.Fields))
+	for k, v := range desc.Fields {
+		fields[k] = v
+	}
+	desc.Fields = fields
+	desc.Fields["byteLength"] = Int(6)
+	desc.Fields["digits"] = Int(0)
+	desc.Fields["inlineHelpText"] = Null
+	desc.Fields["localName"] = String("Tier")
+	desc.Fields["relationshipOrder"] = Null
+	token := vm.sObjectFieldTokenFromField(objectName, plainDeveloperTierField())
+	token.Fields["__plainDeveloperTier"] = Bool(true)
+	desc.Fields["sObjectField"] = token
+	return desc, nil
+}
+
 func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
 	vm.ensureMetadataCacheGeneration()
 	cacheKey := vm.fieldDescribeCacheKey(objectName, fieldName)
 	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
 		return cached, nil
 	}
+	desc, err := vm.buildSyntheticFieldValue(objectName, fieldName, field)
+	if err == nil {
+		vm.fieldDescribeCache[cacheKey] = desc
+	}
+	return desc, err
+}
+
+// Token-backed descriptors must not populate the caller's ordinary field cache.
+func (vm *VM) buildSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
 	if field.APIName == "" {
 		field.APIName = fieldName
 	}
@@ -2614,7 +2682,6 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	token := vm.sObjectFieldTokenFromField(objectName, field)
 	desc.Fields["sObjectField"] = token
 	vm.completeDescribeFieldResult(&desc, objectName, field)
-	vm.fieldDescribeCache[cacheKey] = desc
 	return desc, nil
 }
 
@@ -2975,6 +3042,12 @@ func (vm *VM) ownedGlobalDescribeLocalKeyForCaller(key, resolved, caller string)
 		resolved = resolved[:len(resolved)-len("__Share")] + "__c"
 	} else if hasSuffixFold(resolved, "__ChangeEvent") {
 		resolved = resolved[:len(resolved)-len("__ChangeEvent")] + "__c"
+	}
+	// Only a __c object qualifies, and resolution keeps the suffix. Skipping
+	// the lookup for other names keeps it from installing every owed object
+	// of a lazy spread.
+	if !hasSuffixFold(resolved, "__c") {
+		return false
 	}
 	if canonical, ok := vm.resolveObjectNameForCaller(resolved, caller); ok {
 		resolved = canonical

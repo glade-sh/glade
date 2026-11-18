@@ -1,0 +1,1 @@
+try { Account acc = new Account(Name='x'); List<Account> l = Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :acc.Name', new Map<String,Object>{'acc.Name'=>'x'}, AccessLevel.USER_MODE); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

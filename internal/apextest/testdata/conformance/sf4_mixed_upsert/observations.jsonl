@@ -1,0 +1,4 @@
+{"api": "62.0", "debug": [], "error": "System.AssertException: Assertion Failed: OBS|mixed|seen=insert:new:direct=1,10.00:rel=1,10.00;update:old:direct=2,17.00:rel=2,17.00|final=2,27.00", "id": "mixed", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.AssertException: Assertion Failed: OBS|mixed|seen=insert:new:direct=1,10.00:rel=1,10.00;update:old:direct=2,17.00:rel=2,17.00|final=2,27.00", "id": "mixed", "route": "anonymous"}
+{"api": "62.0", "id": "mixed_test", "route": "istest", "tests": [["mixed", "Fail", "System.AssertException: Assertion Failed: OBS|mixed|seen=insert:new:direct=1,10.00:rel=1,10.00;update:old:direct=2,17.00:rel=2,17.00|final=2,27.00"]]}
+{"api": "67.0", "id": "mixed_test", "route": "istest", "tests": [["mixed", "Fail", "System.AssertException: Assertion Failed: OBS|mixed|seen=insert:new:direct=1,10.00:rel=1,10.00;update:old:direct=2,17.00:rel=2,17.00|final=2,27.00"]]}

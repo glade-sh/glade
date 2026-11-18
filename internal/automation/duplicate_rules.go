@@ -25,8 +25,16 @@ type duplicateRuleXML struct {
 	SortOrder          int                         `xml:"sortOrder"`
 	Filter             storage.DuplicateRuleFilter `xml:"duplicateRuleFilter"`
 	Matches            []struct {
-		Object string `xml:"matchRuleSObjectType"`
-		Name   string `xml:"matchingRule"`
+		Object  string `xml:"matchRuleSObjectType"`
+		Name    string `xml:"matchingRule"`
+		Mapping struct {
+			InputObject  string `xml:"inputObject"`
+			OutputObject string `xml:"outputObject"`
+			Fields       []struct {
+				Input  string `xml:"inputField"`
+				Output string `xml:"outputField"`
+			} `xml:"mappingFields"`
+		} `xml:"objectMapping"`
 	} `xml:"duplicateRuleMatchRules"`
 }
 
@@ -101,6 +109,13 @@ func loadDuplicateRules(p project.Project, read func(string) ([]byte, error)) ([
 			match, found := matches[matchingRuleKey(ref.Object, ref.Name)]
 			if !found {
 				match = storage.MatchingRule{Object: ref.Object, Name: ref.Name}
+			}
+			if len(ref.Mapping.Fields) > 0 {
+				mapping := &storage.MatchingRuleMapping{InputObject: ref.Mapping.InputObject, OutputObject: ref.Mapping.OutputObject}
+				for _, field := range ref.Mapping.Fields {
+					mapping.Fields = append(mapping.Fields, storage.MatchingRuleMapPair{Input: strings.TrimSpace(field.Input), Output: strings.TrimSpace(field.Output)})
+				}
+				match.Mapping = mapping
 			}
 			rule.MatchRules = append(rule.MatchRules, match)
 		}

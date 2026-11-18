@@ -341,6 +341,9 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		return String(replaced), true, nil
 	case "template":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
 		if len(args) != 1 || args[0].Kind != ValueMap {
 			return Null, true, fmt.Errorf("String.template expects Map<String,Object> argument")
 		}
@@ -860,7 +863,7 @@ func stringTemplate(text string, values Value, render func(Value) (string, error
 			name := text[i+2 : end]
 			value, ok := values.Map[mapKey(String(name))]
 			if !ok {
-				return "", newExceptionError("System.StringException", "String template missing value for variable: "+name)
+				return "", newExceptionError("System.StringException", "No value found for key "+name)
 			}
 			var replacement string
 			if render == nil {

@@ -8,22 +8,24 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
-func scratchOrgConfigFiles(root string) []string {
+func scratchOrgConfigFiles(v *inputview.View, root string) []string {
 	paths := []string{
 		filepath.Join(root, "config", "project-scratch-def.json"),
 		filepath.Join(root, "config", "hc-project-scratch-def.json"),
 	}
-	paths = append(paths, packageDefinitionFiles(root)...)
-	return dedupeStrings(append(paths, cumulusCIOrgConfigFiles(root)...))
+	paths = append(paths, packageDefinitionFiles(v, root)...)
+	return dedupeStrings(append(paths, cumulusCIOrgConfigFiles(v, root)...))
 }
 
 // packageDefinitionFiles returns the scratch definitions that
 // sfdx-project.json packageDirectories name with definitionFile. Paths resolve
 // against the project root and must stay inside it.
-func packageDefinitionFiles(root string) []string {
-	data, err := os.ReadFile(filepath.Join(root, "sfdx-project.json"))
+func packageDefinitionFiles(v *inputview.View, root string) []string {
+	data, err := v.ReadFile(filepath.Join(root, "sfdx-project.json"))
 	if err != nil {
 		return nil
 	}
@@ -43,7 +45,7 @@ func packageDefinitionFiles(root string) []string {
 			continue
 		}
 		full := filepath.Clean(filepath.Join(root, filepath.FromSlash(name)))
-		if !strings.HasPrefix(full, cleanRoot+string(os.PathSeparator)) || !PathInsideRoot(root, full) {
+		if !strings.HasPrefix(full, cleanRoot+string(os.PathSeparator)) || !pathInsideRoot(v, root, full) {
 			continue
 		}
 		paths = append(paths, full)
@@ -62,7 +64,7 @@ func ScratchDefinitionWarnings(root string) []string {
 		}
 	}
 	var warnings []string
-	for _, path := range scratchOrgConfigFiles(root) {
+	for _, path := range scratchOrgConfigFiles(nil, root) {
 		data, err := os.ReadFile(path)
 		if errors.Is(err, os.ErrNotExist) {
 			continue

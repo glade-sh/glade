@@ -10,7 +10,6 @@ const workbenchCss = await readFile(new URL("../docs-src/public/css/workbench.cs
 const css = [baseCss, homeCss, workbenchCss].join("\n");
 const tokensCss = await readFile(new URL("../.vitepress/theme/styles/tokens.css", import.meta.url), "utf8");
 const index = await readFile(new URL("../.vitepress/theme/home/GladeHome.vue", import.meta.url), "utf8");
-const releaseManifest = JSON.parse(await readFile(new URL("../release-manifest.json", import.meta.url), "utf8"));
 const theme = await readFile(new URL("../.vitepress/theme/index.ts", import.meta.url), "utf8");
 const docsEnhancer = await readFile(new URL("../.vitepress/theme/DocsEnhancer.vue", import.meta.url), "utf8");
 const codeMirrorWorkbench = await readFile(new URL("../.vitepress/theme/GladeEditorWorkbench.vue", import.meta.url), "utf8").catch(() => "");
@@ -158,8 +157,7 @@ const siteCopy = [
   ...siteSourceFiles.map(([, contents]) => contents)
 ].join("\n");
 
-test("home page uses the checked stable release manifest", () => {
-  assert.match(releaseManifest.version, /^v\d+\.\d+\.\d+$/);
+test("home page uses the generated stable release manifest", () => {
   assert.match(index, /import releaseManifest from '(?:\.\.\/)+release-manifest\.json'/);
   assert.match(index, /class="home-release-version"/);
   assert.match(index, /releaseManifest\.version/);
@@ -1416,7 +1414,8 @@ test('theme uses bundled fonts, readable type, and task-oriented navigation', ()
 test("Cloudflare Pages build publishes the install route itself", () => {
   assert.match(packageJson.scripts.build, /npm run verify/);
   assert.match(packageJson.scripts.build, /npm run build:site/);
-  assert.match(packageJson.scripts["build:site"], /vitepress build \./);
+  assert.match(packageJson.scripts["build:site"], /^node scripts\/sync-release-manifest\.mjs && vitepress build \./);
+  assert.match(packageJson.scripts.dev, /^node scripts\/sync-release-manifest\.mjs && vitepress dev \./);
   assert.match(packageJson.scripts["build:site"], /cp install\.sh \.vitepress\/dist\/install\.sh/);
   assert.doesNotMatch(pagesWorkflow, /deploy-pages|upload-pages-artifact|github-pages|configure-pages/);
   assert.match(siteReadme, /## Cloudflare Pages/);

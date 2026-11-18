@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v34"
+const testRuntimeCacheABI = "apextest-runtime-v44"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -126,7 +126,7 @@ func persistDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheK
 	}
 	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
-		Classes:   entry.Classes,
+		Classes:   PersistableClasses(entry.Classes),
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
@@ -163,7 +163,7 @@ func persistDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCa
 	}
 	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
-		Classes:   entry.Classes,
+		Classes:   PersistableClasses(entry.Classes),
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
@@ -177,18 +177,29 @@ func persistDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCa
 }
 
 func validatedDiskRuntimeInput(index typesys.Index, digests *typesys.SourceDigestSet) (*startupcache.ValidatedInput, error) {
+	return validatedDiskRuntimeInputWithLookup(index, digests, nil)
+}
+
+func validatedDiskRuntimeInputWithLookup(index typesys.Index, digests *typesys.SourceDigestSet, lookup *runtimeDigestLookup) (*startupcache.ValidatedInput, error) {
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return nil, nil
 	}
-	return startupcache.ValidateInputWithSourceDigests(filepath.Clean(root), digests)
+	if lookup == nil {
+		return startupcache.ValidateInputWithSourceDigests(filepath.Clean(root), digests)
+	}
+	return startupcache.ValidateInputWithSourceDigestsAndScopedLookup(filepath.Clean(root), digests, lookup.eligible, lookup.current)
 }
 
-func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *typesys.SourceDigestSet, lookup *startupcache.ValidatedInput) (*startupcache.ValidatedInput, bool) {
+func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *typesys.SourceDigestSet, lookup *startupcache.ValidatedInput, digestLookups ...*runtimeDigestLookup) (*startupcache.ValidatedInput, bool) {
 	if lookup == nil {
 		return nil, false
 	}
-	current, err := validatedDiskRuntimeInput(index, digests)
+	var digestLookup *runtimeDigestLookup
+	if len(digestLookups) != 0 {
+		digestLookup = digestLookups[0]
+	}
+	current, err := validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 	if err != nil || current == nil || current.Digest() != lookup.Digest() {
 		return nil, false
 	}
@@ -198,7 +209,7 @@ func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *types
 func runtimeCacheEntryFromStartup(entry startupcache.Entry) (runtimeCacheEntry, bool) {
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
-		Classes:   entry.Runtime.Classes,
+		Classes:   RestoreLazyClasses(entry.Runtime.Classes),
 		Triggers:  entry.Runtime.Triggers,
 		PageNames: entry.Runtime.PageNames,
 	}
@@ -223,7 +234,7 @@ func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *ru
 	projectStarted := time.Now()
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
-		Classes:   entry.Runtime.Classes,
+		Classes:   RestoreLazyClasses(entry.Runtime.Classes),
 		Triggers:  entry.Runtime.Triggers,
 		PageNames: entry.Runtime.PageNames,
 	}
@@ -298,7 +309,7 @@ func mergeStandardFieldScanResults(results []standardFieldScanResult) standardFi
 	return out
 }
 
-func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source string, childRelationshipLookup map[string]struct{}) standardFieldScanResult {
+func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source string, childRelationshipLookup *childRelationshipLookup) standardFieldScanResult {
 	result := standardFieldScanResult{
 		Inferred:              make(map[string]map[string]storage.Field),
 		ChildRelationshipRefs: make(map[string]projectChildRelationshipSourceReference),
@@ -425,7 +436,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 	return result
 }
 
-func recordProjectReferencedStandardFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, customObjects map[string]struct{}, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedStandardFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, customObjects map[string]struct{}, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -463,7 +474,7 @@ func recordProjectReferencedStandardFieldReadOnly(org *storage.OrgState, inferre
 	inferred[objectName][fieldName] = inferredReferencedField(fieldName)
 }
 
-func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, match []int) {
+func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, match []int) {
 	if len(match) != 6 {
 		return
 	}
@@ -480,7 +491,7 @@ func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[stri
 	}
 }
 
-func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, match []int, varTypes map[string]string) {
+func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, match []int, varTypes map[string]string) {
 	if len(match) != 6 {
 		return
 	}
@@ -501,7 +512,7 @@ func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred ma
 	}
 }
 
-func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName string) {
+func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -539,7 +550,7 @@ func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred 
 	inferred[objectName][fieldName] = field
 }
 
-func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, cache *sourceCache, childRelationshipLookup map[string]struct{}) standardFieldScanResult {
+func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, cache *sourceCache, childRelationshipLookup *childRelationshipLookup) standardFieldScanResult {
 	files := projectReferencedApexFiles(index)
 	if len(files) == 0 {
 		return standardFieldScanResult{}

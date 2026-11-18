@@ -3,7 +3,6 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -13,10 +12,10 @@ import (
 // Delete filters with a single unknown scalar reference are invalid metadata.
 // Dotted record and lookup paths, formulas, and other operators keep their
 // existing validation paths.
-func flowCoreValidateProjectDeleteFilters(_ project.Project, idx *Index) error {
+func flowCoreValidateProjectDeleteFilters(p project.Project, idx *Index) error {
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}

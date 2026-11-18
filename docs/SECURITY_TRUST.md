@@ -45,6 +45,12 @@ not public issues. If GitHub reporting is unavailable, use
 For later releases, read archive inventories and embedded revisions from their
 binaries, SBOMs, and attestations. The measurements below are
 historical v0.2.15 evidence and do not describe later release artifacts.
+For the current release and every release after v0.2.15, use that release's
+own evidence: its [GitHub Release](https://github.com/glade-sh/glade/releases)
+assets (`SHA256SUMS.txt`, per-archive SBOMs, `required-ci-attestation.json`
+and `salesforce-release-authority.json`), the same files under
+`https://downloads.glade.sh/vX.Y.Z/`, and its archive attestations, checked
+with `scripts/verify-release-download.sh` or `gh attestation verify`.
 
 The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
 with `vcs.modified=false`.

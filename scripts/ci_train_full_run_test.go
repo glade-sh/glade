@@ -54,6 +54,8 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		return "F"
 	})
 	expr = ciIfInputs.ReplaceAllString(expr, "T")
+	// A scenario is not a cancelled run.
+	expr = strings.ReplaceAll(expr, "!cancelled()", "T")
 	expr = ciIfStatusCall.ReplaceAllString(expr, "T")
 	toks := regexp.MustCompile(`&&|\|\||[()!TF]|\S`).FindAllString(expr, -1)
 	pos := 0
@@ -131,7 +133,8 @@ func ciJobWidth(t *testing.T, name string, matrix map[string]any) int {
 
 // readCIJobIfs returns each job's `if` and its concurrent width. A job that
 // needs required-ci runs after every other job has finished, so it never
-// competes with them for runners and has width zero.
+// competes with them for runners and has width zero. Workflow lint and the
+// leak scan each use one runner and run in sequence, so count only the scan.
 func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	t.Helper()
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
@@ -164,7 +167,7 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 			}
 		}
 		for _, need := range needs {
-			if need == "required-ci" {
+			if need == "required-ci" || (name == "workflow-lint" && need == "leak-scan" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "") {
 				widths[name] = 0
 			}
 		}

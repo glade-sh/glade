@@ -1,0 +1,8 @@
+started: 2026-11-16T00:55:30.079625Z
+finished: 2026-11-16T00:56:21.679598Z
+apis: 62.0 67.0
+routes: istest
+sf: @salesforce/cli/2.156.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live
+case table sha256: 0eefa3487d85fc5992f1a42ec5d9cb879ce312c57bed929fb18c35eea1189519

@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -151,10 +152,17 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 // FormulaEvaluationOptions carries per-instance options without changing the
 // defaults used by stored formulas, validation rules and workflow evaluation.
 type FormulaEvaluationOptions struct {
-	PreserveNumericNull  bool
+	PreserveNumericNull bool
+	// QueryBlankNumber preserves null through ROUND, ABS, FLOOR, MOD, MIN and
+	// MAX on queried numeric calculated fields with an explicit BlankAsBlank
+	// policy. Other callers keep the prior null-as-zero behavior.
+	QueryBlankNumber     bool
 	Template             bool
 	UserID               storage.ID
 	PermissionUserFields map[string]storage.Value
+	// AssignmentActive, when set, drops the assignments it rejects from a
+	// $Permission lookup (a test-made assignment the context does not apply yet).
+	AssignmentActive func(storage.Record) bool
 	// SetupUserID selects hierarchy settings without changing other global variables.
 	SetupUserID storage.ID
 	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
@@ -233,6 +241,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		evaluating:                    make(map[string]bool),
 		namespace:                     formulaFieldSourceNamespace("", definition, field),
 		preserveNumericNull:           options.PreserveNumericNull,
+		queryBlankNumber:              options.QueryBlankNumber,
 		blankNumericAsZero:            currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
 		formulaSurface:                options.FormulaSurface,
 		flowFinishFields:              options.FlowContext,
@@ -242,6 +251,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		storedFormula:                 options.FormulaSurface && field.Type == storage.FieldCalculated,
 		userID:                        options.UserID,
 		permissionUserFields:          options.PermissionUserFields,
+		assignmentActive:              options.AssignmentActive,
 		setupUserID:                   options.SetupUserID,
 	}
 	if options.FormulaSurface {
@@ -643,6 +653,7 @@ type formulaParser struct {
 	validationRule      bool
 	validationError     bool
 	preserveNumericNull bool
+	queryBlankNumber    bool
 	blankNumericAsZero  bool
 	formulaSurface      bool
 	validating          bool
@@ -658,6 +669,7 @@ type formulaParser struct {
 	flowReference                 func(string) (formulaValue, bool, bool)
 	userID                        storage.ID
 	permissionUserFields          map[string]storage.Value
+	assignmentActive              func(storage.Record) bool
 	setupUserID                   storage.ID
 }
 
@@ -962,7 +974,7 @@ func (p *formulaParser) parsePower() (formulaValue, bool) {
 		if !aOK || !bOK {
 			return formulaValue{}, false
 		}
-		left = formulaNumberValue(math.Pow(a, b))
+		left = formulaNumberValue(stablemath.PowStable(a, b))
 	}
 	return left, true
 }
@@ -1817,6 +1829,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1828,6 +1843,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	case "ROUND":
 		if len(args) != 2 {
 			return formulaValue{}, false
+		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
 		}
 		number, ok := args[0].asNumber()
 		if !ok {
@@ -1846,6 +1864,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1854,6 +1875,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	case "MOD":
 		if len(args) != 2 {
 			return formulaValue{}, false
+		}
+		if p.queryBlankNumber && (args[0].kind == formulaNull || args[1].kind == formulaNull) {
+			return formulaValue{kind: formulaNull}, true
 		}
 		dividend, ok := args[0].asNumber()
 		if !ok {
@@ -2665,7 +2689,11 @@ func (e *Engine) formulaEvaluationOptions() FormulaEvaluationOptions {
 	if userID == "" {
 		userID = storage.DefaultUserID
 	}
-	return FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	options := FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	if e.PermissionAssignmentHidden != nil {
+		options.AssignmentActive = func(assignment storage.Record) bool { return !e.PermissionAssignmentHidden(assignment) }
+	}
+	return options
 }
 
 // setupFormulaEvaluationOptions adds the system setup actor (small-clusters

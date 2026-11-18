@@ -1806,7 +1806,8 @@ func TestExecMapConstructorAcceptsDynamicQueryResultRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account acme = new Account(Name = 'Acme');
 insert acme;
-Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acme.Id'));
+Id acmeId = acme.Id;
+Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acmeId'));
 System.assertEquals('Acme', byId.get(acme.Id).Name);
 `)
 	if err != nil {
@@ -10440,7 +10441,8 @@ System.runAs(u) {
 	);
 	System.assert(result.isSuccess());
 
-	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :created.Id WITH USER_MODE');
+	Id createdId = created.Id;
+	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :createdId WITH USER_MODE');
 	System.assertEquals(1, queried.size());
 	System.assertEquals('415-555-0100', queried[0].Phone);
 
@@ -12824,8 +12826,17 @@ System.assertEquals(2, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE Name = :names ORDER BY Name');
 System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
-rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+// NATIVE a dotted dynamic bind is not a variable
+// internal/apextest/testdata/conformance/dynamic_bind_scope_paths/org.tsv anonymous 62.0 67.0
+String probeName = probe.Name;
+rows = Database.query('SELECT Id FROM Account WHERE Name = :probeName');
 System.assertEquals(1, rows.size());
+try {
+    Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+    System.assert(false, 'expected QueryException');
+} catch (QueryException dotted) {
+    System.assertEquals('Variable does not exist: probe.Name', dotted.getMessage());
+}
 List<Account> betaRows = rows;
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name + \' Test\'');
 System.assertEquals(0, rows.size());

@@ -8,7 +8,7 @@ No post-MVP lane may stay `partial`. Each lane must be split into a complete loc
 
 ## Tracked local capability checks
 
-This internal checklist does not establish complete Salesforce parity.
+This checklist does not establish complete Salesforce parity.
 
 - Target: full-featured glade-parity MVP
 - Readiness: ready
@@ -22,7 +22,7 @@ This internal checklist does not establish complete Salesforce parity.
 | `supported` | 31 |
 | `partial` | 0 |
 | `stub` | 0 |
-| `unsupported` | 2 |
+| `unsupported` | 10 |
 | `unknown` | 0 |
 
 ## Required MVP Capabilities
@@ -56,14 +56,22 @@ This internal checklist does not establish complete Salesforce parity.
 
 | Area | ID | Status | Capability | Notes |
 | --- | --- | --- | --- | --- |
+| Automation | `automation.assignment.scope` | `unsupported` | Assignment rule scope | The local assignment rule implementation is bounded to the supported Lead and Case metadata and checked selection paths; it does not establish full hosted assignment behavior. |
+| Automation | `automation.duplicate.matching` | `unsupported` | Duplicate matching scope | Local duplicate matching enforces custom same-object rules with Exact items and the First Name, Last Name, Company Name, Phone, City, Street, ZIP and Title fuzzy methods, reproducing native verdicts and match confidences for the captured rows. It enforces a custom cross-object rule whose `objectMapping` maps fields of the rule's object onto the matching rule's object, for the captured one-field mapping (unmapped fields count as blank; mappings of several fields stay unenforced), and Allow+Report rules commit one record set for records that match each other. It does not enforce Person Account custom rules or other cross-object shapes, reports no `getFieldDiffs()` entries for custom rules with fuzzy items or for Person Account rules, models the update gate against insert-time values only for records inserted as an allowed duplicate in the same transaction (a record inserted without a match, moved away and back after another record took its original value, compares with its stored value and is blocked; no native row shows that case, nor do other repeat edits, standard-rule update reports or flow-triggered update reports), leaves `runAsCurrentUser` unmodeled, and leaves standard Account, Contact and Lead fuzzy equations, fuzzy items under OR and rules with three or more fuzzy items unenforced. Metaphone 3 and Syllable Alignment are approximated, so some native matches are missed. See [DUPLICATE_FUZZY_MATCHING.md](DUPLICATE_FUZZY_MATCHING.md). |
+| Automation | `automation.flow.hosted` | `unsupported` | Hosted Flow and unsupported nodes | Screen and wait nodes, after-delete Flow and hosted scheduling are outside the local Flow contract. |
+| DML | `dml.text-write-trim.scope` | `unsupported` | Text write trimming set | Plain Text writes trim space and tab, and a value empty afterwards becomes null (captured on Account Name and Site and custom Name). Base already trims spaces on STRING fields. Other control characters (CR, LF, VT, FF, NUL) were not captured and keep base behavior. A blank Name was not captured; Glade keeps REQUIRED_FIELD_MISSING. |
 | Developer experience | `dap.live-ide-orchestration` | `supported` | Richer live IDE debug orchestration | VS Code launch aliases, debug profile wiring, and local glade exec/test DAP sessions are covered by deterministic local tests. |
 | Developer experience | `lsp.context-completion` | `supported` | Context-aware Apex completion | Context-aware completions include SOQL SELECT projection ranking that prefers SObject fields before top-level names, with focused LSP tests. |
 | Developer experience | `profile.pprof-and-timing` | `supported` | pprof output and wall-clock statement timing | Profile reports include pprof-compatible output plus wall-clock statement timing summaries in JSON/Markdown native trace reports. |
 | Developer experience | `watch.profile-trace-reports` | `supported` | Profile-driven watch reports | Watch runs emit profile and trace report events beside affected-test selection, rerun, and stale-run suppression events. |
+| Events | `events.change.delivery` | `unsupported` | Change-event hosted delivery | Local change-event journal and subscriber execution do not establish hosted event streaming or delivery timing. |
 | Limits | `limits.configurable-local-profiles` | `supported` | Configurable local governor cap profiles | glade exec, test, and server accept deterministic local limit profiles and per-counter caps for supported governor counters. |
 | Limits | `limits.exact-salesforce-accounting` | `unsupported` | Exact hosted Salesforce governor accounting | Exact Salesforce runtime counter deltas require hosted execution accounting and remain outside deterministic local execution. |
 | Local API server | `server.rest-breadth.hosted-auth-live-org-deploy` | `unsupported` | Hosted auth, live-org Tooling, and deployment services | OAuth token issuance, live org-only Tooling objects, live metadata deploy/retrieve, and broader hosted REST namespaces require Salesforce services. |
 | Local API server | `server.rest-breadth.local-expanded` | `supported` | Expanded local REST, Composite, Bulk, layout, and metadata jobs | Composite Batch, Tree, and Composite Graph local requests, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, REST limits, and local Tooling shapes are covered by server tests. |
+| Platform | `platform.exclusions` | `unsupported` | Excluded platforms | DataWeave and Slack are excluded and unsupported. ConnectApi types are passive   shapes; its hosted services are not implemented (see release policy). |
 | Release | `compat.fixture-expansion` | `supported` | Compatibility fixture expansion | Fixture evidence coverage is gated by the first-party compat tooling and generated fixture reports. |
 | Release | `release.distribution-automation` | `supported` | Package-manager distribution, signing, and promotion automation | Release scripts build installable archives, checksums, manifests, smoke checks, and promotion metadata for the local binary distribution path. |
 | Runtime | `stdlib.platform-breadth` | `supported` | Broader System stdlib and platform service parity | All locally pursuable stdlib rows are modeled as supported local behavior or split into exact hosted-service unsupported rows with stable diagnostics. |
+| SOQL | `soql.default-order.scope` | `unsupported` | Default order without ORDER BY | Only the captured shapes return index order: an Account query whose entire WHERE clause is a Name prefix LIKE (ascending Name), and an Account to Contacts child subquery whose entire WHERE clause is a LastName prefix LIKE (descending LastName). Compound filters, other child objects, Name on children, GROUP BY, custom objects and describe order keep Id order and are not fitted. |
+| Security | `security.default-permissions.scope` | `unsupported` | Default permission scope | Local default permission behavior covers the checked configurations and does not establish full hosted permission parity. |

@@ -10,6 +10,9 @@
 #   gofmt               changed Go files are gofmt-clean                      FAIL
 #   vet                 go vet on changed packages (--vet)                    FAIL
 #   leak-scan           scripts/leak-scan.sh on the added lines, when present FAIL
+#                       (WARN when LEAK_SCAN_DENYLIST is empty: a local run
+#                       cannot see the secret, so the denylist check is
+#                       skipped; the path checks still run)
 #   org-id              a Salesforce org id (00D...) in an added line         FAIL
 #   personal-path       a personal home, host volume or private temp path added FAIL
 #   test-first          a product change has a test or fixture change, and the
@@ -113,9 +116,20 @@ if [ "${vet}" = 1 ]; then
   fi
 fi
 
-# leak-scan (the script scans added lines of the range; the denylist comes from LEAK_SCAN_DENYLIST)
+# leak-scan (the script scans added lines of the range; the denylist comes from LEAK_SCAN_DENYLIST).
+# A local run cannot see the private denylist secret, so an unset or empty
+# LEAK_SCAN_DENYLIST opts out of the denylist check with a WARNING, the same
+# way a fork pull request does in CI; a set denylist is enforced as usual.
 if [ "${leak}" = 1 ] && [ -x scripts/leak-scan.sh ]; then
-  if out=$(bash scripts/leak-scan.sh --range "${mb}..${head}" 2>&1); then pass leak-scan "$(printf '%s' "${out}" | tail -1)"; else fail leak-scan "$(printf '%s' "${out}" | tail -1)"; fi
+  allowempty=0
+  [ -z "${LEAK_SCAN_DENYLIST:-}" ] && allowempty=1
+  if out=$(LEAK_SCAN_ALLOW_EMPTY_DENYLIST="${allowempty}" bash scripts/leak-scan.sh --range "${mb}..${head}" 2>&1); then
+    if printf '%s' "${out}" | grep -q '^leak-scan: WARNING '; then
+      warn leak-scan "denylist check skipped (empty LEAK_SCAN_DENYLIST); pattern checks passed"
+    else
+      pass leak-scan "$(printf '%s' "${out}" | tail -1)"
+    fi
+  else fail leak-scan "$(printf '%s' "${out}" | tail -1)"; fi
 elif [ "${leak}" = 1 ]; then skip leak-scan "scripts/leak-scan.sh not on this branch; built-in path checks only"
 fi
 

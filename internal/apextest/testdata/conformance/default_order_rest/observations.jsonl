@@ -1,0 +1,33 @@
+{"api": "62.0", "debug": ["OBS|accfields|n=59|first=id,isdeleted,masterrecordid,name,type,parentid|last=operatinghoursid|d=1e2e54aa43c89005"], "error": "", "id": "o3_62_fields_account", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fields|n=12|first=id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid|last=rnk__c|d=14d005120aa1db47|same=true"], "error": "", "id": "o3_62_fields_custom", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|global|n=1312|first=contract,contracthistory,contractfeed,contractchangeevent,order,ordershare|last=msgsessstatuschangedevent,userlocalwebserveridentity,userlocalwebserveridentityshare,ord__c,ord__share,ord__changeevent|d=30e23f80b71f7769|same=true"], "error": "", "id": "o3_62_global", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|groupagg|Bravo:3,Delta:3,Charlie:3,Alpha:3"], "error": "", "id": "o3_62_group_agg", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|groupfiltered|Bravo:2,Delta:1,Charlie:1,Alpha:2"], "error": "", "id": "o3_62_group_filtered", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Amt__c' can not be grouped in a query call", "id": "o3_62_group_num", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|groupplain|Bravo,Delta,Charlie,Alpha"], "error": "", "id": "o3_62_group_plain", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|groupsum|Bravo:180.0,Delta:240.0,Charlie:210.0,Alpha:150.0"], "error": "", "id": "o3_62_group_sum", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|limited|1,9,12,3,6"], "error": ""}], "api": "62.0", "debug": ["OBS|limited|1,9,12,3,7"], "error": "", "id": "o3_62_limited", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|namefilter|1,3,6,5,2,4"], "error": ""}], "api": "62.0", "debug": ["OBS|namefilter|1,3,2,4,6,5"], "error": "", "id": "o3_62_name_filter", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|default|1,9,12,3,6,10,5,8,7,2,11,4"], "error": ""}], "api": "62.0", "debug": ["OBS|default|1,9,12,3,7,2,11,4,6,10,5,8"], "error": "", "id": "o3_62_read_default", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|default2|1,9,12,3,6,10,5,8,7,2,11,4"], "error": ""}], "api": "62.0", "debug": ["OBS|default2|1,9,12,3,7,2,11,4,6,10,5,8"], "error": "", "id": "o3_62_read_default2", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|seed1|n=4"], "error": "", "id": "o3_62_seed1", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|seed2|n=8"], "error": "", "id": "o3_62_seed2", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|seed3|n=12"], "error": "", "id": "o3_62_seed3", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|setup|n=0"], "error": "", "id": "o3_62_setup", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|accfields|n=59|first=id,isdeleted,masterrecordid,name,type,parentid|last=operatinghoursid|d=1e2e54aa43c89005"], "error": "", "id": "o3_67_fields_account", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fields|n=12|first=id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid|last=rnk__c|d=14d005120aa1db47|same=true"], "error": "", "id": "o3_67_fields_custom", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|global|n=1425|first=contract,contracthistory,contractfeed,contractchangeevent,order,ordershare|last=extlrecshrstagedrecord,reporthierarchyobjectfield,workitemevent,ord__c,ord__share,ord__changeevent|d=9a66592d717e23c1|same=true"], "error": "", "id": "o3_67_global", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|groupagg|Bravo:3,Delta:3,Charlie:3,Alpha:3"], "error": "", "id": "o3_67_group_agg", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|groupfiltered|Bravo:2,Delta:1,Charlie:1,Alpha:2"], "error": "", "id": "o3_67_group_filtered", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Amt__c' can not be grouped in a query call", "id": "o3_67_group_num", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|groupplain|Bravo,Delta,Charlie,Alpha"], "error": "", "id": "o3_67_group_plain", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|groupsum|Bravo:180.0,Delta:240.0,Charlie:210.0,Alpha:150.0"], "error": "", "id": "o3_67_group_sum", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|limited|6,10,5,8,7"], "error": ""}], "api": "67.0", "debug": ["OBS|limited|7,2,11,4,6"], "error": "", "id": "o3_67_limited", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|namefilter|6,5,2,4,1,3"], "error": ""}], "api": "67.0", "debug": ["OBS|namefilter|2,4,6,5,1,3"], "error": "", "id": "o3_67_name_filter", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|default|6,10,5,8,7,2,11,4,1,9,12,3"], "error": ""}], "api": "67.0", "debug": ["OBS|default|7,2,11,4,6,10,5,8,1,9,12,3"], "error": "", "id": "o3_67_read_default", "route": "anonymous"}
+{"alt": [{"debug": ["OBS|default2|6,10,5,8,7,2,11,4,1,9,12,3"], "error": ""}], "api": "67.0", "debug": ["OBS|default2|7,2,11,4,6,10,5,8,1,9,12,3"], "error": "", "id": "o3_67_read_default2", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|seed1|n=4"], "error": "", "id": "o3_67_seed1", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|seed2|n=8"], "error": "", "id": "o3_67_seed2", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|seed3|n=12"], "error": "", "id": "o3_67_seed3", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|setup|n=0"], "error": "", "id": "o3_67_setup", "route": "anonymous"}
+{"api": "67.0", "id": "o3t_route", "route": "istest", "tests": [["defaultOrder", "Fail", "System.AssertException: Assertion Failed: r=7,2,11,4,1,9,12,3,6,10,5,8"]]}

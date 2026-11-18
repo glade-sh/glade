@@ -1,0 +1,9 @@
+family=hidden_record_update
+apis=62.0 66.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=USER_DEBUG OBS lines (anonymous) or the test assertion message (isTest); Salesforce ids masked as <id>
+repeats=two clean runs per API; rows identical
+native_classes=HidShareTest and HidSystemTest read the user and records that exist in the org (SeeAllData=true). HidShareLocal, HidSystemLocal and HidSetup are local stand-ins that create the same user, permission set and records inside the test; they were never run natively.
+anonymous=h4_67_anonrunas shows System.runAs is unavailable outside a test method
+raw_runs=hidden-record-update-67/out/20261116T145418Z and 20261116T145126Z (67.0); hidden-record-update-67-istest62/out/20261116T145516Z and 20261116T145231Z (62.0); hidden-record-update-67-istest66/out/20261116T145615Z and 20261116T145328Z (66.0) (capture cache, not committed)

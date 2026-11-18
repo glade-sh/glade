@@ -14,8 +14,8 @@ func TestCIRelease2ApexTwelveShardRoutesAndHistory(t *testing.T) {
 	testCIRelease2ApexShardRoutesAndHistory(t, 12)
 }
 
-func TestCIRelease2ApexFourteenShardRoutesAndHistory(t *testing.T) {
-	testCIRelease2ApexShardRoutesAndHistory(t, 14)
+func TestCIRelease2ApexSixteenShardRoutesAndHistory(t *testing.T) {
+	testCIRelease2ApexShardRoutesAndHistory(t, 16)
 }
 
 func testCIRelease2ApexShardRoutesAndHistory(t *testing.T, count int) {
@@ -89,13 +89,13 @@ func TestCIRelease2ApexTwelveShardRejectsInvalidIndices(t *testing.T) {
 	}
 }
 
-func TestCIRelease2ApexFourteenShardRejectsInvalidIndices(t *testing.T) {
-	for _, index := range []string{"14", "-1", "00"} {
+func TestCIRelease2ApexSixteenShardRejectsInvalidIndices(t *testing.T) {
+	for _, index := range []string{"16", "-1", "00"} {
 		t.Run(index, func(t *testing.T) {
 			cmd := exec.Command("bash", "ci-go-test.sh", "apex-shard", index)
-			cmd.Env = append(os.Environ(), "CI_APEXTEST_SHARDS=14", "CI_APEXTEST_ARTIFACT_DIR="+t.TempDir())
+			cmd.Env = append(os.Environ(), "CI_APEXTEST_SHARDS=16", "CI_APEXTEST_ARTIFACT_DIR="+t.TempDir())
 			out, err := cmd.CombinedOutput()
-			if err == nil || !strings.Contains(string(out), "shard index must be between 0 and 13") {
+			if err == nil || !strings.Contains(string(out), "shard index must be between 0 and 15") {
 				t.Fatalf("invalid shard %q: %v\n%s", index, err, out)
 			}
 		})

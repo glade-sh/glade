@@ -1,0 +1,8 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for Phone, City and ZIP values; panels B1.*, B4.* (2026-11-14) and N5.* (2026-11-15)
+orgs: fresh 30-day Developer Edition scratch orgs on campaign Dev Hubs, no features; each org was deleted and its deletion verified on the hub
+routes: anonymous Apex and deployed @IsTest; APIs 62.0 and 67.0; two repeats; eight observations per panel, all identical
+custom stage: one-item custom matching rules (Phone on Phone, City on BillingCity, Zip on BillingPostalCode), NullNotAllowed, Alert, standard duplicate rules inactive
+standard stage (N5.s*): custom duplicate rules inactive, the org's standard Account, Contact and Lead duplicate rules restored; the other fields of each record are fixed (cases.json)
+panel: every value is inserted, then each value is run as an unsaved candidate; a token is candidate index, existing index (base 36) and the confidence when it is not 100
+canaries: a fixed accept and reject control ran before, during and after every segment and passed
+ids: records are tagged by index; no record, org or user id, username or alias is stored

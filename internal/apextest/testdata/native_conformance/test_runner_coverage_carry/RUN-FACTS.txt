@@ -1,0 +1,28 @@
+capture: per-test coverage carry, @TestSetup coverage and async work, trigger listing in sync and async runs (cov-r2)
+captured: 2026-11-17 (UTC)
+orgs: fresh 1-day Developer scratch orgs on two campaign Dev Hubs, one main org per API plus fresh orgs for the f7 steps; every org deleted and verified gone
+sf: @salesforce/cli 2.157.8
+class apis: 62.0 and 67.0 (every .cls-meta.xml and .trigger-meta.xml)
+fixtures: fixtures/main (main org), fixtures/f7 (f7 orgs)
+steps (main org, repeats r1 and r2 in the same org):
+  mix-full           sf apex run test --class-names CarryMixTest --synchronous --code-coverage
+  mix-gamma          --tests CarryMixTest.Gamma --synchronous
+  mix-full-async     --class-names CarryMixTest (asynchronous)
+  setup              --class-names CarrySetupTest --synchronous
+  x12-par-on         --class-names CarryX1Test,CarryX2Test, parallel Apex testing enabled
+  x12-par-off        the same with parallel Apex testing disabled (ApexSettings)
+  Setup*Test         --class-names <class> --synchronous; each test method reports what it sees through its failure message (FACTS ...)
+  setup-all-async    every Setup*Test class in one asynchronous run
+steps (f7, fresh org each): f7a = aLeft,bRight async then sync; f7b = aLeft sync then aLeft,bRight async
+  The 62.0 f7a r2 async run returned no results within the wait and is omitted. The 67.0 f7b r2 org was not created (hub limit); its rows are absent.
+columns: api, repeat, step, kind, test_class, method, component, covered, detail
+  test  one test method of the step's run: detail = Outcome|Message
+  run   sf run summary: testRunCoverage and the coverage list (read from stored aggregates)
+  per   Tooling ApexCodeCoverage row of a test class the step ran, queried right after the step; covered = covered lines
+notes:
+  Per-test and test rows are identical between repeats and between the two APIs. Run summaries differ between repeats
+  because they read the org's stored aggregates.
+  Carry order is by code point (Alpha, Gamma, Zeta, apple, beta, delta). Carry stays inside one test class.
+  @TestSetup coverage is in the first test row of the class in that order only.
+  A synchronous run lists every trigger in every per-test row and in its summary; an asynchronous run lists only what tests reached.
+  A setup whose async job throws, or chains another Queueable, fails every method and the class has no per-test rows.

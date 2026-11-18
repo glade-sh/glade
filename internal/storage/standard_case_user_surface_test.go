@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // Native rows: unknown_sobject_field/org.tsv, orgs case-user-surface and
@@ -115,11 +117,24 @@ func TestStandardCaseUserSurfaceClosed(t *testing.T) {
 			}
 		}
 		for _, name := range caseUserSurfaceGatedFields[object] {
+			// NATIVE Case.Language, ConnectionReceivedId and ConnectionSentId compile in no captured
+			// configuration: standard_case_field_features_*/org.tsv (none, LiveAgent, Division,
+			// Knowledge, Knowledge with languages, service bundle) at 62.0 and 67.0. They stay open
+			// only for a project with no scratch definition.
+			unsuppliedCapturedNames := object == "Case" && (name == "Language" || strings.HasPrefix(name, "Connection"))
 			for _, fs := range [][]string{nil, features} {
 				d := ObjectDefinition{APIName: object, Fields: map[string]Field{}}
 				EnsureStandardObjectFieldsForFeatures(&d, fs)
-				if !StandardObjectConstructorFieldAllowedForFeatures(object, name, fs, d) {
-					t.Errorf("%s.%s: feature-gated field rejected with features %v", object, name, fs)
+				if allowed := StandardObjectConstructorFieldAllowedForFeatures(object, name, fs, d); allowed == unsuppliedCapturedNames {
+					t.Errorf("%s.%s: allowed=%t with features %v", object, name, allowed, fs)
+				}
+			}
+			if unsuppliedCapturedNames {
+				unspecified := []string{project.UnspecifiedStandardFieldShape}
+				d := ObjectDefinition{APIName: object, Fields: map[string]Field{}}
+				EnsureStandardObjectFieldsForFeatures(&d, unspecified)
+				if !StandardObjectConstructorFieldAllowedForFeatures(object, name, unspecified, d) {
+					t.Errorf("%s.%s: rejected for a project with no scratch definition", object, name)
 				}
 			}
 		}

@@ -9,6 +9,11 @@ import (
 
 func orgDigest(t *testing.T, org storage.OrgState) [32]byte {
 	t.Helper()
+	// Digest the logical org. A lazy org holds the catalog objects something
+	// touched, and what touched them depends on process-wide caches, so
+	// complete a private copy first.
+	org = org.Clone()
+	storage.MaterializeStandardObjectSpread(&org)
 	return sha256.Sum256([]byte(stringJSON(t, org)))
 }
 

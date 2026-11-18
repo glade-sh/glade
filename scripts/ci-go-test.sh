@@ -1251,9 +1251,9 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "apex-ci" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		if [[ "${shard_count}" == "14" ]]; then
-			index_pattern='^([0-9]|1[0-3])$'
-			index_description='between 0 and 13'
+		if [[ "${shard_count}" == "16" ]]; then
+			index_pattern='^([0-9]|1[0-5])$'
+			index_description='between 0 and 15'
 		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 			index_description='between 0 and 11'
@@ -1264,13 +1264,13 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "lwc-compile" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		index_pattern='^[0-7]$'
-		index_description='between 0 and 7'
+		index_pattern='^([0-9]|1[01])$'
+		index_description='between 0 and 11'
 	fi
 	if [[ "${mode}" == "visualforce" ]]; then
 		test_args=(-count=1 -timeout=70m)
-		index_pattern='^[0-3]$'
-		index_description='between 0 and 3'
+		index_pattern='^[0-7]$'
+		index_description='between 0 and 7'
 	fi
 	if [[ "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" ]]; then
 		test_args=(-count=1 -timeout=30m)
@@ -1403,17 +1403,17 @@ run_apextest_matrix_shard() {
 		label="local-release Apex"
 		shard_count="2"
 		index_pattern='^[01]$'
-	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "14" ]]; then
+	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "16" ]]; then
 		mode="apex-ci"
-		if [[ "${shard_count}" == "14" ]]; then
-			index_pattern='^([0-9]|1[0-3])$'
+		if [[ "${shard_count}" == "16" ]]; then
+			index_pattern='^([0-9]|1[0-5])$'
 		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 		else
 			index_pattern='^[0-5]$'
 		fi
 	elif [[ "${shard_count}" != "2" ]]; then
-		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 14" >&2
+		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 16" >&2
 		return 2
 	fi
 	local artifact_suffix="invalid"
@@ -1426,7 +1426,7 @@ run_apextest_matrix_shard() {
 	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
-	# CI opts into six, twelve or fourteen shards; local helpers default to two shards.
+	# CI opts into six, twelve or sixteen shards; local helpers default to two shards.
 	# About 280 measured-plan Apex minutes plus 25% test growth
 	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
 	# Allow 90 minutes for cold history and runner variance.
@@ -1444,15 +1444,15 @@ run_sema_matrix_shard() {
 run_lwc_compile_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "8"
+	[[ "${index}" =~ ^([0-9]|1[01])$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "12"
 }
 
 run_visualforce_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/visualforce" "./internal/visualforce" "remaining-go" "Visualforce" "${CI_VISUALFORCE_ARTIFACT_DIR:-ci-artifacts/visualforce-${artifact_suffix}}" "${CI_VISUALFORCE_HISTORY_PATH:-}" "1" "visualforce" "4"
+	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/visualforce" "./internal/visualforce" "remaining-go" "Visualforce" "${CI_VISUALFORCE_ARTIFACT_DIR:-ci-artifacts/visualforce-${artifact_suffix}}" "${CI_VISUALFORCE_HISTORY_PATH:-}" "1" "visualforce" "8"
 }
 
 run_vm_matrix_shard() {
@@ -1638,6 +1638,20 @@ try:
     all_deferred = []
     total_duration_millis = 0
     shard_elapsed = []
+    shard_largest = []
+    recorded = {}
+    for recorded_path in (os.environ.get("CI_APEXTEST_HISTORY_PATH", ""), os.path.join(os.path.dirname(SCRIPT), "..", "internal", "apextest", "testdata", "shard_durations.json")):
+        # The predecessor history wins; the committed weight table fills gaps.
+        try:
+            with open(recorded_path, encoding="utf-8") as source:
+                for row in json.load(source).get("tests", []):
+                    if isinstance(row.get("name"), str) and isinstance(row.get("durationMillis"), (int, float)):
+                        recorded.setdefault(row["name"], row["durationMillis"] / 1000.0)
+        except (OSError, ValueError, AttributeError):
+            pass
+
+    def recorded_duration(name):
+        return recorded.get(name)
     for index, shard_dir in enumerate(shard_dirs):
         selected = load_json(os.path.join(shard_dir, "selected-shard.json"))
         validate_shard(selected, index, f"selected shard {index}")
@@ -1730,6 +1744,8 @@ try:
         if set(terminal) != set(selected_tests):
             reject(f"shard {index} terminal test set does not match its selection")
         elapsed_total = 0.0
+        largest_test = 0.0
+        largest_name = ""
         for name in selected_tests:
             events = terminal[name]
             expected_action = "skip" if name in deferred else "pass"
@@ -1756,9 +1772,12 @@ try:
             total_duration_millis += millis
             durations[name] = millis
             elapsed_total += elapsed
+            if elapsed > largest_test:
+                largest_test, largest_name = elapsed, name
         if not math.isfinite(elapsed_total):
             reject(f"shard {index} elapsed total is not finite")
         shard_elapsed.append(elapsed_total)
+        shard_largest.append((largest_test, largest_name))
 
     if include_deferred:
         if sorted(durations) != discovery:
@@ -1771,6 +1790,8 @@ try:
     # observed durations for scheduling without failing a PR on runner noise.
     # The advisory is a ::warning:: annotation. Apex and sema enforce balance
     # at every shard count outside PRs when duration history drove the plan.
+    # Train and release PRs (head ref train/ or release/) enforce it too, so
+    # an unbalanced plan fails before the push to main.
     # LWC's indivisible long tests can exceed 1.5x its eight-shard median
     # even with an optimal plan;
     # rejecting that evidence would prevent the next run from balancing it.
@@ -1782,7 +1803,23 @@ try:
         for index, elapsed in enumerate(shard_elapsed):
             if elapsed > 1.5 * median:
                 message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x {SHARD_COUNT}-shard median {median:.6f}s"
-                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+                # One indivisible test can push a shard over the ratio on
+                # runner variance alone. Keep the history when the shard is
+                # within the ratio without its largest test, the whole shard
+                # stays within 2.5x the median, and that test is not more
+                # than twice its own recorded duration. A shard that stays
+                # over the ratio with its largest test removed, or one test
+                # that regressed, is real imbalance and rejects.
+                largest, largest_name = shard_largest[index]
+                baseline = recorded_duration(largest_name)
+                regressed = baseline is not None and baseline > 0 and largest > 2 * baseline
+                if (PACKAGE.endswith("/internal/apextest") and not regressed
+                        and elapsed - largest <= 1.5 * median and elapsed <= 2.5 * median):
+                    print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; dominated by one test {largest_name} at {largest:.6f}s ({largest / elapsed:.0%} of the shard), so the history is kept", file=sys.stderr)
+                    continue
+                head_ref = os.environ.get("GITHUB_HEAD_REF", "")
+                enforced_pr = head_ref.startswith("train/") or head_ref.startswith("release/")
+                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request" and not enforced_pr:
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}", file=sys.stderr)
                 elif plan["historyUsed"] is not True:
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; plan used the deterministic fallback", file=sys.stderr)
@@ -1843,13 +1880,13 @@ refresh_apextest_history() {
 	# Keep the two-shard local train interface; CI supplies output then all dirs.
 	if [[ "$#" -eq 3 ]]; then
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
-	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 15 ]]; then
+	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 17 ]]; then
 		local output="$1"
 		local shard_count="6"
 		if [[ "$#" -eq 13 ]]; then
 			shard_count="12"
-		elif [[ "$#" -eq 15 ]]; then
-			shard_count="14"
+		elif [[ "$#" -eq 17 ]]; then
+			shard_count="16"
 		fi
 		shift
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "${shard_count}" "${output}" "$@"
@@ -1875,7 +1912,7 @@ refresh_gladecli_history() {
 
 bootstrap_visualforce_history() {
 	# A successful unfiltered predecessor supplies timing evidence only. The
-	# current four workers still discover and validate their complete test union.
+	# current workers still discover and validate their complete test union.
 	# Adapt its raw stream to the shared collector instead of adding a second
 	# package, nested-result or duration validation policy.
 	python3 - "${script_dir}/ci-go-test.sh" "$1" "$2" <<'PY'
@@ -2100,22 +2137,22 @@ main() {
 			run_sema_matrix_shard "${2:-}"
 			;;
 		lwc-compile-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-7)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-11)" >&2; return 2; fi
 			run_lwc_compile_matrix_shard "${2:-}"
 			;;
 		lwc-compile-history-refresh)
-			if [[ "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 10 && "$#" -ne 14 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_DIR... (8 or 12)" >&2; return 2; fi
 			shift
-			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "8" "$@"
+			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "$(( $# - 1 ))" "$@"
 			;;
 		visualforce-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-shard INDEX (0-3)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-shard INDEX (0-7)" >&2; return 2; fi
 			run_visualforce_matrix_shard "${2:-}"
 			;;
 		visualforce-history-refresh)
-			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 6 && "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-history-refresh OUTPUT SHARD_DIR... (4 or 8)" >&2; return 2; fi
 			shift
-			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "4" "$@"
+			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "$(( $# - 1 ))" "$@"
 			;;
 		vm-shard)
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh vm-shard INDEX (0-3; CI_VM_SHARDS 3 limits to 0-2)" >&2; return 2; fi
@@ -2157,7 +2194,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-13|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-11|lwc-compile-history-refresh OUTPUT SHARD_DIR...|visualforce-shard 0-7|visualforce-history-refresh OUTPUT SHARD_DIR...|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac
