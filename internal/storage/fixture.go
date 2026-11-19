@@ -251,6 +251,8 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		}
 	}
 	org.IDSequences = copySequences(generator.Sequences)
+	// Imported records keep their org IDs; align custom object prefixes with them.
+	AdoptRecordKeyPrefixes(org)
 	if fixture.Org.Features == nil {
 		org.restoreLegacyFeatureProfile()
 	} else {
@@ -930,6 +932,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	ensureTaskPriorityData(org)
 	ensureDefaultBusinessHours(org)
 	ensureDefaultDuplicateRules(org)
+	replaceStaleOrganizationRecords(org, orgID)
 	putSeedRecord(org, "Organization", Record{
 		ID:     orgID,
 		Object: "Organization",
@@ -1974,6 +1977,40 @@ func existingAutomatedProcessUserID(org OrgState) ID {
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	return ids[0]
+}
+
+// replaceStaleOrganizationRecords keeps the single Organization row in step
+// with the org ID. When a fixture changes the org ID, the row seeded under the
+// previous ID moves to the new one (keeping its field values) instead of
+// leaving a second Organization record behind.
+func replaceStaleOrganizationRecords(org *OrgState, orgID ID) {
+	object, ok := org.Objects["Organization"]
+	if !ok || len(object.Records) == 0 {
+		return
+	}
+	// Seed updates must not mutate records shared with runtime snapshots.
+	if object.RecordsShared || object.IndexesShared {
+		EnsureMutableObjectRecords(org, "Organization")
+		object = org.Objects["Organization"]
+	}
+	_, current := object.Records[orgID]
+	changed := false
+	for id, record := range object.Records {
+		if id == orgID {
+			continue
+		}
+		if !current {
+			moved := record.Clone()
+			moved.ID = orgID
+			object.PutRecord(orgID, moved)
+			current = true
+		}
+		object.DeleteRecord(id)
+		changed = true
+	}
+	if changed {
+		org.Objects["Organization"] = object
+	}
 }
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {
