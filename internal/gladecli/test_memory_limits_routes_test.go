@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"testing"
@@ -50,6 +51,19 @@ func TestRunTestMemoryLimitsWarmDiskCacheRoute(t *testing.T) {
 }
 
 func TestRunTestMemoryLimitsParallelMethodAndClassRoutes(t *testing.T) {
+	// Two tests in flight is a structural contract of this route, not a
+	// timing one: apextest caps simultaneous test execution owners at
+	// runtime.GOMAXPROCS(0) (TestClassWorkersRespectExecutionWidth defends
+	// that cap), so with one processor the runner finishes each test before
+	// starting the next and no barrier the test bodies could reach would
+	// observe overlap. The route therefore needs two processors. Normal CI
+	// lanes supply GOMAXPROCS=2; the early race route spends its single
+	// processor on instrumentation, so it reports the shortfall below
+	// instead of narrowing the overlap assertion in
+	// runMemoryLimitProjectRoute.
+	if runtime.GOMAXPROCS(0) < 2 {
+		t.Skip("the parallel route needs two processors for two tests in flight; testExecutionParallelism caps execution owners to GOMAXPROCS")
+	}
 	for _, policy := range testMemoryLimitPolicies {
 		t.Run(policy.name, func(t *testing.T) {
 			for _, api := range []string{"62.0", "67.0"} {
