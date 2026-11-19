@@ -33,6 +33,10 @@ var standardFeatureDescribeCache struct {
 	// standardFeatureDescribeName first and almost always misses, so the miss
 	// path must not iterate a map or allocate (v0.3.5 b5b9features perf).
 	canonical []string
+	// Lowercase object name to canonical FieldVersions key. The sema
+	// field-access path resolves versioned objects on every field reference,
+	// so the lookup must not scan the FieldVersions map (auth-flow rows).
+	versionedNames map[string]string
 }
 
 func loadStandardFeatureDescribes() *standardFeatureDescribeBundle {
@@ -57,6 +61,10 @@ func loadStandardFeatureDescribes() *standardFeatureDescribeBundle {
 			standardFeatureDescribeCache.canonical = append(standardFeatureDescribeCache.canonical, name)
 		}
 		sort.Strings(standardFeatureDescribeCache.canonical)
+		standardFeatureDescribeCache.versionedNames = make(map[string]string, len(standardFeatureDescribeCache.bundle.FieldVersions))
+		for name := range standardFeatureDescribeCache.bundle.FieldVersions {
+			standardFeatureDescribeCache.versionedNames[strings.ToLower(name)] = name
+		}
 	})
 	return &standardFeatureDescribeCache.bundle
 }
@@ -111,13 +119,9 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 // captured per-API field versions. Most are feature-profile describes, but the
 // version matrix also covers standard catalog objects that no profile owns.
 func standardFeatureVersionedObjectName(object string) (string, bool) {
-	bundle := loadStandardFeatureDescribes()
-	for name := range bundle.FieldVersions {
-		if strings.EqualFold(name, object) {
-			return name, true
-		}
-	}
-	return "", false
+	loadStandardFeatureDescribes()
+	name, ok := standardFeatureDescribeCache.versionedNames[strings.ToLower(object)]
+	return name, ok
 }
 
 // StandardFeatureFieldVersion reports captured source-version membership for
