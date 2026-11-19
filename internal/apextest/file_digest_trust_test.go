@@ -234,7 +234,7 @@ func TestValidatorsDetectEditAfterTrustedPass(t *testing.T) {
 	check := func() map[string]error {
 		return map[string]error{
 			"raw generation": cache.validateCapturedSourceGenerationRaw(),
-			"metadata input": validateApexMetadataInput(meta, expectedMeta),
+			"metadata input": validateApexMetadataInput(meta, expectedMeta, nil),
 		}
 	}
 	reads := countReads(t, source)
@@ -264,7 +264,7 @@ func TestValidatorsDetectEditAfterTrustedPass(t *testing.T) {
 	if err := os.WriteFile(meta, []byte("<ApexClass><apiVersion>66.0</apiVersion></ApexClass>"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := validateApexMetadataInput(meta, expectedMeta); err == nil {
+	if err := validateApexMetadataInput(meta, expectedMeta, nil); err == nil {
 		t.Fatal("metadata validation accepted an edited companion")
 	}
 }
