@@ -9,19 +9,24 @@ import (
 )
 
 type generation struct {
-	index              typesys.Index
-	artifacts          *typesys.BuildArtifacts
-	overlay            *typesys.SourceOverlay
-	baseSeq            uint64
-	seq                uint64
-	analyzer           func(typesys.Index) sema.Result
-	analysisOnce       sync.Once
-	analysisStart      sync.Once
-	analysisDone       chan struct{}
-	analysis           sema.Result
-	abandoned          atomic.Bool // superseded before its overlay analysis ran
-	occurrenceOnce     sync.Once
-	occurrences        occurrenceIndex
+	index          typesys.Index
+	artifacts      *typesys.BuildArtifacts
+	overlay        *typesys.SourceOverlay
+	baseSeq        uint64
+	seq            uint64
+	analyzer       func(typesys.Index) sema.Result
+	analysisOnce   sync.Once
+	analysisStart  sync.Once
+	analysisDone   chan struct{}
+	analysis       sema.Result
+	abandoned      atomic.Bool // superseded before its overlay analysis ran
+	occurrenceOnce sync.Once
+	occurrences    occurrenceIndex
+	// names is the symbol name index: case-folded declaration names mapped to
+	// their locations in symbol scan order. Built once per generation; a
+	// generation installed after a symbol-table change starts empty.
+	nameOnce           sync.Once
+	names              map[string][]Location
 	completionCatalogs [3]struct {
 		once  sync.Once
 		items []CompletionItem

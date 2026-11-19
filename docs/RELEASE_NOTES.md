@@ -10,6 +10,10 @@
 
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
 
+### Performance
+
+- **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
+
 ## v0.3.12
 
 v0.3.12 adds captured behavior for feature-enabled scratch orgs, API 68.0 (Winter '27) Apex and the local LWC shell, test-runner surfaces, code coverage, `hashCode`, dates before 1583, typed flow merges, default query order, regular expressions, and standard and custom duplicate matching. Permission sets assigned to the running user inside a test now behave as in Salesforce, `@TestSetup` runs the async work it enqueues, and numeric results match on macOS arm64 and Linux amd64.
