@@ -2281,6 +2281,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 				fieldPath = receiverType + expr.Name[dot:]
 				fieldReceiver = receiverType
 				fieldName := expr.Name[dot+1:]
+				if a.capturedCustomFieldUnavailable(receiverType, fieldName, scope.anonymous, model) {
+					return []diagnostic.Diagnostic{semaHTTPDiagnostic(typ, "Variable does not exist: "+fieldName, bodyOffset+pos, bodyOffset+pos+len(expr.Name), source)}
+				}
 				visible, captured := storage.StandardFeatureFieldVersion(receiverType, fieldName, typ.EffectiveAPIVersion)
 				versionHidden := captured && !visible
 				namedHidden := scope.anonymous && storage.StandardFeatureNamedOnlyField(receiverType, fieldName)
@@ -2456,6 +2459,34 @@ func (a *Analyzer) explicitFeatureFieldDeclared(objectName, fieldName string) bo
 	return false
 }
 
+// Captured custom-field routes distinguish declared custom fields from
+// missing ones on feature-isolated objects. Anonymous Apex rejects every
+// captured custom field; named source accepts local declarations and rejects
+// missing ones. Uncaptured custom fields keep the partial-schema behavior of
+// an org the local project does not describe.
+func (a *Analyzer) capturedCustomFieldUnavailable(objectName, fieldName string, anonymous bool, model *semaTypeMemberView) bool {
+	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") || semaProjectTypeShadowsPlatform(model, objectName) {
+		return false
+	}
+	// Package-qualified custom fields were not captured and can belong to an
+	// unavailable dependency; retain their existing partial-schema handling.
+	if strings.Contains(strings.TrimSuffix(strings.ToLower(fieldName), "__c"), "__") {
+		return false
+	}
+	anonymousAccepted, _, captured := storage.StandardFeatureCustomFieldRoute(objectName, fieldName)
+	if !captured {
+		return false
+	}
+	if anonymous {
+		return !anonymousAccepted
+	}
+	if a.explicitFeatureFieldDeclared(objectName, fieldName) {
+		return false
+	}
+	_, found := semaResolveField(model, objectName, fieldName, make(map[string]bool))
+	return !found
+}
+
 func semaSchemaDescribeShorthandType(expr ir.Expr, scope irSemaScope, model *semaTypeMemberView) string {
 	if expr.Kind != ir.ExprVariable {
 		return ""
@@ -2522,6 +2553,9 @@ func (a *Analyzer) checkIRAssignmentTarget(typ typesys.TypeSymbol, member typesy
 				item := semaFieldAccessDiagnostic(typ, member, name, message, bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)
 				item.NativeMessage = message
 				return []diagnostic.Diagnostic{item}
+			}
+			if a.capturedCustomFieldUnavailable(receiverType, field, scope.anonymous, model) {
+				return []diagnostic.Diagnostic{semaFieldAccessDiagnostic(typ, member, name, "Variable does not exist: "+field, bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
 			}
 			visible, captured := storage.StandardFeatureFieldVersion(receiverType, field, typ.EffectiveAPIVersion)
 			namedHidden := scope.anonymous && storage.StandardFeatureNamedOnlyField(receiverType, field)

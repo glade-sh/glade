@@ -8,6 +8,8 @@
 
 - Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
 
+- Messaging session campaign fields now follow the captured API version and package-qualified field routes in describe, compile, query and REST describe.
+
 ### Apex
 
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.

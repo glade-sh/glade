@@ -1,0 +1,25 @@
+api	case	result	problem
+62.0	MissingA	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: SyntheticMissing__c"
+62.0	MissingB	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: SyntheticAbsent__c"
+62.0	MissingStd	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: [id]"
+62.0	Declared	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: OwnedProbe__c"
+67.0	MissingA	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: SyntheticMissing__c"
+67.0	MissingB	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: SyntheticAbsent__c"
+67.0	MissingStd	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: [id]"
+67.0	Declared	reject	"Compilation failed at Ln 1, Col 46 with the error:
+
+Variable does not exist: OwnedProbe__c"

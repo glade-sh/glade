@@ -10,8 +10,8 @@ import (
 	"sync"
 )
 
-// Generated from the owned feature-profile capture packet; regenerate with
-// scripts/generate-standard-feature-describes.py.
+// Generated from the owned feature-profile and messaging campaign presence
+// capture packets; regenerate with scripts/generate-standard-feature-describes.py.
 //
 //go:embed standard_feature_describes.json.gz
 var standardFeatureDescribeData []byte
@@ -22,6 +22,9 @@ type standardFeatureDescribeBundle struct {
 	FieldVersions      map[string]map[string]map[string]bool `json:"fieldVersions"`
 	NamedOnly          map[string][]string                   `json:"namedOnly"`
 	NamedQueryVersions map[string]map[string]map[string]bool `json:"namedQueryVersions"`
+	QueryVersions      map[string]map[string]map[string]bool `json:"queryVersions"`
+	DescribeFacets     map[string][]standardDescribeField    `json:"describeFacets"`
+	CustomFieldRoutes  map[string]map[string]map[string]bool `json:"customFieldRoutes"`
 }
 
 var standardFeatureDescribeCache struct {
@@ -112,23 +115,90 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 // fields or API versions, which retain the ordinary catalog behavior.
 func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 	bundle := loadStandardFeatureDescribes()
-	name, ok := standardFeatureDescribeName(object)
-	if !ok {
-		return false, false
-	}
-	for key, versions := range bundle.FieldVersions[name] {
-		if strings.EqualFold(key, field) {
-			value, found := versions[api]
-			return value, found
+	object = strings.TrimSpace(object)
+	for name, fields := range bundle.FieldVersions {
+		if !strings.EqualFold(name, object) {
+			continue
 		}
+		for key, versions := range fields {
+			if strings.EqualFold(key, field) {
+				value, found := versions[api]
+				return value, found
+			}
+		}
+		return false, false
 	}
 	return false, false
 }
 
+// StandardFeatureHasVersionedFields reports whether any per-API field
+// membership was captured for the object.
 func StandardFeatureHasVersionedFields(object string) bool {
 	bundle := loadStandardFeatureDescribes()
-	name, ok := standardFeatureDescribeName(object)
-	return ok && len(bundle.FieldVersions[name]) > 0
+	object = strings.TrimSpace(object)
+	for name, fields := range bundle.FieldVersions {
+		if strings.EqualFold(name, object) {
+			return len(fields) > 0
+		}
+	}
+	return false
+}
+
+// StandardFeatureQueryVersion reports captured dynamic-query membership for
+// versioned feature fields. The second value is false for unmeasured fields
+// or API versions, which retain the source-access visibility.
+func StandardFeatureQueryVersion(object, field, api string) (bool, bool) {
+	bundle := loadStandardFeatureDescribes()
+	object = strings.TrimSpace(object)
+	for name, fields := range bundle.QueryVersions {
+		if !strings.EqualFold(name, object) {
+			continue
+		}
+		for key, versions := range fields {
+			if strings.EqualFold(key, field) {
+				value, found := versions[api]
+				return value, found
+			}
+		}
+		return false, false
+	}
+	return false, false
+}
+
+// StandardFeatureCustomFieldRoute reports the captured compile routes for a
+// custom field on a feature-isolated object. anonymous is the captured
+// anonymous-route acceptance and named the captured named-source acceptance
+// under the capture's own deployment: accepted routes referenced deployed
+// fields, rejected ones missing fields. The third value is false when no
+// route was captured; such fields keep the ordinary partial-schema behavior.
+func StandardFeatureCustomFieldRoute(object, field string) (anonymous, named, captured bool) {
+	bundle := loadStandardFeatureDescribes()
+	object = strings.TrimSpace(object)
+	for name, fields := range bundle.CustomFieldRoutes {
+		if !strings.EqualFold(name, object) {
+			continue
+		}
+		for key, routes := range fields {
+			if strings.EqualFold(key, field) {
+				return routes["anonymous"], routes["named"], true
+			}
+		}
+		return false, false, false
+	}
+	return false, false, false
+}
+
+// standardFeatureDescribeFacets returns the captured describe facets for
+// fields whose object describe is not part of the feature packet.
+func standardFeatureDescribeFacets(object string) []standardDescribeField {
+	bundle := loadStandardFeatureDescribes()
+	object = strings.TrimSpace(object)
+	for name, facets := range bundle.DescribeFacets {
+		if strings.EqualFold(name, object) {
+			return facets
+		}
+	}
+	return nil
 }
 
 // StandardFeatureNamedOnlyField identifies fields observed in named Apex but
