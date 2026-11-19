@@ -101,3 +101,116 @@ func TestCIRaceProvisioningRetainsTestAndEvidenceRoutes(t *testing.T) {
 		}
 	}
 }
+
+// TestCIRaceProvisioningRoutesCoverDeclaredCapabilities pins the generic race
+// route's declared prerequisites. Scheduled run 44158211531 stopped two routes
+// before their intended assertions ran: ./internal/lwc's
+// TestStandardFieldPolicyConfiguredLWCSchemaImportRoutes failed with "no glade
+// checkout with LWC toolchain found" because the Node compiler it drives
+// resolves the toolchain through gladehome root validation, which requires
+// third_party/lwc/node_modules/@lwc/compiler; and ./internal/lwcruntime's
+// TestBrowserRuntimeSuite reported "could not find glade source checkout", the
+// same missing compiler surfaced through compile.FindRepoRoot, while its
+// Playwright suite also needs the lwcruntime dependencies and Chromium. Every
+// package whose tests consume a capability must appear in that capability's
+// route selector, and browser setup must stay off the pure-Go routes.
+func TestCIRaceProvisioningRoutesCoverDeclaredCapabilities(t *testing.T) {
+	var workflow struct {
+		Jobs map[string]struct {
+			Steps []struct{ Name, Run, If, Uses string }
+		}
+	}
+	if err := yaml.Unmarshal([]byte(readWorkflowFile(t, "race.yml")), &workflow); err != nil {
+		t.Fatal(err)
+	}
+	race := workflow.Jobs["race"]
+	if len(race.Steps) == 0 {
+		t.Fatal("race workflow lost its generic job steps")
+	}
+	routeSelector := func(packages []string) string {
+		return `contains(fromJSON('["` + strings.Join(packages, `","`) + `"]'), matrix.package)`
+	}
+	// The declared LWC compiler toolchain consumers. internal/lwc drives the
+	// vendored Node compiler from TestStandardFieldPolicyConfiguredLWCSchemaImportRoutes,
+	// and internal/lwcruntime's TestBrowserRuntimeSuite resolves the same
+	// compiler through compile.FindRepoRoot before it can run.
+	compilerPackages := []string{
+		"./internal/gladehome",
+		"./internal/lwc",
+		"./internal/lwcbrowser",
+		"./internal/lwcruntime",
+		"./internal/server",
+	}
+	// The declared browser conformance consumers: Playwright rows and Chromium.
+	// Pure-Go routes (storage, vm, soql, dml and the rest of the generic
+	// matrix) must stay out of this selector.
+	browserPackages := []string{
+		"./internal/lwcbrowser",
+		"./internal/lwcruntime",
+		"./internal/server",
+	}
+	for _, route := range []struct {
+		name     string
+		selector string
+		steps    []string
+	}{
+		{
+			name:     "LWC compiler toolchain",
+			selector: routeSelector(compilerPackages),
+			steps: []string{
+				"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+				"Resolve npm cache path",
+				"Restore LWC npm cache",
+				"Install LWC toolchain",
+			},
+		},
+		{
+			name:     "browser conformance runtime",
+			selector: routeSelector(browserPackages),
+			steps: []string{
+				"Install browser conformance dependencies",
+				"Install conformance Chromium",
+			},
+		},
+	} {
+		wantIf := "${{ " + route.selector + " }}"
+		for _, identity := range route.steps {
+			var found *struct{ Name, Run, If, Uses string }
+			for i := range race.Steps {
+				if race.Steps[i].Name == identity || race.Steps[i].Uses == identity {
+					found = &race.Steps[i]
+					break
+				}
+			}
+			if found == nil {
+				t.Errorf("%s: race job lost its %q prerequisite step", route.name, identity)
+				continue
+			}
+			if found.If != wantIf {
+				t.Errorf("%s: %q must use the exact consumer selector %s, got %q", route.name, identity, wantIf, found.If)
+			}
+		}
+	}
+	// Browser routes serve the compiled runtime, so every browser consumer
+	// must also select the LWC compiler toolchain route.
+	compilerSet := make(map[string]bool, len(compilerPackages))
+	for _, consumer := range compilerPackages {
+		compilerSet[consumer] = true
+	}
+	for _, consumer := range browserPackages {
+		if !compilerSet[consumer] {
+			t.Errorf("browser consumer %s must also select the LWC compiler toolchain route", consumer)
+		}
+	}
+	// The two routes blocked in the scheduled run must stay provisioned.
+	if !compilerSet["./internal/lwc"] || !compilerSet["./internal/lwcruntime"] {
+		t.Error("the LWC compiler and runtime race routes lost their toolchain provisioning")
+	}
+	browserSet := make(map[string]bool, len(browserPackages))
+	for _, consumer := range browserPackages {
+		browserSet[consumer] = true
+	}
+	if !browserSet["./internal/lwcruntime"] {
+		t.Error("the lwcruntime browser race route lost its browser provisioning")
+	}
+}
