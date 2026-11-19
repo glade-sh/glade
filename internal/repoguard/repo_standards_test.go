@@ -1,15 +1,23 @@
 package repoguard
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"regexp/syntax"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -32,10 +40,10 @@ type repoScanSnapshot struct {
 	byRel map[string]repoScanFile
 }
 
-type repoScanCache struct {
+type repoScanCache[T any] struct {
 	once  sync.Once
-	build func() (repoScanSnapshot, error)
-	value repoScanSnapshot
+	build func() (T, error)
+	value T
 	err   error
 }
 
@@ -45,7 +53,7 @@ type repoScanBuilder struct {
 	readFile  func(string) ([]byte, error)
 }
 
-func (cache *repoScanCache) snapshot() (repoScanSnapshot, error) {
+func (cache *repoScanCache[T]) snapshot() (T, error) {
 	cache.once.Do(func() {
 		cache.value, cache.err = cache.build()
 	})
@@ -54,7 +62,7 @@ func (cache *repoScanCache) snapshot() (repoScanSnapshot, error) {
 
 var canonicalRepoRoot = repositoryRootPath()
 
-var canonicalRepoScan = repoScanCache{build: func() (repoScanSnapshot, error) {
+var canonicalRepoScan = repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 	return buildRepoScan(canonicalRepoRoot)
 }}
 
@@ -594,6 +602,498 @@ func readRepoFile(t *testing.T, root, rel string) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+// publicAssetDecoder expands one tracked file into the bounded text members
+// both public-data rulesets inspect. scanPublicAsset is the product decoder;
+// tests substitute a counting decoder to prove the members are decoded once
+// per file, not once per guard.
+type publicAssetDecoder func(rel, text string, visit func(member, text string)) error
+
+// publicScanFinding is one redacted finding against a decoded member: the
+// archive-member label, the line inside that member and the finding category.
+// The matched text itself is never stored or reported.
+type publicScanFinding struct {
+	member string
+	line   int
+	kind   string
+}
+
+// publicScanFile holds both public-data rulesets' findings for one tracked
+// file, plus the asset-decode error both guards report. The release guard
+// scans every tracked file, private capture artifacts included; the campaign
+// guard skips those files entirely, so they carry no campaign findings.
+type publicScanFile struct {
+	rel            string
+	privateCapture bool
+	campaignPath   []string // findings against the file's own path
+	release        []publicScanFinding
+	campaign       []publicScanFinding
+	err            error
+}
+
+// scanTrackedFileForPublicData scans one tracked file for both public-data
+// rulesets. One decode feeds both rulesets; each member is normalized once
+// and dropped after both matchers run, so no expanded payload is retained.
+func scanTrackedFileForPublicData(file repoScanFile, names *campaignNameMatch, decode publicAssetDecoder) publicScanFile {
+	entry := publicScanFile{rel: file.rel, privateCapture: privateCaptureArtifact(file.rel)}
+	if !entry.privateCapture {
+		for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
+			entry.campaignPath = append(entry.campaignPath, finding.kind)
+		}
+	}
+	entry.err = decode(file.rel, file.text, func(member, text string) {
+		text = normalizePublicText(text)
+		for _, finding := range publicDataFindingsNormalized(file.rel, text) {
+			entry.release = append(entry.release, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+		}
+		if !entry.privateCapture {
+			for _, finding := range publicCampaignFindingsNormalized(names, file.rel, text) {
+				entry.campaign = append(entry.campaign, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+			}
+		}
+	})
+	return entry
+}
+
+// scanTrackedFilesForPublicData runs both public-data rulesets over one
+// decode of every tracked file: each bounded member is decoded once,
+// normalized once, and fed to the release and campaign matchers together.
+// Decoded members are visited and dropped, never retained.
+func scanTrackedFilesForPublicData(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder) []publicScanFile {
+	scans := make([]publicScanFile, 0, len(files))
+	for _, file := range files {
+		scans = append(scans, scanTrackedFileForPublicData(file, names, decode))
+	}
+	return scans
+}
+
+// publicScanRulesetInput is one hashed source that pins the public-data
+// scan's ruleset version: a repository-relative guard source and its bytes.
+type publicScanRulesetInput struct {
+	rel  string
+	data string
+}
+
+// publicScanRulesetVersion derives the record store's ruleset version from
+// the bytes that decide what the public-data scan reports: the guard
+// package's own Go sources, where the release rules, the campaign rules
+// and name tables, the normalizers and the asset decoder all live, plus
+// the Go toolchain running them. A rule, matcher, normalizer, table or
+// decoder edit therefore moves the version, so stored records cannot
+// suppress the edited ruleset's findings; a manual constant left the
+// same hole whenever someone forgot to bump it. Sources are hashed in
+// path order, so the version is stable across runs and checkouts while
+// input order cannot flap the store cold.
+func publicScanRulesetVersion(inputs []publicScanRulesetInput, goVersion string) string {
+	ordered := slices.Clone(inputs)
+	slices.SortFunc(ordered, func(left, right publicScanRulesetInput) int {
+		return strings.Compare(left.rel, right.rel)
+	})
+	digest := sha256.New()
+	for _, input := range ordered {
+		_, _ = fmt.Fprintf(digest, "%s\x00%d\x00", input.rel, len(input.data))
+		_, _ = io.WriteString(digest, input.data)
+	}
+	_, _ = io.WriteString(digest, goVersion)
+	return hex.EncodeToString(digest.Sum(nil))
+}
+
+// publicScanRulesetInputs reads the hashed sources from the repository
+// checkout at test time: every Go file of this guard package in its own
+// bytes, rules, matchers, normalizers, tables and the product asset
+// decoder included, plus the running Go toolchain. An unavailable guard
+// package fails the run instead of deriving a version that cannot see
+// the rules it guards with. Tests swap this seam to pin synthetic
+// inputs.
+var publicScanRulesetInputs = func() ([]publicScanRulesetInput, string) {
+	dir := filepath.Join(canonicalRepoRoot, "internal", "repoguard")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		panic("repoguard package sources unavailable: " + err.Error())
+	}
+	var inputs []publicScanRulesetInput
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			panic("repoguard package source unreadable: " + err.Error())
+		}
+		inputs = append(inputs, publicScanRulesetInput{rel: "internal/repoguard/" + entry.Name(), data: string(data)})
+	}
+	if len(inputs) == 0 {
+		panic("repoguard package has no Go sources to version")
+	}
+	return inputs, runtime.Version()
+}
+
+// currentPublicScanRulesetVersion derives the ruleset version the canonical
+// scan keys its records on.
+func currentPublicScanRulesetVersion() string {
+	inputs, goVersion := publicScanRulesetInputs()
+	return publicScanRulesetVersion(inputs, goVersion)
+}
+
+// scanTrackedFilesForPublicDataCached scans every tracked file whose
+// (ruleset version, path, blob) has no stored record and reuses the stored
+// records for the rest, so unchanged files are not rescanned across runs.
+// Files without records are scanned on a bounded worker pool; each worker
+// owns a campaign matcher clone, so the shared name tables are read-only to
+// the pool and no lock sits on the scan's hot path.
+func scanTrackedFilesForPublicDataCached(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder, cache *publicScanBlobCache, workers int) []publicScanFile {
+	scans := make([]publicScanFile, len(files))
+	blobs := make([]string, len(files))
+	pending := make([]int, 0, len(files))
+	for index, file := range files {
+		blobs[index] = gitBlobHash(file.text)
+		key := publicScanCacheKey(cache.version, file.rel, blobs[index])
+		cache.live[key] = true
+		if record, ok := cache.records[key]; ok {
+			scans[index] = publicScanFileFromRecord(file.rel, record)
+			continue
+		}
+		pending = append(pending, index)
+	}
+	if len(pending) == 0 {
+		return scans
+	}
+	if workers > len(pending) {
+		workers = len(pending)
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	jobs := make(chan int, len(pending))
+	for _, index := range pending {
+		jobs <- index
+	}
+	close(jobs)
+	var group sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			workerNames := names.clone()
+			for index := range jobs {
+				scans[index] = scanTrackedFileForPublicData(files[index], workerNames, decode)
+			}
+		}()
+	}
+	group.Wait()
+	// Records land after the pool drains: every scan slot is written by one
+	// worker only, and the shared map is touched from this goroutine alone.
+	for _, index := range pending {
+		cache.records[publicScanCacheKey(cache.version, files[index].rel, blobs[index])] = publicScanFileRecord(scans[index])
+	}
+	return scans
+}
+
+// publicScanFindingRecord is the stored form of one redacted finding: the
+// archive-member label, the line inside that member and the finding category.
+// The matched text itself is never stored.
+type publicScanFindingRecord struct {
+	Member string `json:"member"`
+	Line   int    `json:"line"`
+	Kind   string `json:"kind"`
+}
+
+// publicScanCacheRecord is one tracked file's findings for both public-data
+// rulesets. Decode failures are stored too, so a corrupt asset still fails
+// its guard on a warm run.
+type publicScanCacheRecord struct {
+	CampaignPath []string                  `json:"campaignPath,omitempty"`
+	Release      []publicScanFindingRecord `json:"release,omitempty"`
+	Campaign     []publicScanFindingRecord `json:"campaign,omitempty"`
+	Err          string                    `json:"err,omitempty"`
+}
+
+// publicScanBlobCache holds one ruleset version's per-blob records, keyed
+// by path and blob hash so unchanged files are not rescanned across runs.
+type publicScanBlobCache struct {
+	version string
+	dir     string
+	path    string
+	records map[string]publicScanCacheRecord
+	live    map[string]bool
+}
+
+// loadPublicScanBlobCache reads one ruleset version's stored records. A
+// missing or corrupt store starts empty, so a run falls back to scanning
+// every file again.
+func loadPublicScanBlobCache(dir, version string) *publicScanBlobCache {
+	cache := &publicScanBlobCache{version: version, dir: dir, records: map[string]publicScanCacheRecord{}, live: map[string]bool{}}
+	if dir == "" {
+		return cache
+	}
+	cache.path = filepath.Join(dir, fmt.Sprintf("repoguard-public-scan-v%s.json", version))
+	data, err := os.ReadFile(cache.path)
+	if err != nil {
+		return cache
+	}
+	var records map[string]publicScanCacheRecord
+	if err := json.Unmarshal(data, &records); err != nil {
+		return cache
+	}
+	if records != nil {
+		cache.records = records
+	}
+	return cache
+}
+
+// save stores the version's records for the next run: only the files this
+// run scanned are kept, so records for deleted files do not accumulate, and
+// the write lands through one atomic rename so a concurrent reader never
+// sees a partial store. Failures are ignored: the records are an
+// optimization, and a run that cannot store them scans in full next time.
+func (cache *publicScanBlobCache) save() {
+	if cache.path == "" {
+		return
+	}
+	records := make(map[string]publicScanCacheRecord, len(cache.live))
+	for key := range cache.live {
+		if record, ok := cache.records[key]; ok {
+			records[key] = record
+		}
+	}
+	data, err := json.Marshal(records)
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(filepath.Dir(cache.path), 0o755); err != nil {
+		return
+	}
+	temp, err := os.CreateTemp(filepath.Dir(cache.path), ".repoguard-public-scan-*")
+	if err != nil {
+		return
+	}
+	tempName := temp.Name()
+	if _, err := temp.Write(data); err != nil || temp.Close() != nil {
+		os.Remove(tempName)
+		return
+	}
+	if err := os.Rename(tempName, cache.path); err != nil {
+		os.Remove(tempName)
+		return
+	}
+	// One version's store is authoritative; a bump retires the old file
+	// instead of leaving it to grow stale in the cache directory.
+	if stale, err := filepath.Glob(filepath.Join(cache.dir, "repoguard-public-scan-v*.json")); err == nil {
+		for _, path := range stale {
+			if path != cache.path {
+				os.Remove(path)
+			}
+		}
+	}
+}
+
+// publicScanCacheKey identifies one tracked file's records: the ruleset
+// version, the tracked path and the git blob hash of the file's content.
+// Both rulesets read the path, and the blob hash fixes the content, so a
+// ruleset change or a content change can never reuse stored records.
+func publicScanCacheKey(version, rel, blob string) string {
+	return version + "\x00" + rel + "\x00" + blob
+}
+
+// gitBlobHash returns the git blob hash of data: SHA-1 over git's blob header
+// and payload. Unchanged content keeps its hash across runs and checkouts,
+// and changed content hashes differently, which is what keys the records.
+func gitBlobHash(data string) string {
+	digest := sha1.New()
+	_, _ = fmt.Fprintf(digest, "blob %d\x00", len(data))
+	_, _ = io.WriteString(digest, data)
+	return hex.EncodeToString(digest.Sum(nil))
+}
+
+// publicScanFileRecord stores one file's scan for the next run.
+func publicScanFileRecord(scan publicScanFile) publicScanCacheRecord {
+	var record publicScanCacheRecord
+	record.CampaignPath = append([]string(nil), scan.campaignPath...)
+	for _, finding := range scan.release {
+		record.Release = append(record.Release, publicScanFindingRecord{Member: finding.member, Line: finding.line, Kind: finding.kind})
+	}
+	for _, finding := range scan.campaign {
+		record.Campaign = append(record.Campaign, publicScanFindingRecord{Member: finding.member, Line: finding.line, Kind: finding.kind})
+	}
+	if scan.err != nil {
+		record.Err = scan.err.Error()
+	}
+	return record
+}
+
+// publicScanFileFromRecord rebuilds one file's scan from stored records. The
+// private-capture flag follows the path alone, so it is recomputed here.
+func publicScanFileFromRecord(rel string, record publicScanCacheRecord) publicScanFile {
+	scan := publicScanFile{
+		rel:            rel,
+		privateCapture: privateCaptureArtifact(rel),
+		campaignPath:   append([]string(nil), record.CampaignPath...),
+	}
+	for _, finding := range record.Release {
+		scan.release = append(scan.release, publicScanFinding{member: finding.Member, line: finding.Line, kind: finding.Kind})
+	}
+	for _, finding := range record.Campaign {
+		scan.campaign = append(scan.campaign, publicScanFinding{member: finding.Member, line: finding.Line, kind: finding.Kind})
+	}
+	if record.Err != "" {
+		scan.err = errors.New(record.Err)
+	}
+	return scan
+}
+
+// publicScanCacheDir returns the directory holding the per-blob scan records:
+// under the Go build cache, which the CI lanes already persist, and whose
+// default location the user cache dir reconstructs when GOCACHE is unset. An
+// unavailable cache location yields an empty directory, which disables
+// storing and falls back to full scans. Tests pass their own directories.
+func publicScanCacheDir() string {
+	if dir := os.Getenv("GOCACHE"); dir != "" {
+		return filepath.Join(dir, "glade-repoguard")
+	}
+	base, err := os.UserCacheDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(base, "go-build", "glade-repoguard")
+}
+
+// publicScanWorkerBound caps the scan pool: workers follow GOMAXPROCS so the
+// guard stays a fair neighbor on shared CI runners, and never exceed eight so
+// a generous core count cannot balloon transient member memory.
+func publicScanWorkerBound() int {
+	workers := runtime.GOMAXPROCS(0)
+	if workers > 8 {
+		workers = 8
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	return workers
+}
+
+// canonicalPublicDataScan scans the canonical tracked-file snapshot once for
+// both public-data guards, extending the snapshot cache the text guards
+// already share, and stores each file's findings under its git blob hash so
+// the next run scans only what changed. The release guard reads every scan
+// entry; the campaign guard skips the private capture files the release guard
+// reports.
+var canonicalPublicDataScan = repoScanCache[[]publicScanFile]{build: func() ([]publicScanFile, error) {
+	snapshot, err := canonicalRepoScan.snapshot()
+	if err != nil {
+		return nil, err
+	}
+	cache := loadPublicScanBlobCache(publicScanCacheDir(), currentPublicScanRulesetVersion())
+	scans := scanTrackedFilesForPublicDataCached(snapshot.files, campaignNameMatcher(campaignNameTable), scanPublicAsset, cache, publicScanWorkerBound())
+	cache.save()
+	return scans, nil
+}}
+
+func publicDataScanFiles(t *testing.T) []publicScanFile {
+	t.Helper()
+	files, err := canonicalPublicDataScan.snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+// structuralRepoFileScan holds the structural repository guards' findings for
+// one working-tree Go file. The cookie-sink review scans every non-test Go
+// file in the tree; the record-write funnel scans the non-test Go files
+// under internal/ and cmd/ outside testdata, so recordScanned marks the
+// files whose parse errors fail the funnel.
+type structuralRepoFileScan struct {
+	rel           string
+	parseErr      error
+	cookieUses    []string
+	cookieSink    *cookieSinkFileScan
+	recordScanned bool
+	recordWrites  []string
+}
+
+// parseRepoGoFileForStructuralGuards parses one working-tree Go file for the
+// structural repository guards. Both guards inspect statements and
+// expressions only, so the shared parse skips object resolution; the browser
+// warmup guard, which reads Ident.Obj, keeps its own resolved parses.
+func parseRepoGoFileForStructuralGuards(positions *token.FileSet, path string) (*ast.File, error) {
+	return parser.ParseFile(positions, path, nil, parser.SkipObjectResolution)
+}
+
+// scanWorkingTreeGoFiles walks the working tree once for the structural
+// repository guards and parses each in-scope Go file through parse. The walk
+// itself skips only .git and node_modules; every other directory the guards'
+// walks skipped is decided per file by their scope rules.
+func scanWorkingTreeGoFiles(root string, parse func(positions *token.FileSet, path string) (*ast.File, error)) ([]structuralRepoFileScan, error) {
+	positions := token.NewFileSet()
+	var scans []structuralRepoFileScan
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			// Neither structural guard reads repository history or vendored
+			// dependencies; each guard's own scope rule handles every other
+			// skipped directory per file.
+			switch entry.Name() {
+			case ".git", "node_modules":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		rel = filepath.ToSlash(rel)
+		cookieScope := cookieSinkScope(rel)
+		recordScope := recordFunnelScope(rel)
+		if !cookieScope && !recordScope {
+			return nil
+		}
+		scan := structuralRepoFileScan{rel: rel, recordScanned: recordScope}
+		// One parse feeds both guards: the cookie-sink review inspects every
+		// use in its scope, and the record-write funnel inspects the files in
+		// its own scope from the same syntax tree.
+		file, parseErr := parse(positions, path)
+		scan.parseErr = parseErr
+		if file != nil {
+			if cookieScope {
+				scan.cookieUses, scan.cookieSink = cookieSinkScanFile(rel, file)
+			}
+			if recordScope {
+				for _, finding := range scanRecordWrites(positions, file) {
+					if recordsOwnerAllowed(rel, finding.recv) {
+						continue
+					}
+					scan.recordWrites = append(scan.recordWrites, fmt.Sprintf("%d: %s", finding.line, finding.what))
+				}
+			}
+		}
+		scans = append(scans, scan)
+		return nil
+	})
+	return scans, err
+}
+
+// canonicalStructuralScan parses the canonical working tree's in-scope Go
+// files once for the structural guards, cached like the tracked-file
+// snapshot. Planted fixtures call scanWorkingTreeGoFiles directly, so their
+// temporary roots stay uncached and successive edits remain observable.
+var canonicalStructuralScan = repoScanCache[[]structuralRepoFileScan]{build: func() ([]structuralRepoFileScan, error) {
+	return scanWorkingTreeGoFiles(canonicalRepoRoot, parseRepoGoFileForStructuralGuards)
+}}
+
+func structuralScanFiles(t *testing.T) []structuralRepoFileScan {
+	t.Helper()
+	files, err := canonicalStructuralScan.snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
 }
 
 func isHumanFacingExampleSurface(rel string) bool {
@@ -1264,7 +1764,7 @@ func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
 
 func TestRepoScanCacheSharesOneSnapshotAndError(t *testing.T) {
 	var builds atomic.Int32
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		builds.Add(1)
 		return repoScanSnapshot{files: []repoScanFile{{rel: "one.txt", text: "one"}}}, nil
 	}}
@@ -1294,7 +1794,7 @@ func TestRepoScanCacheSharesOneSnapshotAndError(t *testing.T) {
 func TestRepoScanCacheSharesBuildError(t *testing.T) {
 	want := errors.New("inventory unavailable")
 	var builds atomic.Int32
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		builds.Add(1)
 		return repoScanSnapshot{}, want
 	}}
@@ -1328,7 +1828,7 @@ func TestRepoScanCacheReadsEachTrackedBodyOnce(t *testing.T) {
 			return os.ReadFile(path)
 		},
 	}
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		return builder.scan(root)
 	}}
 	for call := 0; call < 4; call++ {
