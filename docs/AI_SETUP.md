@@ -161,6 +161,18 @@ pushes to `main` run these workflows:
 | `Repeat timing-sensitive tests` (`repeat.yml`) | Daily, dispatch | Reruns `scripts/ci-repeat-tests.txt` on Linux and macOS. |
 | `Release` (`release.yml`) | `v*` tags, dispatch | See [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md). |
 
+For pull requests the `CI` workflow runs the fast lane instead of the full
+suite: the `pr-tests` matrix runs only the packages `scripts/ci-pr-select.sh`
+selects, which are the changed packages plus every package that transitively
+imports them through production or test imports. A changed path inside the
+nested Apex parser module (`third_party/glade-apex-parser/**`) selects the
+root packages that import the parser and their consumers. A path outside
+every Go package, including the deleted files of a removed or renamed
+package, selects the full set, as do `go.mod` and `go.sum`; only `docs/**`
+and Markdown files outside `testdata` select nothing. The lane inventories in
+`scripts/ci-package-lanes.json` and `scripts/ci-race-push.json` name the
+packages the full lanes own.
+
 CodeQL has two profiles in one reusable workflow (`codeql.yml`). The fast
 profile runs in Security outside `Required CI`. The full profile runs in Security
 and as a release tag dependency. Analysis has a hard 300-second budget. When

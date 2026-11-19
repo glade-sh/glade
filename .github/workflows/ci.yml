@@ -1935,7 +1935,7 @@ jobs:
         run: |
           scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
-      - name: Select packages and direct importers
+      - name: Select packages and transitive importers
         id: select
         env:
           SHARD: ${{ matrix.shard }}
