@@ -30,7 +30,10 @@
     "vitepress": "2.0.0-alpha.17"
   },
   "overrides": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "source-map-js": "1.2.4",
+    "vite": "7.3.8",
+    "vue": "3.5.45"
   },
   "type": "module",
   "dependencies": {

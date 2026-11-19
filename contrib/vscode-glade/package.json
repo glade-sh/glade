@@ -735,7 +735,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.92.0",
-    "@vscode/vsce": "^3.9.2",
+    "@vscode/vsce": "4.1.1",
     "esbuild": "^0.28.1",
     "typescript": "^5.5.0"
   },
@@ -744,6 +744,7 @@
   },
   "overrides": {
     "form-data": "4.0.6",
-    "undici": "7.29.1"
+    "minimatch": "11.0.9",
+    "qs": "6.17.1"
   }
 }
