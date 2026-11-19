@@ -438,9 +438,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race explicit npm cache missing %q", marker)
 		}
 	}
-	const nodeConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
-	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
-	const browserConsumers = `contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	const nodeConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package)`
+	const lwcConsumers = `contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package)`
+	const browserConsumers = `contains(fromJSON('["./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package)`
 	for selector, want := range map[string]int{lwcConsumers: 4, browserConsumers: 2} {
 		if got := strings.Count(raceJob, selector); got != want {
 			t.Errorf("race consumer selector %q count = %d, want %d", selector, got, want)
