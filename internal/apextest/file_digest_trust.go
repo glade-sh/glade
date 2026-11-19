@@ -37,6 +37,15 @@ var (
 	fileDigestReadHook func(path string)
 )
 
+// SetFileDigestReadHookForTesting observes every physical read a source
+// digest validation performs. The returned function restores the previous
+// hook. Cross-package tests use it to prove per-request read counts.
+func SetFileDigestReadHookForTesting(hook func(path string)) func() {
+	previous := fileDigestReadHook
+	fileDigestReadHook = hook
+	return func() { fileDigestReadHook = previous }
+}
+
 func resetFileDigestTrust() {
 	fileDigestTrustMu.Lock()
 	clear(fileDigestTrust)
@@ -49,18 +58,23 @@ func resetFileDigestTrust() {
 // trustedCurrentFileDigest returns a previously hashed digest only while the
 // filesystem still reports the exact trusted file identity.
 func trustedCurrentFileDigest(path string) ([sha256.Size]byte, bool) {
+	digest, _, ok := trustedCurrentFileDigestStamped(path)
+	return digest, ok
+}
+
+// trustedCurrentFileDigestStamped also reports the trusted identity the
+// digest was reused under.
+func trustedCurrentFileDigestStamped(path string) (digest [sha256.Size]byte, stamp filestamp.Stamp, ok bool) {
 	fileDigestTrustMu.Lock()
 	entry, hit := fileDigestTrust[path]
 	fileDigestTrustMu.Unlock()
 	if !hit {
-		return [sha256.Size]byte{}, false
+		return [sha256.Size]byte{}, filestamp.Stamp{}, false
 	}
-	if stamp, ok := filestamp.Stat(path); ok {
-		if entry.stamp == stamp {
-			return entry.digest, true
-		}
+	if current, stamped := filestamp.Stat(path); stamped && entry.stamp == current {
+		return entry.digest, current, true
 	}
-	return [sha256.Size]byte{}, false
+	return [sha256.Size]byte{}, filestamp.Stamp{}, false
 }
 
 // oldTrustedVisualforceDigest combines the old-file check with the existing
@@ -106,12 +120,21 @@ func promoteRecentVisualforceInput(path string, stamp filestamp.Stamp, recent re
 // currentFileDigest returns the SHA-256 of the file's current content. A
 // matching trusted stamp avoids rereading; all other cases hash the file.
 func currentFileDigest(path string) ([sha256.Size]byte, error) {
-	if digest, ok := trustedCurrentFileDigest(path); ok {
-		return digest, nil
+	digest, err, _, _ := currentFileDigestStamped(path)
+	return digest, err
+}
+
+// currentFileDigestStamped also reports the stat stamp proven unchanged
+// across the read, so a request memo can reuse the digest while the same
+// stamp is still on disk. stamped is false when the read failed or the file
+// could not be proven unchanged; such a digest must never be memoized.
+func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.Stamp, bool) {
+	if trusted, stamp, ok := trustedCurrentFileDigestStamped(path); ok {
+		return trusted, nil, stamp, true
 	}
 	file, err := os.Open(path) // #nosec G304 -- indexed source or its fixed metadata companion.
 	if err != nil {
-		return [sha256.Size]byte{}, err
+		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
 	}
 	defer file.Close()
 	if fileDigestReadHook != nil {
@@ -121,12 +144,15 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 	before, beforeOK := filestamp.Fstat(file)
 	hash := sha256.New()
 	if _, err := filestamp.CopyPooled(hash, file); err != nil {
-		return [sha256.Size]byte{}, err
+		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
 	}
 	var digest [sha256.Size]byte
 	hash.Sum(digest[:0])
 	after, afterOK := filestamp.Fstat(file)
-	if beforeOK && afterOK && before == after && after.OlderThan(hashedAt, fileDigestTrustAge) {
+	if !beforeOK || !afterOK || before != after {
+		return digest, nil, filestamp.Stamp{}, false
+	}
+	if after.OlderThan(hashedAt, fileDigestTrustAge) {
 		fileDigestTrustMu.Lock()
 		if len(fileDigestTrust) >= fileDigestTrustMaxEntries {
 			clear(fileDigestTrust)
@@ -134,5 +160,48 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 		fileDigestTrust[path] = trustedFileDigest{stamp: after, digest: digest}
 		fileDigestTrustMu.Unlock()
 	}
-	return digest, nil
+	return digest, nil, after, true
+}
+
+// requestFileDigests remembers, for one request, the stat stamp and digest of
+// every source file already validated. Repeated validation boundaries inside
+// one request reuse the recorded digest while the stamp still matches, so a
+// racily clean file is read and hashed once per request instead of once per
+// boundary. A save between boundaries changes the stamp and forces a fresh
+// read, so mid-request edits are detected exactly as before, and entries
+// never outlive the request that recorded them.
+type requestFileDigests struct {
+	mu      sync.Mutex
+	entries map[string]requestFileDigestEntry
+}
+
+type requestFileDigestEntry struct {
+	stamp  filestamp.Stamp
+	digest [sha256.Size]byte
+}
+
+// digest returns the SHA-256 of path's current content, reusing this
+// request's earlier read while the file reports the same unchanged stamp.
+func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
+	if r == nil {
+		return currentFileDigest(path)
+	}
+	if stamp, ok := filestamp.Stat(path); ok {
+		r.mu.Lock()
+		entry, hit := r.entries[path]
+		r.mu.Unlock()
+		if hit && entry.stamp == stamp {
+			return entry.digest, nil
+		}
+	}
+	digest, err, stamp, stamped := currentFileDigestStamped(path)
+	if stamped && err == nil {
+		r.mu.Lock()
+		if r.entries == nil {
+			r.entries = make(map[string]requestFileDigestEntry)
+		}
+		r.entries[path] = requestFileDigestEntry{stamp: stamp, digest: digest}
+		r.mu.Unlock()
+	}
+	return digest, err
 }

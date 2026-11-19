@@ -856,7 +856,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, cacheSlot string, counters ...*runPerfCounters) ([]diagnostic.Diagnostic, error) {
 	validateGeneration := func() error {
 		if artifacts != nil {
-			return validateCapturedBuildGeneration(index, artifacts)
+			return validateCapturedBuildGeneration(index, artifacts, sources.requestDigests)
 		}
 		return validateRuntimeGeneration(sources)
 	}
@@ -1100,8 +1100,9 @@ func validateBuildArtifacts(index typesys.Index, artifacts *typesys.BuildArtifac
 // validateCapturedBuildGeneration validates all source and Apex metadata
 // inputs against an artifact snapshot. It is intentionally separate from the
 // compiler source cache: callers use it immediately before cache returns and
-// publications, while compilation consumes the captured arena bytes.
-func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.BuildArtifacts) error {
+// publications, while compilation consumes the captured arena bytes. request
+// memoizes the physical reads across one request's validation boundaries.
+func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.BuildArtifacts, request *requestFileDigests) error {
 	if artifacts == nil {
 		return nil
 	}
@@ -1121,14 +1122,14 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		actual, err := currentFileDigest(file)
+		actual, err := request.digest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
-		return validateApexMetadataInput(file+"-meta.xml", metadata)
+		return validateApexMetadataInput(file+"-meta.xml", metadata, request)
 	}
 	for _, typ := range index.Types {
 		if typ.HasSourceSnapshot() {
@@ -1151,8 +1152,8 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 	return nil
 }
 
-func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
-	actual, err := currentFileDigest(path)
+func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput, request *requestFileDigests) error {
+	actual, err := request.digest(path)
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
@@ -1790,7 +1791,7 @@ func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
 	return sources.sourceSnapshotError()
 }
 
-func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) error {
+func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, request *requestFileDigests) error {
 	if digests == nil {
 		return nil
 	}
@@ -1804,7 +1805,7 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		actual, err := currentFileDigest(file)
+		actual, err := request.digest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
@@ -1831,7 +1832,7 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 }
 
 func validateDigestGeneration(index typesys.Index, digests *typesys.SourceDigestSet) error {
-	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+	if err := validateRuntimeSourceDigests(index, digests, nil); err != nil {
 		return err
 	}
 	if digests == nil {
@@ -1845,7 +1846,7 @@ func validateDigestGeneration(index typesys.Index, digests *typesys.SourceDigest
 		if !ok {
 			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
 		}
-		if err := validateApexMetadataInput(typ.File+"-meta.xml", input); err != nil {
+		if err := validateApexMetadataInput(typ.File+"-meta.xml", input, nil); err != nil {
 			return err
 		}
 	}
@@ -1857,7 +1858,7 @@ func validateDigestGeneration(index typesys.Index, digests *typesys.SourceDigest
 		if !ok {
 			return incompleteSourceSnapshotError("missing Apex metadata input " + trigger.File + "-meta.xml")
 		}
-		if err := validateApexMetadataInput(trigger.File+"-meta.xml", input); err != nil {
+		if err := validateApexMetadataInput(trigger.File+"-meta.xml", input, nil); err != nil {
 			return err
 		}
 	}
@@ -2323,7 +2324,7 @@ func compileTestSetupsCached(index typesys.Index, digests *typesys.SourceDigestS
 	if cached, ok := setupCache[key]; ok {
 		setupCacheMu.RUnlock()
 		invokeSnapshotValidationHook("setup_before_cache_return")
-		if err := validateRuntimeSourceDigests(index, digests); err != nil {
+		if err := validateRuntimeSourceDigests(index, digests, sources.requestDigests); err != nil {
 			evictSnapshotCaches(baseKey)
 			return nil, nil, nil, nil, err
 		}
@@ -2339,7 +2340,7 @@ func compileTestSetupsCached(index typesys.Index, digests *typesys.SourceDigestS
 		return methods, errs, programs, programErrs, err
 	}
 	invokeSnapshotValidationHook("setup_before_cache_publication")
-	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+	if err := validateRuntimeSourceDigests(index, digests, sources.requestDigests); err != nil {
 		evictSnapshotCaches(baseKey)
 		return methods, errs, programs, programErrs, err
 	}
@@ -2363,7 +2364,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
 		invokeSnapshotValidationHook("test_before_cache_return")
-		if err := validateRuntimeSourceDigests(index, digests); err != nil {
+		if err := validateRuntimeSourceDigests(index, digests, sources.requestDigests); err != nil {
 			evictSnapshotCaches(baseKey)
 			return nil, nil, nil, nil, err
 		}
@@ -2384,7 +2385,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 		return methods, methodErrs, programs, programErrs, err
 	}
 	invokeSnapshotValidationHook("test_before_cache_publication")
-	if err := validateRuntimeSourceDigests(index, digests); err != nil {
+	if err := validateRuntimeSourceDigests(index, digests, sources.requestDigests); err != nil {
 		evictSnapshotCaches(baseKey)
 		return methods, methodErrs, programs, programErrs, err
 	}
@@ -4072,6 +4073,10 @@ type sourceCache struct {
 	allowVisualforceDiskDigests bool
 	recentVisualforce           map[string]recentVisualforceInput
 	generationValidator         func() error
+	// requestDigests memoizes physical source reads for the one request this
+	// cache serves, so every validation boundary of that request reuses the
+	// first read of an unchanged file.
+	requestDigests *requestFileDigests
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -4105,7 +4110,12 @@ func (e *SourceSnapshotMismatchError) Unwrap() error {
 }
 
 func newSourceCache() *sourceCache {
-	return &sourceCache{files: make(map[string]string), rawFiles: make(map[string]string), apiVersions: make(map[string]string)}
+	return &sourceCache{
+		files:          make(map[string]string),
+		rawFiles:       make(map[string]string),
+		apiVersions:    make(map[string]string),
+		requestDigests: &requestFileDigests{},
+	}
 }
 
 func sourceCacheFor(caches []*sourceCache) *sourceCache {
@@ -4395,7 +4405,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	recent := cache.recentVisualforce
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		actual, err := currentFileDigest(file)
+		actual, err := cache.requestDigests.digest(file)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
@@ -4407,7 +4417,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 		if input, ok := recent[path]; ok && expected.Present && input.matches(path) {
 			continue
 		}
-		if err := validateApexMetadataInput(path, expected); err != nil {
+		if err := validateApexMetadataInput(path, expected, cache.requestDigests); err != nil {
 			return err
 		}
 	}
