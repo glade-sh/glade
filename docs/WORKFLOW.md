@@ -175,11 +175,18 @@ review; a WARN needs its reason in the PR.
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, workflow lint, leak scan and tests changed Go packages
-and their direct importers (the fast PR lane, below). The repository guard, the
-scripts tests, the CLI build and the vendored-parser check run on their own
-`pr-guards` worker that starts immediately and waits on no producer; the PR
-worker that used to run them after its own selection now keeps only the CLI
-doctor authority and its package assignment. The Apex, VM, CLI, sema, LWC
+plus every package that transitively imports them, through production or test
+imports (the fast PR lane, below). The repository guard, the scripts tests, the
+CLI build and the vendored-parser check run on their own `pr-guards` worker
+that starts immediately and waits on no producer; the PR worker that used to
+run them after its own selection now keeps only the CLI doctor authority and
+its package assignment. Selection
+maps each changed path of the merge commit to its nearest Go package, in the
+root module or the nested Apex parser module, and walks reverse imports from
+there to a fixed point, so a change in `internal/apexversion`, for example,
+reaches `internal/vm` and the Apex runner that imports it, and a change inside
+`third_party/glade-apex-parser/**` reaches the root packages that import the
+parser and their consumers. The Apex, VM, CLI, sema, LWC
 compile and Visualforce shards of the fast lane plan from the same shared
 duration-history artifacts the full suite uses, and workers 12-23 split the
 remaining packages by the measured per-package durations recorded in
@@ -189,7 +196,9 @@ Visualforce shards also run the test binaries that the full suite's producer
 jobs build once, for the packages the pull request selects, and every worker
 restores the Go caches read-only. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
-`testdata/**`, workflows or root files) selects the full package set; only
+`testdata/**`, workflows or root files) selects the full package set, and so
+do the deleted files of a removed or renamed package, which keeps its former
+consumers selected, and `go.mod` and `go.sum`; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select
 nothing. Pushes to `main`, scheduled and manually dispatched runs use the
 full suite. So does a pull request from a `train/*` or `release/*` branch
