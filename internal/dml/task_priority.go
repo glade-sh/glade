@@ -2,6 +2,7 @@ package dml
 
 import (
 	"strings"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -123,8 +124,11 @@ func activityAccountSourceField(objectName string, definition storage.ObjectDefi
 	return ""
 }
 
-// activityRefreshScans counts stored-activity scans for tests.
-var activityRefreshScans int
+// activityRefreshScans counts stored-activity scans for tests. Parallel test
+// subtests each own their engine and org but share this package-level
+// counter, so it is atomic: a plain counter is a write/write race under the
+// race detector.
+var activityRefreshScans atomic.Int64
 
 // activityRefreshBatch collects the parents whose account changed during one
 // DML batch so the stored Tasks and Events are scanned once per batch instead
@@ -195,7 +199,7 @@ func (e *Engine) refreshActivityAccountsFor(parents map[storage.ID]struct{}) {
 	if len(parents) == 0 || e.Org == nil {
 		return
 	}
-	activityRefreshScans++
+	activityRefreshScans.Add(1)
 	names := func(record storage.Record) bool {
 		if what := idFromStorageValue(record.Fields["WhatId"]); what != "" {
 			if _, ok := parents[activityParentKey(what)]; ok {
