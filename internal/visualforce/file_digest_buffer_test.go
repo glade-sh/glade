@@ -80,7 +80,11 @@ func TestFileContentDigestAllocationBudget(t *testing.T) {
 	runtime.ReadMemStats(&after)
 	t.Cleanup(resetFileDigestMemo)
 	perFile := (after.TotalAlloc - before.TotalAlloc) / files
-	if perFile > 8*1024 {
+	t.Logf("file digest hashing allocated %d bytes per file", perFile)
+	// The byte budget is a normal-build contract; race instrumentation
+	// inflates the measured bytes, so an instrumented build only observes
+	// and logs them (see fileDigestBudgetEnforced).
+	if fileDigestBudgetEnforced && perFile > 8*1024 {
 		t.Fatalf("hashing allocated %d bytes per file; want at most 8192", perFile)
 	}
 }
