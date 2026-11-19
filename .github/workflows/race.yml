@@ -136,22 +136,40 @@ jobs:
         if: always()
         run: 'echo "concurrency packages whole: ${{ job.status }}"'
 
-  # Only the tests whose names mark concurrency in the six big packages, one
-  # -run regex per package. The lwc/compile and visualforce entries are their
-  # nightly smoke; browser conformance is excluded under race (the weekly
-  # backstop runs it). The gladecli selection synthesizes its own toolchain
-  # layout, but regex-matched server tests serve compiled Lightning modules
-  # and skip without the vendored LWC compiler, so Node and the toolchain are
-  # installed here. No regex-matched test drives Playwright — the only browser
-  # suite in these packages is server's L08 conformance, which the regex does
-  # not match and GLADE_LWC_BROWSER=1 gates — so the lwcruntime dependencies
-  # and Chromium stay out of this job.
+  # Only the tests whose names mark Go-level concurrency, one -run regex per
+  # package. In apextest and vm the words Async, Queue, Stream, Signal and
+  # Lock name Apex features (Queueable, @future, EventBus streams, Approval
+  # and FOR UPDATE locks) — around a hundred heavy conformance tests under
+  # one shared regex — and in server Serve matched the ServerRoutes HTTP
+  # route tests, so those three packages keep only the words whose matches
+  # there are Go concurrency: vm drops Worker and Overlap, whose only matches
+  # are the BatchApexWorker job records and the trigger overlap error, and
+  # server narrows Lock to OrgLock to keep the Approval.lock route tests
+  # out. gladecli keeps the broad set because its Daemon, Watch,
+  # GracefulStop, Listener and Serve tests are Go-level and light. Each
+  # selection prints its matched-test count and fails on an empty match so
+  # drift is visible, and keeps its per-package timeout. The lwc/compile and
+  # visualforce entries are their nightly smoke; browser conformance is
+  # excluded under race (the weekly backstop runs it). The lwc/compile smoke
+  # compiles with the vendored LWC toolchain and the gladecli selection
+  # synthesizes its own toolchain layout, so Node and the toolchain are
+  # installed here. No regex-matched test drives Playwright — the only
+  # browser suite in these packages is server's L08 conformance, which the
+  # regexes do not match and GLADE_LWC_BROWSER=1 gates — so the lwcruntime
+  # dependencies and Chromium stay out of this job.
   concurrent-tests:
     if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
       GLADE_ROOT: ${{ github.workspace }}
+      # Go-concurrency words only, one regex per narrowed package (see the
+      # job comment above).
+      APEXTEST_CONCURRENCY_TEST_RE: 'Concurren|Parallel|Race|Goroutine|Worker|Pool|Singleflight|Overlap|Cancel'
+      VM_CONCURRENCY_TEST_RE: 'Concurren|Race|Pool|Cancel'
+      SERVER_CONCURRENCY_TEST_RE: 'Concurren|OrgLock|Listener|Shutdown|Graceful|Parallel|Race'
+      # The broad set: gladecli's selection and the lwc/compile and
+      # visualforce nightly smoke.
       CONCURRENCY_TEST_RE: 'Concurren|Parallel|Race|Goroutine|Cancel|Daemon|Watch|Async|Queue|Listener|Lock|Shutdown|GracefulStop|Interrupt|Pool|Worker|Serve|Stream|Heartbeat|Debounce|Singleflight|Reentrant|ThreadSafe|Overlap|Signal'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -169,13 +187,24 @@ jobs:
         run: npm ci --prefix third_party/lwc
       - name: Run concurrency-named tests per package
         run: |
-          go test -race -timeout=25m -run "$CONCURRENCY_TEST_RE" ./internal/apextest
-          go test -race -timeout=25m -run "$CONCURRENCY_TEST_RE" ./internal/vm
-          go test -race -timeout=25m -run "$CONCURRENCY_TEST_RE" ./internal/gladecli
-          go test -race -timeout=25m -run "$CONCURRENCY_TEST_RE" ./internal/server
-          go test -race -timeout=10m -run "$CONCURRENCY_TEST_RE" ./internal/lwc/compile
-          go test -race -timeout=10m -run "$CONCURRENCY_TEST_RE" ./internal/visualforce
-          go test -race -timeout=10m -run '^TestPublicScan' ./internal/repoguard
+          run_selection() {
+            package="$1" regex="$2" timeout="$3"
+            listed="$(go test -race -list "$regex" "$package")"
+            matched="$(printf '%s\n' "$listed" | grep -c '^Test' || true)"
+            if [ "$matched" -eq 0 ]; then
+              echo "$package: no tests match '$regex'" >&2
+              exit 1
+            fi
+            echo "$package: $matched tests match '$regex'"
+            go test -race -timeout="$timeout" -run "$regex" "$package"
+          }
+          run_selection ./internal/apextest "$APEXTEST_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/vm "$VM_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/gladecli "$CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/server "$SERVER_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/lwc/compile "$CONCURRENCY_TEST_RE" 10m
+          run_selection ./internal/visualforce "$CONCURRENCY_TEST_RE" 10m
+          run_selection ./internal/repoguard '^TestPublicScan' 10m
       - name: Summary
         if: always()
         run: 'echo "concurrency-named tests of the big six plus the repoguard cache tests: ${{ job.status }}"'
