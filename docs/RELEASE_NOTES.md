@@ -17,10 +17,16 @@
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
 - **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
 - Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
+- **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
 
 ### Changes
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
+
+### Performance
+
+- **Test daemon requests read each source once.** A warm `glade test serve` request re-read and re-hashed every captured Apex source and companion metadata file at each validation boundary when the file was saved inside the racily-clean window: on this release's request shape, 10 reads per source and 8 per companion per request. Each request now reads and hashes each file once and reuses that digest at its later boundaries, while a save between boundaries still changes the file's stat stamp and fails the request as before. On a medium 100-class project measured right after a same-content save, one warm request fell from 28.3 ms to 22.1 ms. The executable digest is already remembered per process and on disk under the executable's stat stamp, so requests after the first add no binary hashing.
+- **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
 
 ### CI
 

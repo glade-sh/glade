@@ -4260,11 +4260,14 @@ func globalDescribeMapReadOnly(receiver Value, method string) bool {
 	return flag.Kind != ValueBool || !flag.Bool
 }
 
-// mapDeepCloneValueTypeError is the compile refusal of Map.deepClone on a map
-// whose values are not SObjects, raised when the call runs, as List.deepClone
-// does (review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object,
-// dc_list_value, dc_nested_map, dc_nested_sobject_list_map, dc_fieldmap;
-// dc_sobject and dc_account compile; APIs 62.0 and 67.0).
+// mapDeepCloneValueTypeError is the refusal of Map.deepClone on a map whose
+// values are not SObjects, raised when the call runs. Sema raises the same
+// message at compile for statically known value types
+// (semaMapDeepCloneValueTypeDiagnostic); this run-time check keeps receivers
+// whose static value type is unknown, and List.deepClone keeps its own
+// run-time-only check (review_round11 dc_typed_self, dc_chained_self, dc_int,
+// dc_object, dc_list_value, dc_nested_map, dc_nested_sobject_list_map,
+// dc_fieldmap; dc_sobject and dc_account compile; APIs 62.0 and 67.0).
 func (vm *VM) mapDeepCloneValueTypeError(receiver Value) error {
 	typeName := receiver.Type
 	if isGlobalDescribeMap(receiver) || typeName == globalDescribeMapType {
