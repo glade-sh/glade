@@ -5,6 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -594,6 +598,156 @@ func readRepoFile(t *testing.T, root, rel string) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+// publicAssetDecoder expands one tracked file into the bounded text members
+// both public-data rulesets inspect. scanPublicAsset is the product decoder;
+// tests substitute a counting decoder to prove the members are decoded once
+// per file, not once per guard.
+type publicAssetDecoder func(rel, text string, visit func(member, text string)) error
+
+// publicScanFinding is one redacted finding against a decoded member: the
+// archive-member label, the line inside that member and the finding category.
+// The matched text itself is never stored or reported.
+type publicScanFinding struct {
+	member string
+	line   int
+	kind   string
+}
+
+// publicScanFile holds both public-data rulesets' findings for one tracked
+// file, plus the asset-decode error both guards report. The release guard
+// scans every tracked file, private capture artifacts included; the campaign
+// guard skips those files entirely, so they carry no campaign findings.
+type publicScanFile struct {
+	rel            string
+	privateCapture bool
+	campaignPath   []string // findings against the file's own path
+	release        []publicScanFinding
+	campaign       []publicScanFinding
+	err            error
+}
+
+// scanTrackedFilesForPublicData runs both public-data rulesets over one
+// decode of every tracked file: each bounded member is decoded once,
+// normalized once, and fed to the release and campaign matchers together.
+// Decoded members are visited and dropped, never retained.
+func scanTrackedFilesForPublicData(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder) []publicScanFile {
+	scans := make([]publicScanFile, 0, len(files))
+	for _, file := range files {
+		entry := publicScanFile{rel: file.rel, privateCapture: privateCaptureArtifact(file.rel)}
+		if !entry.privateCapture {
+			for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
+				entry.campaignPath = append(entry.campaignPath, finding.kind)
+			}
+		}
+		entry.err = decode(file.rel, file.text, func(member, text string) {
+			for _, finding := range publicDataFindings(file.rel, text) {
+				entry.release = append(entry.release, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+			}
+		})
+		if !entry.privateCapture {
+			// Each ruleset decodes and normalizes on its own here, exactly as
+			// the two guards do today; the decode-once regression in
+			// repo_shared_scan_test.go fails against this duplicated form.
+			if err := decode(file.rel, file.text, func(member, text string) {
+				for _, finding := range publicCampaignFindings(names, file.rel, text) {
+					entry.campaign = append(entry.campaign, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+				}
+			}); entry.err == nil {
+				entry.err = err
+			}
+		}
+		scans = append(scans, entry)
+	}
+	return scans
+}
+
+// structuralRepoFileScan holds the structural repository guards' findings for
+// one working-tree Go file. The cookie-sink review scans every non-test Go
+// file in the tree; the record-write funnel scans the non-test Go files
+// under internal/ and cmd/ outside testdata, so recordScanned marks the
+// files whose parse errors fail the funnel.
+type structuralRepoFileScan struct {
+	rel           string
+	parseErr      error
+	cookieUses    []string
+	cookieSink    *cookieSinkFileScan
+	recordScanned bool
+	recordWrites  []string
+}
+
+// parseRepoGoFileForStructuralGuards parses one working-tree Go file for the
+// structural repository guards. Both guards inspect statements and
+// expressions only, so the shared parse skips object resolution; the browser
+// warmup guard, which reads Ident.Obj, keeps its own resolved parses.
+func parseRepoGoFileForStructuralGuards(positions *token.FileSet, path string) (*ast.File, error) {
+	return parser.ParseFile(positions, path, nil, parser.SkipObjectResolution)
+}
+
+// scanWorkingTreeGoFiles walks the working tree once for the structural
+// repository guards and parses each in-scope Go file through parse. The walk
+// itself skips only .git and node_modules; every other directory the guards'
+// walks skipped is decided per file by their scope rules.
+func scanWorkingTreeGoFiles(root string, parse func(positions *token.FileSet, path string) (*ast.File, error)) ([]structuralRepoFileScan, error) {
+	positions := token.NewFileSet()
+	var scans []structuralRepoFileScan
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			// Neither structural guard reads repository history or vendored
+			// dependencies; each guard's own scope rule handles every other
+			// skipped directory per file.
+			switch entry.Name() {
+			case ".git", "node_modules":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		rel = filepath.ToSlash(rel)
+		cookieScope := cookieSinkScope(rel)
+		recordScope := recordFunnelScope(rel)
+		if !cookieScope && !recordScope {
+			return nil
+		}
+		// Each guard parses on its own here, exactly as the two guards do
+		// today; the parse-once regression in repo_shared_scan_test.go fails
+		// against this duplicated form.
+		scan := structuralRepoFileScan{rel: rel, recordScanned: recordScope}
+		if cookieScope {
+			file, parseErr := parse(positions, path)
+			scan.parseErr = parseErr
+			if file != nil {
+				scan.cookieUses, scan.cookieSink = cookieSinkScanFile(rel, file)
+			}
+		}
+		if recordScope {
+			file, parseErr := parse(positions, path)
+			if scan.parseErr == nil {
+				scan.parseErr = parseErr
+			}
+			if file != nil {
+				for _, finding := range scanRecordWrites(positions, file) {
+					if recordsOwnerAllowed(rel, finding.recv) {
+						continue
+					}
+					scan.recordWrites = append(scan.recordWrites, fmt.Sprintf("%d: %s", finding.line, finding.what))
+				}
+			}
+		}
+		scans = append(scans, scan)
+		return nil
+	})
+	return scans, err
 }
 
 func isHumanFacingExampleSurface(rel string) bool {

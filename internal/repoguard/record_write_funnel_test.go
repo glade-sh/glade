@@ -19,6 +19,22 @@ var recordWriteFunnelExempt = []string{
 	"internal/storage/record_writes.go",
 }
 
+// recordFunnelScope reports whether the record-write funnel scans rel: the
+// non-test Go files under internal/ and cmd/, outside testdata directories and
+// the funnel's own implementation files. The shared walk skips .git and
+// node_modules for every guard.
+func recordFunnelScope(rel string) bool {
+	if !strings.HasPrefix(rel, "internal/") && !strings.HasPrefix(rel, "cmd/") {
+		return false
+	}
+	for _, part := range strings.Split(rel, "/") {
+		if part == "testdata" {
+			return false
+		}
+	}
+	return !slices.Contains(recordWriteFunnelExempt, rel)
+}
+
 // recordsFieldOwners names receivers whose Records field is not
 // storage.ObjectState.Records: JSON payload structs, report summaries and
 // slices. The check is syntactic, so these are matched by file and receiver
