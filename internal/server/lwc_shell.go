@@ -744,6 +744,17 @@ func isLocalLWCNamespace(namespace, projectNamespace string) bool {
 	return projectNamespace != "" && strings.EqualFold(namespace, projectNamespace)
 }
 
+// supportsObjectInNamespace matches a component's supported objects, which
+// project source names without its own namespace prefix.
+func supportsObjectInNamespace(objects []string, objectName, namespace string) bool {
+	for _, candidate := range objects {
+		if lwcshell.SameObjectInNamespace(candidate, objectName, namespace) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Server) applyLWCMetadataToComponent(idx lwc.Index, component lwcshell.PageComponent, ctx lwcshell.PageContext, targetOverride string) (lwcshell.PageComponent, lwcshell.Diagnostic) {
 	namespace, name := splitQualifiedLWCName(component.ComponentName, s.Source.Project.Namespace)
 	bundle, ok := idx.Bundle(name)
@@ -762,7 +773,7 @@ func (s *Server) applyLWCMetadataToComponent(idx lwc.Index, component lwcshell.P
 		return component, lwcshell.Diagnostic{Code: "GLADELWC005", Message: fmt.Sprintf("LWC component %q does not support %s", component.ComponentName, target)}
 	}
 	targetConfig := lwcTargetConfigFor(meta, target)
-	if ctx.ObjectAPIName != "" && len(targetConfig.SupportedObjects) > 0 && !containsEqualFold(targetConfig.SupportedObjects, ctx.ObjectAPIName) {
+	if ctx.ObjectAPIName != "" && len(targetConfig.SupportedObjects) > 0 && !supportsObjectInNamespace(targetConfig.SupportedObjects, ctx.ObjectAPIName, s.Source.Project.Namespace) {
 		return component, lwcshell.Diagnostic{Code: "GLADELWC004", Message: fmt.Sprintf("LWC component %q does not support object %q", component.ComponentName, ctx.ObjectAPIName)}
 	}
 	if component.Properties == nil {

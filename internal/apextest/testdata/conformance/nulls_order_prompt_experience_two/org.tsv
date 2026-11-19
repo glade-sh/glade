@@ -1,0 +1,18 @@
+api	case	result
+67.0	deploy Null	accepted
+67.0	deploy Low	accepted
+67.0	deploy High	accepted
+62.0	saved shape	Synthetic High=populated,Synthetic Low=populated,Synthetic Null=null
+62.0	ASC	NLH
+62.0	DESC	NHL
+62.0	ASC NULLS FIRST	NLH
+62.0	ASC NULLS LAST	LHN
+62.0	DESC NULLS FIRST	NHL
+62.0	DESC NULLS LAST	HLN
+67.0	saved shape	Synthetic High=populated,Synthetic Low=populated,Synthetic Null=null
+67.0	ASC	NLH
+67.0	DESC	NHL
+67.0	ASC NULLS FIRST	NLH
+67.0	ASC NULLS LAST	LHN
+67.0	DESC NULLS FIRST	NHL
+67.0	DESC NULLS LAST	HLN

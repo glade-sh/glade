@@ -1,0 +1,1 @@
+Map<String,Schema.SObjectField> fields=Schema.getGlobalDescribe().get('AuthProvider').getDescribe().fields.getMap(); Map<String,Object> obs=new Map<String,Object>{'FlowDefaultAccountId'=>fields.containsKey('FlowDefaultAccountId'),'FlowDefaultProfileId'=>fields.containsKey('FlowDefaultProfileId')};System.debug('CAPTURE|'+JSON.serialize(obs));

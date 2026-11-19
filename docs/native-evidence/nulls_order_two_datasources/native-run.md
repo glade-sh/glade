@@ -1,0 +1,3 @@
+# Native capture: two external data source null ordering
+
+A fresh 30-day Developer scratch org with PlatformConnect:2 was created from a campaign Dev Hub. Two synthetic anonymous no-authentication Apex data sources were deployed; their provider performs no callouts. At API 62 and 67 synthetic tests created Products and ContentVersions with one null and two distinct populated ExternalDataSourceIds, verified saved shape and queried default and explicit NULLS ordering. Salesforce ignored the explicit NULLS direction. The synthetic invalid-domain URLs were not accessed and no message was posted. Tests rolled back and the scratch org was deleted, with ScratchOrgInfo status verified as Deleted.

@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe67_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|UserAppMenuCustomization|'+NullCore67.probeObject('UserAppMenuCustomization',new List<String>{'ApplicationId'}));} }

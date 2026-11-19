@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe62_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|FlowOrchestrationInstance|'+NullCore62.probeObject('FlowOrchestrationInstance',new List<String>{'InterviewId'}));} }

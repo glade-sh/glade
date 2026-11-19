@@ -1,0 +1,14 @@
+{
+"ServiceAppointment": [
+"RelatedBundleId"
+],
+"ServiceResource": [
+"LocationId",
+"PayGroupId",
+"ServiceCrewId"
+],
+"TimeSheetEntry": [
+"WorkOrderId",
+"WorkOrderLineItemId"
+]
+}

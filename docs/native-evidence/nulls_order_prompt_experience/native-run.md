@@ -1,0 +1,3 @@
+# Native capture: PromptVersion experience context null placement
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. An inactive synthetic Visualforce site and unpublished prompts were deployed at API 67. The Lightning prompt had null ExperienceContextId and the Site prompt referenced the synthetic site; the Site ID is represented by a placeholder. API 62 and 67 SOQL each queried these two records with all four explicit NULLS directions and both default directions. This captures null placement but not ordering between distinct populated values. Neither the site nor the prompts were activated or accessed. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

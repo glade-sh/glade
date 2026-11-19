@@ -1,0 +1,73 @@
+api	route	field	observation
+62.0	istest	FlowDefaultAccountId/order	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultAccountId/select	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultAccountId/where	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultProfileId/order	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultProfileId/select	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultProfileId/where	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultAccountId/order	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultAccountId/select	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultAccountId/where	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultProfileId/order	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultProfileId/select	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultProfileId/where	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultAccountId/order	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultAccountId/select	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultAccountId/where	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultProfileId/order	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultProfileId/select	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultProfileId/where	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultAccountId/order	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultAccountId/select	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultAccountId/where	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultProfileId/order	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultProfileId/select	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultProfileId/where	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	istest	FlowDefaultAccountId/order	ok
+64.0	istest	FlowDefaultAccountId/select	ok
+64.0	istest	FlowDefaultAccountId/where	ok
+64.0	istest	FlowDefaultProfileId/order	ok
+64.0	istest	FlowDefaultProfileId/select	ok
+64.0	istest	FlowDefaultProfileId/where	ok
+64.0	anonymous	FlowDefaultAccountId/order	ok
+64.0	anonymous	FlowDefaultAccountId/select	ok
+64.0	anonymous	FlowDefaultAccountId/where	ok
+64.0	anonymous	FlowDefaultProfileId/order	ok
+64.0	anonymous	FlowDefaultProfileId/select	ok
+64.0	anonymous	FlowDefaultProfileId/where	ok
+65.0	istest	FlowDefaultAccountId/order	ok
+65.0	istest	FlowDefaultAccountId/select	ok
+65.0	istest	FlowDefaultAccountId/where	ok
+65.0	istest	FlowDefaultProfileId/order	ok
+65.0	istest	FlowDefaultProfileId/select	ok
+65.0	istest	FlowDefaultProfileId/where	ok
+65.0	anonymous	FlowDefaultAccountId/order	ok
+65.0	anonymous	FlowDefaultAccountId/select	ok
+65.0	anonymous	FlowDefaultAccountId/where	ok
+65.0	anonymous	FlowDefaultProfileId/order	ok
+65.0	anonymous	FlowDefaultProfileId/select	ok
+65.0	anonymous	FlowDefaultProfileId/where	ok
+66.0	istest	FlowDefaultAccountId/order	ok
+66.0	istest	FlowDefaultAccountId/select	ok
+66.0	istest	FlowDefaultAccountId/where	ok
+66.0	istest	FlowDefaultProfileId/order	ok
+66.0	istest	FlowDefaultProfileId/select	ok
+66.0	istest	FlowDefaultProfileId/where	ok
+66.0	anonymous	FlowDefaultAccountId/order	ok
+66.0	anonymous	FlowDefaultAccountId/select	ok
+66.0	anonymous	FlowDefaultAccountId/where	ok
+66.0	anonymous	FlowDefaultProfileId/order	ok
+66.0	anonymous	FlowDefaultProfileId/select	ok
+66.0	anonymous	FlowDefaultProfileId/where	ok
+67.0	istest	FlowDefaultAccountId/order	ok
+67.0	istest	FlowDefaultAccountId/select	ok
+67.0	istest	FlowDefaultAccountId/where	ok
+67.0	istest	FlowDefaultProfileId/order	ok
+67.0	istest	FlowDefaultProfileId/select	ok
+67.0	istest	FlowDefaultProfileId/where	ok
+67.0	anonymous	FlowDefaultAccountId/order	ok
+67.0	anonymous	FlowDefaultAccountId/select	ok
+67.0	anonymous	FlowDefaultAccountId/where	ok
+67.0	anonymous	FlowDefaultProfileId/order	ok
+67.0	anonymous	FlowDefaultProfileId/select	ok
+67.0	anonymous	FlowDefaultProfileId/where	ok

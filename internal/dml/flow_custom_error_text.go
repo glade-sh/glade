@@ -55,7 +55,8 @@ func (e *Engine) renderFlowCustomErrorMessageForAPI(message string, frame *flowF
 		return message, false
 	}
 	fault := false
-	capturedFormula := flowCapturedCustomErrorFormula(message, formulas, frame)
+	capturedFormula := flowCapturedCustomErrorFormula(message, formulas, frame) ||
+		(frame.capturedAfterCreate && flowCustomErrorReferencesStringVariable(message, formulas, frame))
 	rendered, ok := renderFlowTextTemplate(message, frame, func(reference string) (storage.Value, bool) {
 		if number, ok := constants[strings.ToLower(reference)]; ok {
 			if !e.flowMergeLocaleIsEnUS() {
@@ -223,6 +224,12 @@ func flowCapturedCustomErrorFormula(message string, formulas map[string]string, 
 	if frame == nil || !frame.capturedBeforeCreate {
 		return false
 	}
+	return flowCustomErrorReferencesStringVariable(message, formulas, frame)
+}
+
+// The selected formula must actually name a declared String interview
+// variable. Record-only formula resources retain their existing binding.
+func flowCustomErrorReferencesStringVariable(message string, formulas map[string]string, frame *flowFrame) bool {
 	lower := strings.ToLower(message)
 	for name, expression := range formulas {
 		if !strings.Contains(lower, "{!"+strings.ToLower(name)+"}") {

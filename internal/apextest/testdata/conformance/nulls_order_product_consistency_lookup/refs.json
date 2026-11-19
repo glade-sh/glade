@@ -1,0 +1,1 @@
+[{"obj": "ProductConsumed", "field": "ProductItemId", "createable": true, "nillable": true, "sortable": true}, {"obj": "ProductServiceCampaignItem", "field": "SerializedProductId", "createable": true, "nillable": true, "sortable": true}, {"obj": "SerializedProduct", "field": "ProductItemId", "createable": true, "nillable": true, "sortable": true}]

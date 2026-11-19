@@ -1,0 +1,7 @@
+api	stage	observation
+62.0	direct	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: unknown (Portal roles definition require PORTAL_ACCOUNT, PORTAL_TYPE)"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: unknown (Portal roles definition require PORTAL_ACCOUNT, PORTAL_TYPE)""]}"
+67.0	direct	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: unknown (Portal roles definition require PORTAL_ACCOUNT, PORTAL_TYPE)"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: unknown (Portal roles definition require PORTAL_ACCOUNT, PORTAL_TYPE)""]}"
+62.0	typed	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: PortalType (Account is not enabled for this portal type)"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: PortalType (Account is not enabled for this portal type)""]}"
+67.0	typed	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: PortalType (Account is not enabled for this portal type)"",""FIELD_INTEGRITY_EXCEPTION:field integrity exception: PortalType (Account is not enabled for this portal type)""]}"
+62.0	enabled	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:Cannot specify system-maintained portal role field"",""FIELD_INTEGRITY_EXCEPTION:Cannot specify system-maintained portal role field""]}"
+67.0	enabled	"{""inserts"":[""OK"",""FIELD_INTEGRITY_EXCEPTION:Cannot specify system-maintained portal role field"",""FIELD_INTEGRITY_EXCEPTION:Cannot specify system-maintained portal role field""]}"

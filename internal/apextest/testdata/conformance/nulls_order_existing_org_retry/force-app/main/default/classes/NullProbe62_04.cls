@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe62_04 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|Location|'+JSON.serialize(new Map<String,Object>{'VisitorAddressId'=>NullExisting62.observe('Location','VisitorAddressId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|MaintenanceAsset|'+JSON.serialize(new Map<String,Object>{'ContractLineItemId'=>NullExisting62.observe('MaintenanceAsset','ContractLineItemId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|MaintenanceWorkRule|'+JSON.serialize(new Map<String,Object>{'ParentMaintenancePlanId'=>NullExisting62.observe('MaintenanceWorkRule','ParentMaintenancePlanId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|MaintenanceWorkRule|'+JSON.serialize(new Map<String,Object>{'RecordsetFilterCriteriaId'=>NullExisting62.observe('MaintenanceWorkRule','RecordsetFilterCriteriaId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|MessagingChannel|'+JSON.serialize(new Map<String,Object>{'BusinessHoursId'=>NullExisting62.observe('MessagingChannel','BusinessHoursId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|MessagingSession|'+JSON.serialize(new Map<String,Object>{'CampaignId'=>NullExisting62.observe('MessagingSession','CampaignId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|MessagingSession|'+JSON.serialize(new Map<String,Object>{'ConversationId'=>NullExisting62.observe('MessagingSession','ConversationId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|MobileSettingsAssignment|'+JSON.serialize(new Map<String,Object>{'ProfileId'=>NullExisting62.observe('MobileSettingsAssignment','ProfileId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|MsgChannelLanguageKeyword|'+JSON.serialize(new Map<String,Object>{'MessagingChannelUsageId'=>NullExisting62.observe('MsgChannelLanguageKeyword','MessagingChannelUsageId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|MyDomainDiscoverableLogin|'+JSON.serialize(new Map<String,Object>{'ExecuteApexHandlerAsId'=>NullExisting62.observe('MyDomainDiscoverableLogin','ExecuteApexHandlerAsId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|OauthTokenExchHandlerApp|'+JSON.serialize(new Map<String,Object>{'ConnectedApplicationId'=>NullExisting62.observe('OauthTokenExchHandlerApp','ConnectedApplicationId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|OauthTokenExchHandlerApp|'+JSON.serialize(new Map<String,Object>{'ExternalClientApplicationId'=>NullExisting62.observe('OauthTokenExchHandlerApp','ExternalClientApplicationId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|OpportunityLineItem|'+JSON.serialize(new Map<String,Object>{'PricebookEntryId'=>NullExisting62.observe('OpportunityLineItem','PricebookEntryId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|OpportunityLineItem|'+JSON.serialize(new Map<String,Object>{'Product2Id'=>NullExisting62.observe('OpportunityLineItem','Product2Id')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|Order|'+JSON.serialize(new Map<String,Object>{'AccountId'=>NullExisting62.observe('Order','AccountId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|Order|'+JSON.serialize(new Map<String,Object>{'OriginalOrderId'=>NullExisting62.observe('Order','OriginalOrderId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|OrderItem|'+JSON.serialize(new Map<String,Object>{'OriginalOrderItemId'=>NullExisting62.observe('OrderItem','OriginalOrderItemId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|OrderItem|'+JSON.serialize(new Map<String,Object>{'Product2Id'=>NullExisting62.observe('OrderItem','Product2Id')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|OrgMetric|'+JSON.serialize(new Map<String,Object>{'LatestOrgMetricScanSummaryId'=>NullExisting62.observe('OrgMetric','LatestOrgMetricScanSummaryId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|OutboundEngmtContentRsrc|'+JSON.serialize(new Map<String,Object>{'ResourceReferenceRecordId'=>NullExisting62.observe('OutboundEngmtContentRsrc','ResourceReferenceRecordId')})); }
+}

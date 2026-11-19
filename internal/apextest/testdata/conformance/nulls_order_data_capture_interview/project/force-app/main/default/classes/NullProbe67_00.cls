@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe67_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|DynamicDataCapture|'+NullCore67.probeObject('DynamicDataCapture',new List<String>{'PausedFlowInterviewId'}));} }

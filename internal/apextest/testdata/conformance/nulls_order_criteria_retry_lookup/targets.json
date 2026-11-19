@@ -1,0 +1,20 @@
+{
+"ApptBundleAggrPolicy": [
+"FilterCriteriaId"
+],
+"ApptBundleConfig": [
+"CriteriaForAutoUnbundlingId"
+],
+"ContractLineOutcome": [
+"RecordsetFilterCriteriaId"
+],
+"MaintenanceWorkRule": [
+"RecordsetFilterCriteriaId"
+],
+"Shift": [
+"RecordsetFilterCriteriaId"
+],
+"TimeSlot": [
+"RecordsetFilterCriteriaId"
+]
+}

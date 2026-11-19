@@ -1,0 +1,1 @@
+[{"obj": "AppointmentTopicTimeSlot", "field": "WorkTypeGroupId", "createable": true, "nillable": true, "sortable": true}, {"obj": "AppointmentTopicTimeSlot", "field": "WorkTypeId", "createable": true, "nillable": true, "sortable": true}]

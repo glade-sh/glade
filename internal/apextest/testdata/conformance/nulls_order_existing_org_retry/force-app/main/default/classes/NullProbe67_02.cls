@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe67_02 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|ContentVersion|'+JSON.serialize(new Map<String,Object>{'ContentBodyId'=>NullExisting67.observe('ContentVersion','ContentBodyId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|ContentVersion|'+JSON.serialize(new Map<String,Object>{'ExternalDataSourceId'=>NullExisting67.observe('ContentVersion','ExternalDataSourceId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|ContentVersion|'+JSON.serialize(new Map<String,Object>{'FirstPublishLocationId'=>NullExisting67.observe('ContentVersion','FirstPublishLocationId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|ContentWorkspaceMember|'+JSON.serialize(new Map<String,Object>{'ContentWorkspacePermissionId'=>NullExisting67.observe('ContentWorkspaceMember','ContentWorkspacePermissionId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|ContractLineOutcome|'+JSON.serialize(new Map<String,Object>{'RecordsetFilterCriteriaId'=>NullExisting67.observe('ContractLineOutcome','RecordsetFilterCriteriaId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|ConversationEntry|'+JSON.serialize(new Map<String,Object>{'ConversationEntityId'=>NullExisting67.observe('ConversationEntry','ConversationEntityId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|CustomBrandAsset|'+JSON.serialize(new Map<String,Object>{'AssetSourceId'=>NullExisting67.observe('CustomBrandAsset','AssetSourceId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|DevopsEnvDeployment|'+JSON.serialize(new Map<String,Object>{'CheckDeployRequestInfoId'=>NullExisting67.observe('DevopsEnvDeployment','CheckDeployRequestInfoId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|DevopsEnvDeployment|'+JSON.serialize(new Map<String,Object>{'DeployRequestInfoId'=>NullExisting67.observe('DevopsEnvDeployment','DeployRequestInfoId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|DevopsEnvDeploymentMbr|'+JSON.serialize(new Map<String,Object>{'ChangedById'=>NullExisting67.observe('DevopsEnvDeploymentMbr','ChangedById')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|DigitalWallet|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting67.observe('DigitalWallet','PaymentGatewayId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|DuplicateRecordSet|'+JSON.serialize(new Map<String,Object>{'DuplicateRuleId'=>NullExisting67.observe('DuplicateRecordSet','DuplicateRuleId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|DynamicDataCapture|'+JSON.serialize(new Map<String,Object>{'PausedFlowInterviewId'=>NullExisting67.observe('DynamicDataCapture','PausedFlowInterviewId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|EmailMessage|'+JSON.serialize(new Map<String,Object>{'ActivityId'=>NullExisting67.observe('EmailMessage','ActivityId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|EmailServicesFunction|'+JSON.serialize(new Map<String,Object>{'ApexClassId'=>NullExisting67.observe('EmailServicesFunction','ApexClassId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|EmailTemplate|'+JSON.serialize(new Map<String,Object>{'BrandTemplateId'=>NullExisting67.observe('EmailTemplate','BrandTemplateId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|EmailTemplate|'+JSON.serialize(new Map<String,Object>{'EnhancedLetterheadId'=>NullExisting67.observe('EmailTemplate','EnhancedLetterheadId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|Entitlement|'+JSON.serialize(new Map<String,Object>{'BusinessHoursId'=>NullExisting67.observe('Entitlement','BusinessHoursId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|Entitlement|'+JSON.serialize(new Map<String,Object>{'SlaProcessId'=>NullExisting67.observe('Entitlement','SlaProcessId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|EntitlementTemplate|'+JSON.serialize(new Map<String,Object>{'BusinessHoursId'=>NullExisting67.observe('EntitlementTemplate','BusinessHoursId')})); }
+}

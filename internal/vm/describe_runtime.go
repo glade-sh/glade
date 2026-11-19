@@ -2447,6 +2447,12 @@ func (vm *VM) featureFieldHiddenForQuery(objectName, field string) bool {
 		allowed, captured := storage.StandardFeatureNamedQueryVersion(objectName, field, vm.featureDescribeVersion(objectName))
 		return captured && !allowed
 	}
+	// Captured dynamic-query rows can succeed where direct access is hidden;
+	// unmeasured fields keep their source-access visibility.
+	allowed, captured := storage.StandardFeatureQueryVersion(objectName, field, vm.featureDescribeVersion(objectName))
+	if captured {
+		return !allowed
+	}
 	return vm.featureFieldHiddenForAccess(objectName, field)
 }
 

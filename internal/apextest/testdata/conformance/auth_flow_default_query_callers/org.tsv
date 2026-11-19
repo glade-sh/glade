@@ -1,0 +1,49 @@
+api	route	field	observation
+62.0	istest	FlowDefaultAccountId/count	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultAccountId/locator	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultProfileId/count	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	FlowDefaultProfileId/locator	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultAccountId/count	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultAccountId/locator	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultProfileId/count	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	FlowDefaultProfileId/locator	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultAccountId/count	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultAccountId/locator	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultProfileId/count	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	istest	FlowDefaultProfileId/locator	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultAccountId/count	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultAccountId/locator	System.QueryException: No such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultProfileId/count	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+63.0	anonymous	FlowDefaultProfileId/locator	System.QueryException: No such column 'FlowDefaultProfileId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+64.0	istest	FlowDefaultAccountId/count	ok
+64.0	istest	FlowDefaultAccountId/locator	ok
+64.0	istest	FlowDefaultProfileId/count	ok
+64.0	istest	FlowDefaultProfileId/locator	ok
+64.0	anonymous	FlowDefaultAccountId/count	ok
+64.0	anonymous	FlowDefaultAccountId/locator	ok
+64.0	anonymous	FlowDefaultProfileId/count	ok
+64.0	anonymous	FlowDefaultProfileId/locator	ok
+65.0	istest	FlowDefaultAccountId/count	ok
+65.0	istest	FlowDefaultAccountId/locator	ok
+65.0	istest	FlowDefaultProfileId/count	ok
+65.0	istest	FlowDefaultProfileId/locator	ok
+65.0	anonymous	FlowDefaultAccountId/count	ok
+65.0	anonymous	FlowDefaultAccountId/locator	ok
+65.0	anonymous	FlowDefaultProfileId/count	ok
+65.0	anonymous	FlowDefaultProfileId/locator	ok
+66.0	istest	FlowDefaultAccountId/count	ok
+66.0	istest	FlowDefaultAccountId/locator	ok
+66.0	istest	FlowDefaultProfileId/count	ok
+66.0	istest	FlowDefaultProfileId/locator	ok
+66.0	anonymous	FlowDefaultAccountId/count	ok
+66.0	anonymous	FlowDefaultAccountId/locator	ok
+66.0	anonymous	FlowDefaultProfileId/count	ok
+66.0	anonymous	FlowDefaultProfileId/locator	ok
+67.0	istest	FlowDefaultAccountId/count	ok
+67.0	istest	FlowDefaultAccountId/locator	ok
+67.0	istest	FlowDefaultProfileId/count	ok
+67.0	istest	FlowDefaultProfileId/locator	ok
+67.0	anonymous	FlowDefaultAccountId/count	ok
+67.0	anonymous	FlowDefaultAccountId/locator	ok
+67.0	anonymous	FlowDefaultProfileId/count	ok
+67.0	anonymous	FlowDefaultProfileId/locator	ok

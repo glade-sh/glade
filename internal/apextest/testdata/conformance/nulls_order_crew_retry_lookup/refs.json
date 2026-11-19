@@ -1,0 +1,1 @@
+[{"obj": "ServiceResource", "field": "RelatedRecordId", "createable": true, "nillable": true, "sortable": true}, {"obj": "ServiceResource", "field": "ServiceCrewId", "createable": true, "nillable": true, "sortable": true}]

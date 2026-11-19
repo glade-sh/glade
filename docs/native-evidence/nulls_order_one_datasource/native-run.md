@@ -1,0 +1,3 @@
+# Native capture: single external data source null placement
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. One synthetic anonymous, no-authentication Apex data source was deployed; its provider performs no callouts. At API 62 and 67 a synthetic test inserted Products with null and populated ExternalDataSourceId and verified the saved shape and default and explicit NULLS order. Salesforce ignored the explicit NULLS direction. A ContentVersion attempt with ordinary internal content and an external source was rejected with INVALID_STATUS; it is a setup boundary, not an ordering result. Test data rolled back and the scratch org was deleted, with ScratchOrgInfo status verified as Deleted.

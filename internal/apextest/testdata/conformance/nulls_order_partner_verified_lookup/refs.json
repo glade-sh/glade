@@ -1,0 +1,1 @@
+[{"obj": "Partner", "field": "AccountFromId", "createable": true, "nillable": true, "sortable": true}, {"obj": "Partner", "field": "OpportunityId", "createable": true, "nillable": true, "sortable": true}]

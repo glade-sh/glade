@@ -1,0 +1,1 @@
+[{"obj": "AlternativePaymentMethod", "field": "PaymentGatewayId", "createable": true, "nillable": true, "sortable": true}, {"obj": "CardPaymentMethod", "field": "PaymentGatewayId", "createable": true, "nillable": true, "sortable": true}]

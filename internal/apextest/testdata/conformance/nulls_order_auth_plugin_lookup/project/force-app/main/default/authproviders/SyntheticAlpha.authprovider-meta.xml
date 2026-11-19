@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><AuthProvider xmlns="http://soap.sforce.com/2006/04/metadata"><customMetadataTypeRecord>SyntheticAuthAlpha.Record</customMetadataTypeRecord><executionUser>SCRATCH_ADMIN_USERNAME</executionUser><friendlyName>Synthetic Alpha</friendlyName><plugin>SyntheticPluginAlpha</plugin><providerType>Custom</providerType></AuthProvider>

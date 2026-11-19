@@ -1,0 +1,1 @@
+Deploy two synthetic Salesforce-managed authentication providers, with no external authentication requests. At API 62.0 and 67.0 create AuthProvParamFwdAllowlist records through the data API, comparing omission of AuthProviderId with a valid control supplying a distinct synthetic provider. This captures a creation boundary rather than ordering.

@@ -1,0 +1,16 @@
+{
+"AccountPartner": [
+"OpportunityId"
+],
+"AttributeDefinition": [
+"PicklistId"
+],
+"EmailMessage": [
+"ActivityId",
+"FromId"
+],
+"ListEmail": [
+"CampaignId",
+"RelatedToId"
+]
+}
