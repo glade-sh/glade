@@ -23,6 +23,13 @@ Policy, applied to every planned lane:
   shard count      = enough shards that the longest-processing-time bound
                       (package average + slowest test, both raced) fits the
                       budget under the cap, floored at APEXTEST_SHARD_FLOOR
+  runner count     = the fewest count, from RUNNER_COUNT_MIN up to one
+                      shard per runner (RUNNER_COUNT_MAX), whose balanced
+                      longest-first assignment minimizes the slowest
+                      runner's load: one more runner is kept only while
+                      it strictly reduces that load, and the search stops
+                      at the count where the slowest runner holds the
+                      heaviest single shard alone
   batch deadline   = sum of the assigned shard budgets + BATCH_RESERVE_SECONDS,
                      or for one sequential lane the measured complete shard
                      walls scaled by the shard count with test headroom
@@ -105,9 +112,11 @@ DEFAULT_BATCH_SECONDS = 3600
 # runner-count search fails loudly instead of planning unrunnable batches.
 APEXTEST_SHARD_FLOOR = 16
 APEXTEST_SHARD_CEILING = 96
-RUNNER_IDS = "abcdefgh"
+# One id per scheduled runner; the count search below keeps at most one
+# shard per runner (the RUNNER_COUNT_MAX ceiling), so the ids never run out.
+RUNNER_IDS = "abcdefghijklmnop"
 RUNNER_COUNT_MIN = 3
-RUNNER_COUNT_MAX = 8
+RUNNER_COUNT_MAX = 16
 # Heavy generic lanes that run their shards sequentially in one job; the
 # shard counts mirror the runner's planner_shards case values, which the
 # scripts tests cross-check against this table.
@@ -356,34 +365,50 @@ def runner_minutes(batch_seconds):
 
 
 def assign_runners(shard_timeouts):
-    """Bind shards to the fewest runners whose jobs fit the deadline cap."""
+    """Bind shards to the runner count that minimizes the slowest job.
+
+    Hosted runners cost the nightly run nothing extra while every
+    verification dispatch waits on its slowest job, so the count search
+    balances the shards longest-first over each candidate count from the
+    floor upward and keeps the fewest count whose slowest runner holds the
+    least load: one more runner is kept only while it strictly reduces that
+    load, and the search stops at the count where the slowest runner holds
+    the heaviest single shard alone, which no further count below the
+    one-shard-per-runner ceiling can reduce. Every deadline still derives
+    from the assigned shard budgets alone.
+    """
     ordered = sorted(range(len(shard_timeouts)), key=lambda index: (-shard_timeouts[index], index))
-    for count in range(RUNNER_COUNT_MIN, RUNNER_COUNT_MAX + 1):
+    heaviest = max(shard_timeouts)
+    ceiling = min(RUNNER_COUNT_MAX, len(shard_timeouts))
+    best_slowest = None
+    best_assignment = None
+    for count in range(min(RUNNER_COUNT_MIN, ceiling), ceiling + 1):
         loads = [0] * count
         assignment = [[] for _ in range(count)]
         for index in ordered:
             target = min(range(count), key=lambda runner: (loads[runner], runner))
             assignment[target].append(index)
             loads[target] += shard_timeouts[index]
-        runners = []
-        fits = True
-        for runner in range(count):
-            batch_seconds = loads[runner] + BATCH_RESERVE_SECONDS
-            step_minutes, job_minutes = runner_minutes(batch_seconds)
-            if job_minutes > JOB_TIMEOUT_CAP_MINUTES:
-                fits = False
-                break
-            runners.append({
-                "runner": RUNNER_IDS[runner],
-                "shard_indexes": sorted(assignment[runner]),
-                "batch_timeout_seconds": batch_seconds,
-                "step_timeout_minutes": step_minutes,
-                "job_timeout_minutes": job_minutes,
-            })
-        if fits:
-            return runners
-    fail("race plan cannot fit the Apex shards under the job deadline cap with "
-         f"up to {RUNNER_COUNT_MAX} runners; the suite outgrew the current lanes")
+        slowest = max(loads)
+        if best_slowest is None or slowest < best_slowest:
+            best_slowest, best_assignment = slowest, assignment
+        if slowest <= heaviest:
+            break
+    runners = []
+    for runner in range(len(best_assignment)):
+        batch_seconds = sum(shard_timeouts[index] for index in best_assignment[runner]) + BATCH_RESERVE_SECONDS
+        step_minutes, job_minutes = runner_minutes(batch_seconds)
+        if job_minutes > JOB_TIMEOUT_CAP_MINUTES:
+            fail("race plan cannot fit the Apex shards under the job deadline cap with "
+                 f"up to {RUNNER_COUNT_MAX} runners; the suite outgrew the current lanes")
+        runners.append({
+            "runner": RUNNER_IDS[runner],
+            "shard_indexes": sorted(best_assignment[runner]),
+            "batch_timeout_seconds": batch_seconds,
+            "step_timeout_minutes": step_minutes,
+            "job_timeout_minutes": job_minutes,
+        })
+    return runners
 
 
 def validate_plan(plan, names, package):

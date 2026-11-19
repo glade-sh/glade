@@ -517,7 +517,7 @@ func TestCIRacePlanScheduleMinimizesSlowestRunnerJob(t *testing.T) {
 		// sixteen-runner ceiling, so the minimum slowest load is two shard
 		// budgets and the plan keeps the first count that reaches it.
 		if len(partition.Runners) != 10 {
-			t.Fatalf("plan used %d runners, want the first ten that halve the load", len(partition.Runners))
+			t.Fatalf("plan used %d runners, want the first ten that pair up the shards", len(partition.Runners))
 		}
 		for _, runner := range partition.Runners {
 			if len(runner.ShardIndexes) > 2 {
