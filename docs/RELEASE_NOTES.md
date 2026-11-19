@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
+
 ### Apex
 
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
