@@ -189,9 +189,12 @@ reaches `internal/vm` and the Apex runner that imports it, and a change inside
 parser and their consumers. The Apex, VM, CLI, sema, LWC
 compile and Visualforce shards of the fast lane plan from the same shared
 duration-history artifacts the full suite uses, and workers 12-23 split the
-remaining packages by the measured per-package durations recorded in
-`scripts/ci-package-lanes.json` (`scripts/ci-pr-assign.py` derives the same
-deterministic assignment on every worker). The Apex, sema, LWC compile and
+remaining packages longest-first onto the least total load, where each
+worker's load starts from the measured seconds of the dedicated route it also
+runs when that route's package is selected (VM shard, CLI shard, sema shard or
+worker 22's CLI doctor authority), recorded beside the measured per-package
+durations in `scripts/ci-package-lanes.json` (`scripts/ci-pr-assign.py` derives
+the same deterministic assignment on every worker). The Apex, sema, LWC compile and
 Visualforce shards also run the test binaries that the full suite's producer
 jobs build once, for the packages the pull request selects, and every worker
 restores the Go caches read-only. A changed path outside
