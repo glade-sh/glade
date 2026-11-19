@@ -1,0 +1,131 @@
+const item = location.search.slice(1).split('&')[0];
+// B25 measures real tab widths, so it runs under synthetic shadow with the
+// SLDS stylesheet, as the local shell does.
+if (item.startsWith('b25')) {
+  await import('@lwc/synthetic-shadow');
+  const {loadSLDS} = await import('@glade/slds');
+  const style = await loadSLDS();
+  if (!style.ok) throw new Error('SLDS stylesheet unavailable');
+}
+const {createElement} = await import('lwc');
+async function load(name) {
+  return (await import('/shim/' + name + '.js')).default;
+}
+async function add(tag, name, props = {}, parent = document.body) {
+  const el = createElement(tag, {is: await load(name)});
+  Object.assign(el, props);
+  parent.appendChild(el);
+  return el;
+}
+const frame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+// The probe markup of captures-lwc cap68<Item>, as component properties.
+if (item === 'b01') {
+  await add('lightning-checkbox-group', 'checkboxGroup', {name: 'choices', label: 'Choices', required: true,
+    options: [{label: 'First long choice', value: 'first'}, {label: 'Second long choice', value: 'second'}], value: []});
+}
+if (item === 'b17') {
+  await add('lightning-input-address', 'inputAddress', {addressLabel: 'Delivery destination', streetLabel: 'Street', cityLabel: 'City',
+    provinceLabel: 'State', postalCodeLabel: 'Postal code', countryLabel: 'Country', showAddressLookup: true});
+}
+if (item === 'b24') {
+  for (const step of [0.1, 0.25, 0.05]) await add('lightning-slider', 'slider', {label: 'Step ' + step, min: 0, max: 100, step, value: 50});
+}
+if (item === 'b07') {
+  const rows = [{id: 'r1', name: 'Example row'}, {id: 'r2', name: 'Second row'}];
+  const columns = [{label: 'Name', fieldName: 'name', type: 'text'}];
+  const error = extra => ({rows: {r1: {title: 'Capture validation', messages: ['Controlled fixture message'], fieldNames: ['name'], ...extra}}});
+  const table = {keyField: 'id', columns, showRowNumberColumn: true};
+  await add('lightning-datatable', 'datatable', {...table, data: rows, errors: error({rowTitle: 'Capture row title'})});
+  await add('lightning-datatable', 'datatable', {...table, data: rows, errors: error({})});
+  await add('lightning-datatable', 'datatable', {...table, data: [{id: 'r1', name: {label: 'Object row'}}], errors: error({})});
+}
+if (item === 'b11') {
+  const input = await add('lightning-input', 'input', {type: 'datetime', label: 'Appointment', required: true, value: 'not-a-datetime'});
+  input.reportValidity();
+}
+if (item === 'b11_time') {
+  // The invalidTime probe: a readable date, then 99:99 typed into the time half.
+  const input = await add('lightning-input', 'input', {type: 'datetime', label: 'Appointment', required: true, value: '2024-12-31T10:00:00.000Z'});
+  await frame();
+  const time = input.shadowRoot.querySelectorAll('input')[1];
+  time.value = '99:99';
+  time.dispatchEvent(new Event('input', {bubbles: true}));
+  input.reportValidity();
+}
+if (item === 'b15_en_US' || item === 'b15_fr_FR') {
+  for (const [type, label, value] of [['date', 'Date', 'not-a-date'], ['time', 'Time', '99:99'], ['datetime', 'DateTime', 'not-a-datetime']]) {
+    const input = await add('lightning-input', 'input', {type, label, value});
+    input.reportValidity();
+  }
+}
+if (item === 'b18') {
+  // Contact.Email as record-edit-form object info supplies it to the field.
+  const field = await add('lightning-input-field', 'inputField', {fieldName: 'Email'});
+  field.wireRecordUi({record: {apiName: 'Contact', fields: {}}, objectInfo: {fields: {Email: {apiName: 'Email', dataType: 'Email', label: 'Email', length: 80}}}});
+}
+if (item.startsWith('b25')) {
+  // b25 is the 260 px, 12 tab probe; b25_<width>_<tabs> are the other shapes of
+  // captures-lwc _ops2 (same tab labels, container width in px).
+  const [, width = '260', count = '12', selected] = item.match(/^b25(?:_(\d+)_(\d+))?(?:_sel(\d+))?/);
+  const holder = document.createElement('div');
+  holder.style.width = width + 'px';
+  document.body.appendChild(holder);
+  const tabset = await add('lightning-tabset', 'tabset', {}, holder);
+  const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth', 'Eleventh', 'Twelfth'];
+  for (const [index, name] of names.slice(0, Number(count)).entries()) {
+    const tab = await add('lightning-tab', 'tab', {label: name + ' long tab', value: 'tab' + (index + 1)}, tabset);
+    tab.appendChild(document.createTextNode(name));
+  }
+  // b25_<width>_<tabs>_sel<n>: the nth tab is selected, as the capture does
+  // from the More Tabs menu.
+  if (selected) tabset.activeTabValue = 'tab' + selected;
+  for (let i = 0; i < 4; i++) await frame();
+}
+if (item === 'm03_m04') {
+  // Toast timers run on a fake clock: the capture polled every 100 ms for 30 s.
+  const service = await import('/lightning/runtime/shell/toast-service.js');
+  const {ShowToastEvent} = await import('/lightning/shims/lightning/showToastEvent.js');
+  const Toast = await load('toast');
+  let now = 0, nextTimer = 1;
+  const timers = new Map();
+  service.setToastClock({
+    setTimeout(fn, ms) { const id = nextTimer++; timers.set(id, {at: now + ms, fn}); return id; },
+    clearTimeout(id) { timers.delete(id); },
+  });
+  service.installToastService();
+  const advance = ms => {
+    now += ms;
+    for (const [id, timer] of [...timers]) if (timer.at <= now) { timers.delete(id); timer.fn(); }
+  };
+  const region = document.querySelector('[data-glade-toast-region]');
+  const toasts = {};
+  for (const kind of ['event-dismissible', 'event-pester', 'event-sticky', 'module-dismissible', 'module-pester', 'module-sticky']) {
+    service.clearToasts();
+    now = 0;
+    const mode = kind.slice(kind.indexOf('-') + 1);
+    if (kind.startsWith('event-')) {
+      document.body.dispatchEvent(new ShowToastEvent({title: 'Timing capture', message: 'Observe disappearance.', variant: 'info', mode}));
+    } else {
+      await Toast.show({label: 'Timing capture', message: 'Observe disappearance.', variant: 'info', mode}, document.body);
+    }
+    const toast = region.querySelector('[data-glade-toast-id]');
+    const button = toast && toast.querySelector('button');
+    const attr = (el, name) => el && el.hasAttribute(name) ? el.getAttribute(name) : null;
+    const observed = {
+      role: attr(toast, 'role'), live: attr(toast, 'aria-live'), atomic: attr(toast, 'aria-atomic'),
+      close: button ? {class: attr(button, 'class'), 'aria-label': attr(button, 'aria-label'), title: attr(button, 'title'), text: button.textContent.trim()} : null,
+      goneAtMs: null,
+    };
+    for (let ms = 100; ms <= 30000 && observed.goneAtMs === null; ms += 100) {
+      advance(100);
+      if (!region.querySelector('[data-glade-toast-id]')) observed.goneAtMs = ms;
+    }
+    toasts[kind] = observed;
+  }
+  // The duration table is frozen: setToastClock is the only seam.
+  let changed = true;
+  try { service.TOAST_DURATIONS_MS.event.dismissible = 1; service.TOAST_DURATIONS_MS.module = {}; } catch (e) { changed = false; }
+  window.__observation = {toasts, durationsFrozen: Object.isFrozen(service.TOAST_DURATIONS_MS) && Object.isFrozen(service.TOAST_DURATIONS_MS.event) && Object.isFrozen(service.TOAST_DURATIONS_MS.module) && !changed && service.TOAST_DURATIONS_MS.event.dismissible !== 1};
+}
+await frame();
+window.__ready = true;

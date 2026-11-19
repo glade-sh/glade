@@ -3,3 +3,4 @@ context=istest
 rows=3
 native_complete=true
 deployment_success=true
+naming=Apex class, trigger and assertion-marker names were renamed after capture to behavior names; logic is unchanged. Any source_sha256 line refers to the original names.

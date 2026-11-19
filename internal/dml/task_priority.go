@@ -239,7 +239,7 @@ func (e *Engine) refreshActivityAccountsFor(parents map[storage.ID]struct{}) {
 			}
 			next := record.Clone()
 			e.applyActivityAccountFromWhat(&next)
-			mutable.Records[recordID] = next
+			mutable.PutRecord(recordID, next)
 		}
 		e.Org.Objects[activity] = *mutable
 	}

@@ -5,7 +5,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // personAccountEvidenceSkipDirs are directories that never hold object
@@ -25,12 +28,51 @@ const personAccountEvidenceMaxDepth = 12
 // personAccountRecordTypePaths accepts both the retrieved PersonAccount layout
 // and the default Account.PersonAccount identity exposed by listMetadata.
 // Other Account record types do not establish that Person Accounts are enabled.
-func personAccountRecordTypePaths(root string) []string {
-	if root == "" {
-		return nil
-	}
+func personAccountRecordTypePaths(v *inputview.View, root string) []string {
+	_, found := orgShapeEvidenceScan(v, root)
+	return found
+}
+
+// personAccountRecordTypesIn lists the Person Accounts record type evidence
+// under one objects directory.
+func personAccountRecordTypesIn(v *inputview.View, objects string) []string {
 	var found []string
-	_ = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	for _, object := range []string{"PersonAccount", "Account"} {
+		recordTypes := filepath.Join(objects, object, "recordTypes")
+		items, _ := v.ReadDir(recordTypes)
+		for _, item := range items {
+			if item.IsDir() || !strings.HasSuffix(item.Name(), ".recordType-meta.xml") {
+				continue
+			}
+			file := filepath.Join(recordTypes, item.Name())
+			if object == "Account" {
+				var recordType struct {
+					XMLName  xml.Name `xml:"RecordType"`
+					FullName string   `xml:"fullName"`
+				}
+				data, err := v.ReadFile(file)
+				if err != nil || xml.Unmarshal(data, &recordType) != nil || strings.TrimSpace(recordType.FullName) != "PersonAccount" {
+					continue
+				}
+			}
+			found = append(found, file)
+		}
+	}
+	return found
+}
+
+// orgShapeEvidenceScan walks the project tree once for both kinds of org shape
+// evidence: deployed settings files (settings/*.settings-meta.xml, from the
+// outermost settings directory on a path) and Person Accounts record types
+// (under objects directories, which the walk does not enter further). The
+// metadata-folder skip list and depth bound apply as before; the settings list
+// is sorted and the record type list keeps walk order.
+func orgShapeEvidenceScan(v *inputview.View, root string) (settings, personAccounts []string) {
+	if root == "" {
+		return nil, nil
+	}
+	settingsSubtree := ""
+	_ = v.WalkDirProjectRoot(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || !entry.IsDir() {
 			return nil
 		}
@@ -44,31 +86,21 @@ func personAccountRecordTypePaths(root string) []string {
 		if personAccountEvidenceSkipDirs[name] {
 			return filepath.SkipDir
 		}
-		if name != "objects" {
-			return nil
+		if settingsSubtree != "" && !strings.HasPrefix(path, settingsSubtree+string(os.PathSeparator)) {
+			settingsSubtree = ""
 		}
-		for _, object := range []string{"PersonAccount", "Account"} {
-			recordTypes := filepath.Join(path, object, "recordTypes")
-			items, _ := os.ReadDir(recordTypes)
-			for _, item := range items {
-				if item.IsDir() || !strings.HasSuffix(item.Name(), ".recordType-meta.xml") {
-					continue
-				}
-				file := filepath.Join(recordTypes, item.Name())
-				if object == "Account" {
-					var recordType struct {
-						XMLName  xml.Name `xml:"RecordType"`
-						FullName string   `xml:"fullName"`
-					}
-					data, err := os.ReadFile(file)
-					if err != nil || xml.Unmarshal(data, &recordType) != nil || strings.TrimSpace(recordType.FullName) != "PersonAccount" {
-						continue
-					}
-				}
-				found = append(found, file)
+		switch name {
+		case "objects":
+			personAccounts = append(personAccounts, personAccountRecordTypesIn(v, path)...)
+			return filepath.SkipDir
+		case "settings":
+			if settingsSubtree == "" {
+				settings = append(settings, sourceSettingsFilesIn(v, path)...)
+				settingsSubtree = path
 			}
 		}
-		return filepath.SkipDir
+		return nil
 	})
-	return found
+	sort.Strings(settings)
+	return settings, personAccounts
 }

@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -53,11 +52,11 @@ func flowResolveStandardRelationshipUpdates(raw *flowXML, definitions ...storage
 	}
 }
 
-func flowProjectRelationshipDefinitions(p project.Project) map[string]storage.ObjectDefinition {
+func flowProjectRelationshipDefinitions(p project.Project, schemas *projectSchemaLoader) map[string]storage.ObjectDefinition {
 	if len(p.FlowFiles) == 0 || len(p.ObjectFiles) == 0 && len(p.FieldFiles) == 0 {
 		return nil
 	}
-	s, err := schema.LoadProject(p)
+	s, err := schemas.load()
 	if err != nil {
 		return nil
 	}

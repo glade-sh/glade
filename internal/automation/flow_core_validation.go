@@ -3,22 +3,20 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
+func flowCoreValidateProjectEntries(p project.Project, idx *Index, schemas *projectSchemaLoader) error {
 	org := storage.NewOrgState()
 	updateOrg := storage.NewOrgState()
 	completeObjects := make(map[string]bool)
 	if len(p.ObjectFiles) != 0 || len(p.FieldFiles) != 0 || p.SchemaSnapshot != "" {
-		if s, err := schema.LoadProject(p); err == nil {
+		if s, err := schemas.load(); err == nil {
 			for _, object := range s.Objects {
 				if object.CompleteSnapshot {
 					completeObjects[strings.ToLower(object.Name)] = true
@@ -37,7 +35,7 @@ func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
 	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}

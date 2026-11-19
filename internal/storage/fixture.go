@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
+	"reflect"
 	"slices"
 	"sort"
 	"strconv"
@@ -173,7 +175,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			org.Objects[objectName] = object
 		}
 		if object.Records == nil {
-			object.Records = make(map[ID]Record)
+			object.SetRecords(make(map[ID]Record))
 			org.Objects[objectName] = object
 		}
 		assignedIDs[objectIndex] = make([]ID, len(objectFixture.Records))
@@ -204,6 +206,10 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	}
 	for objectIndex, objectFixture := range fixture.Objects {
 		objectName := ensureFixtureObjectState(org, objectFixture.Name, &generator)
+		if len(objectFixture.Records) != 0 {
+			// Runtime clones share the rows of metadata and setup objects.
+			mutableSeedObject(org, objectName)
+		}
 		object := org.Objects[objectName]
 		for i, fixtureRecord := range objectFixture.Records {
 			record := Record{
@@ -235,7 +241,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				delete(record.ExplicitNulls, fieldName)
 			}
 			// Fields and explicit nulls are already owned by this record.
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 		}
 		org.Objects[objectName] = object
 	}
@@ -326,8 +332,63 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 			previous = append(previous, feature)
 		}
 	}
+	combined := append(append([]string(nil), previous...), features...)
+	captured := slices.Contains(features, project.PlainDeveloperDescribeShape) && capturedPlainSpreadFeatures(combined)
+	if !captured {
+		restorePrunedStandardSpread(org)
+	}
+	org.StandardSpreadCapturedPlain = captured
 	org.Features = previous
 	ApplyOrgShape(org, features)
+}
+
+// restorePrunedStandardSpread reverses only this branch's removals. A
+// source-backed spread must not acquire the unrelated eager inventory.
+func restorePrunedStandardSpread(org *OrgState) {
+	if org.StandardSpreadSuppressed != nil {
+		for name := range org.StandardSpreadSuppressed.snapshot() {
+			if org.SuppressesSpreadObject(name) {
+				DeleteObject(org, name)
+			}
+		}
+		org.StandardSpreadSuppressed = nil
+		org.ClearRuntimeSchemaStamp()
+	}
+	if org.StandardSpreadPruned {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
+	removed := org.StandardSpreadRemoved
+	org.StandardSpreadRemoved = nil
+	for _, name := range removed {
+		if _, exists := org.Objects[name]; !exists {
+			ensureStandardObjectWithProfile(org, name, nil)
+		}
+	}
+	if len(org.StandardSpreadHiddenAccess) != 0 || len(org.StandardSpreadHiddenDefinitions) != 0 {
+		org.StandardSpreadHiddenAccess = nil
+		org.StandardSpreadHiddenDefinitions = nil
+		org.ClearRuntimeSchemaStamp()
+	}
+}
+
+// capturedPlainSpreadFeatures accepts only the exact default Developer shape
+// captured for lookup and query, not the broader global-describe profile.
+func capturedPlainSpreadFeatures(features []string) bool {
+	var edition, objects, describe bool
+	for _, feature := range features {
+		switch feature {
+		case project.StandardFieldEditionDeveloper:
+			edition = true
+		case project.PlainDeveloperObjectShape:
+			objects = true
+		case project.PlainDeveloperDescribeShape:
+			describe = true
+		default:
+			return false
+		}
+	}
+	return edition && objects && describe
 }
 
 // ApplyOrgShape adds capabilities. Adding one feature does not establish the
@@ -335,6 +396,19 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 func ApplyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
+	}
+	combined := append(append([]string(nil), org.Features...), features...)
+	captured := capturedPlainSpreadFeatures(combined)
+	if !captured {
+		restorePrunedStandardSpread(org)
+	}
+	if !captured {
+		org.StandardSpreadCapturedPlain = false
+	} else if slices.Contains(features, project.PlainDeveloperDescribeShape) {
+		org.StandardSpreadCapturedPlain = true
+	}
+	if org.StandardSpreadCapturedPlain && (org.StandardSpread != "" || org.lazyStandardSpread) {
+		org.ensureSpreadSuppression()
 	}
 	applyOrgShape(org, features)
 	ensureOrganizationGroups(org)
@@ -371,9 +445,12 @@ func applyOrgShape(org *OrgState, features []string) {
 	}
 	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
+	reconcileBootstrapProfileLicenses(org)
+	pruneUncapturedBootstrapProfiles(org)
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}
+	org.markStandardSpreadShaped()
 }
 
 func featureArgumentInt(feature string, fallback int) int {
@@ -451,11 +528,8 @@ func applyMultiCurrencyField(org *OrgState, name string) {
 	if !ok || !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
 		return
 	}
-	obj.Definition = obj.Definition.Clone()
-	if obj.Definition.Fields == nil {
-		obj.Definition.Fields = make(map[string]Field)
-	}
-	field := obj.Definition.Fields["CurrencyIsoCode"]
+	existing, hasField := obj.Definition.Fields["CurrencyIsoCode"]
+	field := existing
 	field.APIName = "CurrencyIsoCode"
 	if field.Label == "" {
 		field.Label = "Currency ISO Code"
@@ -465,7 +539,16 @@ func applyMultiCurrencyField(org *OrgState, name string) {
 	field.DefaultedOnCreate = BoolFlag(true)
 	// Currency defaults depend on the execution user and DML phase. Do not
 	// store a literal default that would change ordinary SObject field reads.
-	obj.Definition.Fields["CurrencyIsoCode"] = field
+	if hasField && reflect.DeepEqual(existing, field) {
+		return
+	}
+	// Only the field map is written, and only one entry in it, so copy the
+	// map (Field values replace whole) instead of the whole definition. The
+	// definition may be shared with the spread template or other orgs.
+	fields := make(map[string]Field, len(obj.Definition.Fields)+1)
+	maps.Copy(fields, obj.Definition.Fields)
+	fields["CurrencyIsoCode"] = field
+	obj.Definition.Fields = fields
 	org.Objects[name] = obj
 }
 
@@ -821,12 +904,13 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	standardPlatformUserProfileID := ID("00e000000000004")
 	standardUserProfileID := ID("00e000000000005")
 	marketingUserProfileID := ID("00e000000000006")
-	guestProfileID := ID("00e000000000007")
 	customerCommunityLoginProfileID := ID("00e000000000008")
 	automatedProcessProfileID := ID("00e000000000009")
 	chatterFreeProfileID := ID("00e000000000011")
 	salesforceLicenseID := ID("100000000000001")
-	chatterExternalLicenseID := ID("100000000000002")
+	// License 100000000000002 keeps its identity; native names the
+	// PID_Customer_Community_Login license "Customer Community Login".
+	customerCommunityLoginLicenseID := ID("100000000000002")
 	chatterFreeLicenseID := ID("100000000000005")
 	userID := ID(DefaultUserID)
 	automatedProcessUserID := existingAutomatedProcessUserID(*org)
@@ -872,13 +956,18 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		},
 	})
 	putSeedRecord(org, "UserLicense", Record{
-		ID:     chatterExternalLicenseID,
+		ID:     customerCommunityLoginLicenseID,
 		Object: "UserLicense",
 		Fields: map[string]Value{
-			"Name":                 StringValue("Chatter External"),
+			"Name":                 StringValue("Customer Community Login"),
 			"LicenseDefinitionKey": StringValue("PID_Customer_Community_Login"),
 		},
 	})
+	// profile_usertype P1 (API 62.0 and 67.0) links Chatter External User to
+	// Chatter External/CSN_External_User and Standard Platform User to
+	// Salesforce Platform/AUL.
+	chatterExternalLicenseID := ensureInventoryUserLicense(org, "Chatter External", chatterExternalLicenseKey)
+	salesforcePlatformLicenseID := ensureInventoryUserLicense(org, "Salesforce Platform", salesforcePlatformLicenseKey)
 	// Owned API62/64/67 observations establish this built-in profile and
 	// linked license. Their permission records were not captured.
 	putSeedRecord(org, "UserLicense", Record{
@@ -902,12 +991,12 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
-		Fields: profileSeedFields("System Administrator", salesforceLicenseID),
+		Fields: bootstrapProfileSeedFields(profileID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     minimumAccessProfileID,
 		Object: "Profile",
-		Fields: profileSeedFields("Minimum Access - Salesforce", salesforceLicenseID),
+		Fields: bootstrapProfileSeedFields(minimumAccessProfileID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     chatterExternalProfileID,
@@ -915,19 +1004,14 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Fields: profileSeedFields("Chatter External User", chatterExternalLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
-		ID:     guestProfileID,
-		Object: "Profile",
-		Fields: profileSeedFields("Customer Community Guest User", chatterExternalLicenseID),
-	})
-	putSeedRecord(org, "Profile", Record{
 		ID:     standardPlatformUserProfileID,
 		Object: "Profile",
-		Fields: profileSeedFields("Standard Platform User", salesforceLicenseID),
+		Fields: profileSeedFields("Standard Platform User", salesforcePlatformLicenseID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     standardUserProfileID,
 		Object: "Profile",
-		Fields: profileSeedFields("Standard User", salesforceLicenseID),
+		Fields: bootstrapProfileSeedFields(standardUserProfileID),
 	})
 	for _, name := range []string{"Contract Manager", "Solution Manager"} {
 		putDefaultSetupRecord(org, "Profile", "Name", 13, map[string]Value{
@@ -937,13 +1021,14 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	putSeedRecord(org, "Profile", Record{
 		ID:     marketingUserProfileID,
 		Object: "Profile",
-		Fields: profileSeedFields("Marketing User", salesforceLicenseID),
+		Fields: bootstrapProfileSeedFields(marketingUserProfileID),
 	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     customerCommunityLoginProfileID,
 		Object: "Profile",
-		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
+		Fields: bootstrapProfileSeedFields(customerCommunityLoginProfileID),
 	})
+	migrateLegacyLicenseSeeds(org, salesforceLicenseID, customerCommunityLoginLicenseID, chatterExternalLicenseID, salesforcePlatformLicenseID)
 	ensureDefaultUserRoles(org)
 	putSeedRecord(org, "User", Record{
 		ID:     userID,
@@ -1310,13 +1395,46 @@ func ensureOpportunityStageData(org *OrgState) {
 	}
 }
 
+// License definition keys of the inventory licenses linked to the seeded
+// Chatter External User and Standard Platform User profiles.
+const (
+	chatterExternalLicenseKey    = "CSN_External_User"
+	salesforcePlatformLicenseKey = "AUL"
+)
+
+// bootstrapProfileSeedFields records the original fields of the reserved
+// fixture profiles. Shape migration compares against these originals so a
+// changed seed field is never mistaken for untouched data. Chatter External
+// User and Standard Platform User use the inventory license ID the seeder gives
+// a fresh org; a profile seeded with another license is treated as changed.
+func bootstrapProfileSeedFields(id ID) map[string]Value {
+	const salesforce ID = "100000000000001"
+	const communityLogin ID = "100000000000002"
+	switch id {
+	case ID(DefaultProfileID):
+		return profileSeedFields("System Administrator", salesforce)
+	case "00e000000000002":
+		return profileSeedFields("Minimum Access - Salesforce", salesforce)
+	case "00e000000000003":
+		return profileSeedFields("Chatter External User", inventoryUserLicenseSeedID(chatterExternalLicenseKey))
+	case "00e000000000004":
+		return profileSeedFields("Standard Platform User", inventoryUserLicenseSeedID(salesforcePlatformLicenseKey))
+	case "00e000000000005":
+		return profileSeedFields("Standard User", salesforce)
+	case "00e000000000006":
+		return profileSeedFields("Marketing User", salesforce)
+	case "00e000000000008":
+		return profileSeedFieldsWithUserType("Customer Community Login User", communityLogin, "CspLitePortal")
+	default:
+		return nil
+	}
+}
+
 func profileSeedFields(name string, licenseID ID) map[string]Value {
 	userType := "Standard"
 	switch name {
 	case "Chatter External User":
 		userType = "CsnOnly"
-	case "Customer Community Guest User":
-		userType = "Guest"
 	}
 	return profileSeedFieldsWithUserType(name, licenseID, userType)
 }
@@ -1328,10 +1446,6 @@ func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) m
 		"UserType":      StringValue(userType),
 	}
 	applyCapturedProfilePermissions(fields, name)
-	if name == "System Administrator" {
-		// Fresh scratch administrator Profile, API 62.0 and 67.0.
-		fields["PermissionsManageUsers"] = BooleanValue(true)
-	}
 	return fields
 }
 
@@ -1369,6 +1483,12 @@ func applyCapturedProfilePermissions(fields map[string]Value, profileName string
 	for _, flag := range capturedProfilePermissions[profileName] {
 		fields["Permissions"+flag] = BooleanValue(true)
 	}
+	// Direct Profile and profile-owned PermissionSet queries in
+	// user_manage_users/permission_values/org.tsv record both fields at API
+	// 62.0 and 67.0: true for the administrator, false for the other seven.
+	isAdministrator := profileName == "System Administrator"
+	fields["PermissionsManageUsers"] = BooleanValue(isAdministrator)
+	fields["PermissionsManageInternalUsers"] = BooleanValue(isAdministrator)
 }
 
 // SF193 establishes the default BusinessHours record used by a fresh org.
@@ -1542,10 +1662,9 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 		return
 	}
 	// Record-type IDs, defaults and the lookup field are written below.
-	// Runtime seeds can share this definition with other orgs.
-	if len(object.Definition.RecordTypes) != 0 || objectName == "Account" {
-		object.Definition = object.Definition.Clone()
-	}
+	// Runtime seeds can share this definition with other orgs, so privatize
+	// what is written: the record type list always, and the field map and
+	// metadata only when RecordTypeId or the policy snapshot must be added.
 	if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
 		object.Definition.RecordTypes = []RecordTypeInfo{{
 			DeveloperName: "Business",
@@ -1554,6 +1673,13 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 			Available:     true,
 			Default:       true,
 		}}
+	}
+	if recordTypeIDFieldNeedsWrite(object.Definition) {
+		object.Definition = object.Definition.Clone()
+	} else if len(object.Definition.RecordTypes) != 0 {
+		// Entries are replaced whole below; PicklistDefaults maps are never
+		// written, so a shallow copy of the list is enough.
+		object.Definition.RecordTypes = append([]RecordTypeInfo(nil), object.Definition.RecordTypes...)
 	}
 	defaultedPersonAccount := false
 	if objectName == "Account" {
@@ -1665,7 +1791,7 @@ func nextUnusedRecordTypeID(used map[ID]bool, start uint64) (ID, uint64) {
 
 func ResetData(org *OrgState) {
 	for name, object := range org.Objects {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 	}
 	org.IDSequences = make(map[string]uint64)
@@ -1678,13 +1804,13 @@ func ResetNonPlatformData(org *OrgState) {
 			continue
 		}
 		previous := object.Records
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		if name == "Group" {
 			// Organization groups are setup rows; regular and role groups are data.
 			for id, record := range previous {
 				switch record.Fields["Type"].String {
 				case "Organization", "AllCustomerPortal", "PRMOrganization":
-					object.Records[id] = record.Clone()
+					object.PutRecord(id, record.Clone())
 				}
 			}
 		}
@@ -1701,7 +1827,7 @@ func ResetPlatformData(org *OrgState) {
 		if !IsPlatformObject(name) {
 			continue
 		}
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 		delete(org.IDSequences, name)
 	}
@@ -1760,6 +1886,9 @@ func objectNamesFromOrg(org OrgState) []string {
 
 func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 	object := org.Objects[name]
+	if ensureObjectIsComplete(object, prefix, fields) {
+		return
+	}
 	object.Definition = object.Definition.Clone()
 	if object.Definition.APIName == "" {
 		object.Definition.APIName = name
@@ -1811,7 +1940,7 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	org.Objects[name] = object
 }
@@ -1848,9 +1977,12 @@ func existingAutomatedProcessUserID(org OrgState) ID {
 }
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {
+	if org.Objects[objectName].RecordsShared || org.Objects[objectName].IndexesShared {
+		EnsureMutableObjectRecords(org, objectName)
+	}
 	object := org.Objects[objectName]
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	if existing, exists := object.Records[record.ID]; exists {
 		if existing.Fields == nil {
@@ -1862,13 +1994,13 @@ func putSeedRecord(org *OrgState, objectName string, record Record) {
 			}
 		}
 		stampSeedSystemFields(&existing)
-		object.Records[record.ID] = existing
+		object.PutRecord(record.ID, existing)
 		org.Objects[objectName] = object
 		return
 	}
 	seeded := record.Clone()
 	stampSeedSystemFields(&seeded)
-	object.Records[record.ID] = seeded
+	object.PutRecord(record.ID, seeded)
 	org.Objects[objectName] = object
 }
 

@@ -1,0 +1,10 @@
+id	api	route	compiled	success	outcome
+pe01	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"after":0,"fail2":"ok","deliver":"ok","fail1":"ok","before":0}
+pe02	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok","pub":true}
+pe03	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"afterStop":[],"afterDeliver":[],"deliver":"ok","before":[],"fail":"ok"}
+pe04	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f4"],"afterFail":["PE-f4"],"fail":"ok","afterDeliver":[
+pe05	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok"}
+pe06	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f6-b"],"afterDeliver":["PE-f6-b"],"deliver":"ok","fail"
+pe07	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"afterStop":1,"afterDeliver":1,"deliver":"ok","fail":"ok","before":0}
+pe08	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"pe":[],"cdc":1,"before":0,"fail":"ok"}
+pe09	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"afterExtra":["PE-inside","PE-outside"],"afterStop":["PE-inside","PE-out

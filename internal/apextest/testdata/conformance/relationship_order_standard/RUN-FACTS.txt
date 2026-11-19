@@ -1,0 +1,12 @@
+capture: getRelationshipOrder on every reference field of every standard object
+route: anonymous Apex (sf apex run --api-version), Schema.getGlobalDescribe, DescribeFieldResult.getRelationshipOrder
+apis: 62.0 67.0
+sweep 62.0: 1344 objects, 4915 reference fields, 159 non-null orders
+sweep 67.0: 1457 objects, 5341 reference fields, 170 non-null orders
+org.tsv holds the non-null rows of standard objects only (names without a double underscore). Every other reference field is null.
+orders seen: 0 and 1; the 1 appears on EntitlementContact.ContactId, LocationGroupAssignment.LocationGroupId,
+  TestSuiteMembership.ApexClassId, UserListView.ListViewId, WorkTypeGroupMember.WorkTypeGroupId
+62.0 rows are a subset of the 67.0 rows; no field differs in value.
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch Developer edition org, 1 day, deleted after the run)
+Control: a custom master-detail pair and a custom junction object in the same sweep report 0 for the primary and 1 for the secondary master.

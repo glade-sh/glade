@@ -1,0 +1,14 @@
+id	api	route	compiled	success	outcome
+HEAP-DEPLOY-68	68.0	deploy	true	true	deployed
+HEAP-DEPLOY-67	67.0	deploy	true	true	deployed
+HEAP-SYNC-68	68.0	anonymous	true	true	SYNC_HEAP_BYTES=10000000;SYNC_HEAP_USED=1244 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-SYNC-67	67.0	anonymous	true	true	SYNC_HEAP_BYTES=10000000;SYNC_HEAP_USED=1244 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-ASYNC-ENQ-68	68.0	anonymous	true	true	ok [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=1/50]
+HEAP-ASYNC-ENQ-67	67.0	anonymous	true	true	ok [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=1/50]
+HEAP-READ	68.0	anonymous	true	true	ROW|async68|ASYNC_HEAP_BYTES=25000000;ASYNC_HEAP_USED=1306;ROW|async68|ASYNC_HEAP_BYTES=25000000;ASYNC_HEAP_USED=1293;ROW|async67|ASYNC_HEAP_BYTES=25000000;ASYNC_HEAP_USED=1293;ROW_COUNT=3 [LIMITS soql=1/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-SETTING-ON	68.0	deploy	true	true	deployed
+HEAP-CLEAR	68.0	anonymous	true	true	CLEARED=true [LIMITS soql=1/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-SYNC-OVERRIDE-68	68.0	anonymous	true	true	SYNC_HEAP_BYTES=10000000;SYNC_HEAP_USED=1244 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-ASYNC-OVERRIDE-68	68.0	anonymous	true	true	ok [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=1/50]
+HEAP-READ-OVERRIDE	68.0	anonymous	true	true	ROW|async68|ASYNC_HEAP_BYTES=25000000;ASYNC_HEAP_USED=1293;ROW_COUNT=1 [LIMITS soql=1/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+HEAP-SETTING-OFF	68.0	deploy	true	true	deployed

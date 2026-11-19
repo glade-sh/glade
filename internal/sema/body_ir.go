@@ -1625,8 +1625,17 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, inst.Then, scope, bodyOffset, source, model, constructability)...)
 			scope.incrementHeader = header
 		case ir.OpAssign:
-			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
-			diagnostics = append(diagnostics, a.checkIRAssignmentTarget(typ, member, inst.Name, *scope, inst.Pos, bodyOffset, source, model)...)
+			readDiagnostics := a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)
+			targetDiagnostics := a.checkIRAssignmentTarget(typ, member, inst.Name, *scope, inst.Pos, bodyOffset, source, model)
+			if semaIncrementStatementSpelling(inst, bodyOffset+inst.Pos, source) {
+				// ++ and -- lower to an assignment of Name + 1. Natively the
+				// operand is one reference, so one unknown-field error
+				// (unknown_sobject_field/org.tsv D_* rows); += and an
+				// explicit read still report the read and the target.
+				readDiagnostics = semaWithoutDuplicateDiagnostics(readDiagnostics, targetDiagnostics)
+			}
+			diagnostics = append(diagnostics, readDiagnostics...)
+			diagnostics = append(diagnostics, targetDiagnostics...)
 			if targetType, ok := irAssignmentTargetType(inst.Name, *scope, model, typ.Name); ok {
 				diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, targetType, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "assigns")...)
 			}
@@ -2249,6 +2258,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if message, rejected := semaChangeEventHeaderPathField(expr.Name, *scope, model); rejected {
 			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
 		}
+		if hidden, rejected := semaObjectPermissionsHiddenFieldPath(typ.EffectiveAPIVersion, expr.Name, false, *scope, model); rejected {
+			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, "Variable does not exist: "+hidden, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Name)), source)}
+		}
 		fieldReceiver := expr.Name
 		fieldPath := expr.Name
 		fieldMember := ""
@@ -2319,6 +2331,13 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 	case ir.ExprCall:
 		if item, rejected := a.queryBindMapVariableDiagnostic(typ, expr, *scope, model, bodyOffset+pos, source); rejected {
 			return []diagnostic.Diagnostic{item}
+		}
+		if expr.Left == nil && expr.Callee != "" && !strings.HasPrefix(expr.Callee, "new:") {
+			if dot := strings.LastIndexByte(expr.Callee, '.'); dot > 0 {
+				if hidden, rejected := semaObjectPermissionsHiddenFieldPath(typ.EffectiveAPIVersion, expr.Callee[:dot], true, *scope, model); rejected {
+					return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, "Variable does not exist: "+hidden, bodyOffset+pos, bodyOffset+pos+max(1, dot), source)}
+				}
+			}
 		}
 		if expr.Left != nil {
 			diagnostics = append(diagnostics, a.checkIRHTTPReceiverCalls(typ, member, *expr.Left, *scope, pos, bodyOffset, source, model, constructability)...)
@@ -2808,6 +2827,16 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				return []diagnostic.Diagnostic{item}
 			}
 		}
+		// A member access on an index, cast or call result: the rule of
+		// semaUnknownSObjectFieldPath (unknown_sobject_field/org.tsv).
+		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && a.semaStandardSObjectLacksField(model, members, field) {
+			if _, resolved := semaResolveField(model, receiverType, field, make(map[string]bool)); !resolved {
+				message := "Variable does not exist: " + field
+				item := semaFieldAccessDiagnostic(typ, member, field, message, bodyOffset+pos, bodyOffset+pos+max(1, len(field)), source)
+				item.NativeMessage = message
+				return []diagnostic.Diagnostic{item}
+			}
+		}
 		return nil
 	}
 	if strings.HasPrefix(expr.Callee, "__field:") ||
@@ -2927,7 +2956,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 		if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiver, method, "class") || (strings.EqualFold(method, "validateKeys") && semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiver, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name))) {
-			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source), receiver, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model)}
 		}
 		// C033/C035: namespaced platform types can reach the dotted fallback
 		// before ordinary call validation. A bound namespace is a value receiver
@@ -3427,6 +3456,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			return []diagnostic.Diagnostic{nativeSourceOverloadDiagnostic(ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source), receiverType, method, sourceArgTypes, candidates, model, typ)}
 		}
 	}
+	// A query literal passed where one SObject is expected is the single-row
+	// conversion native accepts (review_round7: MxLog.fmt([SELECT ...]) after a
+	// string concatenation reached this path).
+	for _, candidate := range candidates {
+		if memberApplicableWithIRSOQLSingletonArgs(candidate.member, argTypes, expr.Args, model) {
+			return nil
+		}
+	}
 	d := diagnostic.Diagnostic{
 		Severity:      diagnostic.Error,
 		Code:          "GLADESEMA009",
@@ -3816,6 +3853,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 		// Lowered increment operators keep the existing increment checks and
 		// must not be diagnosed as missing source methods.
 		increment := semaIRIncrementCall(ir.Expr{Kind: ir.ExprCall, Callee: method})
+		if d, ok := semaMatcherToMatchResultDiagnostic(typ, member, platformType, receiverMode, method, args, bodyOffset+pos, source); ok {
+			return []diagnostic.Diagnostic{d}, true
+		}
 		if strings.EqualFold(platformType, "String") ||
 			(receiverMode == "instance" && len(args) == 0 && strings.EqualFold(platformType, "Integer") && !increment) {
 			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source), receiverType, method, irCallArgTypes(a, args, scope, model, typ.Name), model)}, true
@@ -5445,6 +5485,9 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		message := "Variable does not exist: " + missing
 		return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA021", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
 	}
+	if missing, owner, ok := a.semaUnknownSObjectFieldPath(root, field, scope, model, typ.Name); ok {
+		return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA021", Message: fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, missing, owner), NativeMessage: "Variable does not exist: " + missing, File: typ.File, Range: semaRange(source, start, start+max(1, len(name)))}, true
+	}
 	receiverType := ""
 	valueReceiver := false
 	switch {
@@ -5595,6 +5638,13 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		Message:  fmt.Sprintf("%s %q references unknown field %q on %s", member.Kind, member.Name, field, receiverType),
 		File:     typ.File,
 		Range:    semaRange(source, start, start+max(1, len(name))),
+	}
+	// A custom object without the field is "Variable does not exist: <field>"
+	// on both routes (unknown_sobject_field/org.tsv, Widget__c rows).
+	if valueReceiver && !strings.Contains(field, ".") {
+		if members, _, known := semaLookupTypeMembers(model, receiverType); known && members.sobject && semaHasAPISuffixFold(members.name, "__c") {
+			item.NativeMessage = "Variable does not exist: " + strings.TrimSpace(field)
+		}
 	}
 	// A source class with a complete nested inventory cannot provide the
 	// missing first segment of a static member chain. Native points at that
@@ -6154,4 +6204,46 @@ func (s semaScopeModel) localKey(local semaLocal) string {
 		return local.key
 	}
 	return s.canonicalName(local.name)
+}
+
+// semaIncrementStatementSpelling reports whether the statement at start is
+// Name++, Name--, ++Name or --Name, which the statement lowering turns into an
+// assignment that no longer carries the operator.
+func semaIncrementStatementSpelling(inst ir.Instruction, start int, source string) bool {
+	if inst.Op != ir.OpAssign || inst.Expr.Kind != ir.ExprBinary || (inst.Expr.Operator != "+" && inst.Expr.Operator != "-") || start < 0 || start >= len(source) {
+		return false
+	}
+	end := strings.IndexByte(source[start:], ';')
+	if end < 0 {
+		return false
+	}
+	spelling := strings.Join(strings.Fields(sourceSyntaxCodeText(source[start:start+end])), "")
+	for _, operator := range []string{"++", "--"} {
+		if strings.EqualFold(spelling, inst.Name+operator) || strings.EqualFold(spelling, operator+inst.Name) {
+			return true
+		}
+	}
+	return false
+}
+
+// semaWithoutDuplicateDiagnostics drops the diagnostics of read that target
+// already reports with the same code, message and range.
+func semaWithoutDuplicateDiagnostics(read, target []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	if len(read) == 0 || len(target) == 0 {
+		return read
+	}
+	var kept []diagnostic.Diagnostic
+	for _, item := range read {
+		duplicate := false
+		for _, other := range target {
+			if item.Code == other.Code && item.Message == other.Message && item.NativeMessage == other.NativeMessage && item.File == other.File && ((item.Range == nil && other.Range == nil) || (item.Range != nil && other.Range != nil && *item.Range == *other.Range)) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			kept = append(kept, item)
+		}
+	}
+	return kept
 }

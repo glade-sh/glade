@@ -1,0 +1,9 @@
+api	route	case	result
+62.0	anonymous	null and non-null default overloads	object:null|object:null|object:true|null
+67.0	anonymous	null and non-null default overloads	object:null|object:null|object:true|null
+62.0	anonymous	invalid integer conversion	System.TypeException: Invalid integer
+67.0	anonymous	invalid integer conversion	System.TypeException: Invalid integer
+62.0	istest	default overloads and rejection	pass
+67.0	istest	default overloads and rejection	pass
+62.0	anonymous	default metadata matrix	{"FlagFalse":false,"Flag":true,"Amount":null,"Fraction":null,"Zero":null,"TextSeed":null,"Number":null,"Blank":null}
+67.0	anonymous	default metadata matrix	{"FlagFalse":false,"Flag":true,"Amount":null,"Fraction":null,"Zero":null,"TextSeed":null,"Number":null,"Blank":null}

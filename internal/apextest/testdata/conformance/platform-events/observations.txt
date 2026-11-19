@@ -1,0 +1,93 @@
+# platform-events full native observations
+
+## API 62.0
+### pe01 [istest @62.0]
+method=observe outcome=Fail time=30ms
+message=System.AssertException: Assertion Failed: OBS|{"after":0,"fail2":"ok","deliver":"ok","fail1":"ok","before":0}
+stack=Class.Pe01FailNoEventsTest.observe: line 8, column 1
+
+### pe02 [istest @62.0]
+method=observe outcome=Fail time=82ms
+message=System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok","pub":true}
+stack=Class.Pe02FailBeforeStopTest.observe: line 10, column 1
+
+### pe03 [istest @62.0]
+method=observe outcome=Fail time=44ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":[],"afterDeliver":[],"deliver":"ok","before":[],"fail":"ok"}
+stack=Class.Pe03FailThenDeliverTest.observe: line 12, column 1
+
+### pe04 [istest @62.0]
+method=observe outcome=Fail time=172ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f4"],"afterFail":["PE-f4"],"fail":"ok","afterDeliver":["PE-f4"],"deliver":"ok"}
+stack=Class.Pe04DeliverThenFailTest.observe: line 12, column 1
+
+### pe05 [istest @62.0]
+method=observe outcome=Fail time=83ms
+message=System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok"}
+stack=Class.Pe05FailMixedEventsTest.observe: line 11, column 1
+
+### pe06 [istest @62.0]
+method=observe outcome=Fail time=124ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f6-b"],"afterDeliver":["PE-f6-b"],"deliver":"ok","fail":"ok"}
+stack=Class.Pe06FailThenRepublishTest.observe: line 12, column 1
+
+### pe07 [istest @62.0]
+method=observe outcome=Fail time=350ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":1,"afterDeliver":1,"deliver":"ok","fail":"ok","before":0}
+stack=Class.Pe07FailCdcTest.observe: line 13, column 1
+
+### pe08 [istest @62.0]
+method=observe outcome=Fail time=184ms
+message=System.AssertException: Assertion Failed: OBS|{"pe":[],"cdc":1,"before":0,"fail":"ok"}
+stack=Class.Pe08FailMixedCdcTest.observe: line 12, column 1
+
+### pe09 [istest @62.0]
+method=observe outcome=Fail time=296ms
+message=System.AssertException: Assertion Failed: OBS|{"afterExtra":["PE-inside","PE-outside"],"afterStop":["PE-inside","PE-outside"],"beforeStart":["PE-outside"]}
+stack=Class.Pe09DeliverPlacementsTest.observe: line 12, column 1
+
+## API 67.0
+### pe01 [istest @67.0]
+method=observe outcome=Fail time=55ms
+message=System.AssertException: Assertion Failed: OBS|{"after":0,"fail2":"ok","deliver":"ok","fail1":"ok","before":0}
+stack=Class.Pe01FailNoEventsTest.observe: line 8, column 1
+
+### pe02 [istest @67.0]
+method=observe outcome=Fail time=74ms
+message=System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok","pub":true}
+stack=Class.Pe02FailBeforeStopTest.observe: line 10, column 1
+
+### pe03 [istest @67.0]
+method=observe outcome=Fail time=78ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":[],"afterDeliver":[],"deliver":"ok","before":[],"fail":"ok"}
+stack=Class.Pe03FailThenDeliverTest.observe: line 12, column 1
+
+### pe04 [istest @67.0]
+method=observe outcome=Fail time=257ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f4"],"afterFail":["PE-f4"],"fail":"ok","afterDeliver":["PE-f4"],"deliver":"ok"}
+stack=Class.Pe04DeliverThenFailTest.observe: line 12, column 1
+
+### pe05 [istest @67.0]
+method=observe outcome=Fail time=77ms
+message=System.AssertException: Assertion Failed: OBS|{"after":[],"before":[],"fail":"ok"}
+stack=Class.Pe05FailMixedEventsTest.observe: line 11, column 1
+
+### pe06 [istest @67.0]
+method=observe outcome=Fail time=214ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":["PE-f6-b"],"afterDeliver":["PE-f6-b"],"deliver":"ok","fail":"ok"}
+stack=Class.Pe06FailThenRepublishTest.observe: line 12, column 1
+
+### pe07 [istest @67.0]
+method=observe outcome=Fail time=277ms
+message=System.AssertException: Assertion Failed: OBS|{"afterStop":1,"afterDeliver":1,"deliver":"ok","fail":"ok","before":0}
+stack=Class.Pe07FailCdcTest.observe: line 13, column 1
+
+### pe08 [istest @67.0]
+method=observe outcome=Fail time=275ms
+message=System.AssertException: Assertion Failed: OBS|{"pe":[],"cdc":1,"before":0,"fail":"ok"}
+stack=Class.Pe08FailMixedCdcTest.observe: line 12, column 1
+
+### pe09 [istest @67.0]
+method=observe outcome=Fail time=256ms
+message=System.AssertException: Assertion Failed: OBS|{"afterExtra":["PE-inside","PE-outside"],"afterStop":["PE-inside","PE-outside"],"beforeStart":["PE-outside"]}
+stack=Class.Pe09DeliverPlacementsTest.observe: line 12, column 1

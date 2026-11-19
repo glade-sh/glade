@@ -31,7 +31,7 @@ func (vm *VM) systemCustomHashCode(value Value, result *Result) (Value, error) {
 		if hash.Kind == ValueInt {
 			return hash, nil
 		}
-		return Int(int64(valueHashCode(value))), nil
+		return Int(int64(valueHashCodeEnv(vm.hashEnv(), value))), nil
 	}
 	if value.Kind == ValueList && len(value.List) == 1 {
 		method, owner, custom := vm.systemDirectSourceHashMethod(value.List[0])
@@ -61,7 +61,7 @@ func (vm *VM) systemCustomHashCode(value Value, result *Result) (Value, error) {
 // them with 31. Other values keep the existing hash.
 func (vm *VM) collectionHashValue(value Value, result *Result) (Value, error) {
 	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap {
-		return Int(int64(valueHashCode(value))), nil
+		return Int(int64(valueHashCodeEnv(vm.hashEnv(), value))), nil
 	}
 	hash, err := vm.collectionHashCode(value, result)
 	return Int(int64(hash)), err
@@ -105,7 +105,7 @@ func (vm *VM) collectionHashCode(value Value, result *Result) (int32, error) {
 		}
 		return hash, nil
 	}
-	return valueHashCode(value), nil
+	return valueHashCodeEnv(vm.hashEnv(), value), nil
 }
 
 func (vm *VM) collectionElementHash(item Value, result *Result) (int32, error) {
@@ -123,7 +123,7 @@ func (vm *VM) collectionElementHash(item Value, result *Result) (int32, error) {
 			}
 		}
 	}
-	return valueHashCode(item), nil
+	return valueHashCodeEnv(vm.hashEnv(), item), nil
 }
 
 // Captured fresh-record hashes are bounded to the observed types and fields.
@@ -137,7 +137,7 @@ func (vm *VM) capturedDirectRecordHash(value Value, version string) (int32, bool
 				continue
 			}
 			var canonical string
-			childHash := valueHashCode(child)
+			childHash := valueHashCodeEnv(vm.hashEnv(), child)
 			valid := child.Kind == ValueString || child.Kind == ValueNull
 			switch strings.ToLower(value.Type) + "." + strings.ToLower(field) {
 			case "account.id", "contact.id", "opportunity.id", "lead.id", "case.id":

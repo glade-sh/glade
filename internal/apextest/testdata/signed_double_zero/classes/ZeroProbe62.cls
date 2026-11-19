@@ -1,0 +1,4 @@
+public class ZeroProbe62 {
+ public static String rel(String label,Double a,Double b) { return label+':eq='+(a==b)+',ne='+(a!=b)+',lt='+(a<b)+',gt='+(a>b)+',le='+(a<=b)+',ge='+(a>=b)+',equals='+a.equals(b); }
+ public static String probe() { Double pos=Double.valueOf('0.0'),neg=Double.valueOf('-0.0');Decimal dec=Decimal.valueOf('0.0');Integer integerZero=0;Object posBox=pos,negBox=neg;return 'test:'+Test.isRunningTest()+'|text:pos='+String.valueOf(pos)+',neg='+String.valueOf(neg)+'|'+rel('pos-neg',pos,neg)+'|'+rel('neg-pos',neg,pos)+'|'+rel('pos-self',pos,pos)+'|'+rel('neg-self',neg,neg)+'|decimal:negDec='+(neg==dec)+',decNeg='+(dec==neg)+',posDec='+(pos==dec)+',decPos='+(dec==pos)+'|integer:negInt='+(neg==integerZero)+',intNeg='+(integerZero==neg)+',posInt='+(pos==integerZero)+',intPos='+(integerZero==pos)+'|boxed:eq='+(posBox==negBox)+',reverse='+(negBox==posBox)+',equals='+posBox.equals(negBox)+',reverseEquals='+negBox.equals(posBox); }
+}

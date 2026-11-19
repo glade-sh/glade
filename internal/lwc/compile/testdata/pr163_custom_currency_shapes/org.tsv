@@ -1,0 +1,17 @@
+case	api	route	result	outcome
+ProbeSetting__c.Name	59.0	deploy	accepted	deployed
+ProbeSetting__c.CurrencyIsoCode	59.0	deploy	accepted	deployed
+ProbeSetting__c.DoesNotExist__c	59.0	deploy	rejected	Invalid reference ProbeSetting__c.DoesNotExist__c
+ProbeMetadata__mdt.Name	59.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.Name
+ProbeMetadata__mdt.CurrencyIsoCode	59.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.CurrencyIsoCode
+ProbeMetadata__mdt.DoesNotExist__c	59.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.DoesNotExist__c
+ProbeSetting__c.Name	67.0	deploy	accepted	deployed
+ProbeSetting__c.CurrencyIsoCode	67.0	deploy	accepted	deployed
+ProbeSetting__c.DoesNotExist__c	67.0	deploy	rejected	Invalid reference ProbeSetting__c.DoesNotExist__c
+ProbeMetadata__mdt.Name	67.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.Name
+ProbeMetadata__mdt.CurrencyIsoCode	67.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.CurrencyIsoCode
+ProbeMetadata__mdt.DoesNotExist__c	67.0	deploy	rejected	Invalid reference ProbeMetadata__mdt.DoesNotExist__c
+ProbeMetadata__mdt.DeveloperName	59.0	deploy	accepted	deployed
+ProbeMetadata__mdt.MasterLabel	59.0	deploy	accepted	deployed
+ProbeMetadata__mdt.DeveloperName	67.0	deploy	accepted	deployed
+ProbeMetadata__mdt.MasterLabel	67.0	deploy	accepted	deployed

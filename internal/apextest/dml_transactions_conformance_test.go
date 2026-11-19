@@ -176,6 +176,7 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 			}
 			org := orgFromIndex(index)
 			org.APIVersion = api
+			grantAdminFieldAccess(&org, "Account", "A36External__c")
 			anonymousRunner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			// Compile and link each API's named matrix once; runCase preserves
 			// ordinary @IsTest isolation while reusing the shared linked base.

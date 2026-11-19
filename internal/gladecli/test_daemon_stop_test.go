@@ -17,6 +17,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestStopTestDaemonWaitsForActiveRunCleanup(t *testing.T) {
@@ -135,7 +136,7 @@ func TestRunTestDaemonStopWaitsForProjectRequestDrain(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), testutil.Deadline(20*time.Second))
 			served := make(chan error, 1)
 			go func() { served <- server.ListenAndServe(ctx, io.Discard) }()
 			t.Cleanup(func() {
@@ -148,7 +149,7 @@ func TestRunTestDaemonStopWaitsForProjectRequestDrain(t *testing.T) {
 					if err != nil {
 						t.Error(err)
 					}
-				case <-time.After(3 * time.Second):
+				case <-time.After(testutil.Deadline(3 * time.Second)):
 					t.Error("project server did not exit")
 				}
 			})
@@ -221,7 +222,7 @@ func assertDaemonStopWaits(t *testing.T, stopped <-chan daemonStopResult, releas
 	if !early {
 		select {
 		case result = <-stopped:
-		case <-time.After(3 * time.Second):
+		case <-time.After(testutil.Deadline(3 * time.Second)):
 			t.Fatal("stop did not complete after request cleanup")
 		}
 	}
@@ -264,7 +265,7 @@ func startDrainingStopDaemon(t *testing.T) drainingStopDaemon {
 	released, started, shutdown, done := make(chan struct{}), make(chan struct{}), make(chan struct{}), make(chan struct{})
 	var once sync.Once
 	release := func() { once.Do(func() { close(released) }) }
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testutil.Deadline(10*time.Second))
 	t.Cleanup(func() {
 		release()
 		cancel()
@@ -315,7 +316,7 @@ func awaitDaemonStopSignal(t *testing.T, done <-chan struct{}, description strin
 	t.Helper()
 	select {
 	case <-done:
-	case <-time.After(3 * time.Second):
+	case <-time.After(testutil.Deadline(3 * time.Second)):
 		t.Fatalf("timed out waiting for %s", description)
 	}
 }

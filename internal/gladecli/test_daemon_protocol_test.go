@@ -18,6 +18,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/trace"
 )
 
@@ -364,7 +365,7 @@ func TestConnectedShardPlanPreservesExactSelectorFailures(t *testing.T) {
 		if err != nil {
 			t.Fatalf("serve exit: %v", err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testutil.Deadline(5 * time.Second)):
 		t.Fatal("server did not stop")
 	}
 }
@@ -444,7 +445,7 @@ func TestWriteClassShardsValidatesImplicitParallelismBeforeArtifacts(t *testing.
 		if err != nil {
 			t.Fatalf("serve exit: %v", err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testutil.Deadline(5 * time.Second)):
 		t.Fatal("server did not stop")
 	}
 }
@@ -655,7 +656,7 @@ func (s *protocolV1Stub) Serve() {
 
 func (s *protocolV1Stub) WaitFor(t *testing.T, operation string) testdaemon.RequestV1 {
 	t.Helper()
-	timer := time.NewTimer(5 * time.Second)
+	timer := time.NewTimer(testutil.Deadline(5 * time.Second))
 	defer timer.Stop()
 	for {
 		select {
@@ -717,7 +718,7 @@ func startLegacyProtocolStub(t *testing.T, socket string) func() {
 		_ = listener.Close()
 		select {
 		case <-done:
-		case <-time.After(5 * time.Second):
+		case <-time.After(testutil.Deadline(5 * time.Second)):
 		}
 	}
 }

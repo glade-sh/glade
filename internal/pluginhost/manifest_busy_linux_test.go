@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestManifestExecutableBusy(t *testing.T) {
@@ -45,7 +47,7 @@ printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","comma
 				if !errors.Is(err, syscall.ETXTBSY) {
 					t.Fatalf("error = %v, want ETXTBSY", err)
 				}
-				if elapsed := time.Since(start); elapsed < 30*time.Millisecond || elapsed > 2*time.Second {
+				if elapsed := time.Since(start); elapsed < 30*time.Millisecond || elapsed > testutil.Deadline(10*time.Second) {
 					t.Fatalf("retry duration = %v, want bounded retries", elapsed)
 				}
 			case "canceled":

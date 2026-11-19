@@ -1,0 +1,10 @@
+Native single-initial first-name capture (held-out panel hf1)
+Date: 2026-11-13.
+Source: the held-out run of the duplicate_fuzzy_panels capture (group hfirst, case hf1). The eight rows here are that run's hf1 rows, unchanged; the case is its value list.
+Org: a fresh 30-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; deletion verified. No record, org or user id, username or alias is stored.
+APIs: 62.0 and 67.0; class ApiVersion read back after each deploy. Routes: anonymous Apex and named @IsTest methods; two repeats. All eight observations agree.
+Rule: Contact G4First, one FirstName item with the FirstName method, NullNotAllowed; duplicate rule Allow with alert.
+Probe: one record per value is inserted (DMLOptions allowSave), then Datacloud.FindDuplicates runs on an unsaved copy of every value. Observation: <value count>:<pairs>; a pair is <candidate index><existing index><confidence>, indexes in 0-9a-z, a missing confidence is 100.
+Values: synthetic test-data shapes. They were not used to fit the scorer.
+org.tsv sha256: 30a2c9418c858dc44da8c372e78660e6fc69e2c908c6ef693e2a82252d87cba6
+cases.json sha256: dfadae1eb7ee14c1535430a68e3cac1eab16b2cad4e04a4cc7754fdc8877e5d7

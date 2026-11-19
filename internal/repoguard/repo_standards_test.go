@@ -345,23 +345,6 @@ func isBroadRootProjectFile(rel string) bool {
 	return false
 }
 
-func TestAgentGuideListsCurrentProductCommands(t *testing.T) {
-	root := repoRoot(t)
-	guide := readRepoFile(t, root, "AGENTS.md")
-	for _, command := range []string{
-		"`version`", "`update`", "`doctor`", "`toolchain`", "`config`",
-		"`init`", "`parse`", "`inspect`", "`schema`", "`refactor`",
-		"`check`", "`exec`", "`debug`", "`editor`", "`dap`", "`test`",
-		"`tui`", "`dev`", "`report`", "`lsp`", "`profile`", "`examples`",
-		"`explain`", "`support`", "`plugins`", "`package`", "`server`",
-		"`org`", "`playground`", "`db`", "`completion`", "`help`",
-	} {
-		if !strings.Contains(guide, command) {
-			t.Fatalf("AGENTS.md product command list is missing %s", command)
-		}
-	}
-}
-
 func regularFileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()

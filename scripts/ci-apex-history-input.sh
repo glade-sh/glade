@@ -72,22 +72,35 @@ fi
 # unusable run (failed before every shard uploaded, expired artifacts, invalid
 # evidence) must not hide an older run with a complete validated set.
 if [[ "$pair" == 0 && ! -s "$CI_APEXTEST_HISTORY_PATH" ]]; then
+  # Seed the history from the first usable run in the given candidate list.
+  seed_from_runs() {
+    local run_id shards profile
+    for run_id in $1; do
+      [[ "$run_id" =~ ^[0-9]+$ ]] || continue
+      shards="$tmp/shards-$run_id"
+      gh run download "$run_id" --pattern 'apex-shard-*' --dir "$shards" || continue
+      profile="$tmp/predecessor-profile-$run_id.json"
+      # The predecessor may predate the 14-shard layout; accept either.
+      if GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..13} ||
+        GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..11}; then
+        break
+      fi
+      rm -f "$CI_APEXTEST_HISTORY_PATH"
+      if [[ -s "$profile" ]]; then
+        mkdir -p "$(dirname "$CI_APEXTEST_HISTORY_PATH")"
+        cp "$profile" "$CI_APEXTEST_HISTORY_PATH"
+        break
+      fi
+    done
+  }
   run_ids=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=completed -f per_page=100 --jq '[.workflow_runs[] | select(.conclusion == "success" or .conclusion == "failure")][0:5][] | .id' 2>/dev/null) || run_ids=""
-  for run_id in $run_ids; do
-    [[ "$run_id" =~ ^[0-9]+$ ]] || continue
-    shards="$tmp/shards-$run_id"
-    gh run download "$run_id" --pattern 'apex-shard-*' --dir "$shards" || continue
-    profile="$tmp/predecessor-profile-$run_id.json"
-    if GITHUB_EVENT_NAME=push CI_APEXTEST_HISTORY_COMPLETE=1 CI_APEXTEST_SCHEDULING_PROFILE="$profile" bash "$script_dir/ci-go-test.sh" apex-history-refresh "$CI_APEXTEST_HISTORY_PATH" "$shards"/apex-shard-{0..11}; then
-      break
-    fi
-    rm -f "$CI_APEXTEST_HISTORY_PATH"
-    if [[ -s "$profile" ]]; then
-      mkdir -p "$(dirname "$CI_APEXTEST_HISTORY_PATH")"
-      cp "$profile" "$CI_APEXTEST_HISTORY_PATH"
-      break
-    fi
-  done
+  seed_from_runs "$run_ids"
+  # With no usable predecessor (for example a dispatched branch head), fall
+  # back to recent default-branch push runs. History only orders shards.
+  if [[ ! -s "$CI_APEXTEST_HISTORY_PATH" && -n "${CI_DURATION_HISTORY_FALLBACK_BRANCH:-}" ]]; then
+    run_ids=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$CI_DURATION_HISTORY_FALLBACK_BRANCH" -f event=push -f status=completed -f per_page=100 --jq '[.workflow_runs[] | select(.conclusion == "success" or .conclusion == "failure")][0:5][] | .id' 2>/dev/null) || run_ids=""
+    seed_from_runs "$run_ids"
+  fi
 fi
 mkdir -p "$stage"
 if [[ -s "$CI_APEXTEST_HISTORY_PATH" ]]; then

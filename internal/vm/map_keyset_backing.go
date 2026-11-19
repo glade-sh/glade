@@ -1,6 +1,9 @@
 package vm
 
-import "weak"
+import (
+	"strings"
+	"weak"
+)
 
 // Key-set values own their backing. The VM's weak index lets map writes find
 // surviving views without retaining temporary maps after those views disappear.
@@ -70,8 +73,23 @@ func (keys Value) currentMapKeySet() Value {
 	}
 	if backing.membersVersion != backing.version {
 		backing.members = nil
+		global := isGlobalDescribeMap(backing.value)
+		var seen map[string]bool
+		if global {
+			seen = make(map[string]bool, len(backing.value.Map))
+		}
 		for _, raw := range orderedValueMapKeys(backing.value) {
-			backing.members = append(backing.members, mapStoredKey(backing.value, raw))
+			key := mapStoredKey(backing.value, raw)
+			if global {
+				// The global describe key set lists each lower-case name once.
+				lower := strings.ToLower(key.Text)
+				if seen[lower] {
+					continue
+				}
+				seen[lower] = true
+				key = String(lower)
+			}
+			backing.members = append(backing.members, key)
 		}
 		backing.membersVersion = backing.version
 	}
@@ -112,8 +130,13 @@ func (vm *VM) writeMapKeySetRemovals(keys Value) error {
 	// ownership barrier as direct Map members before touching either map.
 	vm.prepareSharedMapMutation(&source)
 	changed := false
+	global := isGlobalDescribeMap(source)
 	for _, raw := range orderedValueMapKeys(source) {
-		keep, err := vm.setContainsValue(keys, mapStoredKey(source, raw), &Result{})
+		stored := mapStoredKey(source, raw)
+		if global {
+			stored = String(strings.ToLower(stored.Text))
+		}
+		keep, err := vm.setContainsValue(keys, stored, &Result{})
 		if err != nil {
 			return err
 		}

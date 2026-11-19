@@ -85,8 +85,11 @@ func TestProfilePermissionRowsNativeFields(t *testing.T) {
 						t.Errorf("%s has mismatched flags or object", key)
 					}
 				}
-				if want != 94 || len(got) != want {
-					t.Errorf("selected fields: native=%d Glade=%d", want, len(got))
+				// profile_field_inventory/org.tsv supersedes the 94-row selection
+				// with the full 224-row inventory; every selected row above must
+				// still match, and Glade must carry exactly the full inventory.
+				if want != 94 || len(got) != 224 {
+					t.Errorf("selected fields: native=%d Glade=%d, want 94 selected within 224 inventory rows", want, len(got))
 				}
 			})
 		}

@@ -29,6 +29,12 @@ use its scripts; a source-only checkout can use installed dependencies. Running
 that checkout; `glade toolchain install` selects a source from the current
 checkout. These actions authorize its preparation scripts.
 
+For a shared compiler dependency installation, set `GLADE_LWC_DEPS_DIR` to the
+absolute directory containing the prepared `node_modules` tree. This selects
+the Node dependencies for both compiler passes; the compiler script still
+comes from the selected toolchain root. The shared dependencies are executable
+code and must use the versions prepared for that compiler.
+
 For the legacy automatic discovery workflow, set
 `GLADE_ALLOW_PROJECT_TOOLCHAIN=1` in the invoking environment only after reviewing
 the project and its surroundings. Exactly `1` permits discovery beside the
@@ -447,6 +453,17 @@ common local development loops:
   `lightning/platformResourceLoader` local script and style loading,
   `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
   `lightning/toast` browser toast paths.
+  Toast auto-dismiss durations are measurements from the API 68 captures, not
+  documented Salesforce constants: the midpoint of the last poll that saw the
+  toast and the first poll that saw it gone, push-relative, from 100 ms polling
+  (event dismissible and pester 20.8 s, module dismissible 5.3 s). The export
+  `TOAST_DURATIONS_MS` in `lwcruntime/src/shell/toast-service.mjs` is frozen;
+  `setToastClock` is the only test seam.
+  `lightning-tabset` moves tabs that do not fit into the More Tabs menu by a
+  fitted rule (see `TAB_FIT_MARGIN` in `lwcruntime/src/lightning/tabset.mjs`),
+  checked against native captures of 8 container widths and tab counts at 67.0
+  and a width sweep at 68.0; it is an approximation outside those widths, and it
+  depends on the browser's own text widths.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior

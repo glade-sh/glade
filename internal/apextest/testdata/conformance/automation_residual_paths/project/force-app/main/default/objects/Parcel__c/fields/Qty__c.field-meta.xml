@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Qty__c</fullName><label>Qty</label><type>Number</type><precision>6</precision><scale>0</scale></CustomField>

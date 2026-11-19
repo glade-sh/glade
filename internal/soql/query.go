@@ -7,27 +7,29 @@ import (
 )
 
 type Query struct {
-	Fields               []string
-	ChildQueries         []ChildQuery
-	Typeofs              []TypeofSpec
-	Object               string
-	Where                *Condition
-	Having               *Condition
-	OrderBy              string
-	OrderDesc            bool
-	Order                []OrderSpec
-	Limit                int
-	HasLimit             bool
-	LimitBind            string
-	Offset               int
-	HasOffset            bool
-	OffsetBind           string
-	Count                bool
-	ForUpdate            bool
-	ForView              bool
-	ForReference         bool
-	AllRows              bool
-	UsingScope           string
+	Fields       []string
+	ChildQueries []ChildQuery
+	Typeofs      []TypeofSpec
+	Object       string
+	Where        *Condition
+	Having       *Condition
+	OrderBy      string
+	OrderDesc    bool
+	Order        []OrderSpec
+	Limit        int
+	HasLimit     bool
+	LimitBind    string
+	Offset       int
+	HasOffset    bool
+	OffsetBind   string
+	Count        bool
+	ForUpdate    bool
+	ForView      bool
+	ForReference bool
+	AllRows      bool
+	UsingScope   string
+	// OptionsBind names the SET OPTIONS bind (api68_native queryoptions).
+	OptionsBind          string
 	SecurityMode         string
 	DataCategoryGroup    string
 	DataCategoryOperator string
@@ -43,8 +45,14 @@ type Query struct {
 	// orderAggregates contains execution-only values for ORDER BY expressions
 	// absent from SELECT. They are removed after sorting and windowing.
 	orderAggregates []Aggregate
+	// textComparator is private to this execution and never cached with syntax.
+	textComparator *textComparator
+	textLocale     string
 	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
 	LegacyPicklistNullOrder bool `json:"-"`
+	// LegacyRestrictedPicklistNullOrder extends the legacy policy to restricted
+	// picklists; native source-version rows place the transition at 66.0.
+	LegacyRestrictedPicklistNullOrder bool `json:"-"`
 }
 type OrderSpec struct {
 	Field string
@@ -54,6 +62,9 @@ type OrderSpec struct {
 	// RewrittenAggregate distinguishes a selected aggregate expression from
 	// an author-written exprN selector.
 	RewrittenAggregate bool
+
+	// textComparator carries the running user’s locale for text ordering.
+	textComparator *textComparator
 }
 type ChildQuery struct {
 	Relationship string
@@ -73,6 +84,9 @@ type Aggregate struct {
 	Func  string
 	Field string
 	Alias string
+
+	// textComparator supplies secondary strength for MIN and MAX over text.
+	textComparator *textComparator
 }
 type Condition struct {
 	Parenthesized bool
@@ -108,6 +122,8 @@ type ExecutionCache struct {
 	mu                         sync.RWMutex
 	childRelationships         map[string]childRelationshipResolution
 	childFieldQualifierMatches map[string]bool
+	virtualSchema              *sharedVirtualSchema
+	virtualSchemaBuildMu       sync.Mutex
 }
 type childRelationshipResolution struct {
 	childObjectName string

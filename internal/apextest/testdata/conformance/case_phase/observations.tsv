@@ -1,0 +1,5 @@
+probe	api	route	observation
+criteria_case_sharing	62.0	anonymous	OBS|case-share|during=false:0|after=false,false|escalation=false:submitter>false:submitter
+criteria_case_sharing	67.0	anonymous	OBS|case-share|during=false:0|after=false,false|escalation=false:submitter>false:submitter
+criteria_case_sharing	62.0	istest	OBS|during:false:0:false:submitter|after:false,false|testQuery:0,0|escalation:false:submitter
+criteria_case_sharing	67.0	istest	OBS|during:false:0:false:submitter|after:false,false|testQuery:0,0|escalation:false:submitter

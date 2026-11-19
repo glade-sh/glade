@@ -12,7 +12,9 @@ import (
 // clean change passes; personal paths, host volume paths and private temp
 // paths fail with their class; denylist entries match case-insensitively and
 // are reported without the matched text; the allowlist exempts a path prefix
-// from the denylist only.
+// from the denylist only. A denylist with no entries (empty or comments only)
+// fails the scan, and LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 opts out with a warning
+// while the pattern checks keep running.
 func TestLeakScan(t *testing.T) {
 	script, err := filepath.Abs("leak-scan.sh")
 	if err != nil {
@@ -70,9 +72,10 @@ func TestLeakScan(t *testing.T) {
 		env      []string
 		wantFail bool
 		wantOut  string
+		wantAll  []string
 		notOut   string
 	}{
-		{name: "clean addition", file: "docs/notes.md", content: "base\nplain documentation line\n", wantOut: "leak-scan: clean"},
+		{name: "clean addition", file: "docs/notes.md", content: "base\nplain documentation line\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantOut: "leak-scan: clean"},
 		{name: "personal path", file: "docs/notes.md", content: "base\nsee " + personal + "\n", wantFail: true, wantOut: "file 1:2: personal-path", notOut: "someone"},
 		{name: "linux home path", file: "docs/notes.md", content: "base\nsee " + linuxHome + "\n", wantFail: true, wantOut: "personal-path"},
 		{name: "uppercase home", file: "docs/notes.md", content: "/ho" + "me/Alice/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
@@ -81,14 +84,18 @@ func TestLeakScan(t *testing.T) {
 		{name: "runner lookalike", file: "docs/notes.md", content: "/ho" + "me/runner-other/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
 		{name: "hidden mac home", file: "docs/notes.md", content: "/Us" + "ers/.hidden/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
 		{name: "punctuation mac home", file: "docs/notes.md", content: "/Us" + "ers/-person/private\n", env: []string{"LEAK_SCAN_DENYLIST="}, wantFail: true, wantOut: "personal-path"},
-		{name: "runner home path is fine", file: "docs/notes.md", content: "base\nPLAYWRIGHT_BROWSERS_PATH: " + runnerHome + "\n", wantOut: "leak-scan: clean"},
+		{name: "runner home path is fine", file: "docs/notes.md", content: "base\nPLAYWRIGHT_BROWSERS_PATH: " + runnerHome + "\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantOut: "leak-scan: clean"},
 		{name: "volume path", file: "docs/notes.md", content: "base\ncopied from " + volume + "\n", wantFail: true, wantOut: "volume-path"},
 		{name: "private tmp path", file: "docs/notes.md", content: "base\nlog at " + privateTmp + "\n", wantFail: true, wantOut: "private-tmp"},
 		{name: "denylist entry case-insensitive", file: "docs/notes.md", content: "base\ntested against zephyr-internal-project yesterday\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "file 1:2: denylist", notOut: "zephyr"},
 		{name: "second denylist entry", file: "docs/notes.md", content: "base\nssh marmoset.local\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "denylist"},
 		{name: "allowlisted path skips denylist", file: "docs/pinned-projects.md", content: "Zephyr-Internal-Project at v1\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantOut: "leak-scan: clean"},
 		{name: "allowlisted path keeps builtins", file: "docs/pinned-projects.md", content: personal + "\n", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantFail: true, wantOut: "personal-path"},
-		{name: "removed lines are not scanned", file: "README.md", content: "", wantOut: "leak-scan: clean"},
+		{name: "removed lines are not scanned", file: "README.md", content: "", env: []string{"LEAK_SCAN_DENYLIST=" + deny}, wantOut: "leak-scan: clean"},
+		{name: "empty denylist fails", file: "docs/notes.md", content: "base\nplain empty-denylist case line\n", env: []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0"}, wantFail: true, wantOut: "leak-scan: FAIL LEAK_SCAN_DENYLIST is empty"},
+		{name: "comments-only denylist fails", file: "docs/notes.md", content: "base\nplain comments-only case line\n", env: []string{"LEAK_SCAN_DENYLIST=# nothing but a comment\n", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0"}, wantFail: true, wantOut: "leak-scan: FAIL LEAK_SCAN_DENYLIST is empty"},
+		{name: "empty denylist opt-out passes and warns", file: "docs/notes.md", content: "base\nplain opt-out case line\n", env: []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1"}, wantOut: "leak-scan: WARNING", wantAll: []string{"denylist check skipped", "leak-scan: clean"}},
+		{name: "empty denylist opt-out still scans patterns", file: "docs/notes.md", content: "base\nsee " + personal + "\n", env: []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1"}, wantFail: true, wantOut: "personal-path", wantAll: []string{"leak-scan: WARNING denylist check skipped", "leak-scan: 1 finding(s) in 1 file(s)"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -103,6 +110,11 @@ func TestLeakScan(t *testing.T) {
 			}
 			if !strings.Contains(out, tc.wantOut) {
 				t.Fatalf("output %q lacks %q", out, tc.wantOut)
+			}
+			for _, want := range tc.wantAll {
+				if !strings.Contains(out, want) {
+					t.Fatalf("output %q lacks %q", out, want)
+				}
 			}
 			if tc.notOut != "" && strings.Contains(strings.ToLower(out), tc.notOut) {
 				t.Fatalf("output leaks the matched text: %q", out)
@@ -263,8 +275,175 @@ func TestLeakScanAdversarialDiffs(t *testing.T) {
 	})
 }
 
+// TestLeakScanCommits exercises scripts/leak-scan-commits.sh on throwaway
+// repositories: a denylist finding names the commit that introduced it and no
+// clean commit; a clean range passes; an empty denylist fails the range, and
+// LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 opts out with one warning for the whole
+// range; a lone root commit is scanned against the empty tree; a bad or empty
+// range fails instead of reporting a clean result.
+func TestLeakScanCommits(t *testing.T) {
+	script, err := filepath.Abs("leak-scan-commits.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gitIn := func(dir string, args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.invalid", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.invalid")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %s: %v", args, out, err)
+		}
+		return string(out)
+	}
+	writeIn := func(dir, name, content string) {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	commitIn := func(dir, msg string) string {
+		t.Helper()
+		gitIn(dir, "add", "-A")
+		gitIn(dir, "commit", "-q", "-m", msg)
+		return strings.TrimSpace(gitIn(dir, "rev-parse", "HEAD"))
+	}
+	runIn := func(dir string, env []string, args ...string) (string, error) {
+		cmd := exec.Command("bash", append([]string{script}, args...)...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), env...)
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	shortIn := func(dir, sha string) string {
+		t.Helper()
+		return strings.TrimSpace(gitIn(dir, "rev-parse", "--short", sha))
+	}
+
+	// A range whose middle commit adds a denylist entry.
+	dir := t.TempDir()
+	gitIn(dir, "init", "-q")
+	writeIn(dir, "README.md", "base\n")
+	base := commitIn(dir, "base")
+	writeIn(dir, "docs/one.md", "plain documentation\n")
+	first := commitIn(dir, "clean")
+	writeIn(dir, "docs/two.md", "tested against Zephyr-Internal-Project\n")
+	hit := commitIn(dir, "denylist hit")
+	writeIn(dir, "docs/three.md", "plain documentation\n")
+	last := commitIn(dir, "clean again")
+
+	t.Run("range names the offending commit", func(t *testing.T) {
+		out, err := runIn(dir, []string{"LEAK_SCAN_DENYLIST=Zephyr-Internal-Project"}, base+"..HEAD")
+		if err == nil {
+			t.Fatalf("expected a failure naming %s: %s", shortIn(dir, hit), out)
+		}
+		for _, want := range []string{
+			"leak-scan-commits: commit " + shortIn(dir, hit),
+			"denylist",
+			"leak-scan-commits: 1 of 3 commit(s) have findings",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("output lacks %q:\n%s", want, out)
+			}
+		}
+		for _, clean := range []string{shortIn(dir, first), shortIn(dir, last)} {
+			if strings.Contains(out, "commit "+clean) {
+				t.Errorf("output names a clean commit %s:\n%s", clean, out)
+			}
+		}
+	})
+	t.Run("clean range passes", func(t *testing.T) {
+		out, err := runIn(dir, []string{"LEAK_SCAN_DENYLIST=marmoset.invalid"}, base+"..HEAD")
+		if err != nil {
+			t.Fatalf("expected clean, got %v: %s", err, out)
+		}
+		if !strings.Contains(out, "leak-scan-commits: 3 commit(s) clean") {
+			t.Fatalf("output lacks the clean summary: %s", out)
+		}
+	})
+	t.Run("empty denylist fails the range", func(t *testing.T) {
+		out, err := runIn(dir, []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0"}, base+"..HEAD")
+		if err == nil || !strings.Contains(out, "LEAK_SCAN_DENYLIST is empty") {
+			t.Fatalf("an empty denylist must fail the whole range: %v: %s", err, out)
+		}
+	})
+	t.Run("empty denylist opt-out warns once and passes", func(t *testing.T) {
+		out, err := runIn(dir, []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1"}, base+"..HEAD")
+		if err != nil {
+			t.Fatalf("expected clean with the skip warning, got %v: %s", err, out)
+		}
+		if strings.Count(out, "leak-scan: WARNING") != 1 {
+			t.Fatalf("the skip warning must appear once per range, got %d:\n%s", strings.Count(out, "leak-scan: WARNING"), out)
+		}
+		if !strings.Contains(out, "denylist check skipped") || !strings.Contains(out, "leak-scan-commits: 3 commit(s) clean") {
+			t.Fatalf("output lacks the skip warning and the clean summary: %s", out)
+		}
+	})
+	// A pattern finding while the skip is in force must name the offending
+	// commit, keep scanning the remaining commits, and must not be reported as
+	// the empty denylist failing every commit.
+	writeIn(dir, "docs/four.md", "see /Us"+"ers/someone/notes.txt\n")
+	patternHit := commitIn(dir, "pattern hit")
+	writeIn(dir, "docs/five.md", "plain documentation\n")
+	commitIn(dir, "clean after the hit")
+	t.Run("opt-out pattern finding names the commit and keeps scanning", func(t *testing.T) {
+		out, err := runIn(dir, []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1"}, base+"..HEAD")
+		if err == nil {
+			t.Fatalf("expected the range to fail: %s", out)
+		}
+		for _, want := range []string{
+			"leak-scan-commits: commit " + shortIn(dir, patternHit),
+			"personal-path",
+			"leak-scan: WARNING denylist check skipped",
+			"leak-scan-commits: 1 of 5 commit(s) have findings",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("output lacks %q:\n%s", want, out)
+			}
+		}
+		if strings.Contains(out, "LEAK_SCAN_DENYLIST is empty for every commit") {
+			t.Errorf("a pattern finding must not be reported as the empty denylist:\n%s", out)
+		}
+	})
+	t.Run("usage and range errors", func(t *testing.T) {
+		if out, err := runIn(dir, nil); err == nil || !strings.Contains(out, "usage") {
+			t.Fatalf("usage: %v: %s", err, out)
+		}
+		if out, err := runIn(dir, nil, "nosuchref..HEAD"); err == nil || !strings.Contains(out, "bad range") {
+			t.Fatalf("bad range: %v: %s", err, out)
+		}
+		if out, err := runIn(dir, nil, base+".."+base); err == nil || !strings.Contains(out, "no commits in") {
+			t.Fatalf("empty range: %v: %s", err, out)
+		}
+	})
+
+	// A lone root commit: the range is the commit itself, with no parent.
+	solo := t.TempDir()
+	gitIn(solo, "init", "-q")
+	writeIn(solo, "docs/solo.md", "see /Us"+"ers/someone/notes.txt\n")
+	root := commitIn(solo, "root")
+	t.Run("root commit scans against the empty tree", func(t *testing.T) {
+		out, err := runIn(solo, []string{"LEAK_SCAN_DENYLIST=", "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1"}, root)
+		if err == nil {
+			t.Fatalf("expected the root commit to fail: %s", out)
+		}
+		for _, want := range []string{"leak-scan-commits: commit " + shortIn(solo, root), "personal-path"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("output lacks %q:\n%s", want, out)
+			}
+		}
+	})
+}
+
 // TestLeakScanRequiredWorkflow keeps the leak-scan job wired into Required CI
 // with the denylist secret and a base for every event the workflow runs on.
+// The empty-denylist opt-out is passed only for pull requests that cannot see
+// repository secrets: a fork head, or any head from a different repository.
 func TestLeakScanRequiredWorkflow(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	job, ok := jobs["leak-scan"]
@@ -277,6 +456,7 @@ func TestLeakScanRequiredWorkflow(t *testing.T) {
 		"fetch-depth: 0",
 		"persist-credentials: false",
 		"LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}",
+		"LEAK_SCAN_ALLOW_EMPTY_DENYLIST: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork == true || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) && '1' || '0' }}",
 		"merge_group) range=\"$MERGE_GROUP_BASE_SHA..HEAD\"",
 		"scripts/leak-scan.sh --range \"$range\"",
 	} {

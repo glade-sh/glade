@@ -54,6 +54,10 @@ type ProjectInfo struct {
 	Root             string `json:"root"`
 	Namespace        string `json:"namespace,omitempty"`
 	SourceAPIVersion string `json:"sourceApiVersion,omitempty"`
+	// PackageFieldsNarrow and SourcelessPackageNamespaces carry the declared
+	// package dependency binding (project.PackageNamespaceBinding).
+	PackageFieldsNarrow         bool   `json:"packageFieldsNarrow,omitempty"`
+	SourcelessPackageNamespaces string `json:"sourcelessPackageNamespaces,omitempty"` // comma-joined; keeps ProjectInfo comparable
 }
 
 // ApexMetadataForType returns the companion metadata identity retained in this
@@ -179,13 +183,18 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	artifacts.Sources = sources
 	features := capturedOrgShapeFeatures(p)
 	labelNames, labelsKnown := projectCustomLabels(p)
+	flowShapes := project.FlowRunModeShapes(p, nil)
 	parser := apexast.NewParser()
 	defer parser.Close()
+	projectBinding := p.PackageNamespaceBinding()
 	idx = Index{
 		Project: ProjectInfo{
 			Root:             p.Root,
 			Namespace:        p.Namespace,
 			SourceAPIVersion: p.SourceAPIVersion,
+
+			PackageFieldsNarrow:         projectBinding.Narrow,
+			SourcelessPackageNamespaces: strings.Join(projectBinding.Sourceless, ","),
 		},
 		Objects:               s.Objects,
 		SourceNamespaces:      append([]string(nil), p.SourceNamespaces...),
@@ -195,7 +204,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		CustomLabelsKnown:     labelsKnown,
 		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown, flowShapes),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -234,7 +243,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		}
 		if dep.Status != "loaded" || dep.Project == nil {
 			if dep.Status == "loaded" && dep.ArtifactPath != "" {
-				appendArtifactDependency(&idx, dep)
+				appendArtifactDependency(&idx, p.ReadFile, dep)
 			}
 			continue
 		}
@@ -281,6 +290,24 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			Code:     "GLADEEMAILSERVICE001",
 			File:     rejection.File,
 			Message:  rejection.Message,
+		})
+	}
+	for _, rejection := range project.StandardSharingReasonRejections(p, nil) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity:      diagnostic.Error,
+			Code:          standardSharingReasonDiagnosticCode,
+			File:          rejection.File,
+			Message:       rejection.Message,
+			NativeMessage: rejection.Message,
+		})
+	}
+	for _, rejection := range project.FlowRunModeRejectionsFromShapes(p, flowShapes) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity:      diagnostic.Error,
+			Code:          flowRunModeDiagnosticCode,
+			File:          rejection.File,
+			Message:       rejection.Message,
+			NativeMessage: rejection.Message,
 		})
 	}
 	for _, rejection := range project.PermissionMutingRejections(p, nil) {
@@ -365,8 +392,8 @@ func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.P
 	})
 }
 
-func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) {
-	artifact, err := packageartifact.ReadJSON(dep.ArtifactPath)
+func appendArtifactDependency(idx *Index, read func(string) ([]byte, error), dep project.ManagedPackageDependency) {
+	artifact, err := packageartifact.ReadJSONWith(read, dep.ArtifactPath)
 	if err != nil {
 		diag := diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -464,10 +491,8 @@ func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ pac
 		Members:             memberSymbolsFromArtifact(typ.Members),
 	}
 	// Artifact types arrive without source; their signatures may still name
-	// ConnectApi types the project reaches through them.
-	if !connectAPIShapeRequested.Load() && typeSymbolNamesConnectAPI(&symbol) {
-		connectAPIShapeRequested.Store(true)
-	}
+	// gated platform types the project reaches through them.
+	noteTypeSymbolSignature(&symbol)
 	return symbol
 }
 
@@ -685,8 +710,8 @@ func setApexMetadataCaptureHookForTesting(hook func(string)) func() {
 	}
 }
 
-func captureApexMetadataInput(path, fallback string) (ApexMetadataInput, string) {
-	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+func captureApexMetadataInput(read func(string) ([]byte, error), path, fallback string) (ApexMetadataInput, string) {
+	data, err := read(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for an indexed Apex source.
 	input := ApexMetadataInput{}
 	effective := fallback
 	if err == nil {
@@ -702,13 +727,17 @@ func captureApexMetadataInput(path, fallback string) (ApexMetadataInput, string)
 	return input, effective
 }
 
-func sourceStillMatches(path string, expected [sha256.Size]byte) bool {
-	data, err := os.ReadFile(path) // #nosec G304 -- source just captured for this index occurrence.
+func sourceStillMatches(path string, expected [sha256.Size]byte, readers ...func(string) ([]byte, error)) bool {
+	read := os.ReadFile
+	if len(readers) > 0 {
+		read = readers[0]
+	}
+	data, err := read(path) // #nosec G304 -- source just captured for this index occurrence.
 	return err == nil && sha256.Sum256(data) == expected
 }
 
-func metadataStillMatches(path string, expected ApexMetadataInput) bool {
-	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for the indexed Apex source.
+func metadataStillMatches(read func(string) ([]byte, error), path string, expected ApexMetadataInput) bool {
+	data, err := read(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for the indexed Apex source.
 	if err != nil {
 		return !expected.Present && os.IsNotExist(err)
 	}
@@ -725,7 +754,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		if !dependency {
 			fileNamespace = p.SourceNamespaceForFile(p.ApexFiles[0], namespace)
 		}
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
+		return []projectSymbolFile{projectSymbolFileFromPath(p.ReadFile, p.Inputs() != nil, parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -762,7 +791,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 				}
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(p.ReadFile, p.Inputs() != nil, localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -783,7 +812,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
+func projectSymbolFileFromPath(read func(string) ([]byte, error), pinned bool, parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
 	source, err := sources.load(SourceMetadata{
 		RequestedPath:   path,
@@ -804,8 +833,8 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 	}
 	out.Source = &source
 	var effectiveAPIVersion string
-	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(path, fallbackAPIVersion)
-	if !sourceStillMatches(path, source.Digest()) || !metadataStillMatches(path, out.Metadata) {
+	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(read, path, fallbackAPIVersion)
+	if !sourceStillMatches(path, source.Digest()) || (!pinned && !metadataStillMatches(read, path, out.Metadata)) {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADETYPE001", Message: "Apex source changed while capturing companion metadata", File: path})
 		return out
 	}
@@ -874,15 +903,19 @@ func clearDependencyStandardSnapshotAuthority(objects []schema.Object) []schema.
 	out := objects
 	cloned := false
 	for i, object := range objects {
-		if !storage.IsKnownStandardObject(object.Name) || (!object.FieldsComplete && !object.CompleteSnapshot) {
+		standardAuthority := storage.IsKnownStandardObject(object.Name) && (object.FieldsComplete || object.CompleteSnapshot)
+		if !standardAuthority && !object.FieldSetsComplete {
 			continue
 		}
 		if !cloned {
 			out = append([]schema.Object(nil), objects...)
 			cloned = true
 		}
-		out[i].FieldsComplete = false
-		out[i].CompleteSnapshot = false
+		if standardAuthority {
+			out[i].FieldsComplete = false
+			out[i].CompleteSnapshot = false
+		}
+		out[i].FieldSetsComplete = false
 	}
 	return out
 }
@@ -1033,7 +1066,7 @@ func MatchesProjectIdentity(idx Index, p project.Project) bool {
 // accepts the objects idx carries. Subset indexes and indexes without a
 // digest snapshot never match.
 func MatchesProjectSources(idx Index, p project.Project) bool {
-	if idx.Subset || idx.sourceDigests == nil || !MatchesProjectIdentity(idx, p) {
+	if idx.Volatile() || idx.Subset || idx.sourceDigests == nil || !MatchesProjectIdentity(idx, p) {
 		return false
 	}
 	for _, path := range p.ApexFiles {
@@ -1115,6 +1148,7 @@ func incrementalFallbackFailure(previous Index, err error) Index {
 }
 
 type incrementalFileIdentityOps struct {
+	readSource  func(string) ([]byte, error)
 	stat        func(string) (os.FileInfo, error)
 	lstat       func(string) (os.FileInfo, error)
 	sameFile    func(os.FileInfo, os.FileInfo) bool
@@ -1122,6 +1156,9 @@ type incrementalFileIdentityOps struct {
 }
 
 func incrementalIdentityOpsWithDefaults(identityOps incrementalFileIdentityOps) incrementalFileIdentityOps {
+	if identityOps.readSource == nil {
+		identityOps.readSource = os.ReadFile
+	}
 	if identityOps.stat == nil {
 		identityOps.stat = os.Stat
 	}
@@ -1201,7 +1238,21 @@ type incrementalProjectIdentityLedger struct {
 	// PermissionMutingDigests binds the muting deploy rejections to the
 	// muting permission set and group file contents.
 	PermissionMutingDigests map[string]string `json:",omitempty"`
+	// FlowRunModeShapes binds the Flow run-mode deploy rejections to the
+	// declared version and run mode of each Flow that sets runInMode.
+	FlowRunModeShapes map[string]string `json:",omitempty"`
+	// AccountSharingReasonShapes binds the Account sharing reason deploy
+	// rejections to the declared reason names.
+	AccountSharingReasonShapes map[string]string `json:",omitempty"`
 }
+
+// standardSharingReasonDiagnosticCode marks an Account sharing reason that
+// native deployment rejects (project.StandardSharingReasonRejections).
+const standardSharingReasonDiagnosticCode = "GLADESHAREREASON001"
+
+// flowRunModeDiagnosticCode marks a Flow whose run mode needs a later Flow
+// API version (project.FlowRunModeRejections).
+const flowRunModeDiagnosticCode = "GLADEFLOWMODE001"
 
 // permissionMutingDiagnosticCode marks a muting permission set or group that
 // native deployment rejects.
@@ -1214,7 +1265,7 @@ func permissionMutingDigests(p project.Project) map[string]string {
 	}
 	digests := make(map[string]string, len(files))
 	for _, path := range files {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			digests[path] = "unreadable"
 			continue
@@ -1238,7 +1289,7 @@ func emailServiceDigests(p project.Project) map[string]string {
 	}
 	digests := make(map[string]string, len(files))
 	for _, path := range files {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			digests[path] = "unreadable"
 			continue
@@ -1280,20 +1331,22 @@ func capturedOrgShapeFeatures(p project.Project) []string {
 
 func incrementalProjectIdentity(p project.Project) string {
 	labelNames, labelsKnown := projectCustomLabels(p)
-	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown)
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown, project.FlowRunModeShapes(p, nil))
 }
 
-func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {
+func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool, flowShapes map[string]string) string {
 	ledger := incrementalProjectIdentityLedger{
-		OrgShapeFeatures:        features,
-		VisualforcePageNames:    projectVisualforcePageNames(p),
-		VisualforcePagesKnown:   projectVisualforcePagesKnown(p),
-		CustomLabelNames:        labelNames,
-		CustomLabelsKnown:       labelsKnown,
-		Project:                 incrementalProjectConfigForIdentity(p),
-		DependencyDiagnostics:   p.DependencyDiagnostics,
-		EmailServiceDigests:     emailServiceDigests(p),
-		PermissionMutingDigests: permissionMutingDigests(p),
+		OrgShapeFeatures:           features,
+		VisualforcePageNames:       projectVisualforcePageNames(p),
+		VisualforcePagesKnown:      projectVisualforcePagesKnown(p),
+		CustomLabelNames:           labelNames,
+		CustomLabelsKnown:          labelsKnown,
+		Project:                    incrementalProjectConfigForIdentity(p),
+		DependencyDiagnostics:      p.DependencyDiagnostics,
+		EmailServiceDigests:        emailServiceDigests(p),
+		PermissionMutingDigests:    permissionMutingDigests(p),
+		FlowRunModeShapes:          flowShapes,
+		AccountSharingReasonShapes: project.AccountSharingReasonShapes(p, nil),
 	}
 	for _, dep := range p.ManagedPackageDependencies {
 		identity := incrementalManagedDependencyIdentity{
@@ -1692,17 +1745,17 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	newTriggers := 0
 	if len(changed) == 1 {
 		path := changedSource.path
-		data, err := os.ReadFile(path) // #nosec G304 -- path is the single changed source already admitted to the loaded project index.
+		data, err := identityOps.readSource(path)
 		if err != nil {
 			return Index{}, false
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
-		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(path, metadata.apiVersion)
-		if !sourceStillMatches(path, sha256.Sum256(data)) {
+		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(os.ReadFile, path, metadata.apiVersion)
+		if !sourceStillMatches(path, sha256.Sum256(data), identityOps.readSource) {
 			return Index{}, false
 		}
-		if !metadataStillMatches(path, capturedMetadata) {
+		if !metadataStillMatches(os.ReadFile, path, capturedMetadata) {
 			return Index{}, false
 		}
 		if idx.apexMetadataInputs == nil {

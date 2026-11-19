@@ -1,0 +1,1 @@
+trigger AccessCdc on Cdc__ChangeEvent (after insert) { Database.insert(new Seed__c(Name='fromCdc'), AccessLevel.SYSTEM_MODE); }

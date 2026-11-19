@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>None__c</fullName><label>None</label><type>Lookup</type><referenceTo>Sam_None__c</referenceTo><relationshipName>SamObjs</relationshipName><deleteConstraint>SetNull</deleteConstraint></CustomField>

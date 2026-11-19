@@ -1844,3 +1844,31 @@ func TestQuerySemanticsAPI52MultilineSelectPreservesParameter(t *testing.T) {
 		t.Fatalf("multiline SELECT shadowed String parameter: %#v", result.Diagnostics)
 	}
 }
+
+func TestAnalyzeQuerySemanticsNamespacedStandardFieldFollowsDeclaredDependencies(t *testing.T) {
+	t.Parallel()
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Contact> a = [SELECT pkgone__ParentRouteValue__c FROM Contact];
+    List<Contact> b = [SELECT pkgnine__ParentRouteValue__c FROM Contact];
+  }
+}
+`
+	contact := schema.Schema{Objects: []schema.Object{{Name: "Contact", Fields: []schema.Field{{Name: "LastName", Type: "Text"}}}}}
+	// Declared nothing: the open tolerance stays (undeclared corpora keep working).
+	open := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "local"}, contact)
+	assertNoDiagnosticContaining(t, open, "GLADESEMA_QUERY_FIELD", "pkgnine__ParentRouteValue__c")
+	// Declared pkgone without source: pkgone is tolerated, pkgnine is rejected.
+	narrow := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "local", PackageFieldsNarrow: true, SourcelessPackageNamespaces: "pkgone"}, contact)
+	assertNoDiagnosticContaining(t, narrow, "GLADESEMA_QUERY_FIELD", "pkgone__ParentRouteValue__c")
+	found := false
+	for _, d := range narrow.Diagnostics {
+		if d.Code == "GLADESEMA_QUERY_FIELD" && strings.Contains(d.Message, "pkgnine__ParentRouteValue__c") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("undeclared namespace was not rejected: %#v", narrow.Diagnostics)
+	}
+}

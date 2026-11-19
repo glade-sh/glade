@@ -1,0 +1,221 @@
+api	route	id	observation
+62.0	anonymous	D01 contract status	Draft/Draft
+62.0	anonymous	D01 delete	ok
+62.0	anonymous	D01 contract	deleted
+62.0	anonymous	D01 account	deleted
+62.0	anonymous	D01 undelete	ok
+62.0	anonymous	D01 contract after undelete	live
+62.0	anonymous	D02 contract status	Activated/Activated
+62.0	anonymous	D02 delete	DmlException DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	anonymous	D02 contract	live
+62.0	anonymous	D02 account	live
+62.0	anonymous	D02 partial	result DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	anonymous	D03 contract status	Activated/Activated
+62.0	anonymous	D03 delete	DmlException DELETE_FAILED () Your attempt to delete LP D03 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	anonymous	D03 contract	live
+62.0	anonymous	D04 set Expired	DmlException INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST (Status) Status: bad value for restricted picklist field: Expired
+62.0	anonymous	D04 contract status	Draft/Draft
+62.0	anonymous	D04 delete	ok
+62.0	anonymous	D04 contract	deleted
+62.0	anonymous	D05 contract status	In Approval Process/InApproval
+62.0	anonymous	D05 delete	ok
+62.0	anonymous	D05 contract	deleted
+62.0	anonymous	D06 delete	DmlException DELETE_FAILED () Your attempt to delete LP D06 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	anonymous	D06 draft	live
+62.0	anonymous	D06 activated	live
+62.0	anonymous	D07 delete	ok
+62.0	anonymous	D07 opportunity	deleted
+62.0	anonymous	D08 delete	DmlException DELETE_FAILED () Your attempt to delete LP D08 could not be completed because some opportunities in that account were closed won. The opportunities that could not be deleted are shown below.: LP W
+62.0	anonymous	D08 opportunity	live
+62.0	anonymous	D09 delete	DmlException DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	anonymous	D09 case	live
+62.0	anonymous	D09 account	live
+62.0	anonymous	D09 partial	result DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	anonymous	D10 delete	DmlException DELETE_FAILED () Your attempt to delete LP D10 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	anonymous	D10 case	live
+62.0	anonymous	D11 delete	ok
+62.0	anonymous	D11 contact	deleted
+62.0	anonymous	D12 case account	account
+62.0	anonymous	D12 delete	DmlException DELETE_FAILED () Your attempt to delete LP D12 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	anonymous	D12 contact	live
+62.0	anonymous	D12 case	live
+62.0	anonymous	D13 delete	ok
+62.0	anonymous	D13 order	deleted
+62.0	anonymous	D14 delete	ok
+62.0	anonymous	D14 contract	deleted
+62.0	anonymous	D14 order	deleted
+62.0	anonymous	D15 delete	DmlException DELETE_FAILED () Your attempt to delete LP D15 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	anonymous	D15 opportunity	live
+62.0	anonymous	D15 contact	live
+62.0	anonymous	D15 contract	live
+62.0	anonymous	D16 delete	ok
+62.0	anonymous	D16 opportunity	deleted
+62.0	anonymous	D16 contact	deleted
+62.0	anonymous	D16 contract	deleted
+62.0	anonymous	D17 delete draft contract	ok
+62.0	anonymous	D17 delete activated contract	ok
+62.0	istest	D01 contract status	Draft/Draft
+62.0	istest	D01 delete	ok
+62.0	istest	D01 contract	deleted
+62.0	istest	D01 account	deleted
+62.0	istest	D01 undelete	ok
+62.0	istest	D01 contract after undelete	live
+62.0	istest	D02 contract status	Activated/Activated
+62.0	istest	D02 delete	DmlException DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	istest	D02 contract	live
+62.0	istest	D02 account	live
+62.0	istest	D02 partial	result DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	istest	D03 contract status	Activated/Activated
+62.0	istest	D03 delete	DmlException DELETE_FAILED () Your attempt to delete LP D03 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	istest	D03 contract	live
+62.0	istest	D04 set Expired	DmlException INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST (Status) Status: bad value for restricted picklist field: Expired
+62.0	istest	D04 contract status	Draft/Draft
+62.0	istest	D04 delete	ok
+62.0	istest	D04 contract	deleted
+62.0	istest	D05 contract status	In Approval Process/InApproval
+62.0	istest	D05 delete	ok
+62.0	istest	D05 contract	deleted
+62.0	istest	D06 delete	DmlException DELETE_FAILED () Your attempt to delete LP D06 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	istest	D06 draft	live
+62.0	istest	D06 activated	live
+62.0	istest	D07 delete	ok
+62.0	istest	D07 opportunity	deleted
+62.0	istest	D08 delete	DmlException DELETE_FAILED () Your attempt to delete LP D08 could not be completed because some opportunities in that account were closed won. The opportunities that could not be deleted are shown below.: LP W
+62.0	istest	D08 opportunity	live
+62.0	istest	D09 delete	DmlException DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	istest	D09 case	live
+62.0	istest	D09 account	live
+62.0	istest	D09 partial	result DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	istest	D10 delete	DmlException DELETE_FAILED () Your attempt to delete LP D10 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	istest	D10 case	live
+62.0	istest	D11 delete	ok
+62.0	istest	D11 contact	deleted
+62.0	istest	D12 case account	account
+62.0	istest	D12 delete	DmlException DELETE_FAILED () Your attempt to delete LP D12 could not be completed because it is associated with the following cases.: <caseNumber>
+62.0	istest	D12 contact	live
+62.0	istest	D12 case	live
+62.0	istest	D13 delete	ok
+62.0	istest	D13 order	deleted
+62.0	istest	D14 delete	ok
+62.0	istest	D14 contract	deleted
+62.0	istest	D14 order	deleted
+62.0	istest	D15 delete	DmlException DELETE_FAILED () Your attempt to delete LP D15 could not be completed because it is associated with the following active contracts.: <contractNumber>
+62.0	istest	D15 opportunity	live
+62.0	istest	D15 contact	live
+62.0	istest	D15 contract	live
+62.0	istest	D16 delete	ok
+62.0	istest	D16 opportunity	deleted
+62.0	istest	D16 contact	deleted
+62.0	istest	D16 contract	deleted
+62.0	istest	D17 delete draft contract	ok
+62.0	istest	D17 delete activated contract	ok
+67.0	anonymous	D01 contract status	Draft/Draft
+67.0	anonymous	D01 delete	ok
+67.0	anonymous	D01 contract	deleted
+67.0	anonymous	D01 account	deleted
+67.0	anonymous	D01 undelete	ok
+67.0	anonymous	D01 contract after undelete	live
+67.0	anonymous	D02 contract status	Activated/Activated
+67.0	anonymous	D02 delete	DmlException DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	anonymous	D02 contract	live
+67.0	anonymous	D02 account	live
+67.0	anonymous	D02 partial	result DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	anonymous	D03 contract status	Activated/Activated
+67.0	anonymous	D03 delete	DmlException DELETE_FAILED () Your attempt to delete LP D03 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	anonymous	D03 contract	live
+67.0	anonymous	D04 set Expired	DmlException INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST (Status) Status: bad value for restricted picklist field: Expired
+67.0	anonymous	D04 contract status	Draft/Draft
+67.0	anonymous	D04 delete	ok
+67.0	anonymous	D04 contract	deleted
+67.0	anonymous	D05 contract status	In Approval Process/InApproval
+67.0	anonymous	D05 delete	ok
+67.0	anonymous	D05 contract	deleted
+67.0	anonymous	D06 delete	DmlException DELETE_FAILED () Your attempt to delete LP D06 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	anonymous	D06 draft	live
+67.0	anonymous	D06 activated	live
+67.0	anonymous	D07 delete	ok
+67.0	anonymous	D07 opportunity	deleted
+67.0	anonymous	D08 delete	DmlException DELETE_FAILED () Your attempt to delete LP D08 could not be completed because some opportunities in that account were closed won. The opportunities that could not be deleted are shown below.: LP W
+67.0	anonymous	D08 opportunity	live
+67.0	anonymous	D09 delete	DmlException DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	anonymous	D09 case	live
+67.0	anonymous	D09 account	live
+67.0	anonymous	D09 partial	result DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	anonymous	D10 delete	DmlException DELETE_FAILED () Your attempt to delete LP D10 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	anonymous	D10 case	live
+67.0	anonymous	D11 delete	ok
+67.0	anonymous	D11 contact	deleted
+67.0	anonymous	D12 case account	account
+67.0	anonymous	D12 delete	DmlException DELETE_FAILED () Your attempt to delete LP D12 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	anonymous	D12 contact	live
+67.0	anonymous	D12 case	live
+67.0	anonymous	D13 delete	ok
+67.0	anonymous	D13 order	deleted
+67.0	anonymous	D14 delete	ok
+67.0	anonymous	D14 contract	deleted
+67.0	anonymous	D14 order	deleted
+67.0	anonymous	D15 delete	DmlException DELETE_FAILED () Your attempt to delete LP D15 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	anonymous	D15 opportunity	live
+67.0	anonymous	D15 contact	live
+67.0	anonymous	D15 contract	live
+67.0	anonymous	D16 delete	ok
+67.0	anonymous	D16 opportunity	deleted
+67.0	anonymous	D16 contact	deleted
+67.0	anonymous	D16 contract	deleted
+67.0	anonymous	D17 delete draft contract	ok
+67.0	anonymous	D17 delete activated contract	ok
+67.0	istest	D01 contract status	Draft/Draft
+67.0	istest	D01 delete	ok
+67.0	istest	D01 contract	deleted
+67.0	istest	D01 account	deleted
+67.0	istest	D01 undelete	ok
+67.0	istest	D01 contract after undelete	live
+67.0	istest	D02 contract status	Activated/Activated
+67.0	istest	D02 delete	DmlException DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	istest	D02 contract	live
+67.0	istest	D02 account	live
+67.0	istest	D02 partial	result DELETE_FAILED () Your attempt to delete LP D02 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	istest	D03 contract status	Activated/Activated
+67.0	istest	D03 delete	DmlException DELETE_FAILED () Your attempt to delete LP D03 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	istest	D03 contract	live
+67.0	istest	D04 set Expired	DmlException INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST (Status) Status: bad value for restricted picklist field: Expired
+67.0	istest	D04 contract status	Draft/Draft
+67.0	istest	D04 delete	ok
+67.0	istest	D04 contract	deleted
+67.0	istest	D05 contract status	In Approval Process/InApproval
+67.0	istest	D05 delete	ok
+67.0	istest	D05 contract	deleted
+67.0	istest	D06 delete	DmlException DELETE_FAILED () Your attempt to delete LP D06 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	istest	D06 draft	live
+67.0	istest	D06 activated	live
+67.0	istest	D07 delete	ok
+67.0	istest	D07 opportunity	deleted
+67.0	istest	D08 delete	DmlException DELETE_FAILED () Your attempt to delete LP D08 could not be completed because some opportunities in that account were closed won. The opportunities that could not be deleted are shown below.: LP W
+67.0	istest	D08 opportunity	live
+67.0	istest	D09 delete	DmlException DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	istest	D09 case	live
+67.0	istest	D09 account	live
+67.0	istest	D09 partial	result DELETE_FAILED () Your attempt to delete LP D09 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	istest	D10 delete	DmlException DELETE_FAILED () Your attempt to delete LP D10 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	istest	D10 case	live
+67.0	istest	D11 delete	ok
+67.0	istest	D11 contact	deleted
+67.0	istest	D12 case account	account
+67.0	istest	D12 delete	DmlException DELETE_FAILED () Your attempt to delete LP D12 could not be completed because it is associated with the following cases.: <caseNumber>
+67.0	istest	D12 contact	live
+67.0	istest	D12 case	live
+67.0	istest	D13 delete	ok
+67.0	istest	D13 order	deleted
+67.0	istest	D14 delete	ok
+67.0	istest	D14 contract	deleted
+67.0	istest	D14 order	deleted
+67.0	istest	D15 delete	DmlException DELETE_FAILED () Your attempt to delete LP D15 could not be completed because it is associated with the following active contracts.: <contractNumber>
+67.0	istest	D15 opportunity	live
+67.0	istest	D15 contact	live
+67.0	istest	D15 contract	live
+67.0	istest	D16 delete	ok
+67.0	istest	D16 opportunity	deleted
+67.0	istest	D16 contact	deleted
+67.0	istest	D16 contract	deleted
+67.0	istest	D17 delete draft contract	ok
+67.0	istest	D17 delete activated contract	ok

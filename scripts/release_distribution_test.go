@@ -30,7 +30,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"macos-15-intel",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		`go-version: "1.26.10"`,
+		`go-version: "1.26.11"`,
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		`node-version: "22"`,
 		"shared-payload:",
@@ -62,8 +62,8 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	if got := strings.Count(workflowText, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0"); got != 4 {
 		t.Fatalf("release artifact download count = %d, want payload, platform and both approvals", got)
 	}
-	if got := strings.Count(workflowText, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
-		t.Fatalf("setup-node count = %d, want shared job only", got)
+	if got := strings.Count(workflowText, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 2 {
+		t.Fatalf("setup-node count = %d, want shared payload and static distribution jobs", got)
 	}
 	buildBlock := releaseWorkflowJobBlock(t, workflowText, "build", "attest-and-upload")
 	for _, forbidden := range []string{
@@ -195,7 +195,7 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 	}
 
 	attest := releaseWorkflowJobBlock(t, text, "attest-and-upload", "publish")
-	publish := releaseWorkflowJobBlockUntilEnd(t, text, "publish")
+	publish := releaseWorkflowJobBlock(t, text, "publish", "distribute")
 	publishUploads := releaseWorkflowScriptCommands(publish, "scripts/release-asset-upload.sh")
 	if len(publishUploads) != 1 {
 		t.Fatalf("final publish upload command count = %d, want 1", len(publishUploads))

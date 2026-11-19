@@ -17,8 +17,9 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
+	return vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
 		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
+		vm.currentUserHasCriteriaRuleRead(objectName, record, userID) ||
 		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
 }
 
@@ -29,9 +30,18 @@ func (vm *VM) userModeUnrestrictedObject(objectName, userID string) bool {
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
+	if vm.guestUserReadsOnlySelf(objectName) {
+		return storage.IDsEqual(record.ID, storage.ID(userID))
+	}
 	if vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
+	return vm.userModeRestrictedRecordVisible(objectName, record, userID)
+}
+
+// userModeRestrictedRecordVisible applies the record-dependent policy after
+// the caller has resolved object-wide sharing for this principal.
+func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.Record, userID string) bool {
 	if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
 		return allowed
 	}
@@ -487,9 +497,15 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 		}
 		if canonical, ok := vm.resolveObjectName(objectName); ok && vm.Org != nil {
 			model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
-			if model == "" {
+			// An external user's default is Private for Case.
+			if vm.currentUserHasUndeclaredPrivateExternalDefault(canonical) {
+				model = "Private"
+			} else if model == "" {
 				switch standardObjectDefaultSharingModel(canonical) {
 				case "ReadWrite", "ReadWriteTransfer":
+					return true
+				}
+				if vm.leadScratchDefaultEdit(canonical, record) {
 					return true
 				}
 			}
@@ -500,4 +516,68 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	}
 	// Read-only sharing and read shares do not grant write authority.
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID))
+}
+
+// leadHasDeclaredShapeDefaultModel reports a Lead with no declared sharing
+// model in a declared scratch shape: the ReadWriteTransfer scratch default,
+// which a Standard User reads and edits when another user owns the record
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// An unknown shape keeps its earlier behavior.
+func (vm *VM) leadHasDeclaredShapeDefaultModel(canonical string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(canonical, "Lead") {
+		return false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	// The rows are a Standard User; other user types have no Lead sharing row.
+	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition) &&
+		strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard")
+}
+
+// leadScratchDefaultEdit is the edit half of the scratch default: the captured
+// HasEditAccess row is a Standard User profile user on a Lead owned by a user
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// Queue-owned Leads and other profiles have no write row.
+func (vm *VM) leadScratchDefaultEdit(canonical string, record storage.Record) bool {
+	if !vm.leadHasDeclaredShapeDefaultModel(canonical) || !strings.HasPrefix(string(record.System.OwnerID), "005") {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	return vm.currentUserProfileName(user) == "Standard User"
+}
+
+// Contact manual and committed criteria shares use the same direct recipient
+// and public-group resolution as Account shares. No criteria grant is inferred
+// from field values inside an Apex test transaction.
+func (vm *VM) currentUserHasDirectContactShare(object string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(object, "Contact") || userID == "" {
+		return false
+	}
+	account, ok := record.GetField("AccountId")
+	if !ok {
+		if _, stored, found := storage.LookupRecordByID(vm.Org.Objects["Contact"].Records, record.ID); found {
+			account, ok = stored.GetField("AccountId")
+		}
+	}
+	if !ok || storageValueIDText(account) == "" {
+		return false
+	}
+	for _, share := range vm.Org.Objects["ContactShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		parent, _ := share.GetField("ContactId")
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("ContactAccessLevel")
+		if !storage.IDsEqual(storage.ID(storageValueIDText(parent)), record.ID) || (!strings.EqualFold(level.String, "Read") && !strings.EqualFold(level.String, "Edit") && !strings.EqualFold(level.String, "All")) {
+			continue
+		}
+		recipient := storage.ID(storageValueIDText(target))
+		if storage.IDsEqual(recipient, storage.ID(userID)) || vm.currentUserCanSeeAccountShareTarget(recipient, userID) {
+			return true
+		}
+	}
+	return false
 }

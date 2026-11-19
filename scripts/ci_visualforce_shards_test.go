@@ -109,7 +109,7 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 		{"invalid history fallback", invalidHistory, false},
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
-			dirs := make([]string, 4)
+			dirs := make([]string, 8)
 			var union []string
 			var firstPlan string
 			for index := range dirs {
@@ -131,7 +131,7 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 						Duration int64    `json:"estimatedDurationMillis"`
 					} `json:"shards"`
 				}
-				if err != nil || json.Unmarshal(data, &plan) != nil || plan.HistoryUsed != fixture.weighted || len(plan.Shards) != 4 {
+				if err != nil || json.Unmarshal(data, &plan) != nil || plan.HistoryUsed != fixture.weighted || len(plan.Shards) != 8 {
 					t.Fatalf("shard %d plan=%s err=%v", index, data, err)
 				}
 				if index == 0 {
@@ -147,7 +147,11 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 							long++
 						}
 					}
-					if long != 1 || selection.Duration >= 200000 {
+					wantLong := 0
+					if index < 4 {
+						wantLong = 1
+					}
+					if long != wantLong || selection.Duration >= 200000 {
 						t.Fatalf("long tests were not separated: %#v", selection)
 					}
 				}
@@ -160,11 +164,11 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 			}
 			sort.Strings(union)
 			if !reflect.DeepEqual(union, names) {
-				t.Fatalf("four-shard union changed discovery: %v", union)
+				t.Fatalf("eight-shard union changed discovery: %v", union)
 			}
 			output := filepath.Join(t.TempDir(), "refreshed.json")
 			if out, err := runVisualforceHistory(t, output, dirs); err != nil {
-				t.Fatalf("actual four-worker evidence rejected: %v\n%s", err, out)
+				t.Fatalf("actual eight-worker evidence rejected: %v\n%s", err, out)
 			}
 			assertVisualforceHistory(t, output, names)
 		})
@@ -172,10 +176,20 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 }
 
 func TestCIVisualforceShardRejectsIncompleteResultsAndDiscovery(t *testing.T) {
-	_, dirs := visualforceHistoryFixture(t)
+	names := visualforceFixtureNames(9)
+	planShards := make([]map[string]any, 8)
+	for index := range planShards {
+		tests := names[index+1 : index+2]
+		if index == 0 {
+			tests = names[:2]
+		}
+		planShards[index] = map[string]any{"index": index, "tests": tests,
+			"estimatedDurationMillis": 0, "regex": "^(?:" + strings.Join(tests, "|") + ")$"}
+	}
+	planFile := filepath.Join(t.TempDir(), "plan.json")
+	writeJSONFixture(t, planFile, map[string]any{"version": 1, "package": visualforceFixturePackage, "historyUsed": false, "shards": planShards})
 	planner := filepath.Join(t.TempDir(), "planner")
-	writeApexFixtureExecutable(t, planner, "#!/usr/bin/env bash\ncat '"+filepath.Join(dirs[0], "plan.json")+"'\n")
-	names := visualforceFixtureNames(8)
+	writeApexFixtureExecutable(t, planner, "#!/usr/bin/env bash\ncat '"+planFile+"'\n")
 	discovery := strings.Join(names, "\n") + "\nok  \t" + visualforceFixturePackage + "\n"
 	events := visualforceFixtureEvents(names[:2])
 	for _, fixture := range []struct {
@@ -212,7 +226,7 @@ func TestCIVisualforceShardRejectsIncompleteResultsAndDiscovery(t *testing.T) {
 			}
 		})
 	}
-	for _, index := range []string{"", "4", "-1", "01"} {
+	for _, index := range []string{"", "8", "-1", "01"} {
 		out, err, artifacts := runVisualforceShardFixture(t, index, discovery, planner, "", events, 0)
 		exitErr, ok := err.(*exec.ExitError)
 		if !ok || exitErr.ExitCode() != 2 {

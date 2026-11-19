@@ -1,0 +1,2 @@
+List<List<SObject>> r = [FIND 'copper' RETURNING Account(Name), Contact(Name), Account(Phone)];
+String f = ''; for (List<SObject> l : r) { if (l.isEmpty()) { f += 'empty;'; continue; } String t = String.valueOf(l[0].getSObjectType()); try { Object a = l[0].get('Name'); t += 'N'; } catch (Exception e) { t += 'n'; } try { Object a = l[0].get('Phone'); t += 'P'; } catch (Exception e) { t += 'p'; } f += t + ':' + l.size() + ';'; } obs = r.size() + '|' + f;

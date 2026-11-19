@@ -1,0 +1,1 @@
+@IsTest private class OrderingTest66 { @IsTest static void observe() { System.assert(false, OrderingSource66.run()); } }

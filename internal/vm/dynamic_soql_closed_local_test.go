@@ -100,7 +100,9 @@ func TestExecDynamicSOQLClosedLocalCandidateBoundaries(t *testing.T) {
 insert new Account(Name='Bound');
 String wanted='Bound';
 if(true){String wanted='Other';}
-System.assertEquals(1,Database.query('SELECT Id FROM Account WHERE Name=:wanted').size());
+// Native rows p02/p13 (loop_scope_dynamic_binds): the ended block's local
+// outranks the same-named top-level local, so the bind is 'Other'.
+System.assertEquals(0,Database.query('SELECT Id FROM Account WHERE Name=:wanted').size());
 if(true){String departed='Bound';}
 Boolean mapCaught=false;
 try{Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:departed',new Map<String,Object>(),AccessLevel.USER_MODE);}catch(QueryException expected){mapCaught=true;}
@@ -115,11 +117,11 @@ System.assert(mapCaught);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	// The candidate does not extend the unprobed type, bare-block or
-	// inline-SOQL boundaries.
+	// The candidate does not extend the unprobed type or inline-SOQL
+	// boundaries. Bare blocks are covered by the loop_scope_dynamic_binds
+	// rows (d04, p01), which show the local still binds.
 	for _, source := range []string{
 		"if(true){Integer wanted=17;}Database.query('SELECT Id FROM Account WHERE NumberOfEmployees=:wanted');",
-		"{String wanted='Bound';}Database.query('SELECT Id FROM Account WHERE Name=:wanted');",
 		"if(true){String wanted='Bound';}List<Account> rows=[SELECT Id FROM Account WHERE Name=:wanted];",
 	} {
 		runtime := New(nil)
@@ -147,5 +149,27 @@ System.assertEquals('Use query() for non-count queries',failureMessage);
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Only Database.query follows the loop_scope_dynamic_binds rows. These ended
+// String locals still throw for countQuery, as before those rows.
+func TestExecDynamicSOQLCountQueryKeepsClosedLocalBoundaries(t *testing.T) {
+	org := testDataOrg()
+	for _, source := range []string{
+		"for(String wanted : new List<String>{'Bound'}){}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"{String wanted='Bound';}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"try{String wanted='Bound';}catch(Exception e){}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+		"for(Integer i=0;i<1;i++){String wanted='Bound';break;}Database.countQuery('SELECT count() FROM Account WHERE Name=:wanted');",
+	} {
+		runtime := New(nil)
+		runtime.SetOrg(&org)
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := runtime.Execute(program); err == nil || !strings.Contains(err.Error(), "Variable does not exist: wanted") {
+			t.Fatalf("countQuery boundary changed for %s: %v", source, err)
+		}
 	}
 }

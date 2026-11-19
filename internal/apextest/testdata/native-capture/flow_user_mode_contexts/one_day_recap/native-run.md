@@ -1,0 +1,3 @@
+# Native run
+
+Captured from a newly created one-day Developer scratch org at API 62.0 and 67.0. The org was deleted after capture and deletion was verified. Synthetic metadata was deployed at each API version. The test route ran an Apex test; the committed asynchronous route enqueued the fixture and read back its observation; the scheduled route used a one-time schedule and read back its observation. The CDC route inserted a synthetic custom record and read back the observation written after CDC delivery and the asynchronous Flow. A read-only permission set enabled observation readback. Each observation matched the corresponding checked-in native table. All eight expected observations were captured; none are missing or unmatched.

@@ -18,7 +18,7 @@ func ensureOrganizationGroups(org *OrgState) {
 	}
 	state := org.Objects["Group"]
 	if state.Records == nil {
-		state.Records = make(map[ID]Record)
+		state.SetRecords(make(map[ID]Record))
 	}
 	next := org.IDSequences["Group"]
 	for _, seed := range groups {
@@ -46,7 +46,7 @@ func ensureOrganizationGroups(org *OrgState) {
 			"DeveloperName": StringValue(seed.name), "Type": StringValue(seed.kind),
 		}}
 		stampSeedSystemFields(&record)
-		state.Records[id] = record
+		state.PutRecord(id, record)
 	}
 	org.Objects["Group"] = state
 	org.IDSequences["Group"] = next

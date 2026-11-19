@@ -1,0 +1,21 @@
+case	api	route	result	expression	outcome
+own_object_unqualified	59.0	check-only deploy	accepted	CaptureNsK471__c.Name	deployed
+own_object_qualified	59.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c.Name	LWC1504
+own_field_unqualified	59.0	check-only deploy	accepted	CaptureNsK471__c.ProbeText__c	deployed
+own_field_qualified	59.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c.{namespace}__ProbeText__c	LWC1504
+other_object_namespace	59.0	check-only deploy	rejected	notthisns__CaptureNsK471__c.Name	Invalid reference
+other_field_namespace	59.0	check-only deploy	rejected	CaptureNsK471__c.notthisns__ProbeText__c	Invalid reference
+unknown_field	59.0	check-only deploy	rejected	CaptureNsK471__c.MissingProbe__c	Invalid reference
+own_object_unqualified	67.0	check-only deploy	accepted	CaptureNsK471__c.Name	deployed
+own_object_qualified	67.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c.Name	LWC1504
+own_field_unqualified	67.0	check-only deploy	accepted	CaptureNsK471__c.ProbeText__c	deployed
+own_field_qualified	67.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c.{namespace}__ProbeText__c	LWC1504
+other_object_namespace	67.0	check-only deploy	rejected	notthisns__CaptureNsK471__c.Name	Invalid reference
+other_field_namespace	67.0	check-only deploy	rejected	CaptureNsK471__c.notthisns__ProbeText__c	Invalid reference
+unknown_field	67.0	check-only deploy	rejected	CaptureNsK471__c.MissingProbe__c	Invalid reference
+bare_unqualified	59.0	check-only deploy	accepted	CaptureNsK471__c	deployed
+bare_qualified	59.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c	LWC1504
+field_prefix_only	59.0	check-only deploy	rejected	CaptureNsK471__c.{namespace}__ProbeText__c	LWC1504
+bare_unqualified	67.0	check-only deploy	accepted	CaptureNsK471__c	deployed
+bare_qualified	67.0	check-only deploy	rejected	{namespace}__CaptureNsK471__c	LWC1504
+field_prefix_only	67.0	check-only deploy	rejected	CaptureNsK471__c.{namespace}__ProbeText__c	LWC1504

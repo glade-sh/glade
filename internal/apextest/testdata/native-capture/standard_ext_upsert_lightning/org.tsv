@@ -1,0 +1,26 @@
+source_api	grant	case	observation
+67.0	none	stmt_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbFalse_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbDefault_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	stmt_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbFalse_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbDefault_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	stmt_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbFalse_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbDefault_new	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	stmt_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbFalse_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	dbDefault_upd	EX System.SObjectException|Field Contact.RouteKey__c is inaccessible in this context
+67.0	none	plain_insert	ERROR System.DmlException|Operation failed due to fields being inaccessible on Sobject Contact, check errors on Exception or Result!
+67.0	permset	stmt_new	ok
+67.0	permset	dbFalse_new	ok created=true
+67.0	permset	dbDefault_new	ok created=true
+67.0	permset	stmt_upd	ok
+67.0	permset	dbFalse_upd	ok created=false
+67.0	permset	dbDefault_upd	ok created=false
+62.0	none	stmt_new	ok
+62.0	none	dbFalse_new	ok created=true
+62.0	none	dbDefault_new	ok created=true
+62.0	none	stmt_upd	ok
+62.0	none	dbFalse_upd	ok created=false
+62.0	none	dbDefault_upd	ok created=false

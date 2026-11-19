@@ -1,0 +1,83 @@
+# callout-mocks full native observations
+
+## API 62.0
+### cm01 [istest @62.0]
+method=observe outcome=Fail time=44ms
+message=System.AssertException: Assertion Failed: OBS|{"req":{"xreq":"asked","body":"payload","endpoint":"https://mock.invalid/one","method":"POST"},"limit":100,"delta":1,"calls":1,"header":"yes","body":"mock-body","status":"Created","code":201}
+stack=Class.Cm01HttpMockTest.observe: line 13, column 1
+
+### cm02 [istest @62.0]
+method=observe outcome=Fail time=27ms
+message=System.AssertException: Assertion Failed: OBS|{"delta":1,"header":"on","body":"sr-body\n","status":"Accepted","code":202}
+stack=Class.Cm02StaticResourceMockTest.observe: line 12, column 1
+
+### cm03 [istest @62.0]
+method=observe outcome=Fail time=39ms
+message=System.AssertException: Assertion Failed: OBS|{"missing":"System.NullPointerException|Static Resource not found: <null>","b":"200|body-B\n|1","a":"200|body-A\n|1"}
+stack=Class.Cm03MultiStaticResourceMockTest.observe: line 17, column 1
+
+### cm04 [istest @62.0]
+method=observe outcome=Fail time=36ms
+message=System.AssertException: Assertion Failed: OBS|{"last":{"requestClass":"EchoRequest","stubClass":"MockSoapService","responseType":"MockSoapService.EchoResponse","responseName":"EchoResponse","responseNS":"urn:mock","requestName":"Echo","soapAction":"urn:mock","endpoint":"https://mock.invalid/soap"},"calls":1,"delta":1,"value":"soap-response"}
+stack=Class.Cm04WebServiceMockTest.observe: line 10, column 1
+
+### cm05 [istest @62.0]
+method=observe outcome=Fail time=25ms
+message=System.AssertException: Assertion Failed: OBS|{"delta":0,"error":"System.TypeException|Methods defined as TestMethod do not support Web service callouts"}
+stack=Class.Cm05NoMockHttpTest.observe: line 9, column 1
+
+### cm06 [istest @62.0]
+method=observe outcome=Fail time=23ms
+message=System.AssertException: Assertion Failed: OBS|{"limit":100,"delta":1,"headerNull":true,"body":"sr-body\n","status":"OK","code":200}
+stack=Class.Cm06MockDefaultsTest.observe: line 11, column 1
+
+### cm07 [istest @62.0]
+method=observe outcome=Fail time=15ms
+message=System.AssertException: Assertion Failed: OBS|{"secondCalls":1,"firstCalls":0,"body":"second-body"}
+stack=Class.Cm07SetMockReplaceTest.observe: line 10, column 1
+
+### cm08 [istest @62.0]
+method=observe outcome=Fail time=27ms
+message=System.AssertException: Assertion Failed: OBS|{"error":"System.TypeException|Mock object doesn't implement the supplied interface"}
+stack=Class.Cm08SetMockMismatchTest.observe: line 10, column 1
+
+## API 67.0
+### cm01 [istest @67.0]
+method=observe outcome=Fail time=31ms
+message=System.AssertException: Assertion Failed: OBS|{"req":{"xreq":"asked","body":"payload","endpoint":"https://mock.invalid/one","method":"POST"},"limit":100,"delta":1,"calls":1,"header":"yes","body":"mock-body","status":"Created","code":201}
+stack=Class.Cm01HttpMockTest.observe: line 13, column 1
+
+### cm02 [istest @67.0]
+method=observe outcome=Fail time=32ms
+message=System.AssertException: Assertion Failed: OBS|{"delta":1,"header":"on","body":"sr-body\n","status":"Accepted","code":202}
+stack=Class.Cm02StaticResourceMockTest.observe: line 12, column 1
+
+### cm03 [istest @67.0]
+method=observe outcome=Fail time=29ms
+message=System.AssertException: Assertion Failed: OBS|{"missing":"System.NullPointerException|Static Resource not found: <null>","b":"200|body-B\n|1","a":"200|body-A\n|1"}
+stack=Class.Cm03MultiStaticResourceMockTest.observe: line 17, column 1
+
+### cm04 [istest @67.0]
+method=observe outcome=Fail time=23ms
+message=System.AssertException: Assertion Failed: OBS|{"last":{"requestClass":"EchoRequest","stubClass":"MockSoapService","responseType":"MockSoapService.EchoResponse","responseName":"EchoResponse","responseNS":"urn:mock","requestName":"Echo","soapAction":"urn:mock","endpoint":"https://mock.invalid/soap"},"calls":1,"delta":1,"value":"soap-response"}
+stack=Class.Cm04WebServiceMockTest.observe: line 10, column 1
+
+### cm05 [istest @67.0]
+method=observe outcome=Fail time=17ms
+message=System.AssertException: Assertion Failed: OBS|{"delta":0,"error":"System.TypeException|Methods defined as TestMethod do not support Web service callouts"}
+stack=Class.Cm05NoMockHttpTest.observe: line 9, column 1
+
+### cm06 [istest @67.0]
+method=observe outcome=Fail time=15ms
+message=System.AssertException: Assertion Failed: OBS|{"limit":100,"delta":1,"headerNull":true,"body":"sr-body\n","status":"OK","code":200}
+stack=Class.Cm06MockDefaultsTest.observe: line 11, column 1
+
+### cm07 [istest @67.0]
+method=observe outcome=Fail time=29ms
+message=System.AssertException: Assertion Failed: OBS|{"secondCalls":1,"firstCalls":0,"body":"second-body"}
+stack=Class.Cm07SetMockReplaceTest.observe: line 10, column 1
+
+### cm08 [istest @67.0]
+method=observe outcome=Fail time=25ms
+message=System.AssertException: Assertion Failed: OBS|{"error":"System.TypeException|Mock object doesn't implement the supplied interface"}
+stack=Class.Cm08SetMockMismatchTest.observe: line 10, column 1

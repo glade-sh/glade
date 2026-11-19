@@ -3,14 +3,15 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -18,9 +19,11 @@ type Index struct {
 	AutoResponseRules []storage.AutoResponseRule `json:"autoResponseRules,omitempty"`
 	AssignmentRules   []storage.AssignmentRule   `json:"assignmentRules,omitempty"`
 	DuplicateRules    []storage.DuplicateRule    `json:"duplicateRules,omitempty"`
-	Workflows         []Workflow                 `json:"workflows,omitempty"`
-	Flows             []Flow                     `json:"flows,omitempty"`
-	Diagnostics       []diagnostic.Diagnostic    `json:"diagnostics,omitempty"`
+	// StandardDuplicateRules is the project's duplicateRules.standard setting.
+	StandardDuplicateRules bool                    `json:"standardDuplicateRules,omitempty"`
+	Workflows              []Workflow              `json:"workflows,omitempty"`
+	Flows                  []Flow                  `json:"flows,omitempty"`
+	Diagnostics            []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 type Workflow struct {
@@ -105,19 +108,19 @@ type workflowRecipientXML struct {
 // the remaining files still load, so one bad file never disables the rest of
 // the project's automation.
 func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, error)) (Index, error) {
-	readMetadata := os.ReadFile
+	readMetadata := p.ReadFile
 	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
 		readMetadata = metadataReaders[0]
 	}
 	rules, diagnostics := loadDuplicateRules(p, readMetadata)
-	idx := Index{DuplicateRules: rules, Diagnostics: diagnostics}
+	idx := Index{DuplicateRules: rules, Diagnostics: diagnostics, StandardDuplicateRules: p.StandardDuplicateRules}
 	idx.AutoResponseRules, diagnostics = loadAutoResponseRules(p, readMetadata)
 	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	idx.AssignmentRules, diagnostics = loadAssignmentRules(p, readMetadata)
 	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
-	workflowUpdates := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
+	workflowUpdates := loadProjectWorkflowFieldUpdates(p.ReadFile, p.WorkflowFiles)
 	for _, path := range p.WorkflowFiles {
-		workflow, diagnostics, err := loadWorkflowWithUpdates(path, workflowUpdates[objectNameFromWorkflowPath(path)])
+		workflow, diagnostics, err := loadWorkflowWithUpdates(p.ReadFile, path, workflowUpdates[objectNameFromWorkflowPath(path)])
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "workflow", objectNameFromWorkflowPath(path), err))
 			continue
@@ -125,10 +128,11 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Workflows = append(idx.Workflows, workflow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
-	flowDefinitions := flowProjectRelationshipDefinitions(p)
+	schemaLoader := newProjectSchemaLoader(p)
+	flowDefinitions := flowProjectRelationshipDefinitions(p, schemaLoader)
 	flowPaths := make([]string, 0, len(p.FlowFiles))
 	for _, path := range p.FlowFiles {
-		flow, diagnostics, err := loadFlow(path, flowDefinitions)
+		flow, diagnostics, err := loadFlowWith(p.ReadFile, path, flowDefinitions)
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "flow", flowFileName(path), err))
 			continue
@@ -137,16 +141,17 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		flowPaths = append(flowPaths, path)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
-	if err := leaveUncoveredProcessesUnrun(&idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
+	flowValidateProjectTransformTargets(p, &idx)
+	if err := leaveUncoveredProcessesUnrun(p.ReadFile, &idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
 		return Index{}, err
 	}
-	if err := flowRefsValidateProjectDecisions(p, &idx); err != nil {
+	if err := flowRefsValidateProjectDecisions(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
-	if err := flowCoreValidateProjectEntries(p, &idx); err != nil {
+	if err := flowCoreValidateProjectEntries(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
-	if err := flowCoreValidateProjectConditions(p, &idx); err != nil {
+	if err := flowCoreValidateProjectConditions(p, &idx, schemaLoader); err != nil {
 		return Index{}, err
 	}
 	if err := flowCoreValidateProjectAssignments(p, &idx); err != nil {
@@ -165,6 +170,7 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 		return
 	}
 	applyDuplicateRules(org, idx.DuplicateRules)
+	org.StandardDuplicateRules = idx.StandardDuplicateRules
 	applyAssignmentRules(org, idx.AssignmentRules)
 	applyAutoResponseRules(org, idx.AutoResponseRules)
 	for _, workflow := range idx.Workflows {
@@ -199,12 +205,8 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 	}
 }
 
-func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
-	return loadWorkflowWithUpdates(path, nil)
-}
-
-func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.WorkflowFieldUpdate) (Workflow, []diagnostic.Diagnostic, error) {
-	data, err := os.ReadFile(path)
+func loadWorkflowWithUpdates(read func(string) ([]byte, error), path string, externalUpdates map[string]storage.WorkflowFieldUpdate) (Workflow, []diagnostic.Diagnostic, error) {
+	data, err := read(path)
 	if err != nil {
 		return Workflow{}, nil, err
 	}
@@ -337,10 +339,10 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 
 // loadProjectWorkflowFieldUpdates skips files it cannot read or parse;
 // LoadProject reports each of them when it loads that file.
-func loadProjectWorkflowFieldUpdates(paths []string) map[string]map[string]storage.WorkflowFieldUpdate {
+func loadProjectWorkflowFieldUpdates(read func(string) ([]byte, error), paths []string) map[string]map[string]storage.WorkflowFieldUpdate {
 	out := make(map[string]map[string]storage.WorkflowFieldUpdate)
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := read(path)
 		if err != nil {
 			continue
 		}
@@ -454,4 +456,30 @@ func firstNonBlank(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// loadProjectSchema is the schema loader the automation index uses; tests
+// replace it to observe how often a project load reads its schema.
+var loadProjectSchema = schema.LoadProject
+
+// projectSchemaLoader hands the same project schema to every Flow validation
+// pass of one LoadProject call. The passes each used to load the schema from
+// disk, which re-read every object and field file and re-scanned the project
+// tree for org shape evidence.
+type projectSchemaLoader struct {
+	project project.Project
+	once    sync.Once
+	schema  schema.Schema
+	err     error
+}
+
+func newProjectSchemaLoader(p project.Project) *projectSchemaLoader {
+	return &projectSchemaLoader{project: p}
+}
+
+func (l *projectSchemaLoader) load() (schema.Schema, error) {
+	l.once.Do(func() {
+		l.schema, l.err = loadProjectSchema(l.project)
+	})
+	return l.schema, l.err
 }

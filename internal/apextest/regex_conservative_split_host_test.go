@@ -122,16 +122,6 @@ func TestConservativeSplitNativeVisualforceAndLWCHostRoutes(t *testing.T) {
 					if err := json.Unmarshal([]byte(row[3]), &want); err != nil {
 						t.Fatal(err)
 					}
-					if row[2] == "octal_class_400" || row[2] == "octal_class_777" {
-						// Same carried local syntax gap as the named/anonymous test.
-						for key := range want {
-							if key == "Matcher.find" {
-								want[key] = false
-							} else {
-								want[key] = []any{"L" + input[1] + "R" + input[1] + "T"}
-							}
-						}
-					}
 					params := map[string]string{"source": input[0], "separator": input[1]}
 					for _, route := range []string{"Visualforce", "LWC/imperative", "LWC/wire"} {
 						t.Run(route, func(t *testing.T) {

@@ -303,7 +303,7 @@ func TestFrozenNamespaceClassLookupMatchesUnsharedBuild(t *testing.T) {
 		t.Fatalf("unexpected frozen lookup sharing")
 	}
 	for _, namespace := range []string{"", "pkg", "PKG", "other", "missing"} {
-		for _, name := range []string{"Worker", "Inner", "Entry", "Registry", "Outer.Inner", "Missing"} {
+		for _, name := range []string{"Worker", "Inner", "Entry", "Registry", "Outer", "Shell", "Outer.Inner", "Shell.Inner", "Registry.Entry", "Missing"} {
 			wantClass, wantOK := unshared.lookupClassInNamespace(namespace, name)
 			for _, clone := range []*VM{first, second} {
 				gotClass, gotOK := clone.lookupClassInNamespace(namespace, name)
@@ -312,9 +312,9 @@ func TestFrozenNamespaceClassLookupMatchesUnsharedBuild(t *testing.T) {
 				}
 			}
 		}
-		key := strings.ToLower(namespace)
-		if !reflect.DeepEqual(first.namespaceClassLookup[key], unshared.namespaceClassLookup[key]) {
-			t.Fatalf("namespace %q table = %+v, want %+v", namespace, first.namespaceClassLookup[key], unshared.namespaceClassLookup[key])
+		// A frozen clone answers per name and builds no namespace table.
+		if table := first.namespaceClassLookup[strings.ToLower(namespace)]; table != nil {
+			t.Fatalf("frozen clone built a full table for namespace %q: %+v", namespace, table)
 		}
 	}
 	if len(first.frozenClassLookup.namespaceAliases) == 0 {

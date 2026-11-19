@@ -11,6 +11,12 @@ private class PsTest {
         System.assertEquals(false, FeatureManagement.checkPermission('Pkg_Run'), 'before');
         insert new PermissionSetAssignment(AssigneeId = UserInfo.getUserId(), PermissionSetId = a[0].Id);
         System.assertEquals(1, [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = 'Pkg_User'].size());
-        System.assertEquals(true, FeatureManagement.checkPermission('Pkg_Run'), 'after');
+        // The native row is anonymous Apex, where the grant applies at once. In a
+        // test the running user's new assignment applies in a later runAs block
+        // (permset_in_test v01_direct_c: A=perm=false, B=perm=true).
+        System.assertEquals(false, FeatureManagement.checkPermission('Pkg_Run'), 'after outside runAs');
+        System.runAs(new User(Id = UserInfo.getUserId())) {
+            System.assertEquals(true, FeatureManagement.checkPermission('Pkg_Run'), 'after');
+        }
     }
 }

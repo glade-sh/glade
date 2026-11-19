@@ -596,6 +596,9 @@ func checkWorkflowWithOwnership(name string, data []byte, savedKeys, implicitNPM
 func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWriters map[string]string, repoRoot string) []string {
 	prefix := workflowName + "/" + jobName + ": "
 	var problems []string
+	expanded, expandProblems := expandLocalActions(source.Steps, repoRoot, prefix, 0)
+	problems = append(problems, expandProblems...)
+	source.Steps = expanded
 	checkoutSeen := false
 	populatedPaths := make(map[string]bool)
 	toolchains := jobToolchains(source)
@@ -665,7 +668,13 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 				}
 			}
 		}
-		problems = append(problems, cacheKeyProblems(prefix, cacheType, key, toolchains)...)
+		keyToolchains := toolchains
+		if cacheType == npmCache && !kind.saves() && strings.HasPrefix(key, "node-cache-") {
+			// A restore-only read of setup-node's own cache namespace. Its keys
+			// carry no Node version, so the toolchain component cannot apply.
+			keyToolchains = map[cacheKind]string{}
+		}
+		problems = append(problems, cacheKeyProblems(prefix, cacheType, key, keyToolchains)...)
 		if kind.restores() {
 			problems = append(problems, restoreKeyProblems(prefix, key, withValue(candidate, "restore-keys"))...)
 		}
@@ -681,6 +690,86 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 		}
 	}
 	return problems
+}
+
+type compositeAction struct {
+	Runs struct {
+		Using string `yaml:"using"`
+		Steps []step `yaml:"steps"`
+	} `yaml:"runs"`
+}
+
+const localActionPrefix = "./.github/actions/"
+const maxLocalActionDepth = 4
+
+// expandLocalActions replaces each repository-local composite action step with
+// the steps of its action.yml, so the same pin, cache and ownership rules
+// apply inside it. A local action that cannot be read is reported.
+func expandLocalActions(steps []step, repoRoot, prefix string, depth int) ([]step, []string) {
+	var out []step
+	var problems []string
+	for _, candidate := range steps {
+		if !strings.HasPrefix(candidate.Uses, localActionPrefix) {
+			out = append(out, candidate)
+			continue
+		}
+		if depth >= maxLocalActionDepth {
+			problems = append(problems, prefix+"local action nesting is too deep: "+candidate.Uses)
+			continue
+		}
+		if repoRoot == "" {
+			problems = append(problems, prefix+"cannot read local action without a repository root: "+candidate.Uses)
+			continue
+		}
+		actionDir := filepath.Clean(filepath.FromSlash(strings.TrimPrefix(candidate.Uses, "./")))
+		if !strings.HasPrefix(filepath.ToSlash(actionDir), ".github/actions/") {
+			problems = append(problems, prefix+"local action escapes .github/actions: "+candidate.Uses)
+			continue
+		}
+		// A symlink under .github/actions must not lead outside it.
+		resolvedDir, resolveErr := filepath.EvalSymlinks(filepath.Join(repoRoot, actionDir))
+		resolvedBase, baseErr := filepath.EvalSymlinks(filepath.Join(repoRoot, ".github", "actions"))
+		if resolveErr != nil || baseErr != nil {
+			problems = append(problems, prefix+"cannot read local action "+candidate.Uses)
+			continue
+		}
+		if relative, err := filepath.Rel(resolvedBase, resolvedDir); err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			problems = append(problems, prefix+"local action escapes .github/actions: "+candidate.Uses)
+			continue
+		}
+		var data []byte
+		var err error
+		for _, name := range []string{"action.yml", "action.yaml"} {
+			data, err = os.ReadFile(filepath.Join(resolvedDir, name)) // #nosec G304 -- confined to .github/actions above.
+			if err == nil {
+				if target, linkErr := filepath.EvalSymlinks(filepath.Join(resolvedDir, name)); linkErr == nil {
+					if rel, relErr := filepath.Rel(resolvedBase, target); relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+						err = fmt.Errorf("action file escapes .github/actions")
+					}
+				}
+			}
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			problems = append(problems, prefix+"cannot read local action "+candidate.Uses+": "+err.Error())
+			continue
+		}
+		var action compositeAction
+		if err := yaml.Unmarshal(data, &action); err != nil {
+			problems = append(problems, prefix+"parse local action "+candidate.Uses+": "+err.Error())
+			continue
+		}
+		if action.Runs.Using != "composite" {
+			problems = append(problems, prefix+"local action is not composite: "+candidate.Uses)
+			continue
+		}
+		inner, innerProblems := expandLocalActions(action.Runs.Steps, repoRoot, prefix+"local action "+candidate.Uses+": ", depth+1)
+		problems = append(problems, innerProblems...)
+		out = append(out, inner...)
+	}
+	return out, problems
 }
 
 type matrixRequirements struct {
@@ -1304,18 +1393,18 @@ var requiredUploads = []requiredUpload{
 	{"browser.yml", "browser", "browser-${{ github.run_id }}-${{ github.run_attempt }}", []string{"ci-artifacts/browser/**"}},
 	{"ci.yml", "gladecli", "gladecli-shard-${{ matrix.shard }}", []string{"ci-artifacts/gladecli-${{ matrix.shard }}/"}},
 	{"ci.yml", "vm", "vm-shard-${{ matrix.shard }}", []string{"ci-artifacts/vm-${{ matrix.shard }}/"}},
-	{"ci.yml", "gladecli-history", "gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-gladecli-duration-history/gladecli-duration-history.json"}},
-	{"ci.yml", "vm-history", "vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-vm-duration-history/vm-duration-history.json"}},
+	{"ci.yml", "history", "gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-gladecli-duration-history/gladecli-duration-history.json"}},
+	{"ci.yml", "history", "vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-vm-duration-history/vm-duration-history.json"}},
 	{"ci.yml", "node-integration", "go-test-node-integration", []string{"ci-artifacts/go-test-node-integration/test-node-integration.json", "ci-artifacts/go-test-node-integration/expected.txt", "ci-artifacts/go-test-node-integration/discovery.txt", "ci-artifacts/go-test-node-integration/validation-summary.json", "ci-artifacts/go-test-node-integration/resource-usage.json"}},
 	{"ci.yml", "sema", "sema-shard-${{ matrix.shard }}", []string{"ci-artifacts/sema-${{ matrix.shard }}/"}},
-	{"ci.yml", "sema-history", "sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-sema-duration-history/sema-duration-history.json"}},
+	{"ci.yml", "history", "sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-sema-duration-history/sema-duration-history.json"}},
 	{"ci.yml", "sema-full", "sema-full", []string{"ci-artifacts/sema-full/"}},
 	{"ci.yml", "sema-equivalence", "sema-equivalence-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/sema-equivalence/equivalence.json"}},
 	{"ci.yml", "server-and-playground", "go-test-server-and-playground", []string{"ci-artifacts/go-test/test-server-and-playground.json", "ci-artifacts/go-test/resource-server-and-playground.json"}},
 	{"ci.yml", "server-process-builder", "go-test-server-process-builder", []string{"ci-artifacts/go-test/test-server-process-builder.json", "ci-artifacts/go-test/resource-server-process-builder.json"}},
 	{"ci.yml", "test", "go-test-remaining-go", []string{"ci-artifacts/go-test/test-repoguard.json", "ci-artifacts/go-test/test-remaining-go.json", "ci-artifacts/go-test/resource-repoguard.json", "ci-artifacts/go-test/resource-remaining-go.json"}},
 	{"ci.yml", "apextest", "apex-shard-${{ matrix.shard }}", []string{"ci-artifacts/apextest-${{ matrix.shard }}/discovery.txt", "ci-artifacts/apextest-${{ matrix.shard }}/discovery-stderr.txt", "ci-artifacts/apextest-${{ matrix.shard }}/discovery-command.txt", "ci-artifacts/apextest-${{ matrix.shard }}/plan.json", "ci-artifacts/apextest-${{ matrix.shard }}/selected-shard.json", "ci-artifacts/apextest-${{ matrix.shard }}/events.json", "ci-artifacts/apextest-${{ matrix.shard }}/validation-summary.json", "ci-artifacts/apextest-${{ matrix.shard }}/resource-usage.json"}},
-	{"ci.yml", "apextest-history", "apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-apextest-duration-history/apextest-duration-history.json"}},
+	{"ci.yml", "history", "apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", []string{"/tmp/glade-apextest-duration-history/apextest-duration-history.json"}},
 	{"race.yml", "plan", "race-plan-${{ github.run_id }}-${{ github.run_attempt }}", []string{"ci-artifacts/race-plan/plan.json"}},
 	{"race.yml", "race", "race-${{ steps.artifact.outputs.slug }}", []string{"ci-artifacts/race/"}},
 	{"race.yml", "race-apextest-a", "race-internal-apextest-a-${{ github.run_id }}-${{ github.run_attempt }}", []string{"ci-artifacts/race/internal-apextest"}},

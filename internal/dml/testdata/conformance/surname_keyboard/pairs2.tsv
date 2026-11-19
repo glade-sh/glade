@@ -1,0 +1,97 @@
+method	panel	index	cls	obj	seed	cand	variant	ksum	mp3eq	basenative
+H_noemail_fwd	H	0	H_A	Contact	Ikir	Ikirp	noemail			99
+H_noemail_fwd	H	1	H_A	Contact	Sznc	Szncs	noemail			99
+H_noemail_fwd	H	2	H_C	Contact	Cpv	Cpvp	noemail			99
+H_noemail_fwd	H	3	H_D	Contact	Pszkm	Pszkn	noemail			100
+H_noemail_fwd	H	4	H_E	Contact	Bxc	Bcx	noemail			99
+H_noemail_fwd	H	5	H_F	Contact	Lysqw	Lyqws	noemail			99
+H_noemail_fwd	H	6	H_G	Contact	Gklnjdrl	Gklnjdlr	noemail			97
+H_noemail_fwd	H	7	H_A	Contact	Riim	Riimq	noemail			99
+H_noemail_rev	H	0	H_A	Contact	Ikirp	Ikir	noemail			99
+H_noemail_rev	H	1	H_A	Contact	Szncs	Sznc	noemail			99
+H_noemail_rev	H	2	H_C	Contact	Cpvp	Cpv	noemail			99
+H_noemail_rev	H	3	H_D	Contact	Pszkn	Pszkm	noemail			100
+H_noemail_rev	H	4	H_E	Contact	Bcx	Bxc	noemail			99
+H_noemail_rev	H	5	H_F	Contact	Lyqws	Lysqw	noemail			99
+H_noemail_rev	H	6	H_G	Contact	Gklnjdlr	Gklnjdrl	noemail			97
+H_noemail_rev	H	7	H_A	Contact	Riimq	Riim	noemail			99
+H_diffemail_fwd	H	0	H_A	Contact	Ikir	Ikirp	diffemail			99
+H_diffemail_fwd	H	1	H_A	Contact	Sznc	Szncs	diffemail			99
+H_diffemail_fwd	H	2	H_C	Contact	Cpv	Cpvp	diffemail			99
+H_diffemail_fwd	H	3	H_D	Contact	Pszkm	Pszkn	diffemail			100
+H_diffemail_fwd	H	4	H_E	Contact	Bxc	Bcx	diffemail			99
+H_diffemail_fwd	H	5	H_F	Contact	Lysqw	Lyqws	diffemail			99
+H_diffemail_fwd	H	6	H_G	Contact	Gklnjdrl	Gklnjdlr	diffemail			97
+H_diffemail_fwd	H	7	H_A	Contact	Riim	Riimq	diffemail			99
+H_diffemail_rev	H	0	H_A	Contact	Ikirp	Ikir	diffemail			99
+H_diffemail_rev	H	1	H_A	Contact	Szncs	Sznc	diffemail			99
+H_diffemail_rev	H	2	H_C	Contact	Cpvp	Cpv	diffemail			99
+H_diffemail_rev	H	3	H_D	Contact	Pszkn	Pszkm	diffemail			100
+H_diffemail_rev	H	4	H_E	Contact	Bcx	Bxc	diffemail			99
+H_diffemail_rev	H	5	H_F	Contact	Lyqws	Lysqw	diffemail			99
+H_diffemail_rev	H	6	H_G	Contact	Gklnjdlr	Gklnjdrl	diffemail			97
+H_diffemail_rev	H	7	H_A	Contact	Riimq	Riim	diffemail			99
+H_diffname_fwd	H	0	H_A	Contact	Ikir	Ikirp	diffname			99
+H_diffname_fwd	H	1	H_A	Contact	Sznc	Szncs	diffname			99
+H_diffname_fwd	H	2	H_C	Contact	Cpv	Cpvp	diffname			99
+H_diffname_fwd	H	3	H_D	Contact	Pszkm	Pszkn	diffname			100
+H_diffname_fwd	H	4	H_E	Contact	Bxc	Bcx	diffname			99
+H_diffname_fwd	H	5	H_F	Contact	Lysqw	Lyqws	diffname			99
+H_diffname_fwd	H	6	H_G	Contact	Gklnjdrl	Gklnjdlr	diffname			97
+H_diffname_fwd	H	7	H_A	Contact	Riim	Riimq	diffname			99
+H_diffname_rev	H	0	H_A	Contact	Ikirp	Ikir	diffname			99
+H_diffname_rev	H	1	H_A	Contact	Szncs	Sznc	diffname			99
+H_diffname_rev	H	2	H_C	Contact	Cpvp	Cpv	diffname			99
+H_diffname_rev	H	3	H_D	Contact	Pszkn	Pszkm	diffname			100
+H_diffname_rev	H	4	H_E	Contact	Bcx	Bxc	diffname			99
+H_diffname_rev	H	5	H_F	Contact	Lyqws	Lysqw	diffname			99
+H_diffname_rev	H	6	H_G	Contact	Gklnjdlr	Gklnjdrl	diffname			97
+H_diffname_rev	H	7	H_A	Contact	Riimq	Riim	diffname			99
+H_phone_fwd	H	0	H_A	Contact	Ikir	Ikirp	phone			99
+H_phone_fwd	H	1	H_A	Contact	Sznc	Szncs	phone			99
+H_phone_fwd	H	2	H_C	Contact	Cpv	Cpvp	phone			99
+H_phone_fwd	H	3	H_D	Contact	Pszkm	Pszkn	phone			100
+H_phone_fwd	H	4	H_E	Contact	Bxc	Bcx	phone			99
+H_phone_fwd	H	5	H_F	Contact	Lysqw	Lyqws	phone			99
+H_phone_fwd	H	6	H_G	Contact	Gklnjdrl	Gklnjdlr	phone			97
+H_phone_fwd	H	7	H_A	Contact	Riim	Riimq	phone			99
+H_phone_rev	H	0	H_A	Contact	Ikirp	Ikir	phone			99
+H_phone_rev	H	1	H_A	Contact	Szncs	Sznc	phone			99
+H_phone_rev	H	2	H_C	Contact	Cpvp	Cpv	phone			99
+H_phone_rev	H	3	H_D	Contact	Pszkn	Pszkm	phone			100
+H_phone_rev	H	4	H_E	Contact	Bcx	Bxc	phone			99
+H_phone_rev	H	5	H_F	Contact	Lyqws	Lysqw	phone			99
+H_phone_rev	H	6	H_G	Contact	Gklnjdlr	Gklnjdrl	phone			97
+H_phone_rev	H	7	H_A	Contact	Riimq	Riim	phone			99
+I_upper_fwd	I	0	I_upper	Contact	IKIR	IKIRP	std			99
+I_upper_fwd	I	1	I_upper	Contact	SZNC	SZNCS	std			99
+I_upper_fwd	I	2	I_upper	Contact	PSZKM	PSZKN	std			100
+I_upper_fwd	I	3	I_upper	Contact	FLRYM	FLRYN	std			100
+I_upper_rev	I	0	I_upper	Contact	IKIRP	IKIR	std			99
+I_upper_rev	I	1	I_upper	Contact	SZNCS	SZNC	std			99
+I_upper_rev	I	2	I_upper	Contact	PSZKN	PSZKM	std			100
+I_upper_rev	I	3	I_upper	Contact	FLRYN	FLRYM	std			100
+I_accent_fwd	I	0	I_accent	Contact	Iékir	Iékirp	std			99
+I_accent_fwd	I	1	I_accent	Contact	Séznc	Sézncs	std			99
+I_accent_fwd	I	2	I_accent	Contact	Pészkm	Pészkn	std			100
+I_accent_fwd	I	3	I_accent	Contact	Félrym	Félryn	std			100
+I_accent_rev	I	0	I_accent	Contact	Iékirp	Iékir	std			99
+I_accent_rev	I	1	I_accent	Contact	Sézncs	Séznc	std			99
+I_accent_rev	I	2	I_accent	Contact	Pészkn	Pészkm	std			100
+I_accent_rev	I	3	I_accent	Contact	Félryn	Félrym	std			100
+I_hyphen_fwd	I	0	I_hyphen	Contact	Ik-ir	Ik-irp	std			99
+I_hyphen_fwd	I	1	I_hyphen	Contact	Sz-nc	Sz-ncs	std			99
+I_hyphen_fwd	I	2	I_hyphen	Contact	Ps-zkm	Ps-zkn	std			100
+I_hyphen_fwd	I	3	I_hyphen	Contact	Fl-rym	Fl-ryn	std			100
+I_hyphen_rev	I	0	I_hyphen	Contact	Ik-irp	Ik-ir	std			99
+I_hyphen_rev	I	1	I_hyphen	Contact	Sz-ncs	Sz-nc	std			99
+I_hyphen_rev	I	2	I_hyphen	Contact	Ps-zkn	Ps-zkm	std			100
+I_hyphen_rev	I	3	I_hyphen	Contact	Fl-ryn	Fl-rym	std			100
+I_token_fwd	I	0	I_token	Contact	Van Ikir	Van Ikirp	std			99
+I_token_fwd	I	1	I_token	Contact	Van Sznc	Van Szncs	std			99
+I_token_fwd	I	2	I_token	Contact	Van Pszkm	Van Pszkn	std			100
+I_token_fwd	I	3	I_token	Contact	Van Flrym	Van Flryn	std			100
+I_token_rev	I	0	I_token	Contact	Van Ikirp	Van Ikir	std			99
+I_token_rev	I	1	I_token	Contact	Van Szncs	Van Sznc	std			99
+I_token_rev	I	2	I_token	Contact	Van Pszkn	Van Pszkm	std			100
+I_token_rev	I	3	I_token	Contact	Van Flryn	Van Flrym	std			100

@@ -1,0 +1,1 @@
+Fresh 30-day Developer scratch org, synthetic page deployments at API 59.0 and 67.0. Rows capture empty IDs on input, span, anchor, form and div plus a nonempty control. Synthetic pages were rendered with PageReference.getContent; raw element markup is recorded. Scratch deleted and unique-description ScratchOrgInfo verified Deleted.

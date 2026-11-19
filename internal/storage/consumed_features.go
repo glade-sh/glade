@@ -20,6 +20,11 @@ func PolicyFeatureNames() []string {
 			for _, feature := range gate.Features {
 				seen[canonicalFeatureName(feature)] = true
 			}
+			for _, group := range gate.Alternatives {
+				for _, feature := range group {
+					seen[canonicalFeatureName(feature)] = true
+				}
+			}
 		}
 	}
 	for _, entry := range standardObjectCatalogData {

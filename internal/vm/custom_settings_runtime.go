@@ -216,6 +216,17 @@ func (vm *VM) hierarchyCustomSettingInstance(objectName, kind string, args []Val
 		}
 	}
 	if empty {
+		// Native loaddata-settings ld07 withNone (62.0 and 67.0): an instance with
+		// no row applies no field defaults, so a Checkbox reads false.
+		if vm.Org == nil {
+			// No schema to consult.
+		} else if object, ok := vm.Org.Objects[objectName]; ok {
+			for name, field := range object.Definition.Fields {
+				if _, present := value.Fields[name]; present && field.Type == storage.FieldBoolean {
+					value.Fields[name] = Bool(false)
+				}
+			}
+		}
 		// The captured empty instance contains only its requested owner.
 		markExplicitSObjectField(&value, "SetupOwnerId")
 		for field := range value.Fields {
@@ -551,6 +562,12 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 		if fieldValue.Kind != ValueDecimal {
 			continue
 		}
+		// Native loaddata-settings ld07 to ld10 (62.0 and 67.0): a declared
+		// scale-zero Number keeps its stored text. An Integer or field default
+		// reads 7, a CSV cell loaded as a Double reads 5.0.
+		if vm.customSettingScaleZeroField(record.Object, kind, name) {
+			continue
+		}
 		if rational, ok := valueDecimalRat(fieldValue); ok {
 			text := rational.FloatString(decimalScale(fieldValue))
 			if strings.Contains(text, ".") {
@@ -589,6 +606,30 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 	}
 	return value
 }
+
+// customSettingScaleZeroField reports a declared scale-zero Number field of a
+// custom setting. Native loaddata-settings ld07, ld08 and ld10 (62.0 and 67.0):
+// an integral cached value of such a field keeps no fractional digit
+// (String.valueOf gives 7, not 7.0).
+func (vm *VM) customSettingScaleZeroField(objectName, kind, fieldName string) bool {
+	if kind != "custom setting" || vm.Org == nil {
+		return false
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	field, ok := object.Definition.Fields[fieldName]
+	if !ok {
+		resolved, found := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName)
+		if !found {
+			return false
+		}
+		field = object.Definition.Fields[resolved]
+	}
+	return field.Type == storage.FieldDecimal && field.ScaleSpecified && field.Scale == 0
+}
+
 func (vm *VM) readOnlyCustomDataDefaultValue(objectName, kind string) Value {
 	value := Object(objectName)
 	// A custom setting with no stored row is a fresh instance: native

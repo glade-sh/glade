@@ -1,0 +1,5 @@
+case	api	route	result	outcome
+css_valid	59.0	deploy	accepted	deployed
+css_missing	59.0	deploy	rejected	No MODULE named markup://c:absentStyles found
+css_valid	67.0	deploy	accepted	deployed
+css_missing	67.0	deploy	rejected	No MODULE named markup://c:absentStyles found

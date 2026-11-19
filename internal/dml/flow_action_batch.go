@@ -108,23 +108,27 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 		}
 		restore()
 	}
-	var batchErr error
+	batchActionFailed := false
 	if len(requests) > 0 {
-		batchErr = e.FlowActionBatchInvoker(action, requests)
+		err := e.FlowActionBatchInvoker(action, requests)
+		batchActionFailed = err != nil
 		for _, frame := range frames {
 			if frame != nil {
-				frame.preparedAction.err = batchErr
+				frame.preparedAction.err = err
 			}
 		}
 	}
 	// The native refire captures cover successful action inputs selected by an
 	// unfiltered or String-prefix start, with Date and Datetime outputs. Delay
 	// trigger refiring for that shape until all of those writes are stored.
-	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && len(requests) >= 2 && batchErr == nil && flowActionDateRefireShape(rule, definition, e.Org.Namespace) && flowActionDateRefireOutputs(frames)
+	batchedRefire := len(afterBatch) == 1 && afterBatch[0] != nil && !batchActionFailed && len(requests) >= 2 && flowActionDateRefireShape(rule, definition, e.Org.Namespace) && flowActionDateRefireOutputs(frames)
 	var outcomes []AutomationResult
 	if batchedRefire {
 		outcomes = make([]AutomationResult, len(records))
 	}
+	// A failed shared action can send multiple interviews to Custom Error.
+	// Collect those errors by input index; the enclosing atomic DML rolls back.
+	var batchFailure *flowActionBatchFailure
 	for i, frame := range frames {
 		outcome := AutomationResult{}
 		if frame != nil {
@@ -136,7 +140,11 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 				if err != nil {
 					return false, flowCoreRecordTriggerError(rule, err)
 				}
-				if changed {
+				// flow_action_fault_update/org.tsv (nofault): when the interview's own
+				// row is written by a filtered record update, earlier assignments
+				// to $Record are not persisted; only a $Record update stores them.
+				// A field update after the filtered write keeps the prior path.
+				if changed && (len(frame.batchUpdatedFields) == 0 || frame.batchLaterFieldUpdate) {
 					if err := e.storeFlowFieldUpdates(objectName, previous[i], working[i]); err != nil {
 						return false, err
 					}
@@ -144,15 +152,21 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 				return changed, nil
 			}()
 			if err != nil {
-				// A failed batched Apex action sends every admitted interview down
-				// its fault connector. Preserve the captured all-admitted Custom
-				// Error shape for the statement DML exception envelope.
-				if len(requests) == len(records) && batchErr != nil && flowActionBatchLiteralFault(rule) {
-					if _, ok := FlowCustomErrorFailureResult(err); ok {
-						return &flowActionBatchCustomError{cause: err, count: len(records)}
+				failure, custom := FlowCustomErrorFailureResult(err)
+				if !batchActionFailed || !custom {
+					if batchFailure != nil {
+						return batchFailure.cause
+					}
+					return err
+				}
+				if batchFailure == nil {
+					batchFailure = &flowActionBatchFailure{cause: err, results: make([]Result, len(records))}
+					for j := range batchFailure.results {
+						batchFailure.results[j].Success = true
 					}
 				}
-				return err
+				batchFailure.results[i] = failure
+				continue
 			}
 			outcome.FlowUpdated = changed
 		}
@@ -161,7 +175,7 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 			outcomes[i] = outcome
 			continue
 		}
-		if after != nil {
+		if after != nil && batchFailure == nil {
 			// The ordinary route finishes Flow before refiring Apex triggers.
 			// Nested DML in the callback therefore starts at the caller's depth.
 			e.flowDepth--
@@ -179,6 +193,9 @@ func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAc
 		if err != nil {
 			return err
 		}
+	}
+	if batchFailure != nil {
+		return batchFailure
 	}
 	return nil
 }
@@ -264,20 +281,6 @@ func flowActionDateRefireOutputs(frames []*flowFrame) bool {
 		count++
 	}
 	return count >= 2
-}
-
-// The captured batch fault uses one direct, record-independent Custom Error.
-// Dynamic messages and more complex fault graphs retain their prior envelope.
-func flowActionBatchLiteralFault(rule storage.FlowRule) bool {
-	if len(rule.Steps) == 0 || rule.Steps[0].Kind != "action" {
-		return false
-	}
-	fault := rule.Steps[0].FaultBranch
-	if len(fault) != 1 || fault[0].Kind != "customError" || len(fault[0].CustomError.Messages) != 1 {
-		return false
-	}
-	message := fault[0].CustomError.Messages[0]
-	return message.Field == "" && !strings.Contains(message.Message, "{!")
 }
 
 // Inspect both success and fault graphs. Memoized summaries count repeated

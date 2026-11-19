@@ -1,0 +1,1 @@
+public class AlLg { public static List<String> ev = new List<String>(); public static void add(String s) { ev.add(s); } public static List<String> get() { return ev; } }

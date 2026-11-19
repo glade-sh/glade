@@ -1,0 +1,11 @@
+family=timestamps
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=USER_DEBUG lines (anonymous) or assertion messages (isTest); Salesforce ids masked as <id>
+rows 62.0,67.0=payloads identical at both API versions
+holdout_inputs_sha256=2f5b967e109dfea29c9c5c237200f92c9dfa2932ec1c143f724cf9fbf07353f0
+sf_cli=2.157.8
+run=request-now 20261116T044357Z
+run=request-test 20261116T045533Z
+run=request-timestamps 20261116T044357Z

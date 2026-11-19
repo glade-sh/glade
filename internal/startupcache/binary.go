@@ -51,6 +51,8 @@ type testCachePayload struct {
 	Runtime CompiledRuntime  `json:"runtime"`
 	// ZeroFieldFlags restores field pointer flags that gob drops; see zero_flags.go.
 	ZeroFieldFlags []zeroFieldFlags `json:"zeroFieldFlags,omitempty"`
+	// EmptyLabelSources restores empty label translation sources; see zero_flags.go.
+	EmptyLabelSources []int `json:"emptyLabelSources,omitempty"`
 }
 
 func Clear(projectRoot, subdir string) error {
@@ -394,7 +396,10 @@ func readTestCachePayload(cacheRoot *os.Root, name, wantHash string, wantSize in
 		return testCachePayload{}, fmt.Errorf("payload hash mismatch")
 	}
 	restoreZeroFieldFlags(&payload.Org, payload.ZeroFieldFlags)
+	restoreEmptyLabelSources(&payload.Org, payload.EmptyLabelSources)
+	payload.Org.RebaseDecodedSpreadSuppression()
 	payload.ZeroFieldFlags = nil
+	payload.EmptyLabelSources = nil
 	return payload, nil
 }
 
@@ -424,6 +429,7 @@ func readLegacyGobInRoot(cacheRoot *os.Root) (*Entry, error) {
 	if err := dec.Decode(&entry); err != nil {
 		return nil, nil
 	}
+	entry.Org.RebaseDecodedSpreadSuppression()
 	return &entry, nil
 }
 
@@ -461,7 +467,8 @@ func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, af
 			return stats, err
 		}
 	}
-	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime, ZeroFieldFlags: captureZeroFieldFlags(entry.Org)}
+	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime, ZeroFieldFlags: captureZeroFieldFlags(entry.Org), EmptyLabelSources: captureEmptyLabelSources(entry.Org)}
+	payload.Org.StandardSpreadSuppressed = entry.Org.SpreadSuppressionForGob()
 	tmp, tmpName, err := createTestCacheTemp(cacheRoot, "startup-payload-", ".gob")
 	if err != nil {
 		return stats, err
@@ -690,8 +697,10 @@ func writeLegacyGob(entry *Entry, subdir string) error {
 	tmpPath := tmp.Name()
 	writeErr := func() error {
 		defer os.Remove(tmpPath)
+		encoded := *entry
+		encoded.Org.StandardSpreadSuppressed = entry.Org.SpreadSuppressionForGob()
 		enc := gob.NewEncoder(tmp)
-		if err := enc.Encode(entry); err != nil {
+		if err := enc.Encode(&encoded); err != nil {
 			_ = tmp.Close()
 			return err
 		}

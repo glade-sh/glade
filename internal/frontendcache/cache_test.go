@@ -311,3 +311,25 @@ func TestSidecarAPIVersionChangeInvalidatesSnapshot(t *testing.T) {
 		t.Fatalf("rebuilt index API version = %q, want 66.0", got)
 	}
 }
+
+func TestVolatileGenerationIsNotPublished(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Draft.cls")
+	if err := os.WriteFile(path, []byte("public class Draft {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	overlay := typesys.NewSourceOverlay(map[string]string{path: "public class Draft { void added() {} }"})
+	LoadOrBuild(p, schema.Schema{}, func() (typesys.Index, typesys.BuildArtifacts) {
+		return typesys.BuildWithArtifactsOverlay(p, schema.Schema{}, overlay)
+	})
+	if _, err := os.Stat(filepath.Join(root, ".glade", "semantic", name)); !os.IsNotExist(err) {
+		t.Fatalf("volatile generation published a snapshot: %v", err)
+	}
+	LoadOrBuild(p, schema.Schema{}, func() (typesys.Index, typesys.BuildArtifacts) {
+		return typesys.BuildWithArtifacts(p, schema.Schema{})
+	})
+	if _, err := os.Stat(filepath.Join(root, ".glade", "semantic", name)); err != nil {
+		t.Fatalf("disk generation was not published: %v", err)
+	}
+}

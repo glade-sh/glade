@@ -1,0 +1,5 @@
+id	api	route	compiled	transport	observation
+single	62.0	anonymous	true	intentional exception	test:false|results:ok|trace:before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+single	62.0	istest	true	intentional assertion	test:true|results:ok|trace:before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+single	67.0	anonymous	true	intentional exception	test:false|results:ok|trace:before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+single	67.0	istest	true	intentional assertion	test:true|results:ok|trace:before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1

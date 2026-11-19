@@ -44,13 +44,13 @@ func TestMetadataNamespaceRelationshipHostRoutes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			write(root, "force-app/main/default/classes/Road215NamespaceProbe.cls", string(probe))
-			for _, name := range []string{"Road215NamespaceProbe", "Road215Host"} {
+			write(root, "force-app/main/default/classes/Case215NamespaceProbe.cls", string(probe))
+			for _, name := range []string{"Case215NamespaceProbe", "Case215Host"} {
 				write(root, "force-app/main/default/classes/"+name+".cls-meta.xml", `<ApexClass><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			}
-			write(root, "force-app/main/default/classes/Road215Host.cls", `global class Road215Host { @AuraEnabled(cacheable=true) global static String observe() { return JSON.serialize(Road215NamespaceProbe.observe()); } global String getObservation() { return observe(); } }`)
-			write(root, "force-app/main/default/pages/Road215Host.page", `<apex:page controller="Road215Host" showHeader="false" sidebar="false"><pre id="observation"><apex:outputText value="{!observation}"/></pre></apex:page>`)
-			write(root, "force-app/main/default/pages/Road215Host.page-meta.xml", `<ApexPage><apiVersion>`+api+`</apiVersion><label>Host</label></ApexPage>`)
+			write(root, "force-app/main/default/classes/Case215Host.cls", `global class Case215Host { @AuraEnabled(cacheable=true) global static String observe() { return JSON.serialize(Case215NamespaceProbe.observe()); } global String getObservation() { return observe(); } }`)
+			write(root, "force-app/main/default/pages/Case215Host.page", `<apex:page controller="Case215Host" showHeader="false" sidebar="false"><pre id="observation"><apex:outputText value="{!observation}"/></pre></apex:page>`)
+			write(root, "force-app/main/default/pages/Case215Host.page-meta.xml", `<ApexPage><apiVersion>`+api+`</apiVersion><label>Host</label></ApexPage>`)
 			p, err := project.Load(root)
 			if err != nil {
 				t.Fatal(err)
@@ -76,12 +76,12 @@ func TestMetadataNamespaceRelationshipHostRoutes(t *testing.T) {
 			handler.SetProjectIndex(index)
 			for _, route := range []string{"vf", "lwc", "wire"} {
 				t.Run(route, func(t *testing.T) {
-					method, path, body := http.MethodGet, "/apex/Road215Host", ""
+					method, path, body := http.MethodGet, "/apex/Case215Host", ""
 					if route == "lwc" {
-						method, path, body = http.MethodPost, "/lightning/apex/Road215Host/observe", `{}`
+						method, path, body = http.MethodPost, "/lightning/apex/Case215Host/observe", `{}`
 					}
 					if route == "wire" {
-						method, path, body = http.MethodPost, "/lightning/wire/apex", `{"className":"Road215Host","method":"observe","params":{}}`
+						method, path, body = http.MethodPost, "/lightning/wire/apex", `{"className":"Case215Host","method":"observe","params":{}}`
 					}
 					for attempt := 0; attempt < 2; attempt++ {
 						rec := httptest.NewRecorder()
@@ -160,13 +160,13 @@ func TestMetadataForeignRelationshipHostRoutes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			write(root, "force-app/main/default/classes/Road215NamespaceProbe.cls", string(probe))
-			for _, name := range []string{"Road215NamespaceProbe", "Road215Host"} {
+			write(root, "force-app/main/default/classes/Case215NamespaceProbe.cls", string(probe))
+			for _, name := range []string{"Case215NamespaceProbe", "Case215Host"} {
 				write(root, "force-app/main/default/classes/"+name+".cls-meta.xml", `<ApexClass><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			}
-			write(root, "force-app/main/default/classes/Road215Host.cls", `global class Road215Host { @AuraEnabled(cacheable=true) global static String observe() { return JSON.serialize(Road215NamespaceProbe.observe()); } global String getObservation() { return observe(); } }`)
-			write(root, "force-app/main/default/pages/Road215Host.page", `<apex:page controller="Road215Host" showHeader="false" sidebar="false"><pre id="observation"><apex:outputText value="{!observation}"/></pre></apex:page>`)
-			write(root, "force-app/main/default/pages/Road215Host.page-meta.xml", `<ApexPage><apiVersion>`+api+`</apiVersion><label>Host</label></ApexPage>`)
+			write(root, "force-app/main/default/classes/Case215Host.cls", `global class Case215Host { @AuraEnabled(cacheable=true) global static String observe() { return JSON.serialize(Case215NamespaceProbe.observe()); } global String getObservation() { return observe(); } }`)
+			write(root, "force-app/main/default/pages/Case215Host.page", `<apex:page controller="Case215Host" showHeader="false" sidebar="false"><pre id="observation"><apex:outputText value="{!observation}"/></pre></apex:page>`)
+			write(root, "force-app/main/default/pages/Case215Host.page-meta.xml", `<ApexPage><apiVersion>`+api+`</apiVersion><label>Host</label></ApexPage>`)
 			p, err := project.Load(root)
 			if err != nil {
 				t.Fatal(err)
@@ -192,12 +192,12 @@ func TestMetadataForeignRelationshipHostRoutes(t *testing.T) {
 			handler.SetProjectIndex(index)
 			for _, route := range []string{"vf", "lwc", "wire"} {
 				t.Run(route, func(t *testing.T) {
-					method, path, body := http.MethodGet, "/apex/Road215Host", ""
+					method, path, body := http.MethodGet, "/apex/Case215Host", ""
 					if route == "lwc" {
-						method, path, body = http.MethodPost, "/lightning/apex/Road215Host/observe", `{}`
+						method, path, body = http.MethodPost, "/lightning/apex/Case215Host/observe", `{}`
 					}
 					if route == "wire" {
-						method, path, body = http.MethodPost, "/lightning/wire/apex", `{"className":"Road215Host","method":"observe","params":{}}`
+						method, path, body = http.MethodPost, "/lightning/wire/apex", `{"className":"Case215Host","method":"observe","params":{}}`
 					}
 					for attempt := 0; attempt < 2; attempt++ {
 						rec := httptest.NewRecorder()

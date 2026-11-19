@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <label>Dec Probe</label>
+    <nameField>
+        <label>Dec Probe Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>DP-{0000}</displayFormat>
+    </nameField>
+    <pluralLabel>Dec Probes</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

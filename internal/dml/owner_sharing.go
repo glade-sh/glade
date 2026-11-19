@@ -132,7 +132,7 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 	storage.EnsureMutableObjectRecords(e.Org, shareName)
 	share = e.Org.Objects[shareName]
 	if share.Records == nil {
-		share.Records = make(map[storage.ID]storage.Record)
+		share.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, change := range changes {
 		if e.IsolationJournal != nil {
@@ -143,9 +143,9 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 			}
 		}
 		if change.remove {
-			delete(share.Records, change.id)
+			share.DeleteRecord(change.id)
 		} else {
-			share.Records[change.id] = change.next
+			share.PutRecord(change.id, change.next)
 		}
 	}
 	share.Indexes = nil
@@ -174,4 +174,42 @@ func (e *Engine) ownerIsDirectGroupMember(group, owner storage.ID) bool {
 		}
 	}
 	return false
+}
+
+// removeManualAccountSharesOnTransfer applies the owner-transfer rule the API
+// 68 capture shows for Account (apextest api68_native sharing-off and
+// sharing-on, source APIs 67.0 and 68.0): a Manual AccountShare to another
+// recipient is removed when the record owner changes, unless the org setting
+// enableKeepManualSharesOnTransfer is on. Other objects, other row causes and
+// owner changes outside update DML were not captured and keep their shares.
+func (e *Engine) removeManualAccountSharesOnTransfer(objectName string, parentID storage.ID) {
+	if e.Org == nil || e.Org.Metadata.KeepManualSharesOnTransfer || !strings.EqualFold(objectName, "Account") {
+		return
+	}
+	shareName, ok := storage.ResolveObjectName(*e.Org, "AccountShare")
+	if !ok {
+		return
+	}
+	var ids []storage.ID
+	for id, row := range e.Org.Objects[shareName].Records {
+		parent, _ := row.GetField("AccountId")
+		cause, _ := row.GetField("RowCause")
+		if !row.System.IsDeleted && storage.IDsEqual(idFromStorageValue(parent), parentID) && strings.EqualFold(cause.String, "Manual") {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	storage.EnsureMutableObjectRecords(e.Org, shareName)
+	share := e.Org.Objects[shareName]
+	for _, id := range ids {
+		if e.IsolationJournal != nil {
+			e.IsolationJournal.RecordUpdate(shareName, id, share.Records[id])
+		}
+		share.DeleteRecord(id)
+	}
+	share.Indexes = nil
+	e.Org.Objects[shareName] = share
 }

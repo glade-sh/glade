@@ -17,7 +17,7 @@ import (
 //
 //   dependency_missing (per-reference form): unloaded_dependency conformance matrix and
 //     TestDependencyGateMissingDependencyPolicy; the signature below pins the message layout.
-//   repo_metadata_missing / undefined_metadata: TestRoad2701MetadataFixtureTransitions plus the absent/present
+//   repo_metadata_missing / undefined_metadata: TestCase2701MetadataFixtureTransitions plus the absent/present
 //     field control here.
 //   repo_defect: compile_defects.tsv rows (native rejects the same source with the same text).
 //   locale: date_parse_locale.tsv rows (the user's locale decides Date.parse).
@@ -66,15 +66,18 @@ func envControlProject(t *testing.T, withField bool, body string) salesforceSurf
 	return project
 }
 
-// repo_metadata_missing: a field the project never defines is a compile rejection naming the field and its
-// object; defining it removes the failure. The corpus rule md_ref_unknown_field matches this shape.
+// repo_metadata_missing: a field the project never defines is a compile rejection naming the field; defining it
+// removes the failure. The corpus rule md_ref_unknown_field matches this shape. Native text for a direct read or
+// assignment of an undefined custom field is "Variable does not exist: <Field>" at API 62.0 and 67.0
+// (unknown_sobject_field/org.tsv: R19_cont_acct_unkcustom_read, W_dflt_unkc_asgn, I_unkc_asgn).
+// Glade reports it as a dependent-class-invalid problem for the consumer class.
 func TestExpectedEnvControlUndefinedFieldAbsentPresent(t *testing.T) {
 	body := `public class EnvCtl { public static void go() { Cust__c c = new Cust__c(); c.Note__c = 'x'; System.assertEquals('x', c.Note__c); } }`
 	absent := envControlProject(t, false, body).run()
 	if got := absent.Summary(); got.Total != 1 || got.Passed != 0 {
 		t.Fatalf("absent field: summary=%#v problems=%v", got, runProblems(absent))
 	}
-	pattern := regexp.MustCompile(`(?m)^ Class EnvCtl : method "go" references unknown field "Note__c" on Cust__c$`)
+	pattern := regexp.MustCompile(`(?m)^ Class EnvCtl : Variable does not exist: Note__c$`)
 	if p := strings.Join(runProblems(absent), "\n"); !pattern.MatchString(p) {
 		t.Fatalf("absent field: signature changed: %q", p)
 	}
