@@ -1,6 +1,7 @@
 package repoguard
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -8,12 +9,14 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"regexp/syntax"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -628,6 +631,30 @@ type publicScanFile struct {
 	err            error
 }
 
+// scanTrackedFileForPublicData scans one tracked file for both public-data
+// rulesets. One decode feeds both rulesets; each member is normalized once
+// and dropped after both matchers run, so no expanded payload is retained.
+func scanTrackedFileForPublicData(file repoScanFile, names *campaignNameMatch, decode publicAssetDecoder) publicScanFile {
+	entry := publicScanFile{rel: file.rel, privateCapture: privateCaptureArtifact(file.rel)}
+	if !entry.privateCapture {
+		for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
+			entry.campaignPath = append(entry.campaignPath, finding.kind)
+		}
+	}
+	entry.err = decode(file.rel, file.text, func(member, text string) {
+		text = normalizePublicText(text)
+		for _, finding := range publicDataFindingsNormalized(file.rel, text) {
+			entry.release = append(entry.release, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+		}
+		if !entry.privateCapture {
+			for _, finding := range publicCampaignFindingsNormalized(names, file.rel, text) {
+				entry.campaign = append(entry.campaign, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
+			}
+		}
+	})
+	return entry
+}
+
 // scanTrackedFilesForPublicData runs both public-data rulesets over one
 // decode of every tracked file: each bounded member is decoded once,
 // normalized once, and fed to the release and campaign matchers together.
@@ -635,40 +662,186 @@ type publicScanFile struct {
 func scanTrackedFilesForPublicData(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder) []publicScanFile {
 	scans := make([]publicScanFile, 0, len(files))
 	for _, file := range files {
-		entry := publicScanFile{rel: file.rel, privateCapture: privateCaptureArtifact(file.rel)}
-		if !entry.privateCapture {
-			for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
-				entry.campaignPath = append(entry.campaignPath, finding.kind)
-			}
-		}
-		// One decode feeds both rulesets; each member is normalized once and
-		// dropped after both matchers run, so no expanded payload is retained.
-		entry.err = decode(file.rel, file.text, func(member, text string) {
-			text = normalizePublicText(text)
-			for _, finding := range publicDataFindingsNormalized(file.rel, text) {
-				entry.release = append(entry.release, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
-			}
-			if !entry.privateCapture {
-				for _, finding := range publicCampaignFindingsNormalized(names, file.rel, text) {
-					entry.campaign = append(entry.campaign, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
-				}
-			}
-		})
-		scans = append(scans, entry)
+		scans = append(scans, scanTrackedFileForPublicData(file, names, decode))
 	}
 	return scans
 }
 
-// canonicalPublicDataScan decodes the canonical tracked-file snapshot once
-// for both public-data guards, extending the snapshot cache the text guards
-// already share. The release guard reads every scan entry; the campaign
-// guard skips the private capture files the release guard reports.
+// publicScanRulesetVersion pins both public-data rulesets: the release rules
+// in public_safety_test.go and the campaign rules in public_campaign_test.go.
+// Bump it whenever either ruleset changes, so stored records cannot suppress
+// the new ruleset's findings.
+const publicScanRulesetVersion = "1"
+
+// scanTrackedFilesForPublicDataCached scans every tracked file whose
+// (ruleset version, path, blob) has no stored record and reuses the stored
+// records for the rest, so unchanged files are not rescanned across runs.
+func scanTrackedFilesForPublicDataCached(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder, cache *publicScanBlobCache, workers int) []publicScanFile {
+	scans := make([]publicScanFile, len(files))
+	blobs := make([]string, len(files))
+	pending := make([]int, 0, len(files))
+	for index, file := range files {
+		blobs[index] = gitBlobHash(file.text)
+		key := publicScanCacheKey(cache.version, file.rel, blobs[index])
+		cache.live[key] = true
+		if record, ok := cache.records[key]; ok {
+			scans[index] = publicScanFileFromRecord(file.rel, record)
+			continue
+		}
+		pending = append(pending, index)
+	}
+	for _, index := range pending {
+		scan := scanTrackedFileForPublicData(files[index], names, decode)
+		scans[index] = scan
+		cache.records[publicScanCacheKey(cache.version, files[index].rel, blobs[index])] = publicScanFileRecord(scan)
+	}
+	return scans
+}
+
+// publicScanFindingRecord is the stored form of one redacted finding: the
+// archive-member label, the line inside that member and the finding category.
+// The matched text itself is never stored.
+type publicScanFindingRecord struct {
+	Member string `json:"member"`
+	Line   int    `json:"line"`
+	Kind   string `json:"kind"`
+}
+
+// publicScanCacheRecord is one tracked file's findings for both public-data
+// rulesets. Decode failures are stored too, so a corrupt asset still fails
+// its guard on a warm run.
+type publicScanCacheRecord struct {
+	CampaignPath []string                  `json:"campaignPath,omitempty"`
+	Release      []publicScanFindingRecord `json:"release,omitempty"`
+	Campaign     []publicScanFindingRecord `json:"campaign,omitempty"`
+	Err          string                    `json:"err,omitempty"`
+}
+
+// publicScanBlobCache holds one ruleset version's per-blob records. The
+// record store is not implemented yet, so every run still scans every file.
+type publicScanBlobCache struct {
+	version string
+	dir     string
+	path    string
+	records map[string]publicScanCacheRecord
+	live    map[string]bool
+}
+
+// loadPublicScanBlobCache reads one ruleset version's stored records. A
+// missing or corrupt store starts empty, so a run falls back to scanning
+// every file again.
+func loadPublicScanBlobCache(dir, version string) *publicScanBlobCache {
+	cache := &publicScanBlobCache{version: version, dir: dir, records: map[string]publicScanCacheRecord{}, live: map[string]bool{}}
+	if dir == "" {
+		return cache
+	}
+	cache.path = filepath.Join(dir, fmt.Sprintf("repoguard-public-scan-v%s.json", version))
+	return cache
+}
+
+// save stores the version's records for the next run.
+func (cache *publicScanBlobCache) save() {}
+
+// publicScanCacheKey identifies one tracked file's records: the ruleset
+// version, the tracked path and the git blob hash of the file's content. Both
+// rulesets read the path, and the blob hash fixes the content. The record
+// store is not implemented yet, so records never outlive a run and the
+// version cannot matter; the next commit keys records on it.
+func publicScanCacheKey(version, rel, blob string) string {
+	return rel + "\x00" + blob
+}
+
+// gitBlobHash returns the git blob hash of data: SHA-1 over git's blob header
+// and payload. Unchanged content keeps its hash across runs and checkouts,
+// and changed content hashes differently, which is what keys the records.
+func gitBlobHash(data string) string {
+	digest := sha1.New()
+	_, _ = fmt.Fprintf(digest, "blob %d\x00", len(data))
+	_, _ = io.WriteString(digest, data)
+	return hex.EncodeToString(digest.Sum(nil))
+}
+
+// publicScanFileRecord stores one file's scan for the next run.
+func publicScanFileRecord(scan publicScanFile) publicScanCacheRecord {
+	var record publicScanCacheRecord
+	record.CampaignPath = append([]string(nil), scan.campaignPath...)
+	for _, finding := range scan.release {
+		record.Release = append(record.Release, publicScanFindingRecord{Member: finding.member, Line: finding.line, Kind: finding.kind})
+	}
+	for _, finding := range scan.campaign {
+		record.Campaign = append(record.Campaign, publicScanFindingRecord{Member: finding.member, Line: finding.line, Kind: finding.kind})
+	}
+	if scan.err != nil {
+		record.Err = scan.err.Error()
+	}
+	return record
+}
+
+// publicScanFileFromRecord rebuilds one file's scan from stored records. The
+// private-capture flag follows the path alone, so it is recomputed here.
+func publicScanFileFromRecord(rel string, record publicScanCacheRecord) publicScanFile {
+	scan := publicScanFile{
+		rel:            rel,
+		privateCapture: privateCaptureArtifact(rel),
+		campaignPath:   append([]string(nil), record.CampaignPath...),
+	}
+	for _, finding := range record.Release {
+		scan.release = append(scan.release, publicScanFinding{member: finding.Member, line: finding.Line, kind: finding.Kind})
+	}
+	for _, finding := range record.Campaign {
+		scan.campaign = append(scan.campaign, publicScanFinding{member: finding.Member, line: finding.Line, kind: finding.Kind})
+	}
+	if record.Err != "" {
+		scan.err = errors.New(record.Err)
+	}
+	return scan
+}
+
+// publicScanCacheDir returns the directory holding the per-blob scan records:
+// under the Go build cache, which the CI lanes already persist, and whose
+// default location the user cache dir reconstructs when GOCACHE is unset. An
+// unavailable cache location yields an empty directory, which disables
+// storing and falls back to full scans. Tests pass their own directories.
+func publicScanCacheDir() string {
+	if dir := os.Getenv("GOCACHE"); dir != "" {
+		return filepath.Join(dir, "glade-repoguard")
+	}
+	base, err := os.UserCacheDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(base, "go-build", "glade-repoguard")
+}
+
+// publicScanWorkerBound caps the scan pool: workers follow GOMAXPROCS so the
+// guard stays a fair neighbor on shared CI runners, and never exceed eight so
+// a generous core count cannot balloon transient member memory.
+func publicScanWorkerBound() int {
+	workers := runtime.GOMAXPROCS(0)
+	if workers > 8 {
+		workers = 8
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	return workers
+}
+
+// canonicalPublicDataScan scans the canonical tracked-file snapshot once for
+// both public-data guards, extending the snapshot cache the text guards
+// already share, and stores each file's findings under its git blob hash so
+// the next run scans only what changed. The release guard reads every scan
+// entry; the campaign guard skips the private capture files the release guard
+// reports.
 var canonicalPublicDataScan = repoScanCache[[]publicScanFile]{build: func() ([]publicScanFile, error) {
 	snapshot, err := canonicalRepoScan.snapshot()
 	if err != nil {
 		return nil, err
 	}
-	return scanTrackedFilesForPublicData(snapshot.files, campaignNameMatcher(campaignNameTable), scanPublicAsset), nil
+	cache := loadPublicScanBlobCache(publicScanCacheDir(), publicScanRulesetVersion)
+	scans := scanTrackedFilesForPublicDataCached(snapshot.files, campaignNameMatcher(campaignNameTable), scanPublicAsset, cache, publicScanWorkerBound())
+	cache.save()
+	return scans, nil
 }}
 
 func publicDataScanFiles(t *testing.T) []publicScanFile {
