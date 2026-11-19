@@ -5,8 +5,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -70,45 +68,17 @@ var recordsFieldOwners = map[string][]string{
 //
 // The scan is syntactic. It flags index assignment, delete, clear, direct
 // assignment of the field, and the same writes through a local variable
-// that was assigned from a .Records selector.
+// that was assigned from a .Records selector. The shared working-tree scan
+// parses each in-scope file once for this guard and the cookie-sink review;
+// a parse error in this funnel's scope fails here.
 func TestObjectStateRecordsWritesUseFunnel(t *testing.T) {
-	root := canonicalRepoRoot
 	var findings []string
-	fset := token.NewFileSet()
-	for _, top := range []string{"internal", "cmd"} {
-		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if entry.IsDir() {
-				switch entry.Name() {
-				case "node_modules", "testdata", ".git":
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-				return nil
-			}
-			rel, _ := filepath.Rel(root, path)
-			rel = filepath.ToSlash(rel)
-			if slices.Contains(recordWriteFunnelExempt, rel) {
-				return nil
-			}
-			file, err := parser.ParseFile(fset, path, nil, parser.SkipObjectResolution)
-			if err != nil {
-				return fmt.Errorf("parse %s: %w", rel, err)
-			}
-			for _, finding := range scanRecordWrites(fset, file) {
-				if recordsOwnerAllowed(rel, finding.recv) {
-					continue
-				}
-				findings = append(findings, fmt.Sprintf("%s:%d: %s", rel, finding.line, finding.what))
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
+	for _, file := range structuralScanFiles(t) {
+		if file.recordScanned && file.parseErr != nil {
+			t.Fatal(fmt.Errorf("parse %s: %w", file.rel, file.parseErr))
+		}
+		for _, finding := range file.recordWrites {
+			findings = append(findings, fmt.Sprintf("%s:%s", file.rel, finding))
 		}
 	}
 	sort.Strings(findings)

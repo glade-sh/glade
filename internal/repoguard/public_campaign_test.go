@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -68,22 +67,21 @@ var (
 // The sibling maintenance checkout is documented public layout.
 const campaignPublicWorkspace = "glade-tools"
 
+// The shared scan decodes each tracked asset once and feeds every member to
+// both public-data rulesets; this guard reports the campaign findings.
 func TestPublicCampaignData(t *testing.T) {
-	names := campaignNameMatcher(campaignNameTable)
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
-		if privateCaptureArtifact(file.rel) {
+	for _, file := range publicDataScanFiles(t) {
+		if file.privateCapture {
 			continue // TestPublicReleaseData reports these files.
 		}
-		for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
-			t.Errorf("%s: campaign value in path: %s (REDACTED)", file.rel, finding.kind)
+		for _, kind := range file.campaignPath {
+			t.Errorf("%s: campaign value in path: %s (REDACTED)", file.rel, kind)
 		}
-		err := scanPublicAsset(file.rel, file.text, func(member, text string) {
-			for _, finding := range publicCampaignFindings(names, file.rel, text) {
-				t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind)
-			}
-		})
-		if err != nil {
-			t.Errorf("%s: %v", file.rel, err)
+		for _, finding := range file.campaign {
+			t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, finding.member, finding.line, finding.kind)
+		}
+		if file.err != nil {
+			t.Errorf("%s: %v", file.rel, file.err)
 		}
 	}
 }
@@ -165,11 +163,12 @@ func (m *campaignNameMatch) names(text string) []int {
 }
 
 func publicCampaignFindings(names *campaignNameMatch, rel, text string) []publicDataFinding {
-	text = unicodeEscape.ReplaceAllStringFunc(text, func(s string) string {
-		n, _ := strconv.ParseUint(s[2:], 16, 16)
-		return string(rune(n))
-	})
-	text = strings.ReplaceAll(text, `\/`, "/")
+	return publicCampaignFindingsNormalized(names, rel, normalizePublicText(text))
+}
+
+// publicCampaignFindingsNormalized matches the campaign ruleset against text
+// that normalizePublicText has already decoded.
+func publicCampaignFindingsNormalized(names *campaignNameMatch, rel, text string) []publicDataFinding {
 	var findings []publicDataFinding
 	add := func(offset int, kind string) {
 		line := 1 + strings.Count(text[:offset], "\n")

@@ -43,19 +43,19 @@ type publicDataFinding struct {
 
 // Check decoded assets as well as text: embedded catalogs are part of the
 // distributed product even though a plain text search cannot inspect them.
+// The shared scan decodes each tracked asset once and feeds every member to
+// both public-data rulesets; this guard reports the release findings.
 func TestPublicReleaseData(t *testing.T) {
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
-		if privateCaptureArtifact(file.rel) {
+	for _, file := range publicDataScanFiles(t) {
+		if file.privateCapture {
 			t.Errorf("%s:1: private capture or preparation material (REDACTED)", file.rel)
 		}
-		err := scanPublicAsset(file.rel, file.text, func(member, text string) {
-			for _, finding := range publicDataFindings(file.rel, text) {
-				// Report categories and locations, never the captured value itself.
-				t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind)
-			}
-		})
-		if err != nil {
-			t.Errorf("%s: %v", file.rel, err)
+		for _, finding := range file.release {
+			// Report categories and locations, never the captured value itself.
+			t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, finding.member, finding.line, finding.kind)
+		}
+		if file.err != nil {
+			t.Errorf("%s: %v", file.rel, file.err)
 		}
 	}
 }
@@ -79,13 +79,24 @@ func publicFixturePath(rel string) bool {
 	return strings.HasSuffix(rel, "_test.go") || strings.Contains(filepath.Base(rel), ".test.")
 }
 
-func publicDataFindings(rel, text string) []publicDataFinding {
-	// JSON can encode identifying text with Unicode or escaped slashes.
+// normalizePublicText decodes the encodings both public-data rulesets match
+// against: JSON \uXXXX escapes and escaped slashes. One pass per member
+// feeds both rulesets.
+func normalizePublicText(text string) string {
 	text = unicodeEscape.ReplaceAllStringFunc(text, func(s string) string {
 		n, _ := strconv.ParseUint(s[2:], 16, 16)
 		return string(rune(n))
 	})
-	text = strings.ReplaceAll(text, `\/`, "/")
+	return strings.ReplaceAll(text, `\/`, "/")
+}
+
+func publicDataFindings(rel, text string) []publicDataFinding {
+	return publicDataFindingsNormalized(rel, normalizePublicText(text))
+}
+
+// publicDataFindingsNormalized matches the release ruleset against text that
+// normalizePublicText has already decoded.
+func publicDataFindingsNormalized(rel, text string) []publicDataFinding {
 	var findings []publicDataFinding
 	add := func(offset int, kind string) {
 		line := 1 + strings.Count(text[:offset], "\n")

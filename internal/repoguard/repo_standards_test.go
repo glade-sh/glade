@@ -36,10 +36,10 @@ type repoScanSnapshot struct {
 	byRel map[string]repoScanFile
 }
 
-type repoScanCache struct {
+type repoScanCache[T any] struct {
 	once  sync.Once
-	build func() (repoScanSnapshot, error)
-	value repoScanSnapshot
+	build func() (T, error)
+	value T
 	err   error
 }
 
@@ -49,7 +49,7 @@ type repoScanBuilder struct {
 	readFile  func(string) ([]byte, error)
 }
 
-func (cache *repoScanCache) snapshot() (repoScanSnapshot, error) {
+func (cache *repoScanCache[T]) snapshot() (T, error) {
 	cache.once.Do(func() {
 		cache.value, cache.err = cache.build()
 	})
@@ -58,7 +58,7 @@ func (cache *repoScanCache) snapshot() (repoScanSnapshot, error) {
 
 var canonicalRepoRoot = repositoryRootPath()
 
-var canonicalRepoScan = repoScanCache{build: func() (repoScanSnapshot, error) {
+var canonicalRepoScan = repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 	return buildRepoScan(canonicalRepoRoot)
 }}
 
@@ -641,26 +641,43 @@ func scanTrackedFilesForPublicData(files []repoScanFile, names *campaignNameMatc
 				entry.campaignPath = append(entry.campaignPath, finding.kind)
 			}
 		}
+		// One decode feeds both rulesets; each member is normalized once and
+		// dropped after both matchers run, so no expanded payload is retained.
 		entry.err = decode(file.rel, file.text, func(member, text string) {
-			for _, finding := range publicDataFindings(file.rel, text) {
+			text = normalizePublicText(text)
+			for _, finding := range publicDataFindingsNormalized(file.rel, text) {
 				entry.release = append(entry.release, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
 			}
-		})
-		if !entry.privateCapture {
-			// Each ruleset decodes and normalizes on its own here, exactly as
-			// the two guards do today; the decode-once regression in
-			// repo_shared_scan_test.go fails against this duplicated form.
-			if err := decode(file.rel, file.text, func(member, text string) {
-				for _, finding := range publicCampaignFindings(names, file.rel, text) {
+			if !entry.privateCapture {
+				for _, finding := range publicCampaignFindingsNormalized(names, file.rel, text) {
 					entry.campaign = append(entry.campaign, publicScanFinding{member: member, line: finding.line, kind: finding.kind})
 				}
-			}); entry.err == nil {
-				entry.err = err
 			}
-		}
+		})
 		scans = append(scans, entry)
 	}
 	return scans
+}
+
+// canonicalPublicDataScan decodes the canonical tracked-file snapshot once
+// for both public-data guards, extending the snapshot cache the text guards
+// already share. The release guard reads every scan entry; the campaign
+// guard skips the private capture files the release guard reports.
+var canonicalPublicDataScan = repoScanCache[[]publicScanFile]{build: func() ([]publicScanFile, error) {
+	snapshot, err := canonicalRepoScan.snapshot()
+	if err != nil {
+		return nil, err
+	}
+	return scanTrackedFilesForPublicData(snapshot.files, campaignNameMatcher(campaignNameTable), scanPublicAsset), nil
+}}
+
+func publicDataScanFiles(t *testing.T) []publicScanFile {
+	t.Helper()
+	files, err := canonicalPublicDataScan.snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
 }
 
 // structuralRepoFileScan holds the structural repository guards' findings for
@@ -719,23 +736,17 @@ func scanWorkingTreeGoFiles(root string, parse func(positions *token.FileSet, pa
 		if !cookieScope && !recordScope {
 			return nil
 		}
-		// Each guard parses on its own here, exactly as the two guards do
-		// today; the parse-once regression in repo_shared_scan_test.go fails
-		// against this duplicated form.
 		scan := structuralRepoFileScan{rel: rel, recordScanned: recordScope}
-		if cookieScope {
-			file, parseErr := parse(positions, path)
-			scan.parseErr = parseErr
-			if file != nil {
+		// One parse feeds both guards: the cookie-sink review inspects every
+		// use in its scope, and the record-write funnel inspects the files in
+		// its own scope from the same syntax tree.
+		file, parseErr := parse(positions, path)
+		scan.parseErr = parseErr
+		if file != nil {
+			if cookieScope {
 				scan.cookieUses, scan.cookieSink = cookieSinkScanFile(rel, file)
 			}
-		}
-		if recordScope {
-			file, parseErr := parse(positions, path)
-			if scan.parseErr == nil {
-				scan.parseErr = parseErr
-			}
-			if file != nil {
+			if recordScope {
 				for _, finding := range scanRecordWrites(positions, file) {
 					if recordsOwnerAllowed(rel, finding.recv) {
 						continue
@@ -748,6 +759,23 @@ func scanWorkingTreeGoFiles(root string, parse func(positions *token.FileSet, pa
 		return nil
 	})
 	return scans, err
+}
+
+// canonicalStructuralScan parses the canonical working tree's in-scope Go
+// files once for the structural guards, cached like the tracked-file
+// snapshot. Planted fixtures call scanWorkingTreeGoFiles directly, so their
+// temporary roots stay uncached and successive edits remain observable.
+var canonicalStructuralScan = repoScanCache[[]structuralRepoFileScan]{build: func() ([]structuralRepoFileScan, error) {
+	return scanWorkingTreeGoFiles(canonicalRepoRoot, parseRepoGoFileForStructuralGuards)
+}}
+
+func structuralScanFiles(t *testing.T) []structuralRepoFileScan {
+	t.Helper()
+	files, err := canonicalStructuralScan.snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
 }
 
 func isHumanFacingExampleSurface(rel string) bool {
@@ -1418,7 +1446,7 @@ func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
 
 func TestRepoScanCacheSharesOneSnapshotAndError(t *testing.T) {
 	var builds atomic.Int32
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		builds.Add(1)
 		return repoScanSnapshot{files: []repoScanFile{{rel: "one.txt", text: "one"}}}, nil
 	}}
@@ -1448,7 +1476,7 @@ func TestRepoScanCacheSharesOneSnapshotAndError(t *testing.T) {
 func TestRepoScanCacheSharesBuildError(t *testing.T) {
 	want := errors.New("inventory unavailable")
 	var builds atomic.Int32
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		builds.Add(1)
 		return repoScanSnapshot{}, want
 	}}
@@ -1482,7 +1510,7 @@ func TestRepoScanCacheReadsEachTrackedBodyOnce(t *testing.T) {
 			return os.ReadFile(path)
 		},
 	}
-	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+	cache := repoScanCache[repoScanSnapshot]{build: func() (repoScanSnapshot, error) {
 		return builder.scan(root)
 	}}
 	for call := 0; call < 4; call++ {
