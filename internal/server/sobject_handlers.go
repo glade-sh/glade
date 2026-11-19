@@ -61,18 +61,19 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		payload := describePayload(object.Definition, s.Org)
-		if strings.EqualFold(objectName, "MessagingSession") {
-			visible, captured := storage.StandardFeatureFieldVersion(objectName, "CampaignId", strings.TrimPrefix(version, "v"))
-			if captured && !visible {
-				fields := payload["fields"].([]map[string]any)
-				filtered := make([]map[string]any, 0, len(fields))
-				for _, field := range fields {
-					if !strings.EqualFold(fmt.Sprint(field["name"]), "CampaignId") {
-						filtered = append(filtered, field)
-					}
+		// Captured per-API field membership hides versioned feature fields the
+		// same way the Apex describe routes do, for any object the bundle covers.
+		if storage.StandardFeatureHasVersionedFields(objectName) {
+			api := strings.TrimPrefix(version, "v")
+			fields := payload["fields"].([]map[string]any)
+			filtered := make([]map[string]any, 0, len(fields))
+			for _, field := range fields {
+				if visible, captured := storage.StandardFeatureFieldVersion(objectName, fmt.Sprint(field["name"]), api); captured && !visible {
+					continue
 				}
-				payload["fields"] = filtered
+				filtered = append(filtered, field)
 			}
+			payload["fields"] = filtered
 		}
 		original := payload["childRelationships"].([]map[string]any)
 		relationships := make([]map[string]any, 0, len(original))

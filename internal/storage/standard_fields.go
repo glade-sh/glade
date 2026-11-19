@@ -167,7 +167,7 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
-	if messagingCampaignFieldNeedsRepair(definition) {
+	if capturedDescribeFacetsNeedRepair(definition) {
 		return true
 	}
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
@@ -232,18 +232,21 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
-	if messagingCampaignFieldNeedsRepair(definition) {
+	if capturedDescribeFacetsNeedRepair(definition) {
 		return true
 	}
 	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardRelationshipOrderNeedsRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
-func messagingCampaignFieldNeedsRepair(definition ObjectDefinition) bool {
-	if !stringsEqualFold(definition.APIName, "MessagingSession") {
-		return false
+// A cached definition missing a captured describe facet was written before
+// the capture landed; refresh it so the supplemented field reappears.
+func capturedDescribeFacetsNeedRepair(definition ObjectDefinition) bool {
+	for _, captured := range standardFeatureDescribeFacets(definition.APIName) {
+		if _, found := ResolveFieldName(definition, "", captured.Name); !found {
+			return true
+		}
 	}
-	_, found := ResolveFieldName(definition, "", "CampaignId")
-	return !found
+	return false
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
@@ -1917,14 +1920,12 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 
 func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 	var fields []Field
+	// Captured describe facets (messaging_campaign_presence/facets.tsv) cover
+	// fields whose object describe is not part of the feature packet.
+	for _, captured := range standardFeatureDescribeFacets(objectName) {
+		fields = append(fields, describeField(captured))
+	}
 	switch {
-	case stringsEqualFold(objectName, "MessagingSession"):
-		// messaging_campaign_presence/facets.tsv captures this reference at
-		// API 66/67. Source and REST visibility are versioned separately.
-		fields = []Field{{APIName: "CampaignId", Label: "Campaign ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18,
-			Nillable: BoolFlag(true), Createable: BoolFlag(true), Updateable: BoolFlag(true), Filterable: BoolFlag(true),
-			Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(true),
-			ReferenceTo: []string{"Campaign"}, RelationshipName: "Campaign"}}
 	case stringsEqualFold(objectName, "Account"):
 		fields = []Field{
 			{APIName: "Tradestyle", Type: FieldString, DisplayType: "STRING", Length: 255},
