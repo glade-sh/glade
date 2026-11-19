@@ -1,36 +1,75 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 2 ]]; then
-	echo "usage: scripts/ci-race-test.sh <package> <slug>" >&2
+race_mode="test"
+if [[ "$#" -eq 3 && "$1" == "partition" ]]; then
+	race_mode="partition"
+	package="$2"
+	slug="$3"
+elif [[ "$#" -eq 2 ]]; then
+	package="$1"
+	slug="$2"
+else
+	echo "usage: scripts/ci-race-test.sh [partition] <package> <slug>" >&2
 	exit 2
 fi
 
-package="$1"
-slug="$2"
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 go_command="${CI_RACE_GO_COMMAND:-go}"
 resource_runner="${CI_RACE_RESOURCE_RUNNER:-scripts/ci-resource-run.sh}"
 shard_planner="${CI_RACE_SHARD_PLANNER:-}"
 git_command="${CI_RACE_GIT_COMMAND:-git}"
 artifact_dir="${PWD}/ci-artifacts/race/${slug}"
-apextest_shard_indexes="${CI_RACE_APEXTEST_SHARD_INDEXES:-}"
 apextest_runner="${CI_RACE_APEXTEST_RUNNER:-}"
+apextest_partition_dir="${CI_RACE_PARTITION_DIR:-}"
 apextest_head_sha="${CI_RACE_HEAD_SHA:-}"
+apextest_assigned=false
+batch_timeout="${CI_RACE_BATCH_TIMEOUT_SECONDS:-60m}"
+test_timeout_arg="${CI_RACE_TEST_TIMEOUT_SECONDS:-60m}"
+if [[ -n "${CI_RACE_APEXTEST_SHARD_INDEXES:-}" ]]; then
+	echo "[ci] CI_RACE_APEXTEST_SHARD_INDEXES is obsolete; Apex shard assignments come from the race partition" >&2
+	exit 2
+fi
 browser_shard_index="${CI_RACE_SHARD_INDEX:-}"
 browser_shard_count=0
 case "${package}" in
 	./internal/visualforce) browser_shard_count=4 ;;
 	./internal/lwc/compile) browser_shard_count=8 ;;
+	./internal/vm) browser_shard_count=4 ;;
 esac
+
+if [[ "${race_mode}" == "partition" ]]; then
+	if [[ "${package}" != "./internal/apextest" ]]; then
+		printf '[ci] only ./internal/apextest produces a race partition\n' >&2
+		exit 2
+	fi
+	if [[ -n "${apextest_runner}" || -n "${apextest_partition_dir}" || -n "${browser_shard_index}" ]]; then
+		printf '[ci] race partition production cannot also consume a runner assignment\n' >&2
+		exit 2
+	fi
+fi
 
 if [[ ! "${package}" =~ ^\./[A-Za-z0-9._/-]+$ ]] || [[ "${package}" == *...* ]]; then
 	printf '[ci] invalid exact race package %q\n' "${package}" >&2
 	exit 2
 fi
 if [[ -n "${browser_shard_index}" ]] && { [[ ! "${browser_shard_index}" =~ ^[0-7]$ ]] || [[ "${browser_shard_index}" -ge "${browser_shard_count}" ]]; }; then
-	echo "[ci] race shard index must select one of the four Visualforce or eight LWC compile shards" >&2
+	echo "[ci] race shard index must select one of the four Visualforce, eight LWC compile or four VM shards" >&2
 	exit 2
+fi
+case "${batch_timeout}" in
+	60m) ;;
+	*[!0-9]* | "") printf '[ci] CI_RACE_BATCH_TIMEOUT_SECONDS must be plain seconds\n' >&2; exit 2 ;;
+	*) [[ "${batch_timeout}" -ge 60 ]] || { printf '[ci] CI_RACE_BATCH_TIMEOUT_SECONDS must be at least 60 seconds\n' >&2; exit 2; } ;;
+esac
+case "${test_timeout_arg}" in
+	60m) ;;
+	*[!0-9]* | "") printf '[ci] CI_RACE_TEST_TIMEOUT_SECONDS must be plain seconds\n' >&2; exit 2 ;;
+	*) [[ "${test_timeout_arg}" -ge 60 ]] || { printf '[ci] CI_RACE_TEST_TIMEOUT_SECONDS must be at least 60 seconds\n' >&2; exit 2; } ;;
+esac
+go_test_timeout="${test_timeout_arg}"
+if [[ "${go_test_timeout}" != "60m" ]]; then
+	go_test_timeout="${go_test_timeout}s"
 fi
 package_body="${package#./}"
 if [[ -z "${package_body}" || "${package_body}" == */ ]]; then
@@ -112,7 +151,7 @@ PY
 
 heavy_package=false
 case "${package}" in
-	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon|./internal/visualforce|./internal/lwc/compile)
+	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server|./internal/testdaemon|./internal/vm|./internal/visualforce|./internal/lwc/compile)
 		heavy_package=true
 		;;
 	*)
@@ -144,8 +183,12 @@ if [[ "${heavy_package}" == true && "${CI_RACE_DEADLINE_ACTIVE:-0}" != "1" ]]; t
 		exit 2
 	fi
 	export CI_RACE_DEADLINE_ACTIVE=1
-	exec "${timeout_command}" --signal=TERM --kill-after=30s 60m \
-		"${BASH}" "${BASH_SOURCE[0]}" "${package}" "${slug}"
+	wrapper_args=()
+	if [[ "${race_mode}" == "partition" ]]; then
+		wrapper_args=("partition")
+	fi
+	exec "${timeout_command}" --signal=TERM --kill-after=30s "${batch_timeout}" \
+		"${BASH}" "${BASH_SOURCE[0]}" ${wrapper_args[@]+"${wrapper_args[@]}"} "${package}" "${slug}"
 fi
 
 package_name="github.com/glade-sh/glade/${package#./}"
@@ -180,26 +223,32 @@ mv "${union_sentinel}" "${union_validation}"
 
 if [[ "${package}" == "./internal/apextest" ]]; then
 	assigned_apextest_indexes=(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
-	if [[ -n "${apextest_shard_indexes}" || -n "${apextest_runner}" || -n "${apextest_head_sha}" ]]; then
-		if [[ ! "${apextest_head_sha}" =~ ^[0-9a-f]{40}$ ]]; then
-			printf '[ci] apextest runner requires a 40-character lowercase head SHA\n' >&2
+	apextest_assigned=false
+	partition_shard_count=""
+	partition_batch_seconds=""
+	partition_discovery_sha256=""
+	partition_plan_sha256=""
+	partition_digest=""
+	partition_binary_sha256=""
+	partition_binary_size=""
+	declare -A partition_shard_timeouts=()
+	if [[ -n "${apextest_runner}" || -n "${apextest_partition_dir}" ]]; then
+		apextest_assigned=true
+		if [[ -z "${apextest_runner}" || -z "${apextest_partition_dir}" ]]; then
+			printf '[ci] an assigned Apex runner needs both CI_RACE_APEXTEST_RUNNER and CI_RACE_PARTITION_DIR\n' >&2
 			exit 2
 		fi
-		case "${apextest_runner}:${apextest_shard_indexes}" in
-			a:0,3,5,8,11,13)
-				assigned_apextest_indexes=(0 3 5 8 11 13)
-				;;
-			b:4,7,12,15)
-				assigned_apextest_indexes=(4 7 12 15)
-				;;
-			c:1,2,6,9,10,14)
-				assigned_apextest_indexes=(1 2 6 9 10 14)
-				;;
-			*)
-				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2
-				exit 2
-				;;
-		esac
+		if [[ ! -d "${apextest_partition_dir}" ]]; then
+			printf '[ci] the Apex race partition directory does not exist: %q\n' "${apextest_partition_dir}" >&2
+			exit 2
+		fi
+		python3 "${script_dir}/ci-race-plan.py" verify "${apextest_partition_dir}"
+	fi
+	if [[ "${race_mode}" == "partition" || "${apextest_assigned}" == true ]]; then
+		if [[ ! "${apextest_head_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+			printf '[ci] the Apex race partition route requires a 40-character lowercase head SHA\n' >&2
+			exit 2
+		fi
 		if [[ "${git_command}" == */* ]]; then
 			[[ -x "${git_command}" ]] || { printf '[ci] git command is not executable: %s\n' "${git_command}" >&2; exit 2; }
 		elif ! command -v "${git_command}" >/dev/null 2>&1; then
@@ -216,6 +265,87 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 		fi
 		if [[ "${actual_apextest_head}" != "${apextest_head_sha}" ]]; then
 			printf '[ci] apextest runner checkout HEAD does not match expected head\n' >&2
+			exit 2
+		fi
+	fi
+	if [[ "${apextest_assigned}" == true ]]; then
+		assigned_apextest_indexes=()
+		partition_rows=()
+		mapfile -t partition_rows < <(python3 - "${apextest_partition_dir}/partition.json" "${apextest_runner}" <<'PY'
+import hashlib
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    partition = json.load(source)
+with open(sys.argv[1], "rb") as source:
+    digest = hashlib.sha256(source.read()).hexdigest()
+runner = next((entry for entry in partition["runners"] if entry["runner"] == sys.argv[2]), None)
+if runner is None:
+    raise SystemExit(f"race partition has no assignment for runner {sys.argv[2]}")
+print(f"shard-count {partition['shard_count']}")
+print(f"batch {runner['batch_timeout_seconds']}")
+print(f"discovery {partition['discovery_sha256']}")
+print(f"plan {partition['plan_sha256']}")
+print(f"partition {digest}")
+print(f"binary {partition['binary_sha256']}")
+print(f"binary-size {partition['binary_size_bytes']}")
+for shard in partition["shards"]:
+    print(f"timeout {shard['index']} {shard['test_timeout_seconds']}")
+for index in sorted(runner["shard_indexes"]):
+    print(f"assigned {index}")
+PY
+		)
+		for row in "${partition_rows[@]}"; do
+			kind="${row%% *}"
+			rest="${row#* }"
+			case "${kind}" in
+				shard-count) partition_shard_count="${rest}" ;;
+				batch) partition_batch_seconds="${rest}" ;;
+				discovery) partition_discovery_sha256="${rest}" ;;
+				plan) partition_plan_sha256="${rest}" ;;
+				partition) partition_digest="${rest}" ;;
+				binary) partition_binary_sha256="${rest}" ;;
+				binary-size) partition_binary_size="${rest}" ;;
+				timeout)
+					index="${rest%% *}"
+					seconds="${rest#* }"
+					if [[ ! "${index}" =~ ^[0-9]+$ ]] || [[ ! "${seconds}" =~ ^[0-9]+$ ]] || [[ "${seconds}" -lt 60 ]]; then
+						printf '[ci] partition returned an invalid shard deadline: %q\n' "${row}" >&2
+						exit 2
+					fi
+					partition_shard_timeouts["${index}"]="${seconds}"
+					;;
+				assigned)
+					if [[ ! "${rest}" =~ ^[0-9]+$ ]]; then
+						printf '[ci] partition returned an invalid shard index: %q\n' "${row}" >&2
+						exit 2
+					fi
+					assigned_apextest_indexes+=("${rest}")
+					;;
+				*)
+					printf '[ci] partition returned an unrecognized row: %q\n' "${row}" >&2
+					exit 2
+					;;
+			esac
+		done
+		if [[ "${#assigned_apextest_indexes[@]}" -eq 0 ]]; then
+			printf '[ci] partition assigned no shards to runner %q\n' "${apextest_runner}" >&2
+			exit 2
+		fi
+		if [[ ! "${partition_shard_count}" =~ ^[0-9]+$ ]] || [[ "${partition_shard_count}" -ne 16 ]]; then
+			printf '[ci] partition shard count must be sixteen, got %q\n' "${partition_shard_count}" >&2
+			exit 2
+		fi
+		for index in "${assigned_apextest_indexes[@]}"; do
+			if [[ -z "${partition_shard_timeouts["${index}"]}" ]]; then
+				printf '[ci] partition has no deadline for assigned shard %s\n' "${index}" >&2
+				exit 2
+			fi
+		done
+		if [[ "${CI_RACE_BATCH_TIMEOUT_SECONDS:-}" != "${partition_batch_seconds}" ]]; then
+			printf '[ci] the workflow batch deadline does not match the partition: %q vs %q\n' \
+				"${CI_RACE_BATCH_TIMEOUT_SECONDS:-}" "${partition_batch_seconds}" >&2
 			exit 2
 		fi
 	fi
@@ -323,6 +453,12 @@ if value["schema_version"] != 1 or value["removed"] is not False:
 print(value["sha256"], value["size_bytes"])
 PY
 	)
+	if [[ "${apextest_assigned}" == true ]]; then
+		if [[ "${binary_sha256}" != "${partition_binary_sha256}" || "${binary_size}" != "${partition_binary_size}" ]]; then
+			printf '[ci] the Apex race binary does not match the partition identity\n' >&2
+			exit 2
+		fi
+	fi
 	verify_apextest_binary() {
 		python3 - "${binary_path}" "${binary_sha256}" "${binary_size}" <<'PY'
 import hashlib, os, stat, sys
@@ -341,16 +477,32 @@ if digest.hexdigest() != expected_sha:
     raise SystemExit("race apextest binary checksum changed")
 PY
 	}
-	set +e
-	run_apextest_command bash -c 'cd "$1"; shift; exec "$@"' bash "${PWD}/${package#./}" "${binary_path}" -test.list '.' >"${discovery_raw}"
-	discovery_native_rc="$?"
-	set -e
-	if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
-	verify_apextest_binary
+	if [[ "${apextest_assigned}" == true ]]; then
+		cp "${apextest_partition_dir}/discovery.txt" "${discovery}"
+		cp "${apextest_partition_dir}/plan.json" "${plan}"
+		python3 - "${apextest_partition_dir}/discovery.txt" "${partition_discovery_sha256}" "${apextest_partition_dir}/plan.json" "${partition_plan_sha256}" <<'PY'
+import hashlib
+import sys
+
+for path, expected in ((sys.argv[1], sys.argv[2]), (sys.argv[3], sys.argv[4])):
+    with open(path, "rb") as source:
+        digest = hashlib.sha256(source.read()).hexdigest()
+    if digest != expected:
+        raise SystemExit("the Apex race partition files do not match their recorded digests")
+PY
+	else
+		set +e
+		run_apextest_command bash -c 'cd "$1"; shift; exec "$@"' bash "${PWD}/${package#./}" "${binary_path}" -test.list '.' >"${discovery_raw}"
+		discovery_native_rc="$?"
+		set -e
+		if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
+		verify_apextest_binary
+	fi
 else
 	CI_TEST_GO_COMMAND="${go_command}" python3 "${script_dir}/ci-test-binary.py" test "${go_test_package_args[@]}" -race -list '.' "${package}" >"${discovery_raw}"
 fi
-python3 - "${discovery_raw}" "${discovery}" "${discovery_benchmarks}" "${ordinary_discovery}" "${package_name}" <<'PY'
+if [[ "${apextest_assigned}" != true ]]; then
+	python3 - "${discovery_raw}" "${discovery}" "${discovery_benchmarks}" "${ordinary_discovery}" "${package_name}" <<'PY'
 import re
 import sys
 
@@ -413,6 +565,7 @@ if package == "github.com/glade-sh/glade/internal/playground":
 with open(ordinary_path, "w", encoding="utf-8") as target:
     target.write("\n".join(ordinary) + "\n")
 PY
+fi
 
 planner_tests="${discovery}"
 planner_shards=4
@@ -433,7 +586,14 @@ planner_args=(--package "${package_name}" --shards "${planner_shards}" --tests "
 if [[ "${package}" == "./internal/lwc/compile" && -s "${CI_LWC_COMPILE_HISTORY_PATH:-}" ]]; then
 	planner_args+=(--history "${CI_LWC_COMPILE_HISTORY_PATH}")
 fi
-if [[ -n "${shard_planner}" ]]; then
+if [[ "${package}" == "./internal/apextest" && "${race_mode}" == "partition" ]]; then
+	race_history="${artifact_dir}/race-history.json"
+	python3 "${script_dir}/ci-race-plan.py" history "${discovery}" >"${race_history}"
+	planner_args+=(--history "${race_history}")
+fi
+if [[ "${apextest_assigned}" == true ]]; then
+	: # The partition's frozen plan already binds discovery to shard regexes.
+elif [[ -n "${shard_planner}" ]]; then
 	if [[ "${shard_planner}" == */* ]]; then
 		[[ -x "${shard_planner}" ]] || { printf '[ci] shard planner is not executable: %s\n' "${shard_planner}" >&2; exit 2; }
 	elif ! command -v "${shard_planner}" >/dev/null 2>&1; then
@@ -519,6 +679,15 @@ if mode == "playground":
             target.write(selection["regex"] + "\n")
 PY
 
+if [[ "${race_mode}" == "partition" ]]; then
+	partition_path="${artifact_dir}/partition.json"
+	python3 "${script_dir}/ci-race-plan.py" schedule "${discovery}" "${plan}" "${binary_sha256}" "${binary_size}" >"${partition_path}"
+	python3 "${script_dir}/ci-race-plan.py" verify "${artifact_dir}"
+	cleanup_apextest_binary
+	trap - EXIT HUP INT TERM
+	exit 0
+fi
+
 if [[ "${package}" == "./internal/apextest" ]]; then
 	lane_names=()
 	for index in "${assigned_apextest_indexes[@]}"; do
@@ -526,6 +695,12 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 	done
 	event_paths=()
 	for lane_name in "${lane_names[@]}"; do
+		shard_index="${lane_name#shard-}"
+		if [[ "${apextest_assigned}" == true ]]; then
+			shard_go_timeout="${partition_shard_timeouts["${shard_index}"]}s"
+		else
+			shard_go_timeout="${go_test_timeout}"
+		fi
 		shard_dir="${artifact_dir}/${lane_name}"
 		events="${shard_dir}/events.json"
 		resource="${shard_dir}/resource.json"
@@ -535,7 +710,7 @@ if [[ "${package}" == "./internal/apextest" ]]; then
 		run_apextest_command "${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 			bash -c '
 set -euo pipefail
-binary="$1"; expected_size="$2"; events="$3"; go_command="$4"; package="$5"; regex="$6"; package_dir="$7"
+binary="$1"; expected_size="$2"; events="$3"; go_command="$4"; package="$5"; regex="$6"; package_dir="$7"; go_timeout="$8"
 actual_size="$(python3 - "$binary" <<'"'"'PY'"'"'
 import os
 import stat
@@ -555,13 +730,13 @@ if [[ "$actual_size" != "$expected_size" ]]; then
     exit 125
 fi
 set +e
-(cd "$package_dir" && "$binary" -test.v=test2json -test.count=1 -test.timeout=60m -test.run="$regex") | \
+(cd "$package_dir" && "$binary" -test.v=test2json -test.count=1 -test.timeout="$go_timeout" -test.run="$regex") | \
     "$go_command" tool test2json -t -p "$package" >"$events"
 statuses=("${PIPESTATUS[@]}")
 set -e
 if [[ "${statuses[0]}" -ne 0 ]]; then exit "${statuses[0]}"; fi
 exit "${statuses[1]}"
-' bash "${binary_path}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}" "${PWD}/${package#./}"
+' bash "${binary_path}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}" "${PWD}/${package#./}" "${shard_go_timeout}"
 		native_rc="$?"
 		set -e
 		set +e
@@ -622,15 +797,17 @@ PY
 	if [[ -n "${apextest_runner}" ]]; then
 		cleanup_apextest_binary
 		trap - EXIT HUP INT TERM
-		python3 - "${discovery}" "${plan}" "${binary_metadata}" "${artifact_dir}/runner-validation.json" "${package_name}" "${apextest_runner}" "${actual_apextest_head}" "${assigned_apextest_indexes[@]}" <<'PY'
+		python3 - "${discovery}" "${plan}" "${binary_metadata}" "${artifact_dir}/runner-validation.json" "${package_name}" "${apextest_runner}" "${actual_apextest_head}" "${partition_digest}" "${assigned_apextest_indexes[@]}" <<'PY'
 import hashlib
 import json
 import os
 import sys
 import tempfile
 
-discovery_path, plan_path, binary_path, output_path, package, runner, head_sha, *indexes = sys.argv[1:]
+discovery_path, plan_path, binary_path, output_path, package, runner, head_sha, partition_sha256, *indexes = sys.argv[1:]
 indexes = [int(index) for index in indexes]
+if len(indexes) != len(set(indexes)) or any(index < 0 or index >= 16 for index in indexes):
+    raise SystemExit("race apextest runner indexes must be unique shard indexes")
 with open(discovery_path, "rb") as source:
     discovery = source.read()
 with open(plan_path, "rb") as source:
@@ -650,6 +827,7 @@ value = {
     "discovered_count": len(discovery.splitlines()),
     "discovery_sha256": hashlib.sha256(discovery).hexdigest(),
     "plan_sha256": hashlib.sha256(plan).hexdigest(),
+    "partition_sha256": partition_sha256,
     "binary_sha256": binary["sha256"],
     "binary_size_bytes": binary["size_bytes"],
     "binary_removed": True,
@@ -744,7 +922,7 @@ for lane_name in "${lane_names[@]}"; do
 	set +e
 	"${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 		bash -c 'events="$1"; shift; "$@" >"${events}"' bash "${events}" \
-		env CI_TEST_GO_COMMAND="${go_command}" python3 "${script_dir}/ci-test-binary.py" test "${go_test_package_args[@]}" -json -race -count=1 -timeout=60m -run "${regex}" "${package}"
+		env CI_TEST_GO_COMMAND="${go_command}" python3 "${script_dir}/ci-test-binary.py" test "${go_test_package_args[@]}" -json -race -count=1 -timeout="${go_test_timeout}" -run "${regex}" "${package}"
 	native_rc="$?"
 	set -e
 	set +e

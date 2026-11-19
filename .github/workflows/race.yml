@@ -30,12 +30,15 @@ jobs:
     outputs:
       packages: ${{ steps.classify.outputs.packages }}
       early-packages: ${{ steps.classify.outputs.early-packages }}
+      independent-packages: ${{ steps.classify.outputs.independent-packages }}
       generic-packages: ${{ steps.classify.outputs.generic-packages }}
       has-packages: ${{ steps.classify.outputs.has-packages }}
       has-early-packages: ${{ steps.classify.outputs.has-early-packages }}
+      has-independent-packages: ${{ steps.classify.outputs.has-independent-packages }}
       has-generic-packages: ${{ steps.classify.outputs.has-generic-packages }}
       mode: ${{ steps.classify.outputs.mode }}
       push-matrix: ${{ steps.classify.outputs.push-matrix }}
+      vm-matrix: ${{ steps.lanes.outputs.vm-matrix }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -63,25 +66,35 @@ jobs:
           esac
           if [[ "$packages" == "[]" ]]; then has_packages=false; else has_packages=true; fi
           mapfile -t partition < <(scripts/ci-race-packages.sh partition "$packages")
-          if [[ "${#partition[@]}" -ne 2 ]]; then
-            echo "race package partition did not return early and generic lists" >&2
+          if [[ "${#partition[@]}" -ne 3 ]]; then
+            echo "race package partition did not return early, independent and generic lists" >&2
             exit 2
           fi
           early_packages="${partition[0]}"
-          generic_packages="${partition[1]}"
+          independent_packages="${partition[1]}"
+          generic_packages="${partition[2]}"
           if [[ "$early_packages" == "[]" ]]; then has_early_packages=false; else has_early_packages=true; fi
+          if [[ "$independent_packages" == "[]" ]]; then has_independent_packages=false; else has_independent_packages=true; fi
           if [[ "$generic_packages" == "[]" ]]; then has_generic_packages=false; else has_generic_packages=true; fi
           push_matrix="$(python3 scripts/ci-race-push.py plan)"
           echo "push-matrix=$push_matrix" >>"$GITHUB_OUTPUT"
           echo "mode=$mode" >>"$GITHUB_OUTPUT"
           echo "packages=$packages" >>"$GITHUB_OUTPUT"
           echo "early-packages=$early_packages" >>"$GITHUB_OUTPUT"
+          echo "independent-packages=$independent_packages" >>"$GITHUB_OUTPUT"
           echo "generic-packages=$generic_packages" >>"$GITHUB_OUTPUT"
           echo "has-packages=$has_packages" >>"$GITHUB_OUTPUT"
           echo "has-early-packages=$has_early_packages" >>"$GITHUB_OUTPUT"
+          echo "has-independent-packages=$has_independent_packages" >>"$GITHUB_OUTPUT"
           echo "has-generic-packages=$has_generic_packages" >>"$GITHUB_OUTPUT"
           mkdir -p ci-artifacts/race-plan
-          printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
+          printf '{"mode":"%s","packages":%s,"early_packages":%s,"independent_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$independent_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
+      - name: Plan bounded race lanes
+        id: lanes
+        # Static lane policy from the shared race plan; the VM lane runs as
+        # its own matrix so the long package is eligible immediately after
+        # this job instead of queueing behind the generic matrix.
+        run: echo "vm-matrix=$(python3 scripts/ci-race-plan.py lanes)" >>"$GITHUB_OUTPUT"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         with:
@@ -183,6 +196,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
+      runner-matrix: ${{ steps.race-runner-matrix.outputs.include }}
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
@@ -221,6 +235,20 @@ jobs:
             slug="${package//\//-}"
             python3 scripts/ci-test-binary.py build "/tmp/glade-race-test-binaries/$slug" race "./internal/$package"
           done
+      - name: Discover and partition the Apex race tests
+        # One discovery from the verified shared race binary, then one frozen
+        # partition: shard regexes, runner assignments and every deadline.
+        # The Apex runners and the aggregate consume this artifact instead of
+        # re-planning the package.
+        timeout-minutes: 15
+        env:
+          CGO_ENABLED: "1"
+          CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries/apextest
+          CI_RACE_HEAD_SHA: ${{ github.sha }}
+        run: scripts/ci-race-test.sh partition ./internal/apextest internal-apextest
+      - name: Resolve the Apex runner matrix
+        id: race-runner-matrix
+        run: echo "include=$(python3 scripts/ci-race-plan.py matrix ci-artifacts/race/internal-apextest/partition.json)" >>"$GITHUB_OUTPUT"
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -239,6 +267,13 @@ jobs:
           name: race-test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-race-test-binaries/apextest/
           compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload Apex race partition
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-apextest-partition-${{ github.run_id }}-${{ steps.bundle.outputs.attempt }}
+          path: ci-artifacts/race/internal-apextest/
           retention-days: 1
           if-no-files-found: error
       - name: Upload gladecli test binary
@@ -478,6 +513,110 @@ jobs:
           path: ci-artifacts/race/
           if-no-files-found: error
 
+  race-independent:
+    needs: [plan]
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-independent-packages == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.plan.outputs.independent-packages) }}
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - name: Resolve artifact name
+        id: artifact
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          slug="${PACKAGE#./}"
+          slug="${slug//\//-}"
+          if [[ ! "$slug" =~ ^[A-Za-z0-9._-]+$ ]]; then exit 2; fi
+          echo "slug=$slug" >>"$GITHUB_OUTPUT"
+      - name: Run independent race detector
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SLUG: ${{ steps.artifact.outputs.slug }}
+        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
+      - name: Upload independent race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-${{ steps.artifact.outputs.slug }}
+          path: ci-artifacts/race/
+          if-no-files-found: error
+
+  race-vm:
+    needs: [plan]
+    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/vm')
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.timeoutMinutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.vm-matrix).include }}
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+      CI_RACE_SHARD_INDEX: ${{ matrix.shard }}
+      CI_RACE_HEAD_SHA: ${{ github.sha }}
+      CI_RACE_TEST_TIMEOUT_SECONDS: ${{ matrix.testTimeoutSeconds }}
+      CI_RACE_BATCH_TIMEOUT_SECONDS: ${{ matrix.batchTimeoutSeconds }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - name: Run assigned VM race shard
+        timeout-minutes: ${{ matrix.stepMinutes }}
+        run: scripts/ci-race-test.sh ./internal/vm internal-vm
+      - name: Upload VM race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-internal-vm-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/internal-vm
+          if-no-files-found: error
+
+  race-vm-aggregate:
+    needs: [plan, race-vm]
+    if: always() && needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/vm')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download VM race evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: race-internal-vm-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/vm-runners
+      - name: Validate combined VM race evidence
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          roots=()
+          for ((index=0; index<4; index++)); do
+            roots+=("ci-artifacts/race/vm-runners/race-internal-vm-${index}-${RUN_ID}-${RUN_ATTEMPT}")
+          done
+          scripts/ci-race-shard-aggregate.sh ./internal/vm ci-artifacts/race/internal-vm-aggregate/union-validation.json "${{ github.sha }}" "${roots[@]}"
+      - name: Upload combined VM race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-internal-vm-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/internal-vm-aggregate/union-validation.json
+          if-no-files-found: error
+
   race:
     needs: plan
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-generic-packages == 'true'
@@ -548,18 +687,21 @@ jobs:
           path: ci-artifacts/race/
           if-no-files-found: error
 
-  race-apextest-a:
+  race-apextest:
     needs: [plan, test-binaries]
     if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-24.04
-    timeout-minutes: 70
+    timeout-minutes: ${{ matrix.timeoutMinutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.test-binaries.outputs.runner-matrix).include }}
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: a
-      CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13
       CI_RACE_HEAD_SHA: ${{ github.sha }}
+      CI_RACE_PARTITION_DIR: /tmp/glade-race-apextest-partition
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download shared race test binaries
@@ -567,110 +709,48 @@ jobs:
         with:
           name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
           path: /tmp/glade-race-test-binaries
+      - name: Download the shared Apex race partition
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-apextest-partition-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-apextest-partition
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
       - name: Run assigned Apex race shards
+        timeout-minutes: ${{ matrix.stepMinutes }}
+        env:
+          CI_RACE_APEXTEST_RUNNER: ${{ matrix.runner }}
+          CI_RACE_BATCH_TIMEOUT_SECONDS: ${{ matrix.batchTimeoutSeconds }}
         run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner A evidence
+      - name: Upload Apex runner evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: race-internal-apextest-a-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/internal-apextest
-          if-no-files-found: error
-
-  race-apextest-b:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 70
-    env:
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: b
-      CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Run assigned Apex race shard
-        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner B evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-b-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/internal-apextest
-          if-no-files-found: error
-
-  race-apextest-c:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 70
-    env:
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: c
-      CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Run assigned Apex race shards
-        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner C evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
+          name: race-internal-apextest-${{ matrix.runner }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ci-artifacts/race/internal-apextest
           if-no-files-found: error
 
   race-apextest-aggregate:
-    needs: [plan, race-apextest-a, race-apextest-b, race-apextest-c]
+    needs: [plan, test-binaries, race-apextest]
     if: always() && needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download Apex runner A evidence
+      - name: Download the shared Apex race partition
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-apextest-partition-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-apextest-partition
+      - name: Download Apex runner evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: race-internal-apextest-a-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-a
-      - name: Download Apex runner B evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: race-internal-apextest-b-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-b
-      - name: Download Apex runner C evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-c
+          pattern: race-internal-apextest-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race/apextest-runners
       - name: Validate combined Apex race evidence
-        run: scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c ci-artifacts/race/apextest-aggregate/union-validation.json "${{ github.sha }}"
+        run: scripts/ci-race-apextest-aggregate.sh /tmp/glade-race-apextest-partition ci-artifacts/race/apextest-runners ci-artifacts/race/apextest-aggregate/union-validation.json "${{ github.sha }}"
       - name: Upload combined Apex race evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

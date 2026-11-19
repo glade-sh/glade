@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "apextestNormalHistory": "internal/apextest/testdata/shard_durations.json",
+  "apextestNormalHistorySource": "The checked-in complete Apex duration registry maintained by scripts/apextest-duration-table.py; its own source field records the measurement provenance. Entries are pruned or merged by the table workflow, never here.",
+  "vmLane": {
+    "shards": 4,
+    "normalSeconds": 2764,
+    "slowestTestNormalSeconds": 850,
+    "source": "normalSeconds is the sum of the four measured normal-mode PR VM shard walls (717/550/652/846 s, Required CI run 44461362525), the same measurement recorded in scripts/ci-package-lanes.json prPoolDedicatedSeconds. slowestTestNormalSeconds is TestAssignmentSaveVMAnonymousAndIsTestAPIRoutes as recorded in scripts/ci-race-push.json isolatedTests. Re-measure both when the VM suite drifts."
+  }
+}

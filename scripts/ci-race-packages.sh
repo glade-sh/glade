@@ -52,15 +52,21 @@ for lane in manifest["lanes"].values():
 packages = json.loads(sys.argv[2])
 if not isinstance(packages, list) or sorted(packages) != sorted(expected) or len(packages) != len(set(packages)):
 	raise SystemExit("race partition requires the exact unique full-manifest packages")
-early = ["./internal/gladecli", "./internal/repoguard"]
-apextest = "./internal/apextest"
-dedicated = [apextest, "./internal/visualforce", "./internal/lwc/compile"]
-excluded = set(early + dedicated)
+# gladecli consumes the shared race binary, so it can only start after the
+# binary producer; repoguard needs no binary and gets its own early lane so
+# the slowest generic package is not queued behind the generic matrix.
+early = ["./internal/gladecli"]
+independent = ["./internal/repoguard"]
+# apextest, visualforce, lwc/compile and vm run dedicated shard lanes; vm is
+# bounded by its own shards instead of one unsharded generic route.
+dedicated = ["./internal/apextest", "./internal/visualforce", "./internal/lwc/compile", "./internal/vm"]
+excluded = set(early + independent + dedicated)
 generic = [package for package in packages if package not in excluded]
-combined = early + generic + dedicated
+combined = early + independent + generic + dedicated
 if sorted(combined) != sorted(packages) or len(combined) != len(set(combined)):
     raise SystemExit("race package partition does not exactly cover the full manifest")
 print(json.dumps(early, separators=(",", ":")))
+print(json.dumps(independent, separators=(",", ":")))
 print(json.dumps(generic, separators=(",", ":")))
 PY
 		exit 0

@@ -2,16 +2,17 @@
 set -euo pipefail
 
 if [[ "$#" -lt 3 ]]; then
-	echo "usage: scripts/ci-race-shard-aggregate.sh <./internal/visualforce|./internal/lwc/compile> <output-json> <expected-head-sha> <shard-dirs...>" >&2
+	echo "usage: scripts/ci-race-shard-aggregate.sh <./internal/visualforce|./internal/lwc/compile|./internal/vm> <output-json> <expected-head-sha> <shard-dirs...>" >&2
 	exit 2
 fi
 case "$1" in
 	./internal/visualforce) shard_count=4 ;;
 	./internal/lwc/compile) shard_count=8 ;;
+	./internal/vm) shard_count=4 ;;
 	*) echo "unsupported browser race aggregate package: $1" >&2; exit 2 ;;
 esac
 if [[ "$#" -ne "$((shard_count + 3))" ]]; then
-	echo "browser race aggregate requires exactly ${shard_count} shard directories" >&2
+	echo "race shard aggregate for $1 requires exactly ${shard_count} shard directories" >&2
 	exit 2
 fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,7 +29,7 @@ import tempfile
 summary_runner, relative_package, output_path, head_sha, *roots = sys.argv[1:]
 package = "github.com/glade-sh/glade/" + relative_package.removeprefix("./")
 slug = relative_package.removeprefix("./").replace("/", "-")
-shard_count = 4 if relative_package == "./internal/visualforce" else 8
+shard_count = {"./internal/visualforce": 4, "./internal/lwc/compile": 8, "./internal/vm": 4}[relative_package]
 if not re.fullmatch(r"[0-9a-f]{40}", head_sha):
     raise SystemExit("race shard aggregate requires the expected checkout head SHA")
 
