@@ -4,6 +4,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -73,37 +74,110 @@ func encodeSemanticTokens(tokens []semanticToken) []int {
 	return data
 }
 
+// definitionForName resolves one case-insensitive name to its declaration.
+// The generation's name index is built once per generation in the order the
+// symbol scan used to visit, so the first entry stored for a name is the
+// match the scan would have returned first.
 func (h *requestHandler) definitionForName(name string) (Location, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return Location{}, false
 	}
-	for _, typ := range h.index.Types {
-		if strings.EqualFold(typ.Name, name) {
-			return Location{URI: uriFromPath(typ.File), Range: toLSPRange(typ.Range)}, true
-		}
-		for _, member := range typ.Members {
-			if strings.EqualFold(member.Name, name) || strings.EqualFold(typ.Name+"."+member.Name, name) {
-				return Location{URI: uriFromPath(typ.File), Range: toLSPRange(member.Range)}, true
-			}
-		}
-	}
-	for _, trigger := range h.index.Triggers {
-		if strings.EqualFold(trigger.Name, name) {
-			return Location{URI: uriFromPath(trigger.File), Range: toLSPRange(trigger.Range)}, true
-		}
-	}
-	for _, object := range h.index.Objects {
-		if strings.EqualFold(object.Name, name) {
-			return Location{URI: schemaURI(object.Name), Range: Range{}}, true
-		}
-		for _, field := range object.Fields {
-			if strings.EqualFold(field.Name, name) || strings.EqualFold(object.Name+"."+field.Name, name) {
-				return Location{URI: schemaURI(object.Name, "fields", field.Name), Range: Range{}}, true
-			}
-		}
+	h.generation.nameOnce.Do(h.generation.buildNameIndex)
+	if locations := h.generation.names[caseFoldKey(name)]; len(locations) > 0 {
+		return locations[0], true
 	}
 	return Location{}, false
+}
+
+// buildNameIndex maps every name a definition request can carry to the
+// location the symbol scan would return for it, in the scan's order: types
+// and their members first, then triggers, then objects and their fields.
+// Several symbols may share one folded name; the first stored entry wins,
+// as the first match of the scan did.
+func (g *generation) buildNameIndex() {
+	names := make(map[string][]Location)
+	add := func(name string, location Location) {
+		if name == "" {
+			// Queries are never empty, so an empty candidate cannot match.
+			return
+		}
+		key := caseFoldKey(name)
+		names[key] = append(names[key], location)
+	}
+	for _, typ := range g.index.Types {
+		add(typ.Name, Location{URI: uriFromPath(typ.File), Range: toLSPRange(typ.Range)})
+		for _, member := range typ.Members {
+			location := Location{URI: uriFromPath(typ.File), Range: toLSPRange(member.Range)}
+			add(member.Name, location)
+			add(typ.Name+"."+member.Name, location)
+		}
+	}
+	for _, trigger := range g.index.Triggers {
+		add(trigger.Name, Location{URI: uriFromPath(trigger.File), Range: toLSPRange(trigger.Range)})
+	}
+	for _, object := range g.index.Objects {
+		add(object.Name, Location{URI: schemaURI(object.Name), Range: Range{}})
+		for _, field := range object.Fields {
+			location := Location{URI: schemaURI(object.Name, "fields", field.Name), Range: Range{}}
+			add(field.Name, location)
+			add(object.Name+"."+field.Name, location)
+		}
+	}
+	g.names = names
+}
+
+// caseFoldKey folds name to a canonical key: two strings share a key exactly
+// when strings.EqualFold reports them equal, which is how names were compared
+// before. A name that is already folded (ASCII with no uppercase) returns
+// unchanged, so queries folded after ToLower do not allocate.
+func caseFoldKey(name string) string {
+	for i := 0; i < len(name); i++ {
+		if c := name[i]; c >= utf8.RuneSelf || (c >= 'A' && c <= 'Z') {
+			return foldKeySlow(name)
+		}
+	}
+	return name
+}
+
+func foldKeySlow(name string) string {
+	var folded strings.Builder
+	folded.Grow(len(name))
+	for _, r := range name {
+		folded.WriteRune(foldRune(r))
+	}
+	return folded.String()
+}
+
+// foldRune returns r's canonical folded rune, one rune per Unicode simple
+// fold cycle: the cycle's lowercase ASCII letter when it has one (the k and
+// s cycles extend past ASCII, to the Kelvin sign and long s), else the
+// cycle's greatest rune. Cycle members therefore share one key and no other
+// rune does, exactly matching strings.EqualFold; in particular a lowercase
+// ASCII name is its own key.
+func foldRune(r rune) rune {
+	if r < utf8.RuneSelf {
+		if 'A' <= r && r <= 'Z' {
+			return r + 'a' - 'A'
+		}
+		return r
+	}
+	high, ascii := r, r
+	for f := unicode.SimpleFold(r); f != r; f = unicode.SimpleFold(f) {
+		if f > high {
+			high = f
+		}
+		if f < utf8.RuneSelf && f < ascii {
+			ascii = f
+		}
+	}
+	if ascii < utf8.RuneSelf {
+		if 'A' <= ascii && ascii <= 'Z' {
+			ascii += 'a' - 'A'
+		}
+		return ascii
+	}
+	return high
 }
 
 func (h *requestHandler) referenceLocations(name string) []Location {
