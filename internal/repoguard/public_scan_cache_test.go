@@ -418,14 +418,12 @@ func TestPublicScanRulesetInputsCoverGuardSources(t *testing.T) {
 		t.Fatalf("ruleset inputs = %v, want every guard package source %v", got, want)
 	}
 	for _, input := range inputs {
-		if input.data == "" {
-			t.Fatalf("%s contributes no bytes to the ruleset version", input.rel)
+		data, err := os.ReadFile(filepath.Join(repoRoot(t), filepath.FromSlash(input.rel)))
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
-	campaign := "internal/repoguard/public_campaign_test.go"
-	for _, input := range inputs {
-		if input.rel == campaign && input.data != readRepoFile(t, repoRoot(t), input.rel) {
-			t.Fatal("ruleset inputs do not carry the checkout's bytes for the campaign rules")
+		if input.data != string(data) {
+			t.Fatalf("ruleset inputs do not carry the checkout's bytes for %s", input.rel)
 		}
 	}
 	edited := slices.Clone(inputs)

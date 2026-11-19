@@ -676,24 +676,57 @@ type publicScanRulesetInput struct {
 }
 
 // publicScanRulesetVersion derives the record store's ruleset version from
-// the guard sources and the Go toolchain running them, so a rule, matcher,
-// normalizer, table or decoder edit moves the version and stored records
-// cannot suppress the edited ruleset's findings. The derivation is not
-// implemented yet: this draft ignores its inputs and returns the manual
-// constant, so an edited ruleset silently keeps reusing stored records;
-// the next commit hashes the inputs for real.
+// the bytes that decide what the public-data scan reports: the guard
+// package's own Go sources, where the release rules, the campaign rules
+// and name tables, the normalizers and the asset decoder all live, plus
+// the Go toolchain running them. A rule, matcher, normalizer, table or
+// decoder edit therefore moves the version, so stored records cannot
+// suppress the edited ruleset's findings; a manual constant left the
+// same hole whenever someone forgot to bump it. Sources are hashed in
+// path order, so the version is stable across runs and checkouts while
+// input order cannot flap the store cold.
 func publicScanRulesetVersion(inputs []publicScanRulesetInput, goVersion string) string {
-	return "1"
+	ordered := slices.Clone(inputs)
+	slices.SortFunc(ordered, func(left, right publicScanRulesetInput) int {
+		return strings.Compare(left.rel, right.rel)
+	})
+	digest := sha256.New()
+	for _, input := range ordered {
+		_, _ = fmt.Fprintf(digest, "%s\x00%d\x00", input.rel, len(input.data))
+		_, _ = io.WriteString(digest, input.data)
+	}
+	_, _ = io.WriteString(digest, goVersion)
+	return hex.EncodeToString(digest.Sum(nil))
 }
 
-// publicScanRulesetInputs feeds the version derivation. The default must
-// read this guard package's own Go sources from the repository checkout and
-// report the running Go toolchain, since the release rules, the campaign
-// rules and name tables, the normalizers and the asset decoder all live in
-// this package. This draft returns no inputs, so the version cannot see the
-// rules it guards with; the next commit reads them.
+// publicScanRulesetInputs reads the hashed sources from the repository
+// checkout at test time: every Go file of this guard package in its own
+// bytes, rules, matchers, normalizers, tables and the product asset
+// decoder included, plus the running Go toolchain. An unavailable guard
+// package fails the run instead of deriving a version that cannot see
+// the rules it guards with. Tests swap this seam to pin synthetic
+// inputs.
 var publicScanRulesetInputs = func() ([]publicScanRulesetInput, string) {
-	return nil, ""
+	dir := filepath.Join(canonicalRepoRoot, "internal", "repoguard")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		panic("repoguard package sources unavailable: " + err.Error())
+	}
+	var inputs []publicScanRulesetInput
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if err != nil {
+			panic("repoguard package source unreadable: " + err.Error())
+		}
+		inputs = append(inputs, publicScanRulesetInput{rel: "internal/repoguard/" + entry.Name(), data: string(data)})
+	}
+	if len(inputs) == 0 {
+		panic("repoguard package has no Go sources to version")
+	}
+	return inputs, runtime.Version()
 }
 
 // currentPublicScanRulesetVersion derives the ruleset version the canonical
