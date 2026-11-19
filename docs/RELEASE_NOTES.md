@@ -2,15 +2,35 @@
 
 ## Unreleased
 
+- **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
+
+- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v45`. Captured at 62.0, 67.0 and 68.0.
+
+- Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
+
+- Messaging session campaign fields now follow the captured API version and package-qualified field routes in describe, compile, query and REST describe.
+
+- Authentication flow default objects now follow the captured API version, field access and query clause boundaries for static and dynamic access.
+
 ### Apex
 
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
+- **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
+- Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
+
+### Changes
+
+- **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
 
 ### CI
 
 - **Transitive affected-test selection.** The fast PR lane now selects the changed Go packages plus every package that transitively imports them, walking reverse production, internal-test and external-test import edges to a fixed point instead of stopping at direct importers, so an `internal/apexversion` change also runs `internal/vm` and `internal/apextest`. A changed path in the nested Apex parser module selects the root packages that import the parser and their consumers, a path that no longer maps to a package (deleted, renamed or removed) still selects the full set like `go.mod`, `go.sum` and other unowned inputs, and a malformed package graph or lane manifest fails the selection instead of producing an empty one.
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
 - **Shorter ordinary PR CI.** The repository guard batch (CLI build, repoguard, scripts tests and the vendored-parser check) moved from PR worker 22, which ran it after its own selection and made that worker the ~30-minute long tail, to a dedicated `pr-guards` worker that starts immediately and is required by `Required CI`. The VM, CLI and sema shards of the fast PR lane now plan from the same shared duration-history artifacts the full suite uses, and workers 12-23 split the remaining packages by the measured per-package durations recorded in `scripts/ci-package-lanes.json` (`storage` 370 s, `lwcbrowser` 124 s and the rest of the train measurement) instead of by list position, so the memory-heavy packages never share a worker. The selected test inventory and the required check name are unchanged.
+
+### Flow
+
+- **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
 
 ## v0.3.12
 

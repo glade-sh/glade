@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe67_03 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|EntitlementTemplate|'+JSON.serialize(new Map<String,Object>{'SlaProcessId'=>NullExisting67.observe('EntitlementTemplate','SlaProcessId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|ExternalDataUserAuth|'+JSON.serialize(new Map<String,Object>{'AuthProviderId'=>NullExisting67.observe('ExternalDataUserAuth','AuthProviderId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|ExternalDataUserAuth|'+JSON.serialize(new Map<String,Object>{'UserId'=>NullExisting67.observe('ExternalDataUserAuth','UserId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|FeedAttachment|'+JSON.serialize(new Map<String,Object>{'RecordId'=>NullExisting67.observe('FeedAttachment','RecordId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|FeedComment|'+JSON.serialize(new Map<String,Object>{'LastEditById'=>NullExisting67.observe('FeedComment','LastEditById')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|FeedComment|'+JSON.serialize(new Map<String,Object>{'RelatedRecordId'=>NullExisting67.observe('FeedComment','RelatedRecordId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|FeedComment|'+JSON.serialize(new Map<String,Object>{'ThreadParentId'=>NullExisting67.observe('FeedComment','ThreadParentId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|FeedItem|'+JSON.serialize(new Map<String,Object>{'LastEditById'=>NullExisting67.observe('FeedItem','LastEditById')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|FlowOrchestrationInstance|'+JSON.serialize(new Map<String,Object>{'InterviewId'=>NullExisting67.observe('FlowOrchestrationInstance','InterviewId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|FlowOrchestrationWorkItem|'+JSON.serialize(new Map<String,Object>{'ParentWorkItemId'=>NullExisting67.observe('FlowOrchestrationWorkItem','ParentWorkItemId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|FlowOrchestrationWorkItem|'+JSON.serialize(new Map<String,Object>{'RelatedRecordId'=>NullExisting67.observe('FlowOrchestrationWorkItem','RelatedRecordId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|FlowOrchestrationWorkItem|'+JSON.serialize(new Map<String,Object>{'StepInstanceId'=>NullExisting67.observe('FlowOrchestrationWorkItem','StepInstanceId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|Folder|'+JSON.serialize(new Map<String,Object>{'ParentId'=>NullExisting67.observe('Folder','ParentId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|GtwyProvPaymentMethodType|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayProviderId'=>NullExisting67.observe('GtwyProvPaymentMethodType','PaymentGatewayProviderId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|GtwyProvPaymentMethodType|'+JSON.serialize(new Map<String,Object>{'RecordTypeId'=>NullExisting67.observe('GtwyProvPaymentMethodType','RecordTypeId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|Image|'+JSON.serialize(new Map<String,Object>{'ContentDocumentId'=>NullExisting67.observe('Image','ContentDocumentId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|LightningExperienceTheme|'+JSON.serialize(new Map<String,Object>{'DefaultBrandingSetId'=>NullExisting67.observe('LightningExperienceTheme','DefaultBrandingSetId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|LightningOnboardingConfig|'+JSON.serialize(new Map<String,Object>{'CollaborationGroupId'=>NullExisting67.observe('LightningOnboardingConfig','CollaborationGroupId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|ListEmailSentResult|'+JSON.serialize(new Map<String,Object>{'ActivityId'=>NullExisting67.observe('ListEmailSentResult','ActivityId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|ListEmailSentResult|'+JSON.serialize(new Map<String,Object>{'RecipientId'=>NullExisting67.observe('ListEmailSentResult','RecipientId')})); }
+}

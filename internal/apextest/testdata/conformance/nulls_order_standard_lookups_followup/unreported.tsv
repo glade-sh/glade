@@ -1,0 +1,27 @@
+api	object	field	reason
+62.0	ContentFolder	ParentContentFolderId	test emitted no observation
+62.0	ContentVersion	ContentBodyId	test emitted no observation
+62.0	ContentVersion	ExternalDataSourceId	test emitted no observation
+62.0	ContentVersion	FirstPublishLocationId	test emitted no observation
+62.0	FeedComment	LastEditById	test emitted no observation
+62.0	FeedComment	RelatedRecordId	test emitted no observation
+62.0	FeedComment	ThreadParentId	test emitted no observation
+62.0	FlowOrchestrationWorkItem	ParentWorkItemId	test emitted no observation
+62.0	FlowOrchestrationWorkItem	RelatedRecordId	test emitted no observation
+62.0	FlowOrchestrationWorkItem	StepInstanceId	test emitted no observation
+62.0	OutgoingEmailRelation	RelationId	test emitted no observation
+62.0	WorkCapacityAvailability	ServiceTerritoryId	test emitted no observation
+62.0	WorkCapacityLimit	ServiceTerritoryId	test emitted no observation
+67.0	ContentFolder	ParentContentFolderId	test emitted no observation
+67.0	ContentVersion	ContentBodyId	test emitted no observation
+67.0	ContentVersion	ExternalDataSourceId	test emitted no observation
+67.0	ContentVersion	FirstPublishLocationId	test emitted no observation
+67.0	FeedComment	LastEditById	test emitted no observation
+67.0	FeedComment	RelatedRecordId	test emitted no observation
+67.0	FeedComment	ThreadParentId	test emitted no observation
+67.0	FlowOrchestrationWorkItem	ParentWorkItemId	test emitted no observation
+67.0	FlowOrchestrationWorkItem	RelatedRecordId	test emitted no observation
+67.0	FlowOrchestrationWorkItem	StepInstanceId	test emitted no observation
+67.0	OutgoingEmailRelation	RelationId	test emitted no observation
+67.0	WorkCapacityAvailability	ServiceTerritoryId	test emitted no observation
+67.0	WorkCapacityLimit	ServiceTerritoryId	test emitted no observation

@@ -1,0 +1,1 @@
+Deploy two synthetic payment gateway providers with no-callout adapters. Using the data API, create three gateway provider payment method types: one with no PaymentGatewayProviderId and two with distinct provider IDs. At API 62.0 and 67.0 re-query all three saved references and record the five ORDER BY variants. No payment requests or callouts are made.

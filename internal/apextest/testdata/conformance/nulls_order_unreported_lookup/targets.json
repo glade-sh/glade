@@ -1,0 +1,29 @@
+{
+"ContentFolder": [
+"ParentContentFolderId"
+],
+"ContentVersion": [
+"ContentBodyId",
+"ExternalDataSourceId",
+"FirstPublishLocationId"
+],
+"FeedComment": [
+"LastEditById",
+"RelatedRecordId",
+"ThreadParentId"
+],
+"FlowOrchestrationWorkItem": [
+"ParentWorkItemId",
+"RelatedRecordId",
+"StepInstanceId"
+],
+"OutgoingEmailRelation": [
+"RelationId"
+],
+"WorkCapacityAvailability": [
+"ServiceTerritoryId"
+],
+"WorkCapacityLimit": [
+"ServiceTerritoryId"
+]
+}

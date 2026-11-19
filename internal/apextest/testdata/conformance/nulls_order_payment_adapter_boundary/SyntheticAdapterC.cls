@@ -1,0 +1,1 @@
+global class SyntheticAdapterC implements commercepayments.PaymentGatewayAdapter { global commercepayments.GatewayResponse processRequest(commercepayments.PaymentGatewayContext context) { return null; } }

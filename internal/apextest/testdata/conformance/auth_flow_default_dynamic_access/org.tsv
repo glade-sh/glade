@@ -1,0 +1,49 @@
+api	route	field	observation
+62.0	istest	FlowDefaultAccountId/get	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+62.0	istest	FlowDefaultAccountId/put	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+62.0	istest	FlowDefaultProfileId/get	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+62.0	istest	FlowDefaultProfileId/put	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+62.0	anonymous	FlowDefaultAccountId/get	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+62.0	anonymous	FlowDefaultAccountId/put	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+62.0	anonymous	FlowDefaultProfileId/get	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+62.0	anonymous	FlowDefaultProfileId/put	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+63.0	istest	FlowDefaultAccountId/get	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+63.0	istest	FlowDefaultAccountId/put	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+63.0	istest	FlowDefaultProfileId/get	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+63.0	istest	FlowDefaultProfileId/put	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+63.0	anonymous	FlowDefaultAccountId/get	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+63.0	anonymous	FlowDefaultAccountId/put	System.SObjectException: Invalid field FlowDefaultAccountId for AuthProvider
+63.0	anonymous	FlowDefaultProfileId/get	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+63.0	anonymous	FlowDefaultProfileId/put	System.SObjectException: Invalid field FlowDefaultProfileId for AuthProvider
+64.0	istest	FlowDefaultAccountId/get	ok
+64.0	istest	FlowDefaultAccountId/put	ok
+64.0	istest	FlowDefaultProfileId/get	ok
+64.0	istest	FlowDefaultProfileId/put	ok
+64.0	anonymous	FlowDefaultAccountId/get	ok
+64.0	anonymous	FlowDefaultAccountId/put	ok
+64.0	anonymous	FlowDefaultProfileId/get	ok
+64.0	anonymous	FlowDefaultProfileId/put	ok
+65.0	istest	FlowDefaultAccountId/get	ok
+65.0	istest	FlowDefaultAccountId/put	ok
+65.0	istest	FlowDefaultProfileId/get	ok
+65.0	istest	FlowDefaultProfileId/put	ok
+65.0	anonymous	FlowDefaultAccountId/get	ok
+65.0	anonymous	FlowDefaultAccountId/put	ok
+65.0	anonymous	FlowDefaultProfileId/get	ok
+65.0	anonymous	FlowDefaultProfileId/put	ok
+66.0	istest	FlowDefaultAccountId/get	ok
+66.0	istest	FlowDefaultAccountId/put	ok
+66.0	istest	FlowDefaultProfileId/get	ok
+66.0	istest	FlowDefaultProfileId/put	ok
+66.0	anonymous	FlowDefaultAccountId/get	ok
+66.0	anonymous	FlowDefaultAccountId/put	ok
+66.0	anonymous	FlowDefaultProfileId/get	ok
+66.0	anonymous	FlowDefaultProfileId/put	ok
+67.0	istest	FlowDefaultAccountId/get	ok
+67.0	istest	FlowDefaultAccountId/put	ok
+67.0	istest	FlowDefaultProfileId/get	ok
+67.0	istest	FlowDefaultProfileId/put	ok
+67.0	anonymous	FlowDefaultAccountId/get	ok
+67.0	anonymous	FlowDefaultAccountId/put	ok
+67.0	anonymous	FlowDefaultProfileId/get	ok
+67.0	anonymous	FlowDefaultProfileId/put	ok

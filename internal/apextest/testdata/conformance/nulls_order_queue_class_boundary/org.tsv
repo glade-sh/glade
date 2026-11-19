@@ -1,0 +1,5 @@
+api	object	field	case	observation
+62.0	ApexTestQueueItem	ApexClassId	null	"{""accepted"":false,""messages"":[""You must specify an Apex Class for this object"",""You must specify an Apex Class for this object""]}"
+62.0	ApexTestQueueItem	ApexClassId	control	"{""accepted"":true,""messages"":[]}"
+67.0	ApexTestQueueItem	ApexClassId	null	"{""accepted"":false,""messages"":[""You must specify an Apex Class for this object"",""You must specify an Apex Class for this object""]}"
+67.0	ApexTestQueueItem	ApexClassId	control	"{""accepted"":true,""messages"":[]}"

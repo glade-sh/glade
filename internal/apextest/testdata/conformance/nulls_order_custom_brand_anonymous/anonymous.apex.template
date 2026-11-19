@@ -1,0 +1,1 @@
+Map<Id,String> labels=new Map<Id,String>{'NULL_RECORD_ID'=>'N','LOW_RECORD_ID'=>'L','HIGH_RECORD_ID'=>'H'};Set<Id> ids=labels.keySet();List<String> xs=new List<String>();for(SObject x:Database.query('SELECT Id FROM CustomBrandAsset WHERE Id IN :ids ORDER BY AssetSourceId NULLS LAST'))xs.add(labels.get(x.Id));System.assert(false,'ANONORDER|'+String.join(xs,''));

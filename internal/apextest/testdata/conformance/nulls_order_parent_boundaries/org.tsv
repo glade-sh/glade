@@ -1,0 +1,7 @@
+api	object	field	observation
+62.0	ServiceAppointment	ParentRecordId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[""ParentRecordId""],""message"":""Required fields are missing: [ParentRecordId]"",""statusCode"":""REQUIRED_FIELD_MISSING""}],""nullSuccess"":false}"
+62.0	OpportunityLineItem	Product2Id	"{""omittedProductPopulatedFromEntry"":true,""savedCount"":2}"
+62.0	OrderItem	Product2Id	"{""omittedProductPopulatedFromEntry"":true,""savedCount"":2}"
+67.0	ServiceAppointment	ParentRecordId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[""ParentRecordId""],""message"":""Required fields are missing: [ParentRecordId]"",""statusCode"":""REQUIRED_FIELD_MISSING""}],""nullSuccess"":false}"
+67.0	OpportunityLineItem	Product2Id	"{""omittedProductPopulatedFromEntry"":true,""savedCount"":2}"
+67.0	OrderItem	Product2Id	"{""omittedProductPopulatedFromEntry"":true,""savedCount"":2}"

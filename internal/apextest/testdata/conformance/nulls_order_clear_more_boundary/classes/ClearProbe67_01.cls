@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_01 { @IsTest static void probe() { System.assert(false,'CAPTURE|ApexTestResult|ApexClassId|'+JSON.serialize(NullCore67.probeField('ApexTestResult','ApexClassId'))); } }

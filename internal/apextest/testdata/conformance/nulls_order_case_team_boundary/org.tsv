@@ -1,0 +1,5 @@
+api	object	field	case	observation
+62.0	CaseTeamTemplateMember	TeamRoleId	control	"{""accepted"":true,""messages"":[]}"
+62.0	CaseTeamTemplateMember	TeamRoleId	null	"{""accepted"":false,""messages"":[""invalid cross reference id"",""invalid cross reference id""]}"
+67.0	CaseTeamTemplateMember	TeamRoleId	control	"{""accepted"":true,""messages"":[]}"
+67.0	CaseTeamTemplateMember	TeamRoleId	null	"{""accepted"":false,""messages"":[""invalid cross reference id"",""invalid cross reference id""]}"

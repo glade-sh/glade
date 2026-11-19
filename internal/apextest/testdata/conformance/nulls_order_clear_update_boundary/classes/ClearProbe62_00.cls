@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe62_00 { @IsTest static void probe() { System.assert(false,'CAPTURE|AuthorizationFormConsent|AuthorizationFormTextId|'+JSON.serialize(NullCore62.probeField('AuthorizationFormConsent','AuthorizationFormTextId'))); } }

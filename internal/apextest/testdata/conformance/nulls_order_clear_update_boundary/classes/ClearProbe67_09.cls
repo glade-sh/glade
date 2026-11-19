@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_09 { @IsTest static void probe() { System.assert(false,'CAPTURE|TimeSheet|ServiceResourceId|'+JSON.serialize(NullCore67.probeField('TimeSheet','ServiceResourceId'))); } }

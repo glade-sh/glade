@@ -1,0 +1,13 @@
+api	route	result	observation
+62.0	named	rejected	"[""SELECT FlowDefaultAccountId,FlowDefaultProfileId\n       ^\nERROR at Row:1:Column:8\nNo such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.""]"
+62.0	anonymous	rejected	""""""
+63.0	named	rejected	"[""SELECT FlowDefaultAccountId,FlowDefaultProfileId\n       ^\nERROR at Row:1:Column:8\nNo such column 'FlowDefaultAccountId' on entity 'AuthProvider'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.""]"
+63.0	anonymous	rejected	""""""
+64.0	named	accepted	[]
+64.0	anonymous	accepted	""""""
+65.0	named	accepted	[]
+65.0	anonymous	accepted	""""""
+66.0	named	accepted	[]
+66.0	anonymous	accepted	""""""
+67.0	named	accepted	[]
+67.0	anonymous	accepted	""""""

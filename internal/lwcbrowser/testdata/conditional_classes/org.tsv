@@ -1,0 +1,23 @@
+case	api	route	result	outcome
+input_valid	59.0	browser	rendered	slds-form-element slds-input
+input_error	59.0	browser	rendered	slds-form-element slds-has-error slds-input
+textarea_valid	59.0	browser	rendered	slds-form-element slds-textarea
+textarea_error	59.0	browser	rendered	slds-form-element slds-has-error slds-textarea
+combobox_closed	59.0	browser	rendered	slds-form-element slds-combobox
+combobox_open	59.0	browser	rendered	slds-form-element slds-combobox slds-is-open
+combobox_error	59.0	browser	rendered	slds-form-element slds-has-error slds-combobox
+radio_valid	59.0	browser	rendered	slds-form-element
+radio_error	59.0	browser	rendered	slds-form-element slds-has-error
+stateful_selected	59.0	browser	rendered	slds-is-selected
+stateful_unselected	59.0	browser	rendered	slds-not-selected
+input_valid	67.0	browser	rendered	slds-form-element slds-input
+input_error	67.0	browser	rendered	slds-form-element slds-has-error slds-input
+textarea_valid	67.0	browser	rendered	slds-form-element slds-textarea
+textarea_error	67.0	browser	rendered	slds-form-element slds-has-error slds-textarea
+combobox_closed	67.0	browser	rendered	slds-form-element slds-combobox
+combobox_open	67.0	browser	rendered	slds-form-element slds-combobox slds-is-open
+combobox_error	67.0	browser	rendered	slds-form-element slds-has-error slds-combobox
+radio_valid	67.0	browser	rendered	slds-form-element
+radio_error	67.0	browser	rendered	slds-form-element slds-has-error
+stateful_selected	67.0	browser	rendered	slds-is-selected
+stateful_unselected	67.0	browser	rendered	slds-not-selected

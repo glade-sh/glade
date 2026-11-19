@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe67_05 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|OutboundEngmtContentRsrc|'+JSON.serialize(new Map<String,Object>{'TargetReferenceRecordId'=>NullExisting67.observe('OutboundEngmtContentRsrc','TargetReferenceRecordId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|OutgoingEmailRelation|'+JSON.serialize(new Map<String,Object>{'RelationId'=>NullExisting67.observe('OutgoingEmailRelation','RelationId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|Payment|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting67.observe('Payment','PaymentGatewayId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|Payment|'+JSON.serialize(new Map<String,Object>{'PaymentMethodId'=>NullExisting67.observe('Payment','PaymentMethodId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|PaymentAuthorization|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting67.observe('PaymentAuthorization','PaymentGatewayId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|PaymentAuthorization|'+JSON.serialize(new Map<String,Object>{'PaymentMethodId'=>NullExisting67.observe('PaymentAuthorization','PaymentMethodId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|PaymentGateway|'+JSON.serialize(new Map<String,Object>{'MerchantCredentialId'=>NullExisting67.observe('PaymentGateway','MerchantCredentialId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|PaymentGateway|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayProviderId'=>NullExisting67.observe('PaymentGateway','PaymentGatewayProviderId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|PaymentGatewayLog|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting67.observe('PaymentGatewayLog','PaymentGatewayId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|PaymentGatewayProvider|'+JSON.serialize(new Map<String,Object>{'ApexAdapterId'=>NullExisting67.observe('PaymentGatewayProvider','ApexAdapterId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|PaymentLineInvoice|'+JSON.serialize(new Map<String,Object>{'AssociatedAccountId'=>NullExisting67.observe('PaymentLineInvoice','AssociatedAccountId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|PaymentLineInvoice|'+JSON.serialize(new Map<String,Object>{'AssociatedPaymentLineId'=>NullExisting67.observe('PaymentLineInvoice','AssociatedPaymentLineId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|PermissionSetAssignment|'+JSON.serialize(new Map<String,Object>{'PermissionSetGroupId'=>NullExisting67.observe('PermissionSetAssignment','PermissionSetGroupId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|PermissionSetAssignment|'+JSON.serialize(new Map<String,Object>{'PermissionSetId'=>NullExisting67.observe('PermissionSetAssignment','PermissionSetId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|PrivacyRTBFRequest|'+JSON.serialize(new Map<String,Object>{'PolicyNameId'=>NullExisting67.observe('PrivacyRTBFRequest','PolicyNameId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|ProcessException|'+JSON.serialize(new Map<String,Object>{'AssetId'=>NullExisting67.observe('ProcessException','AssetId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|Product2|'+JSON.serialize(new Map<String,Object>{'ExternalDataSourceId'=>NullExisting67.observe('Product2','ExternalDataSourceId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|ProductConsumed|'+JSON.serialize(new Map<String,Object>{'PricebookEntryId'=>NullExisting67.observe('ProductConsumed','PricebookEntryId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|ProductConsumed|'+JSON.serialize(new Map<String,Object>{'ProductItemId'=>NullExisting67.observe('ProductConsumed','ProductItemId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|ProductServiceCampaignItem|'+JSON.serialize(new Map<String,Object>{'SerializedProductId'=>NullExisting67.observe('ProductServiceCampaignItem','SerializedProductId')})); }
+}

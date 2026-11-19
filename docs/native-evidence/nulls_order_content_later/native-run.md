@@ -1,0 +1,3 @@
+# Native capture: content version first publish location ordering
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. At API 62 and 67 a synthetic test created two initial ContentVersions with distinct synthetic Account first-publish locations, then created a later version of one synthetic document. The later version saved a null FirstPublishLocationId, while the initial versions retained distinct populated references. Salesforce returned the same order for both explicit NULLS directions within each sort direction. Test data rolled back; the scratch org was deleted and ScratchOrgInfo status verified as Deleted.

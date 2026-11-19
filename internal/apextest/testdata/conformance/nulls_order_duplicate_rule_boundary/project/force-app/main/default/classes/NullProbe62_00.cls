@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe62_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|DuplicateRecordSet|'+NullCore62.probeObject('DuplicateRecordSet',new List<String>{'DuplicateRuleId'}));} }

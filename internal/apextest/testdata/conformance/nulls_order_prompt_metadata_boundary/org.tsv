@@ -1,0 +1,6 @@
+api	case	result
+67.0	deploy Null	accepted
+67.0	deploy Name	accepted
+67.0	deploy SiteId	accepted
+62.0	saved shape	Synthetic Name=null,Synthetic Null=null,Synthetic SiteId=null
+67.0	saved shape	Synthetic Name=null,Synthetic Null=null,Synthetic SiteId=null
