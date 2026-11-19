@@ -108,6 +108,52 @@ func campaignNameMatcher(table []campaignName) *campaignNameMatch {
 	return m
 }
 
+// clone returns a matcher that shares this one's read-only name tables and
+// memoizes separately, so a scan pool's workers can match concurrently
+// without locks.
+func (m *campaignNameMatch) clone() *campaignNameMatch {
+	copied := &campaignNameMatch{prefixes: m.prefixes, words: m.words}
+	copied.seen = map[*map[int]map[string]bool]map[string]bool{&copied.prefixes: {}, &copied.words: {}}
+	return copied
+}
+
+func TestCampaignNameMatchCloneMatchesAndMemoizesSeparately(t *testing.T) {
+	sum := func(name string) string {
+		digest := sha256.Sum256([]byte(campaignNameSalt + name))
+		return hex.EncodeToString(digest[:])
+	}
+	names := campaignNameMatcher([]campaignName{
+		{campaignNameWord, len("hostx"), sum("hostx")},
+	})
+	text := "runs on Hostx today"
+	if got := len(names.names(text)); got != 1 {
+		t.Fatalf("original matcher findings = %d, want 1", got)
+	}
+	originalMemo := len(names.seen[&names.words])
+	if originalMemo == 0 {
+		t.Fatal("original matcher did not memoize its name lookups")
+	}
+	clone := names.clone()
+	if got := len(clone.names(text)); got != 1 {
+		t.Fatalf("clone findings = %d, want 1", got)
+	}
+	if got := len(clone.seen[&clone.words]); got != originalMemo {
+		t.Fatalf("clone memo = %d entries, want %d like the original", got, originalMemo)
+	}
+	if got := len(names.seen[&names.words]); got != originalMemo {
+		t.Fatalf("original matcher memo changed to %d entries after clone use, want %d", got, originalMemo)
+	}
+	// The shared tables stay read-only: a memo poisoned through the clone
+	// changes what the clone finds, not what the original finds.
+	clone.seen[&clone.words]["hostx"] = false
+	if got := len(clone.names("Hostx again")); got != 0 {
+		t.Fatalf("findings through the poisoned clone = %d, want 0", got)
+	}
+	if got := len(names.names("Hostx again")); got != 1 {
+		t.Fatalf("original matcher findings after clone poison = %d, want 1", got)
+	}
+}
+
 func (m *campaignNameMatch) hit(set *map[int]map[string]bool, name string) bool {
 	seen := m.seen[set]
 	if hit, ok := seen[name]; ok {

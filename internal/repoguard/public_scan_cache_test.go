@@ -73,6 +73,17 @@ func publicScanErrorText(err error) string {
 	return err.Error()
 }
 
+func TestGitBlobHashMatchesGitFormat(t *testing.T) {
+	// The hashes git itself produces for these blobs; the format is what lets
+	// a record key survive across checkouts and match git's own object names.
+	if got := gitBlobHash(""); got != "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391" {
+		t.Fatalf("empty blob hash = %s, want git's empty-blob hash", got)
+	}
+	if got := gitBlobHash("hello\n"); got != "ce013625030ba8dba906f756967f9e9ca394464a" {
+		t.Fatalf("blob hash of \"hello\\n\" = %s, want git's hash", got)
+	}
+}
+
 func TestPublicScanBlobCacheSkipsUnchangedFilesAcrossRuns(t *testing.T) {
 	files := []repoScanFile{
 		{rel: "docs/one.md", text: "public notes\n"},
@@ -137,7 +148,7 @@ func TestPublicScanBlobCacheCatchesViolationsWithWarmCache(t *testing.T) {
 	}
 
 	t.Run("newly added file", func(t *testing.T) {
-		files := append(slices.Clone(clean), repoScanFile{rel: "docs/added.go", text: "// tracked in " + "ROAD-12\n"})
+		files := append(slices.Clone(clean), repoScanFile{rel: "docs/added.go", text: "// tracked in " + "RO" + "AD-12\n"})
 		scans := warm(files)
 		got := scans[len(scans)-1].campaign
 		if len(got) != 1 || got[0].member != "" || got[0].kind != "campaign roadmap reference" {
@@ -203,12 +214,12 @@ func TestPublicScanBlobCacheWarmRunMatchesColdScan(t *testing.T) {
 	files := []repoScanFile{
 		{rel: "docs/one.md", text: "public notes\n"},
 		{rel: "docs/glade-planted-x/notes.md", text: "the " + "glade-planted-x checkout\n"},
-		{rel: "docs/mail.md", text: "contact person" + "@gmail.com about " + "ROAD-12\n"},
+		{rel: "docs/mail.md", text: "contact person" + "@gmail.com about " + "RO" + "AD-12\n"},
 		{rel: "docs/catalog.json.gz", text: catalog},
 		{rel: "docs/broken.json.gz", text: catalog[:len(catalog)-8]},
 		{rel: "docs/plans/ORG-RUN.txt", text: "person" + "@gmail.com\n"},
 		{rel: "src/decision.go", text: "package src\n\n// decision " + "D9\n"},
-		{rel: "testdata/fixture.json", text: "{\"review_note\":\"tracked in " + "ROAD-12\"}\n"},
+		{rel: "testdata/fixture.json", text: "{\"review_note\":\"tracked in " + "RO" + "AD-12\"}\n"},
 	}
 	cold := scanTrackedFilesForPublicData(files, names, scanPublicAsset)
 
@@ -243,6 +254,35 @@ func TestPublicScanBlobCacheWarmRunMatchesColdScan(t *testing.T) {
 	}
 }
 
+func TestPublicScanBlobCacheRecordsAreCopies(t *testing.T) {
+	names := publicScanPlantedMatcher()
+	files := []repoScanFile{
+		{rel: "docs/glade-planted-x/notes.md", text: "contact person" + "@gmail.com\n"},
+	}
+	dir := t.TempDir()
+	cache := loadPublicScanBlobCache(dir, "test-v1")
+	scans := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, cache, 2)
+	cache.save()
+	record := cache.records[publicScanCacheKey(cache.version, files[0].rel, gitBlobHash(files[0].text))]
+
+	// A guard mutating its scan cannot reach the stored record, and a
+	// mutation of the stored record cannot reach a later scan.
+	scans[0].campaignPath[0] = "mutated"
+	scans[0].release[0].kind = "mutated"
+	if record.CampaignPath[0] == "mutated" || record.Release[0].Kind == "mutated" {
+		t.Fatalf("mutating a scan changed the stored record: %+v", record)
+	}
+	record.CampaignPath[0] = "mutated"
+	warm := loadPublicScanBlobCache(dir, "test-v1")
+	rescanned := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, warm, 2)
+	if rescanned[0].campaignPath[0] == "mutated" || rescanned[0].release[0].kind == "mutated" {
+		t.Fatalf("mutating the stored record changed a warm scan: %+v", rescanned[0])
+	}
+	if rescanned[0].campaignPath[0] != "private org alias or host name" || rescanned[0].release[0].kind != "personal-provider mailbox" {
+		t.Fatalf("warm scan findings = %v %v, want the planted alias and mailbox", rescanned[0].campaignPath, rescanned[0].release)
+	}
+}
+
 func TestPublicScanBlobCacheFallsBackToFullScanWhenStoreMissingOrCorrupt(t *testing.T) {
 	names := campaignNameMatcher(nil)
 	files := []repoScanFile{
@@ -268,6 +308,18 @@ func TestPublicScanBlobCacheFallsBackToFullScanWhenStoreMissingOrCorrupt(t *test
 		scans := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, corrupt, 2)
 		if got := scans[0].release; len(got) != 1 || got[0].kind != "personal-provider mailbox" {
 			t.Fatalf("findings over a corrupt store = %v, want a full scan reporting the mailbox", got)
+		}
+	})
+
+	t.Run("null store", func(t *testing.T) {
+		cache := loadPublicScanBlobCache(dir, "test-v1")
+		if err := os.WriteFile(cache.path, []byte("null"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		empty := loadPublicScanBlobCache(dir, "test-v1")
+		scans := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, empty, 2)
+		if got := scans[0].release; len(got) != 1 || got[0].kind != "personal-provider mailbox" {
+			t.Fatalf("findings over a null store = %v, want a full scan reporting the mailbox", got)
 		}
 	})
 

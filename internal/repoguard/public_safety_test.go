@@ -30,6 +30,16 @@ var (
 	privateCommit      = regexp.MustCompile(`\b[0-9a-fA-F]{7,40}\b`)
 	privateCapturePath = regexp.MustCompile(`(?:/|\b)family` + `probe/[^\s"'<>]+`)
 	editorialMetadata  = regexp.MustCompile(`(?i)(?:^|_)(?:notes?|reason|review|oracle|basis|family|surface|owner|description|comment|provenance|decision|boundary|status|explanation|source|sources|evidence)(?:$|_)`)
+
+	// editorialFixtureCommentPattern is the fixture-file form of
+	// campaignReference: fixture case names may keep their letters and digit
+	// runs, so only roadmap and task tickets stay guarded there.
+	editorialFixtureCommentPattern = regexp.MustCompile(`\b(?:RO` + `AD-\d+|TA` + `SK-\d+(?:\.\d+)?)\b`)
+	// editorialOwnedFixtureLabel and editorialCapturedFilePath inspect every
+	// captured fixture member, so they are compiled once here rather than per
+	// scanned member.
+	editorialOwnedFixtureLabel = regexp.MustCompile(`<label>\s*V[0-9]{2}\s+(?:owned (?:row|oracle)|oracle access [0-9]+)\s*</label>`)
+	editorialCapturedFilePath  = regexp.MustCompile(`(?i)(?:^|/)[^/]*(?:org[^/]*\.tsv|org[-_]run\.txt)(?:$|[?#])`)
 )
 
 // Salesforce's own LWC compiler location appears in native diagnostics, and
@@ -201,7 +211,7 @@ func publicEditorialFindings(rel, text string, add func(int, string)) {
 	// Parse comments so fixture identifiers and diagnostic strings remain data.
 	commentPattern := campaignReference
 	if publicFixturePath(rel) {
-		commentPattern = regexp.MustCompile(`\b(?:RO` + `AD-\d+|TA` + `SK-\d+(?:\.\d+)?)\b`)
+		commentPattern = editorialFixtureCommentPattern
 	}
 	if strings.HasSuffix(rel, ".go") && commentPattern.MatchString(text) {
 		fset := token.NewFileSet()
@@ -237,10 +247,10 @@ func publicEditorialFindings(rel, text string, add func(int, string)) {
 	// Its companion digest identifies the exact owned source; provenance
 	// strings without that matching digest remain editorial metadata.
 	decoder := json.NewDecoder(strings.NewReader(text))
-	// These capture labels are ornamental. Other XML labels are behavioral
-	// schema/list-view inputs and may intentionally contain fixture case names.
-	label := regexp.MustCompile(`<label>\s*V[0-9]{2}\s+(?:owned (?:row|oracle)|oracle access [0-9]+)\s*</label>`)
-	capturedFile := regexp.MustCompile(`(?i)(?:^|/)[^/]*(?:org[^/]*\.tsv|org[-_]run\.txt)(?:$|[?#])`)
+	// These capture labels are ornamental (editorialOwnedFixtureLabel); other
+	// XML labels are behavioral schema/list-view inputs and may intentionally
+	// contain fixture case names. editorialCapturedFilePath keeps the private
+	// row files guarded in every editorial provenance string.
 	position := func() int {
 		offset := int(decoder.InputOffset())
 		return offset + len(text[offset:]) - len(strings.TrimLeft(text[offset:], " \t\r\n:,"))
@@ -324,10 +334,10 @@ func publicEditorialFindings(rel, text string, add func(int, string)) {
 			if editorial && !(source && ownedSources[offset]) && campaignReference.MatchString(value) {
 				add(offset, "campaign reference in fixture metadata")
 			}
-			if editorial && capturedFile.MatchString(value) {
+			if editorial && editorialCapturedFilePath.MatchString(value) {
 				add(offset, "private capture provenance path")
 			}
-			for _, match := range label.FindAllString(value, -1) {
+			for _, match := range editorialOwnedFixtureLabel.FindAllString(value, -1) {
 				if campaignReference.MatchString(match) {
 					add(offset, "campaign reference in embedded fixture label")
 				}

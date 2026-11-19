@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -676,6 +677,9 @@ const publicScanRulesetVersion = "1"
 // scanTrackedFilesForPublicDataCached scans every tracked file whose
 // (ruleset version, path, blob) has no stored record and reuses the stored
 // records for the rest, so unchanged files are not rescanned across runs.
+// Files without records are scanned on a bounded worker pool; each worker
+// owns a campaign matcher clone, so the shared name tables are read-only to
+// the pool and no lock sits on the scan's hot path.
 func scanTrackedFilesForPublicDataCached(files []repoScanFile, names *campaignNameMatch, decode publicAssetDecoder, cache *publicScanBlobCache, workers int) []publicScanFile {
 	scans := make([]publicScanFile, len(files))
 	blobs := make([]string, len(files))
@@ -690,10 +694,36 @@ func scanTrackedFilesForPublicDataCached(files []repoScanFile, names *campaignNa
 		}
 		pending = append(pending, index)
 	}
+	if len(pending) == 0 {
+		return scans
+	}
+	if workers > len(pending) {
+		workers = len(pending)
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	jobs := make(chan int, len(pending))
 	for _, index := range pending {
-		scan := scanTrackedFileForPublicData(files[index], names, decode)
-		scans[index] = scan
-		cache.records[publicScanCacheKey(cache.version, files[index].rel, blobs[index])] = publicScanFileRecord(scan)
+		jobs <- index
+	}
+	close(jobs)
+	var group sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			workerNames := names.clone()
+			for index := range jobs {
+				scans[index] = scanTrackedFileForPublicData(files[index], workerNames, decode)
+			}
+		}()
+	}
+	group.Wait()
+	// Records land after the pool drains: every scan slot is written by one
+	// worker only, and the shared map is touched from this goroutine alone.
+	for _, index := range pending {
+		cache.records[publicScanCacheKey(cache.version, files[index].rel, blobs[index])] = publicScanFileRecord(scans[index])
 	}
 	return scans
 }
@@ -717,8 +747,8 @@ type publicScanCacheRecord struct {
 	Err          string                    `json:"err,omitempty"`
 }
 
-// publicScanBlobCache holds one ruleset version's per-blob records. The
-// record store is not implemented yet, so every run still scans every file.
+// publicScanBlobCache holds one ruleset version's per-blob records, keyed
+// by path and blob hash so unchanged files are not rescanned across runs.
 type publicScanBlobCache struct {
 	version string
 	dir     string
@@ -736,19 +766,72 @@ func loadPublicScanBlobCache(dir, version string) *publicScanBlobCache {
 		return cache
 	}
 	cache.path = filepath.Join(dir, fmt.Sprintf("repoguard-public-scan-v%s.json", version))
+	data, err := os.ReadFile(cache.path)
+	if err != nil {
+		return cache
+	}
+	var records map[string]publicScanCacheRecord
+	if err := json.Unmarshal(data, &records); err != nil {
+		return cache
+	}
+	if records != nil {
+		cache.records = records
+	}
 	return cache
 }
 
-// save stores the version's records for the next run.
-func (cache *publicScanBlobCache) save() {}
+// save stores the version's records for the next run: only the files this
+// run scanned are kept, so records for deleted files do not accumulate, and
+// the write lands through one atomic rename so a concurrent reader never
+// sees a partial store. Failures are ignored: the records are an
+// optimization, and a run that cannot store them scans in full next time.
+func (cache *publicScanBlobCache) save() {
+	if cache.path == "" {
+		return
+	}
+	records := make(map[string]publicScanCacheRecord, len(cache.live))
+	for key := range cache.live {
+		if record, ok := cache.records[key]; ok {
+			records[key] = record
+		}
+	}
+	data, err := json.Marshal(records)
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(filepath.Dir(cache.path), 0o755); err != nil {
+		return
+	}
+	temp, err := os.CreateTemp(filepath.Dir(cache.path), ".repoguard-public-scan-*")
+	if err != nil {
+		return
+	}
+	tempName := temp.Name()
+	if _, err := temp.Write(data); err != nil || temp.Close() != nil {
+		os.Remove(tempName)
+		return
+	}
+	if err := os.Rename(tempName, cache.path); err != nil {
+		os.Remove(tempName)
+		return
+	}
+	// One version's store is authoritative; a bump retires the old file
+	// instead of leaving it to grow stale in the cache directory.
+	if stale, err := filepath.Glob(filepath.Join(cache.dir, "repoguard-public-scan-v*.json")); err == nil {
+		for _, path := range stale {
+			if path != cache.path {
+				os.Remove(path)
+			}
+		}
+	}
+}
 
 // publicScanCacheKey identifies one tracked file's records: the ruleset
-// version, the tracked path and the git blob hash of the file's content. Both
-// rulesets read the path, and the blob hash fixes the content. The record
-// store is not implemented yet, so records never outlive a run and the
-// version cannot matter; the next commit keys records on it.
+// version, the tracked path and the git blob hash of the file's content.
+// Both rulesets read the path, and the blob hash fixes the content, so a
+// ruleset change or a content change can never reuse stored records.
 func publicScanCacheKey(version, rel, blob string) string {
-	return rel + "\x00" + blob
+	return version + "\x00" + rel + "\x00" + blob
 }
 
 // gitBlobHash returns the git blob hash of data: SHA-1 over git's blob header

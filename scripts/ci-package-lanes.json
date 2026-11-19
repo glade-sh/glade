@@ -203,7 +203,7 @@
     "./internal/playground": 4,
     "./internal/pluginhost": 5,
     "./internal/project": 1,
-    "./internal/repoguard": 2,
+    "./internal/repoguard": 8,
     "./internal/sema": 660,
     "./internal/semanticcache": 6,
     "./internal/server": 13,
