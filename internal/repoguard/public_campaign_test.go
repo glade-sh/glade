@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -68,22 +67,21 @@ var (
 // The sibling maintenance checkout is documented public layout.
 const campaignPublicWorkspace = "glade-tools"
 
+// The shared scan decodes each tracked asset once and feeds every member to
+// both public-data rulesets; this guard reports the campaign findings.
 func TestPublicCampaignData(t *testing.T) {
-	names := campaignNameMatcher(campaignNameTable)
-	for _, file := range repoRegularFiles(t, repoRoot(t)) {
-		if privateCaptureArtifact(file.rel) {
+	for _, file := range publicDataScanFiles(t) {
+		if file.privateCapture {
 			continue // TestPublicReleaseData reports these files.
 		}
-		for _, finding := range publicCampaignFindings(names, file.rel, file.rel) {
-			t.Errorf("%s: campaign value in path: %s (REDACTED)", file.rel, finding.kind)
+		for _, kind := range file.campaignPath {
+			t.Errorf("%s: campaign value in path: %s (REDACTED)", file.rel, kind)
 		}
-		err := scanPublicAsset(file.rel, file.text, func(member, text string) {
-			for _, finding := range publicCampaignFindings(names, file.rel, text) {
-				t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, member, finding.line, finding.kind)
-			}
-		})
-		if err != nil {
-			t.Errorf("%s: %v", file.rel, err)
+		for _, finding := range file.campaign {
+			t.Errorf("%s%s:%d: %s (REDACTED)", file.rel, finding.member, finding.line, finding.kind)
+		}
+		if file.err != nil {
+			t.Errorf("%s: %v", file.rel, file.err)
 		}
 	}
 }
@@ -108,6 +106,52 @@ func campaignNameMatcher(table []campaignName) *campaignNameMatch {
 		set[row.length][row.digest] = true
 	}
 	return m
+}
+
+// clone returns a matcher that shares this one's read-only name tables and
+// memoizes separately, so a scan pool's workers can match concurrently
+// without locks.
+func (m *campaignNameMatch) clone() *campaignNameMatch {
+	copied := &campaignNameMatch{prefixes: m.prefixes, words: m.words}
+	copied.seen = map[*map[int]map[string]bool]map[string]bool{&copied.prefixes: {}, &copied.words: {}}
+	return copied
+}
+
+func TestCampaignNameMatchCloneMatchesAndMemoizesSeparately(t *testing.T) {
+	sum := func(name string) string {
+		digest := sha256.Sum256([]byte(campaignNameSalt + name))
+		return hex.EncodeToString(digest[:])
+	}
+	names := campaignNameMatcher([]campaignName{
+		{campaignNameWord, len("hostx"), sum("hostx")},
+	})
+	text := "runs on Hostx today"
+	if got := len(names.names(text)); got != 1 {
+		t.Fatalf("original matcher findings = %d, want 1", got)
+	}
+	originalMemo := len(names.seen[&names.words])
+	if originalMemo == 0 {
+		t.Fatal("original matcher did not memoize its name lookups")
+	}
+	clone := names.clone()
+	if got := len(clone.names(text)); got != 1 {
+		t.Fatalf("clone findings = %d, want 1", got)
+	}
+	if got := len(clone.seen[&clone.words]); got != originalMemo {
+		t.Fatalf("clone memo = %d entries, want %d like the original", got, originalMemo)
+	}
+	if got := len(names.seen[&names.words]); got != originalMemo {
+		t.Fatalf("original matcher memo changed to %d entries after clone use, want %d", got, originalMemo)
+	}
+	// The shared tables stay read-only: a memo poisoned through the clone
+	// changes what the clone finds, not what the original finds.
+	clone.seen[&clone.words]["hostx"] = false
+	if got := len(clone.names("Hostx again")); got != 0 {
+		t.Fatalf("findings through the poisoned clone = %d, want 0", got)
+	}
+	if got := len(names.names("Hostx again")); got != 1 {
+		t.Fatalf("original matcher findings after clone poison = %d, want 1", got)
+	}
 }
 
 func (m *campaignNameMatch) hit(set *map[int]map[string]bool, name string) bool {
@@ -165,11 +209,12 @@ func (m *campaignNameMatch) names(text string) []int {
 }
 
 func publicCampaignFindings(names *campaignNameMatch, rel, text string) []publicDataFinding {
-	text = unicodeEscape.ReplaceAllStringFunc(text, func(s string) string {
-		n, _ := strconv.ParseUint(s[2:], 16, 16)
-		return string(rune(n))
-	})
-	text = strings.ReplaceAll(text, `\/`, "/")
+	return publicCampaignFindingsNormalized(names, rel, normalizePublicText(text))
+}
+
+// publicCampaignFindingsNormalized matches the campaign ruleset against text
+// that normalizePublicText has already decoded.
+func publicCampaignFindingsNormalized(names *campaignNameMatch, rel, text string) []publicDataFinding {
 	var findings []publicDataFinding
 	add := func(offset int, kind string) {
 		line := 1 + strings.Count(text[:offset], "\n")
