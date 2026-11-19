@@ -12,6 +12,20 @@
     "github.com/glade-sh/glade/internal/visualforce",
     "github.com/glade-sh/glade/scripts"
   ],
+  "prPoolDedicatedSeconds": [
+    {"package": "github.com/glade-sh/glade/internal/vm", "worker": 0, "seconds": 717},
+    {"package": "github.com/glade-sh/glade/internal/vm", "worker": 1, "seconds": 550},
+    {"package": "github.com/glade-sh/glade/internal/vm", "worker": 2, "seconds": 652},
+    {"package": "github.com/glade-sh/glade/internal/vm", "worker": 3, "seconds": 846},
+    {"package": "github.com/glade-sh/glade/internal/gladecli", "worker": 4, "seconds": 310},
+    {"package": "github.com/glade-sh/glade/internal/gladecli", "worker": 5, "seconds": 236},
+    {"package": "github.com/glade-sh/glade/internal/gladecli", "worker": 6, "seconds": 236},
+    {"package": "github.com/glade-sh/glade/internal/gladecli", "worker": 7, "seconds": 314},
+    {"package": "github.com/glade-sh/glade/internal/sema", "worker": 8, "seconds": 231},
+    {"package": "github.com/glade-sh/glade/internal/sema", "worker": 9, "seconds": 647},
+    {"package": "github.com/glade-sh/glade/internal/gladecli", "worker": 10, "seconds": 487}
+  ],
+  "prPoolDedicatedSecondsSource": "Dedicated-route wall seconds a PR pool worker already runs when the route's package is selected, from the step logs of the PR 253 Required CI run 44461362525 (the run the CI review measured): VM shards 0-3 on workers 12-15 took 716.968/550.289/651.530/845.617 s, CLI shards 0-3 on workers 16-19 took 309.953/235.992/235.550/314.264 s, sema shards 0 and 1 on workers 20-21 took 230.5 s and 646.5 s (shard group start to PASS), and worker 22's CLI doctor authority route took 486.588 s. Pool worker 11 (SHARD 23) runs no dedicated route. Values are rounded to the nearest second; re-measure from a later run when the shard plans drift.",
   "prWorkerSeconds": {
     "github.com/glade-sh/glade/cmd/glade": 1,
     "github.com/glade-sh/glade/internal/apexast": 3,

@@ -85,14 +85,23 @@ type packageManifest struct {
 	Lanes                packageLanes   `json:"lanes"`
 	ConcurrentTestCounts map[string]int `json:"concurrentTestCounts,omitempty"`
 	// The PR pool worker fields carry the ordinary-PR assignment contract:
-	// the dedicated-worker exclusions and the measured balancing table. The
-	// scripts tests validate them against the workflow; cishard only needs to
-	// keep accepting the manifest so lane validation stays strict, not
-	// reject the checked-in fields it does not consume.
-	PRDedicatedPackages    []string       `json:"prDedicatedPackages,omitempty"`
-	PRWorkerSeconds        map[string]int `json:"prWorkerSeconds,omitempty"`
-	PRWorkerSecondsDefault int            `json:"prWorkerSecondsDefault,omitempty"`
-	PRWorkerSecondsSource  string         `json:"prWorkerSecondsSource,omitempty"`
+	// the dedicated-worker exclusions, the dedicated-route load each pool
+	// worker already carries and the measured balancing table. The scripts
+	// tests validate them against the workflow; cishard only needs to keep
+	// accepting the manifest so lane validation stays strict, not reject the
+	// checked-in fields it does not consume.
+	PRDedicatedPackages          []string                      `json:"prDedicatedPackages,omitempty"`
+	PRPoolDedicatedSeconds       []prPoolDedicatedSecondsEntry `json:"prPoolDedicatedSeconds,omitempty"`
+	PRPoolDedicatedSecondsSource string                        `json:"prPoolDedicatedSecondsSource,omitempty"`
+	PRWorkerSeconds              map[string]int                `json:"prWorkerSeconds,omitempty"`
+	PRWorkerSecondsDefault       int                           `json:"prWorkerSecondsDefault,omitempty"`
+	PRWorkerSecondsSource        string                        `json:"prWorkerSecondsSource,omitempty"`
+}
+
+type prPoolDedicatedSecondsEntry struct {
+	Package string `json:"package"`
+	Worker  int    `json:"worker"`
+	Seconds int    `json:"seconds"`
 }
 
 func main() {
