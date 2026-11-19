@@ -37,6 +37,15 @@ var (
 	fileDigestReadHook func(path string)
 )
 
+// SetFileDigestReadHookForTesting observes every physical read a source
+// digest validation performs. The returned function restores the previous
+// hook. Cross-package tests use it to prove per-request read counts.
+func SetFileDigestReadHookForTesting(hook func(path string)) func() {
+	previous := fileDigestReadHook
+	fileDigestReadHook = hook
+	return func() { fileDigestReadHook = previous }
+}
+
 func resetFileDigestTrust() {
 	fileDigestTrustMu.Lock()
 	clear(fileDigestTrust)
