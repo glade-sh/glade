@@ -1,0 +1,3 @@
+# Native capture: test-result class null update boundary
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. The synthetic classes in ../nulls_order_test_class_delete_boundary/classes were deployed and run, producing three test-result controls. A Salesforce data REST PATCH with JSON body {"ApexClassId":null} was rejected with INVALID_FIELD_FOR_INSERT_UPDATE at API 62 and 67. Re-query retained three populated distinct class values. Temporary IDs are not retained. This is a setup boundary, not a null-ordering result. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.

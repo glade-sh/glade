@@ -1,0 +1,11 @@
+api	object	field	observation
+63.0	AuthProvider	FlowDefaultAccountId	"{""skip"":""field absent from describe""}"
+63.0	AuthProvider	FlowDefaultProfileId	"{""skip"":""field absent from describe""}"
+64.0	AuthProvider	FlowDefaultAccountId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+64.0	AuthProvider	FlowDefaultProfileId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+65.0	AuthProvider	FlowDefaultAccountId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+65.0	AuthProvider	FlowDefaultProfileId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+66.0	AuthProvider	FlowDefaultAccountId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+66.0	AuthProvider	FlowDefaultProfileId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	AuthProvider	FlowDefaultAccountId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	AuthProvider	FlowDefaultProfileId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"

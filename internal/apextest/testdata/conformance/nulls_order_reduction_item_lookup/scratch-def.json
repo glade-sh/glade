@@ -1,0 +1,1 @@
+{"edition": "Developer", "features": ["LiveAgent", "LiveMessage"], "settings": {"liveAgentSettings": {"enableLiveAgent": true}, "liveMessageSettings": {"enableLiveMessage": true}, "orderSettings": {"enableOrders": true, "enableReductionOrders": true}}}

@@ -1,0 +1,1 @@
+global class SyntheticEmailBeta implements Messaging.InboundEmailHandler { global Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope env) { return new Messaging.InboundEmailResult(); } }

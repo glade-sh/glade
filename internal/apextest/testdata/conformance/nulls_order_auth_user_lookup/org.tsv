@@ -1,0 +1,7 @@
+api	object	field	observation
+62.0	AuthProvider	ExecutionUserId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+62.0	AuthProvider	RegistrationHandlerId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+62.0	AuthProvider	PluginId	"{""distinctNonNullCount"":0,""nullCount"":3,""skip"":""expected one saved null and two distinct parents""}"
+67.0	AuthProvider	ExecutionUserId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	AuthProvider	RegistrationHandlerId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	AuthProvider	PluginId	"{""distinctNonNullCount"":0,""nullCount"":3,""skip"":""expected one saved null and two distinct parents""}"

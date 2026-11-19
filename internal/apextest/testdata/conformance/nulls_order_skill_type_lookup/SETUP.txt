@@ -1,0 +1,1 @@
+Create two synthetic SkillType records using the data API. Create three synthetic Skill records: one omits TypeId and two reference different skill types. At API 62.0 and 67.0 re-query all three saved TypeId values and record the five ORDER BY variants.

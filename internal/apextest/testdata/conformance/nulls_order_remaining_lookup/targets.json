@@ -1,0 +1,457 @@
+{
+"AccountPartner": [
+"OpportunityId"
+],
+"AdditionalNumber": [
+"CallCenterId"
+],
+"AlternativePaymentMethod": [
+"PaymentGatewayId"
+],
+"ApexEmailNotification": [
+"UserId"
+],
+"ApexTestQueueItem": [
+"ApexClassId"
+],
+"ApexTestResult": [
+"ApexClassId",
+"ApexLogId",
+"ApexTestRunResultId",
+"AsyncApexJobId",
+"QueueItemId"
+],
+"ApexTestRunResult": [
+"AsyncApexJobId",
+"UserId"
+],
+"AppointmentTopicTimeSlot": [
+"WorkTypeGroupId",
+"WorkTypeId"
+],
+"ApptBundleAggrPolicy": [
+"FilterCriteriaId"
+],
+"ApptBundleConfig": [
+"CriteriaForAutoUnbundlingId"
+],
+"ApptBundlePolicy": [
+"FilterCriteriaId"
+],
+"AssetAttribute": [
+"AttributePicklistValueId"
+],
+"AttributeDefinition": [
+"PicklistId",
+"UnitOfMeasureId"
+],
+"AuthProvParamFwdAllowlist": [
+"AuthProviderId"
+],
+"AuthProvider": [
+"ExecutionUserId",
+"FlowDefaultAccountId",
+"FlowDefaultProfileId",
+"PluginId",
+"RegistrationHandlerId"
+],
+"AuthorizationFormConsent": [
+"AuthorizationFormTextId",
+"DocumentVersionId",
+"RelatedRecordId"
+],
+"AuthorizationFormText": [
+"ContentDocumentId"
+],
+"CalendarView": [
+"ListViewFilterId",
+"PublisherId"
+],
+"Campaign": [
+"CampaignMemberRecordTypeId"
+],
+"CardPaymentMethod": [
+"PaymentGatewayId"
+],
+"CaseTeamTemplateMember": [
+"TeamRoleId"
+],
+"CategoryNode": [
+"ParentId"
+],
+"ChatterExtension": [
+"IconId"
+],
+"ChatterExtensionConfig": [
+"ChatterExtensionId"
+],
+"CollaborationGroup": [
+"AnnouncementId"
+],
+"CommSubscriptionChannelType": [
+"MessagingChannelId",
+"MessagingChannelUsageId"
+],
+"ContentFolder": [
+"ParentContentFolderId"
+],
+"ContentVersion": [
+"ContentBodyId",
+"ExternalDataSourceId",
+"FirstPublishLocationId"
+],
+"ContentWorkspaceMember": [
+"ContentWorkspacePermissionId"
+],
+"ContractLineOutcome": [
+"RecordsetFilterCriteriaId"
+],
+"ConversationEntry": [
+"ConversationEntityId"
+],
+"CustomBrandAsset": [
+"AssetSourceId"
+],
+"DevopsEnvDeployment": [
+"CheckDeployRequestInfoId",
+"DeployRequestInfoId"
+],
+"DevopsEnvDeploymentMbr": [
+"ChangedById"
+],
+"DigitalWallet": [
+"PaymentGatewayId"
+],
+"DuplicateRecordSet": [
+"DuplicateRuleId"
+],
+"DynamicDataCapture": [
+"PausedFlowInterviewId"
+],
+"EmailMessage": [
+"ActivityId",
+"EmailTemplateId",
+"FromId"
+],
+"EmailMessageRelation": [
+"RelationId"
+],
+"EmailServicesFunction": [
+"ApexClassId"
+],
+"EmailTemplate": [
+"BrandTemplateId",
+"EnhancedLetterheadId"
+],
+"Entitlement": [
+"BusinessHoursId",
+"SlaProcessId"
+],
+"EntitlementTemplate": [
+"BusinessHoursId",
+"SlaProcessId"
+],
+"ExternalDataUserAuth": [
+"AuthProviderId",
+"UserId"
+],
+"FeedAttachment": [
+"RecordId"
+],
+"FeedComment": [
+"LastEditById",
+"RelatedRecordId",
+"ThreadParentId"
+],
+"FeedItem": [
+"LastEditById"
+],
+"FlowOrchestrationInstance": [
+"InterviewId"
+],
+"FlowOrchestrationWorkItem": [
+"ParentWorkItemId",
+"RelatedRecordId",
+"StepInstanceId"
+],
+"Folder": [
+"ParentId"
+],
+"GtwyProvPaymentMethodType": [
+"PaymentGatewayProviderId",
+"RecordTypeId"
+],
+"Image": [
+"ContentDocumentId"
+],
+"LightningExperienceTheme": [
+"DefaultBrandingSetId"
+],
+"LightningOnboardingConfig": [
+"CollaborationGroupId"
+],
+"ListEmail": [
+"CampaignId",
+"RelatedToId"
+],
+"ListEmailSentResult": [
+"ActivityId",
+"RecipientId"
+],
+"LiveChatTranscriptEvent": [
+"AgentId"
+],
+"Location": [
+"VisitorAddressId"
+],
+"MaintenanceAsset": [
+"ContractLineItemId"
+],
+"MaintenanceWorkRule": [
+"ParentMaintenancePlanId",
+"RecordsetFilterCriteriaId"
+],
+"MessagingChannel": [
+"BusinessHoursId"
+],
+"MessagingSession": [
+"CampaignId",
+"ConversationId"
+],
+"MobileSettingsAssignment": [
+"ProfileId"
+],
+"MsgChannelLanguageKeyword": [
+"MessagingChannelUsageId"
+],
+"MyDomainDiscoverableLogin": [
+"ExecuteApexHandlerAsId"
+],
+"OauthTokenExchHandlerApp": [
+"ConnectedApplicationId",
+"ExternalClientApplicationId"
+],
+"OpportunityLineItem": [
+"PricebookEntryId",
+"Product2Id"
+],
+"Order": [
+"AccountId",
+"OriginalOrderId"
+],
+"OrderItem": [
+"OriginalOrderItemId",
+"Product2Id"
+],
+"OrgMetric": [
+"LatestOrgMetricScanSummaryId"
+],
+"OutboundEngmtContentRsrc": [
+"ResourceReferenceRecordId",
+"TargetReferenceRecordId"
+],
+"OutgoingEmailRelation": [
+"RelationId"
+],
+"Payment": [
+"PaymentGatewayId",
+"PaymentMethodId"
+],
+"PaymentAuthorization": [
+"PaymentGatewayId",
+"PaymentMethodId"
+],
+"PaymentGateway": [
+"MerchantCredentialId",
+"PaymentGatewayProviderId"
+],
+"PaymentGatewayLog": [
+"PaymentGatewayId",
+"ReferencedEntityId"
+],
+"PaymentGatewayProvider": [
+"ApexAdapterId"
+],
+"PaymentGroup": [
+"SourceObjectId"
+],
+"PaymentLineInvoice": [
+"AssociatedAccountId",
+"AssociatedPaymentLineId"
+],
+"PermissionSetAssignment": [
+"PermissionSetGroupId",
+"PermissionSetId"
+],
+"PrivacyRTBFRequest": [
+"PolicyNameId"
+],
+"ProcessException": [
+"AssetId"
+],
+"Product2": [
+"ExternalDataSourceId"
+],
+"ProductConsumed": [
+"PricebookEntryId",
+"ProductItemId"
+],
+"ProductServiceCampaignItem": [
+"SerializedProductId"
+],
+"ProductTransfer": [
+"ReturnOrderLineItemId",
+"SourceProductItemId"
+],
+"ProductWarrantyTerm": [
+"CoveredProductId"
+],
+"PromptVersion": [
+"ExperienceContextId",
+"ImageId",
+"PublishedByUserId",
+"TargetRecordTypeId"
+],
+"Recommendation": [
+"ImageId"
+],
+"RecordAction": [
+"FlowInterviewId"
+],
+"RecordType": [
+"BusinessProcessId"
+],
+"Refund": [
+"PaymentGatewayId",
+"PaymentMethodId"
+],
+"RefundLinePayment": [
+"AssociatedAccountId",
+"AssociatedRefundLinePaymentId"
+],
+"ReturnOrder": [
+"OrderId"
+],
+"ReturnOrderLineItem": [
+"ProductItemId",
+"ProductServiceCampaignItemId"
+],
+"SPSamlAttributes": [
+"ConnectivityId"
+],
+"ScorecardMetric": [
+"ReportId"
+],
+"Seller": [
+"PartyId"
+],
+"SerializedProduct": [
+"AssetId",
+"ProductItemId"
+],
+"ServiceAppointment": [
+"BundlePolicyId",
+"ParentRecordId",
+"RelatedBundleId"
+],
+"ServiceResource": [
+"LocationId",
+"PayGroupId",
+"RelatedRecordId",
+"ServiceCrewId"
+],
+"ServiceTerritoryMember": [
+"OperatingHoursId",
+"TravelModeId"
+],
+"Shift": [
+"RecordsetFilterCriteriaId"
+],
+"Skill": [
+"TypeId"
+],
+"Swarm": [
+"CollaborationRoomId"
+],
+"ThreatDetectionFeedback": [
+"ThreatDetectionEventId",
+"UserId"
+],
+"TimeSheet": [
+"ServiceResourceId"
+],
+"TimeSheetEntry": [
+"WorkOrderId",
+"WorkOrderLineItemId"
+],
+"TimeSlot": [
+"RecordsetFilterCriteriaId"
+],
+"TransactionSecurityPolicy": [
+"ApexPolicyId",
+"ExecutionUserId"
+],
+"User": [
+"CallCenterId",
+"ContactId"
+],
+"UserAppInfo": [
+"AppDefinitionId"
+],
+"UserAppMenuCustomization": [
+"ApplicationId"
+],
+"UserProvAccount": [
+"ConnectedAppId",
+"SalesforceUserId"
+],
+"UserProvAccountStaging": [
+"ConnectedAppId",
+"SalesforceUserId"
+],
+"UserProvisioningConfig": [
+"ConnectedAppId",
+"NamedCredentialId"
+],
+"UserProvisioningRequest": [
+"ConnectedAppId",
+"UserProvAccountId",
+"UserProvConfigId"
+],
+"UserRole": [
+"ForecastUserId",
+"PortalAccountId"
+],
+"WebLink": [
+"ScontrolId"
+],
+"WorkCapacityAvailability": [
+"ServiceTerritoryId"
+],
+"WorkCapacityLimit": [
+"ServiceTerritoryId"
+],
+"WorkCapacityUsage": [
+"ServiceTerritoryId"
+],
+"WorkOrder": [
+"BusinessHoursId",
+"ProductServiceCampaignItemId",
+"ServiceReportTemplateId"
+],
+"WorkOrderLineItem": [
+"Product2Id",
+"ProductServiceCampaignItemId",
+"ServiceReportTemplateId"
+],
+"WorkPlan": [
+"WorkOrderId",
+"WorkOrderLineItemId"
+],
+"WorkStep": [
+"PausedFlowInterviewId"
+],
+"WorkType": [
+"ServiceReportTemplateId"
+]
+}

@@ -1,0 +1,4 @@
+api	case	result
+67.0	app deletion	accepted
+62.0	saved shape	"{""count"":3,""distinct"":3,""nullCount"":0}"
+67.0	saved shape	"{""count"":3,""distinct"":3,""nullCount"":0}"

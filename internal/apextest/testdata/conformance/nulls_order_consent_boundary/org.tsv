@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	AuthorizationFormConsent	AuthorizationFormTextId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""Specify a valid value for Authorization Form Text and try again."",""statusCode"":""FIELD_CUSTOM_VALIDATION_EXCEPTION""}],""nullSuccess"":false}"
+67.0	AuthorizationFormConsent	AuthorizationFormTextId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""Specify a valid value for Authorization Form Text and try again."",""statusCode"":""FIELD_CUSTOM_VALIDATION_EXCEPTION""}],""nullSuccess"":false}"

@@ -1,0 +1,1 @@
+@IsTest private class SyntheticResultsGamma { @IsTest static void passes(){System.debug('synthetic');System.assertEquals(1,1);} }

@@ -1,0 +1,1 @@
+[{"obj": "FeedComment", "field": "LastEditById", "createable": true, "nillable": true, "sortable": true}, {"obj": "FeedItem", "field": "LastEditById", "createable": true, "nillable": true, "sortable": true}]
