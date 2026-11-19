@@ -174,15 +174,27 @@ review; a WARN needs its reason in the PR.
 ### 3.7 CI
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
-checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages plus every package that transitively
-imports them, through production or test imports (the fast PR lane, below). The Apex, LWC compile and Visualforce shards of the fast lane plan from the same shared duration-history artifact the full suite uses. They also run the Apex, sema, LWC compile and Visualforce test binaries that the full suite's producer jobs build once, for the packages the pull request selects, and restore the Go caches read-only. Selection
+checks formatting, vet, workflow lint, leak scan and tests changed Go packages
+plus every package that transitively imports them, through production or test
+imports (the fast PR lane, below). The repository guard, the scripts tests, the
+CLI build and the vendored-parser check run on their own `pr-guards` worker
+that starts immediately and waits on no producer; the PR worker that used to
+run them after its own selection now keeps only the CLI doctor authority and
+its package assignment. Selection
 maps each changed path of the merge commit to its nearest Go package, in the
 root module or the nested Apex parser module, and walks reverse imports from
 there to a fixed point, so a change in `internal/apexversion`, for example,
 reaches `internal/vm` and the Apex runner that imports it, and a change inside
 `third_party/glade-apex-parser/**` reaches the root packages that import the
-parser and their consumers. A changed path outside
+parser and their consumers. The Apex, VM, CLI, sema, LWC
+compile and Visualforce shards of the fast lane plan from the same shared
+duration-history artifacts the full suite uses, and workers 12-23 split the
+remaining packages by the measured per-package durations recorded in
+`scripts/ci-package-lanes.json` (`scripts/ci-pr-assign.py` derives the same
+deterministic assignment on every worker). The Apex, sema, LWC compile and
+Visualforce shards also run the test binaries that the full suite's producer
+jobs build once, for the packages the pull request selects, and every worker
+restores the Go caches read-only. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set, and so
 do the deleted files of a removed or renamed package, which keeps its former
@@ -192,7 +204,9 @@ nothing. Pushes to `main`, scheduled and manually dispatched runs use the
 full suite. So does a pull request from a `train/*` or `release/*` branch
 (section 3.12): it runs the full suite as its `Required CI` run and skips the
 fast lane. Any other pull request runs only the fast lane over the union of
-its changed packages. Superseded PR runs
+its changed packages, and Required CI requires both the `pr-tests` matrix and
+the `pr-guards` worker, so a missing or skipped worker fails the check.
+Superseded PR runs
 are cancelled, so push once and let the run finish; do not close and reopen a
 PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
