@@ -121,6 +121,19 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		run(event, true)
 	}
 	run("pull_request", false)
+	// The repository guards moved to their own PR worker: a missing or
+	// skipped guard worker must fail the pull request gate, and the full
+	// routes keep excluding it because their test job owns the guards.
+	if _, ok := results["pr-guards"]; !ok {
+		t.Fatal("required-ci does not need pr-guards; the aggregate must expect the split guard worker")
+	}
+	results["pr-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	for _, event := range []string{"merge_group", "push", "schedule", "workflow_dispatch"} {
+		run(event, true)
+	}
+	results["pr-guards"]["result"] = "success"
+	run("pull_request", true)
 	results["pr-tests"]["result"] = "success"
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)

@@ -2061,6 +2061,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 	wantNeeds := `    needs:
       - workflow-lint
       - pr-tests
+      - pr-guards
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2117,8 +2118,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan")`},
-		{name: "full result selection", want: `(.key != "pr-tests")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan")`},
+		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -3592,6 +3593,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"remove history":          strings.Replace(workflow, "      - history\n", "", 1),
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
+		"remove pr guards":        strings.Replace(workflow, "      - pr-guards\n", "", 1),
 		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
@@ -3620,6 +3622,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "pr-tests")
+	wantJobs = append(wantJobs, "pr-guards")
 	wantJobs = append(wantJobs, "history-input", "vm")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
