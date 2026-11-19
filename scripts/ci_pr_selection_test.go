@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -74,13 +75,15 @@ func runPRSelect(t *testing.T, files map[string]string, paths string) ([]string,
 		"--parser-graph", filepath.Join(root, "parser-graph.json"),
 		"--manifest", filepath.Join(root, "manifest.json"))
 	cmd.Stdin = strings.NewReader(paths)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("selector: %w\n%s", err, out)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("selector: %w\n%s", err, stderr.String())
 	}
 	var got []string
-	if err := json.Unmarshal(out, &got); err != nil {
-		t.Fatalf("invalid output: %v: %s", err, out)
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("invalid output: %v: %s", err, stdout.String())
 	}
 	sort.Strings(got)
 	return got, nil

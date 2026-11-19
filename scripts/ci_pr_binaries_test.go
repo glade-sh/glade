@@ -147,7 +147,7 @@ func TestCIPRLaneUsesSharedTestBinaries(t *testing.T) {
 	}
 	// Selection has a single source shared with the producers.
 	for _, step := range pr.Steps {
-		if step.Name == "Select packages and direct importers" {
+		if step.Name == "Select packages and transitive importers" {
 			if !strings.Contains(step.Run, "scripts/ci-pr-select.sh") || strings.Contains(step.Run, "go list -json") {
 				t.Errorf("pr-tests selection must call scripts/ci-pr-select.sh:\n%s", step.Run)
 			}

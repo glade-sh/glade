@@ -1,29 +1,106 @@
 #!/usr/bin/env python3
-"""Select changed Go packages and their direct production or test importers."""
+"""Select changed Go packages and their transitive reverse-import consumers.
+
+The graph inputs are `go list -json ./...` from the repository root and from
+the nested Apex parser module. A changed path maps to its nearest enclosing
+package in either module; from there the selector walks reverse production,
+internal-test and external-test import edges to a fixed point, so a change
+reaches every package that compiles or tests against it directly or
+transitively (for example apexversion -> vm -> apextest). The nested parser
+module's packages are connector nodes: they are never executed by the root
+module's lanes, but they connect a parser change to the root packages that
+import the parser. A path outside every package, including the files of a
+deleted, renamed or removed package, whose former consumers must stay
+selected, conservatively selects the full set, as do `go.mod` and `go.sum`.
+A malformed graph or lane manifest fails the selection instead of producing
+an empty successful one.
+"""
 import argparse
 import json
 import os
 import sys
 
-p = argparse.ArgumentParser()
-p.add_argument('--root', required=True)
-p.add_argument('--graph', required=True)
-p.add_argument('--manifest', required=True)
-a = p.parse_args()
-with open(a.graph, encoding='utf-8') as f:
-    graph = json.load(f)
-with open(a.manifest, encoding='utf-8') as f:
-    manifest = json.load(f)
-owned = {pkg for lane in manifest['lanes'].values() for pkg in lane}
-packages = {pkg['ImportPath']: pkg for pkg in graph}
-if set(packages) != owned:
-    sys.exit('package graph does not match the CI lane manifest')
-root = os.path.abspath(a.root)
-by_dir = {os.path.relpath(pkg['Dir'], root): name for name, pkg in packages.items()}
-changed = set()
-paths = [line.rstrip('\n') for line in sys.stdin]
-if any(path in ('go.mod', 'go.sum') for path in paths):
-    changed.update(packages)
+PARSER_MODULE = 'github.com/glade-sh/apex-parser'
+PARSER_DIR = 'third_party/glade-apex-parser'
+
+
+def fail(message):
+    sys.exit(f'ci-pr-select: {message}')
+
+
+def load_json(path, what):
+    try:
+        with open(path, encoding='utf-8') as handle:
+            return json.load(handle)
+    except (OSError, ValueError) as err:
+        fail(f'cannot read the {what} {path}: {err}')
+
+
+def import_paths(pkg):
+    """Production, internal-test and external-test import paths of a package."""
+    paths = []
+    for key in ('Imports', 'TestImports', 'XTestImports'):
+        value = pkg.get(key)
+        if value is not None:
+            paths.extend(value)
+    return paths
+
+
+def load_packages(path, what, root, restrict_dir=None, module=None):
+    """Load one package graph, validated and mapped to repository directories."""
+    data = load_json(path, what)
+    if not isinstance(data, list):
+        fail(f'the {what} is not a JSON list')
+    packages = {}
+    by_dir = {}
+    for entry in data:
+        if not isinstance(entry, dict):
+            fail(f'a {what} entry is not an object')
+        name = entry.get('ImportPath')
+        directory = entry.get('Dir')
+        if not isinstance(name, str) or not name:
+            fail(f'a {what} entry has no ImportPath')
+        if not isinstance(directory, str) or not directory:
+            fail(f'{what} package {name} has no Dir')
+        if name in packages:
+            fail(f'the {what} lists {name} twice')
+        if module is not None and name != module and not name.startswith(module + '/'):
+            fail(f'{what} package {name} is outside the {module} module')
+        for key in ('Imports', 'TestImports', 'XTestImports'):
+            value = entry.get(key)
+            if value is not None and (not isinstance(value, list)
+                                      or not all(isinstance(item, str) for item in value)):
+                fail(f'{what} package {name} has a malformed {key} list')
+        relative = os.path.relpath(directory, root)
+        if relative.startswith('..'):
+            fail(f'{what} package {name} is outside the repository')
+        if restrict_dir is not None and not (relative == restrict_dir
+                                             or relative.startswith(restrict_dir + os.sep)):
+            fail(f'{what} package {name} is outside {restrict_dir}')
+        if relative in by_dir:
+            fail(f'the {what} maps directory {relative} twice')
+        packages[name] = entry
+        by_dir[relative] = name
+    if not packages:
+        fail(f'the {what} lists no packages')
+    return packages, by_dir
+
+
+def load_manifest(path, packages):
+    """Validate the CI lane manifest against the root package graph."""
+    data = load_json(path, 'manifest')
+    if not isinstance(data, dict) or not isinstance(data.get('lanes'), dict):
+        fail('the manifest has no lanes object')
+    owned = set()
+    for lane, members in data['lanes'].items():
+        if not isinstance(members, list) or not all(isinstance(member, str) for member in members):
+            fail(f'manifest lane {lane} is not a list of package paths')
+        for member in members:
+            if member not in packages:
+                fail(f'manifest lane {lane} lists unknown package {member}')
+            owned.add(member)
+    if owned != set(packages):
+        fail('package graph does not match the CI lane manifest')
 
 
 def docs_only(path):
@@ -34,30 +111,105 @@ def docs_only(path):
     return parts[0] == 'docs' or path.endswith('.md')
 
 
-for path in paths:
-    if not path:
-        continue
-    directory = os.path.dirname(path)
-    mapped = False
-    while directory and directory != '.':
-        if directory in by_dir:
-            changed.add(by_dir[directory])
-            mapped = True
-            break
-        directory = os.path.dirname(directory)
-    if mapped or path.startswith('third_party/glade-apex-parser/') or docs_only(path):
-        continue
-    # Safe by default: a path outside every Go package (lwcruntime/**,
-    # third_party/lwc/**, root testdata/**, workflows, root files, ...) may be
-    # read by any test through a relative path, so select the full set.
-    changed.update(packages)
-if any(path.startswith("third_party/glade-apex-parser/") for path in paths):
-    changed.update(imp for pkg in packages.values()
-                   for imp in pkg.get("Imports", []) + pkg.get("TestImports", []) + pkg.get("XTestImports", [])
-                   if imp == "github.com/glade-sh/apex-parser" or imp.startswith("github.com/glade-sh/apex-parser/"))
-selected = changed.intersection(packages)
-for name, pkg in packages.items():
-    imports = set(pkg.get('Imports', []) + pkg.get('TestImports', []) + pkg.get('XTestImports', []))
-    if changed.intersection(imports):
-        selected.add(name)
-print(json.dumps(sorted(selected)))
+def reverse_consumers(packages, parser_packages, changed, parser_changed, parser_unknown):
+    """Packages that import a changed package, directly or transitively.
+
+    Reverse production, internal-test and external-test edges close over both
+    modules to a fixed point. The nested parser module's packages are
+    connector nodes: they are never returned, but a parser change reaches the
+    root packages that import the parser through them.
+    """
+    if not (changed or parser_changed or parser_unknown):
+        return set()
+    reverse = {}
+    for pkg in list(packages.values()) + list(parser_packages.values()):
+        for imported in import_paths(pkg):
+            reverse.setdefault(imported, set()).add(pkg['ImportPath'])
+    seeds = set(changed) | set(parser_changed)
+    if parser_changed or parser_unknown:
+        # A parser change also seeds every root package that imports the
+        # parser, so an untracked parser input cannot hide a consumer.
+        for name, pkg in packages.items():
+            if any(imported == PARSER_MODULE or imported.startswith(PARSER_MODULE + '/')
+                   for imported in import_paths(pkg)):
+                seeds.add(name)
+    if parser_unknown:
+        seeds |= set(parser_packages)
+    seen = set(seeds)
+    work = list(seeds)
+    while work:
+        for consumer in reverse.get(work.pop(), ()):
+            if consumer not in seen:
+                seen.add(consumer)
+                work.append(consumer)
+    return seen & set(packages)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--root', required=True)
+    p.add_argument('--graph', required=True)
+    p.add_argument('--parser-graph', required=True)
+    p.add_argument('--manifest', required=True)
+    a = p.parse_args()
+    root = os.path.abspath(a.root)
+    packages, by_dir = load_packages(a.graph, 'package graph', root)
+    parser_packages, parser_by_dir = load_packages(
+        a.parser_graph, 'parser graph', root, restrict_dir=PARSER_DIR, module=PARSER_MODULE)
+    load_manifest(a.manifest, packages)
+
+    changed = set()
+    parser_changed = set()
+    parser_unknown = False
+    unmapped = []
+    full = False
+    for path in [line.rstrip('\n') for line in sys.stdin]:
+        if not path:
+            continue
+        if path in ('go.mod', 'go.sum'):
+            full = True
+            continue
+        directory = os.path.dirname(path)
+        mapped = None
+        while directory and directory != '.':
+            if directory in by_dir:
+                mapped = by_dir[directory]
+                break
+            if directory in parser_by_dir:
+                mapped = parser_by_dir[directory]
+                break
+            directory = os.path.dirname(directory)
+        if mapped is not None:
+            if mapped in parser_packages:
+                parser_changed.add(mapped)
+            else:
+                changed.add(mapped)
+            continue
+        if path.startswith(PARSER_DIR + '/'):
+            # A parser path outside every parser package (a module manifest or
+            # a removed parser package) still reaches every root package that
+            # imports the parser.
+            parser_unknown = True
+            continue
+        if docs_only(path):
+            continue
+        # Safe by default: a path outside every Go package (lwcruntime/**,
+        # third_party/lwc/**, root testdata/**, workflows, root files, and the
+        # deleted files of a removed or renamed package) may be read by any
+        # test through a relative path, and a removed package must not hide
+        # its former consumers, so select the full set.
+        full = True
+        unmapped.append(path)
+    if full:
+        if unmapped:
+            print(f'ci-pr-select: {len(unmapped)} unmapped path(s) select the full set',
+                  file=sys.stderr)
+        selected = set(packages)
+    else:
+        selected = reverse_consumers(packages, parser_packages, changed,
+                                     parser_changed, parser_unknown)
+    print(json.dumps(sorted(selected)))
+
+
+if __name__ == '__main__':
+    main()
