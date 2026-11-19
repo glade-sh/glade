@@ -1,0 +1,13 @@
+<template>
+    <div data-probe="input_valid"><lightning-input label="Valid input" value="x"></lightning-input></div>
+    <div data-probe="input_error"><lightning-input data-report label="Required input" required></lightning-input></div>
+    <div data-probe="textarea_valid"><lightning-textarea label="Notes" value="x"></lightning-textarea></div>
+    <div data-probe="textarea_error"><lightning-textarea data-report label="Required notes" required></lightning-textarea></div>
+    <div data-probe="combobox_closed"><lightning-combobox label="Pick" options={options} value="a"></lightning-combobox></div>
+    <div data-probe="combobox_open"><lightning-combobox label="Pick open" options={options} value="a"></lightning-combobox></div>
+    <div data-probe="combobox_error"><lightning-combobox data-report label="Pick required" options={options} required></lightning-combobox></div>
+    <div data-probe="radio_valid"><lightning-radio-group label="Radio" options={options} value="a"></lightning-radio-group></div>
+    <div data-probe="radio_error"><lightning-radio-group data-report label="Radio required" options={options} required></lightning-radio-group></div>
+    <div data-probe="stateful_selected"><lightning-button-stateful label-when-off="Off" label-when-on="On" selected={on}></lightning-button-stateful></div>
+    <div data-probe="stateful_unselected"><lightning-button-stateful label-when-off="Off" label-when-on="On" selected={off}></lightning-button-stateful></div>
+</template>

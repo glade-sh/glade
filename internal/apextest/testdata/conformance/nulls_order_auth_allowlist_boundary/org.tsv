@@ -1,0 +1,5 @@
+api	object	field	case	observation
+62.0	AuthProvParamFwdAllowlist	AuthProviderId	null	"{""accepted"":false,""messages"":[""Specify an AuthProvider.: Authentication Provider ID"",""Specify an AuthProvider.: Authentication Provider ID""]}"
+62.0	AuthProvParamFwdAllowlist	AuthProviderId	control	"{""accepted"":true,""messages"":[]}"
+67.0	AuthProvParamFwdAllowlist	AuthProviderId	null	"{""accepted"":false,""messages"":[""Specify an AuthProvider.: Authentication Provider ID"",""Specify an AuthProvider.: Authentication Provider ID""]}"
+67.0	AuthProvParamFwdAllowlist	AuthProviderId	control	"{""accepted"":true,""messages"":[]}"

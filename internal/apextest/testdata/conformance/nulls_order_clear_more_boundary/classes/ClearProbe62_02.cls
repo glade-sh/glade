@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe62_02 { @IsTest static void probe() { System.assert(false,'CAPTURE|ApexTestRunResult|AsyncApexJobId|'+JSON.serialize(NullCore62.probeField('ApexTestRunResult','AsyncApexJobId'))); } }

@@ -1,0 +1,5 @@
+api	object	field	observation
+62.0	ApexTestRunResult	UserId	"{""accepted"":false,""messages"":[]}"
+62.0	ApexTestRunResult	AsyncApexJobId	"{""accepted"":false,""messages"":[]}"
+67.0	ApexTestRunResult	UserId	"{""accepted"":false,""messages"":[]}"
+67.0	ApexTestRunResult	AsyncApexJobId	"{""accepted"":false,""messages"":[]}"

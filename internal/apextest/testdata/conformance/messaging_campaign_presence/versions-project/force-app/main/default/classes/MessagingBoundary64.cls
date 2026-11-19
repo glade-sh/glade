@@ -1,0 +1,1 @@
+@IsTest private class MessagingBoundary64 { @IsTest static void capture(){ Schema.SObjectType t=Schema.getGlobalDescribe().get('MessagingSession'); System.assert(false,'CAP|'+String.valueOf(t!=null && t.getDescribe().fields.getMap().containsKey('CampaignId'))); } }

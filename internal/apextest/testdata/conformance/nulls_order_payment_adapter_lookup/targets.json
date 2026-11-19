@@ -1,0 +1,20 @@
+{
+"AlternativePaymentMethod": [
+"PaymentGatewayId"
+],
+"CardPaymentMethod": [
+"PaymentGatewayId"
+],
+"Payment": [
+"PaymentGatewayId"
+],
+"PaymentAuthorization": [
+"PaymentGatewayId"
+],
+"PaymentGateway": [
+"PaymentGatewayProviderId"
+],
+"Refund": [
+"PaymentGatewayId"
+]
+}

@@ -1,0 +1,3 @@
+# Native capture: deleting product and pricebook entry boundaries
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. At API 62 and 67 synthetic tests created three products, pricebook entries, opportunity lines and draft order lines. Salesforce rejected deletion of a referenced pricebook entry and product; re-query kept all three product and pricebook-entry references populated and distinct on both line types. No payment was processed. This is setup evidence, not a null-ordering result. Test records rolled back and the scratch org was deleted, with ScratchOrgInfo status verified as Deleted.

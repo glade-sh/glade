@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_04 { @IsTest static void probe() { System.assert(false,'CAPTURE|AuthProvParamFwdAllowlist|AuthProviderId|'+JSON.serialize(NullCore67.probeField('AuthProvParamFwdAllowlist','AuthProviderId'))); } }

@@ -1,0 +1,3 @@
+setting	api	observation
+private	62.0	"{""actor"":{""count"":1,""detailRows"":1},""admin"":{""count"":2,""detailRows"":2},""reportName"":""Synthetic Queue"",""reportQuery"":1}"
+private	67.0	"{""actor"":{""count"":1,""detailRows"":1},""admin"":{""count"":2,""detailRows"":2},""reportName"":""Synthetic Queue"",""reportQuery"":1}"

@@ -1,0 +1,13 @@
+{
+"ContentVersion": [
+"ContentBodyId",
+"ExternalDataSourceId",
+"FirstPublishLocationId"
+],
+"EmailMessage": [
+"ActivityId"
+],
+"FeedAttachment": [
+"RecordId"
+]
+}

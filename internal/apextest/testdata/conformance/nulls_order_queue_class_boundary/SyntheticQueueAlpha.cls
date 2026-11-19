@@ -1,0 +1,1 @@
+@IsTest private class SyntheticQueueAlpha { @IsTest static void passes(){System.assertEquals(1,1);} }

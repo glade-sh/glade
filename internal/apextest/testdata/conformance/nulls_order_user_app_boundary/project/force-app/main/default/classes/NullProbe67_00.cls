@@ -1,0 +1,9 @@
+@IsTest private class NullProbe67_00 { @IsTest static void m00(){
+ List<AppDefinition> apps=[SELECT Id,DurableId FROM AppDefinition LIMIT 2];if(apps.size()!=2){System.assert(false,'CAPTURE|UserAppInfo|'+JSON.serialize(new Map<String,Object>{'AppDefinitionId'=>new Map<String,Object>{'setup'=>'insufficient apps'}}));return;}
+ List<Id> appIds=new List<Id>();for(AppDefinition app:apps){try{appIds.add(Id.valueOf(app.DurableId));}catch(Exception e){}}
+ if(appIds.size()!=2 || appIds[0]==null || appIds[1]==null || appIds[0]==appIds[1]){System.assert(false,'CAPTURE|UserAppInfo|'+JSON.serialize(new Map<String,Object>{'AppDefinitionId'=>new Map<String,Object>{'validDistinctDurableIds'=>false}}));return;}
+ List<User> users=new List<User>();for(Integer i=0;i<3;i++){String a='nua'+i;users.add(new User(Alias=a,LastName='Synthetic '+i,Email=a+'@example.invalid',EmailEncodingKey='UTF-8',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='GMT',ProfileId=UserInfo.getProfileId(),Username=a+Math.abs(Crypto.getRandomInteger())+'@example.invalid'));}insert users;
+ List<UserAppInfo> rows=new List<UserAppInfo>{new UserAppInfo(UserId=users[0].Id,FormFactor='Large'),new UserAppInfo(UserId=users[1].Id,FormFactor='Large',AppDefinitionId=appIds[0]),new UserAppInfo(UserId=users[2].Id,FormFactor='Large',AppDefinitionId=appIds[1])};
+ List<Database.SaveResult> rs=Database.insert(rows,false,AccessLevel.SYSTEM_MODE);List<Object> outcomes=new List<Object>();for(Database.SaveResult r:rs)outcomes.add(new Map<String,Object>{'success'=>r.isSuccess(),'errors'=>r.getErrors()});
+ System.assert(false,'CAPTURE|UserAppInfo|'+JSON.serialize(new Map<String,Object>{'AppDefinitionId'=>outcomes}));
+} }

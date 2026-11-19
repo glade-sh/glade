@@ -1,0 +1,3 @@
+# Native capture: privacy lookup parent setup boundary
+
+A fresh 30-day scratch org was created from a campaign Dev Hub. Describe returned the synthetic parent metadata as createable; the project then attempted dynamic DML in @IsTest only, using inactive synthetic right-to-be-forgotten policies with RunFrequency none. No policy was activated and no child request or external operation was executed because both parent inserts failed. The test captures the two parent rejection statuses and sanitized diagnostics at Apex APIs 62 and 67. This is a setup boundary, not a NULLS ordering result. The scratch org was deleted and ScratchOrgInfo status verified as Deleted. Earlier typed DML failed at compile time; an initial dynamic attempt captured status only.

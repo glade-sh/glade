@@ -1,0 +1,9 @@
+api	object	field	case	observation
+62.0	ApexTestRunResult	UserId	null	"{""accepted"":false,""messages"":[""The ID value for User is invalid."",""The ID value for User is invalid.""]}"
+62.0	ApexTestRunResult	UserId	control	"{""accepted"":true,""messages"":[]}"
+62.0	ApexTestRunResult	AsyncApexJobId	null	"{""accepted"":false,""messages"":[""The ID value for AsyncApexJob is invalid."",""The ID value for AsyncApexJob is invalid.""]}"
+62.0	ApexTestRunResult	AsyncApexJobId	control	"{""accepted"":true,""messages"":[]}"
+67.0	ApexTestRunResult	UserId	null	"{""accepted"":false,""messages"":[""The ID value for User is invalid."",""The ID value for User is invalid.""]}"
+67.0	ApexTestRunResult	UserId	control	"{""accepted"":true,""messages"":[]}"
+67.0	ApexTestRunResult	AsyncApexJobId	null	"{""accepted"":false,""messages"":[""The ID value for AsyncApexJob is invalid."",""The ID value for AsyncApexJob is invalid.""]}"
+67.0	ApexTestRunResult	AsyncApexJobId	control	"{""accepted"":true,""messages"":[]}"

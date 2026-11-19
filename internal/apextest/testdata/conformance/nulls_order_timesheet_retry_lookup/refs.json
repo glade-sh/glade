@@ -1,0 +1,1 @@
+[{"obj": "TimeSheetEntry", "field": "WorkOrderId", "createable": true, "nillable": true, "sortable": true}, {"obj": "TimeSheetEntry", "field": "WorkOrderLineItemId", "createable": true, "nillable": true, "sortable": true}]

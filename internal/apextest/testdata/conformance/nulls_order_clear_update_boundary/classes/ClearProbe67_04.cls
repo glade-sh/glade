@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_04 { @IsTest static void probe() { System.assert(false,'CAPTURE|DuplicateRecordSet|DuplicateRuleId|'+JSON.serialize(NullCore67.probeField('DuplicateRecordSet','DuplicateRuleId'))); } }

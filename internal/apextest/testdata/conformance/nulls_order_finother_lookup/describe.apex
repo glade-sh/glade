@@ -1,0 +1,1 @@
+Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('FinanceTransaction').getDescribe().fields.getMap().get('ReferenceEntityType').getDescribe(); List<String> a=new List<String>(); for(Schema.PicklistEntry e:d.getPicklistValues()) if(e.isActive()) a.add(e.getValue()); System.debug('CAP|'+JSON.serialize(a));

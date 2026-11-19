@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_08 { @IsTest static void probe() { System.assert(false,'CAPTURE|OpportunityLineItem|Product2Id|'+JSON.serialize(NullCore67.probeField('OpportunityLineItem','Product2Id'))); } }

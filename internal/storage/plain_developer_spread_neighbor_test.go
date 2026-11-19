@@ -10,17 +10,20 @@ import (
 )
 
 // Digests that touch standard objects with a native relationship order include
-// those orders (relationship_order_standard/org.tsv). Apart from the order
-// entries they equal the origin/main serialization;
-// TestStandardRelationshipOrderIsTheOnlySpreadDifference checks that.
+// those orders (relationship_order_standard/org.tsv), and whole-org digests
+// include the captured MessagingSession.CampaignId supplement
+// (messaging_campaign_presence/facets.tsv). Apart from those entries they equal
+// the origin/main serialization; TestStandardRelationshipOrderIsTheOnlySpreadDifference
+// checks the order entries.
 func TestStandardSpreadUncapturedShapeSnapshot(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.UnspecifiedStandardFieldShape})
 	data, err := json.Marshal(org)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Serialized eager org from origin/main with the same test and inputs.
-	const base = "c86920c2e0e6c4e16b894cc73c9f6266812a1bb2adc016a7914acc5bfdda6d30"
+	// Serialized eager org from origin/main with the same test and inputs,
+	// plus the captured MessagingSession.CampaignId supplement.
+	const base = "7c7cfdc2d67cf3c6c60afba764a2d2f83b333ef15569e4e1893e5d1c16f811b4"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != base {
 		t.Fatalf("uncaptured shape sha256 %s, want origin/main %s", got, base)
 	}
@@ -126,20 +129,20 @@ func TestUncapturedPlainDeveloperShapesMatchBaseline(t *testing.T) {
 		name, digest string
 		build        func() OrgState
 	}{
-		{"direct", "caad0e8e6d59f4ec3fafbe1423d9050f97542e2696774a26c629374577720762", func() OrgState {
+		{"direct", "836a7851773043ca02a090bad6458dbca32b5998430cbf94d12dab4d07a9b599", func() OrgState {
 			return sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 		}},
-		{"project-transition", "b0e2c1f826d978069f6829aa61c95491d1ac34ec72d29b09f97568bf60908d42", func() OrgState {
+		{"project-transition", "53c83fdbab13e1c19649202715a6705a9360be8545375252f5f4969828c53ebf", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 			return org
 		}},
-		{"additive-transition", "b0e2c1f826d978069f6829aa61c95491d1ac34ec72d29b09f97568bf60908d42", func() OrgState {
+		{"additive-transition", "53c83fdbab13e1c19649202715a6705a9360be8545375252f5f4969828c53ebf", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyOrgShape(&org, []string{"EnableSetPasswordInApi"})
 			return org
 		}},
-		{"unmarked-transition", "d1dde048f86ccfbaab6d243d739d4e65e02005da3e030396e4a9e88022f22f45", func() OrgState {
+		{"unmarked-transition", "2552b3ec0823d9829d1c0fbb4e25b3dc82f7ba7cac3f00ffa0d5fdc3b7f53af5", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 			return org
@@ -165,11 +168,11 @@ func TestUncapturedSourceSpreadTransitionsMatchBaseline(t *testing.T) {
 		name, digest string
 		apply        func(*OrgState)
 	}{
-		{"project", "3b6a584b7ed6c44a3937d335257b1efa94985f0317747a06eca95065a709a9fc", func(org *OrgState) {
+		{"project", "63f541fb934d6dd13379ceeca1236191bb6b65accec0146f5f59e9826d85ee64", func(org *OrgState) {
 			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 		}},
-		{"additive", "3b6a584b7ed6c44a3937d335257b1efa94985f0317747a06eca95065a709a9fc", func(org *OrgState) { ApplyOrgShape(org, []string{"EnableSetPasswordInApi"}) }},
-		{"unmarked", "55d66ee681f8c6d209c52b5e39009a77609e29b66f7ad28d74465f92f3cb653e", func(org *OrgState) {
+		{"additive", "63f541fb934d6dd13379ceeca1236191bb6b65accec0146f5f59e9826d85ee64", func(org *OrgState) { ApplyOrgShape(org, []string{"EnableSetPasswordInApi"}) }},
+		{"unmarked", "b51c0664ef697b236d66c2eadc502c532698bbda12aa8335695fe475b2ab98df", func(org *OrgState) {
 			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 		}},
 	}
@@ -202,8 +205,9 @@ func TestSourceSpreadRestoresPreviouslyMaterializedObjectOnShapeTransition(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Serialized source-backed org from origin/main with the same operations.
-	const baseline = "6caf2090c1f93da673baa1dfa96c4dff7e37d43672e6125abed3479f43d1aae3"
+	// Serialized source-backed org from origin/main with the same operations,
+	// plus the captured MessagingSession.CampaignId supplement.
+	const baseline = "1d9a86b1f418c0212f4d4747d2510970a8726492b7854d918d16d082f6591b38"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}
@@ -230,7 +234,7 @@ func TestSourceSpreadRestoresRemovedObjectAfterSerialization(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const baseline = "6caf2090c1f93da673baa1dfa96c4dff7e37d43672e6125abed3479f43d1aae3"
+	const baseline = "1d9a86b1f418c0212f4d4747d2510970a8726492b7854d918d16d082f6591b38"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}
