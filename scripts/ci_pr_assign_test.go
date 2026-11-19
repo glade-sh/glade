@@ -311,7 +311,7 @@ func TestCIPRDedicatedPackagesMatchWorkflowRoutes(t *testing.T) {
 		dedicated["github.com/glade-sh/glade/internal/"+match[1]] = true
 	}
 	for _, pkg := range []string{"github.com/glade-sh/glade/internal/server", "github.com/glade-sh/glade/internal/playground"} {
-		if !strings.Contains(run, `select(. == "`+pkg+`"`) {
+		if !strings.Contains(run, `. == "`+pkg+`"`) {
 			t.Errorf("worker 44 route no longer owns %s", pkg)
 		}
 		dedicated[pkg] = true

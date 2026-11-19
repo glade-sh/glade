@@ -174,8 +174,20 @@ review; a WARN needs its reason in the PR.
 ### 3.7 CI
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
-checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers (the fast PR lane, below). The Apex, LWC compile and Visualforce shards of the fast lane plan from the same shared duration-history artifact the full suite uses. They also run the Apex, sema, LWC compile and Visualforce test binaries that the full suite's producer jobs build once, for the packages the pull request selects, and restore the Go caches read-only. A changed path outside
+checks formatting, vet, workflow lint, leak scan and tests changed Go packages
+and their direct importers (the fast PR lane, below). The repository guard, the
+scripts tests, the CLI build and the vendored-parser check run on their own
+`pr-guards` worker that starts immediately and waits on no producer; the PR
+worker that used to run them after its own selection now keeps only the CLI
+doctor authority and its package assignment. The Apex, VM, CLI, sema, LWC
+compile and Visualforce shards of the fast lane plan from the same shared
+duration-history artifacts the full suite uses, and workers 12-23 split the
+remaining packages by the measured per-package durations recorded in
+`scripts/ci-package-lanes.json` (`scripts/ci-pr-assign.py` derives the same
+deterministic assignment on every worker). The Apex, sema, LWC compile and
+Visualforce shards also run the test binaries that the full suite's producer
+jobs build once, for the packages the pull request selects, and every worker
+restores the Go caches read-only. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select
@@ -183,7 +195,9 @@ nothing. Pushes to `main`, scheduled and manually dispatched runs use the
 full suite. So does a pull request from a `train/*` or `release/*` branch
 (section 3.12): it runs the full suite as its `Required CI` run and skips the
 fast lane. Any other pull request runs only the fast lane over the union of
-its changed packages. Superseded PR runs
+its changed packages, and Required CI requires both the `pr-tests` matrix and
+the `pr-guards` worker, so a missing or skipped worker fails the check.
+Superseded PR runs
 are cancelled, so push once and let the run finish; do not close and reopen a
 PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR

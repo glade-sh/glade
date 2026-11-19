@@ -133,8 +133,8 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		run(event, true)
 	}
 	results["pr-guards"]["result"] = "success"
-	run("pull_request", true)
 	results["pr-tests"]["result"] = "success"
+	run("pull_request", true)
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)
 	run("merge_group", false)

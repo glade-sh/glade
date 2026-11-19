@@ -1014,7 +1014,7 @@ func TestCIDurationHistoryUsesOneImmutablePredecessorKeyPerRun(t *testing.T) {
 				t.Errorf("%s duration history restore does not use the pinned predecessor", name)
 			}
 		}
-		if restores == 0 || (name == "history-input" && restores != 5) {
+		if restores == 0 || (name == "history-input" && restores != 6) {
 			t.Fatalf("%s duration history restore steps = %d", name, restores)
 		}
 	}

@@ -183,6 +183,7 @@ jobs:
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
       CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
+      CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
       CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -226,6 +227,25 @@ jobs:
         with:
           name: vm-history-input
           path: ci-artifacts/vm-history-input/
+          if-no-files-found: error
+      - name: Restore sema duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-sema-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Stage sema duration history
+        run: |
+          mkdir -p ci-artifacts/sema-history-input
+          if [[ -s "$CI_SEMA_HISTORY_PATH" ]]; then
+            cp "$CI_SEMA_HISTORY_PATH" ci-artifacts/sema-history-input/sema-duration-history.json
+          fi
+          : >ci-artifacts/sema-history-input/ready
+      - name: Upload sema duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: sema-history-input
+          path: ci-artifacts/sema-history-input/
           if-no-files-found: error
       - name: Restore LWC compile duration history
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -1865,6 +1885,63 @@ jobs:
           esac
           scripts/leak-scan.sh --range "$range"
 
+  pr-guards:
+    if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
+    runs-on: ubuntu-24.04
+    # The repository guards, scripts tests, CLI build and vendored-parser
+    # check used to run on PR worker 22 after its own selection, which made
+    # that worker the long serial tail of ordinary PR CI. They run here
+    # instead, unconditionally and without waiting on any producer, while the
+    # PR workers keep only the CLI authority and the package assignments.
+    timeout-minutes: 45
+    env:
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+      # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
+      NO_COLOR: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      # Read-only: this worker restores what pushes to main publish and never
+      # saves, so it cannot evict the shared duration histories. The keys carry
+      # the benchmark pair prefix like every other explicit key; on the pull
+      # requests this job runs for it evaluates to the empty string.
+      - name: Restore Go module cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-guards-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-guards-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-guards-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-guards-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Install actionlint for scripts tests
+        run: |
+          scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
+          echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
+      - name: Run repository guards and scripts tests
+        run: |
+          go build -o "$RUNNER_TEMP/glade" ./cmd/glade
+          go test -count=1 -timeout=0 ./internal/repoguard ./scripts
+          if git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"; then
+            (cd third_party/glade-apex-parser && go test -count=1 ./...)
+          fi
+
   pr-tests:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
     needs: [history-input, test-binaries-apextest, test-binaries]
@@ -1879,8 +1956,11 @@ jobs:
       GOMAXPROCS: "2"
       # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
       NO_COLOR: "1"
-      # One shared plan input per package, downloaded from the history-input jobs.
+      # One shared plan input per package, downloaded from the history-input job.
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
+      CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
+      CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+      CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
       CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
     steps:
@@ -1900,6 +1980,24 @@ jobs:
         with:
           name: apextest-history-input
           path: /tmp/glade-apextest-duration-history
+      - name: Download shared vm duration history
+        if: ${{ matrix.shard >= 12 && matrix.shard < 16 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: vm-history-input
+          path: /tmp/glade-vm-duration-history
+      - name: Download shared gladecli duration history
+        if: ${{ matrix.shard >= 16 && matrix.shard < 20 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: gladecli-history-input
+          path: /tmp/glade-gladecli-duration-history
+      - name: Download shared sema duration history
+        if: ${{ matrix.shard >= 20 && matrix.shard < 22 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: sema-history-input
+          path: /tmp/glade-sema-duration-history
       - name: Download shared LWC duration history
         if: ${{ matrix.shard >= 24 && matrix.shard < 36 }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -1930,11 +2028,6 @@ jobs:
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
-      - name: Install actionlint for scripts tests
-        if: ${{ matrix.shard == 22 }}
-        run: |
-          scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
-          echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
       - name: Select packages and direct importers
         id: select
         env:
@@ -2010,13 +2103,6 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
-          if [[ "$SHARD" == 22 ]]; then
-            go build -o "$RUNNER_TEMP/glade" ./cmd/glade
-            go test -count=1 -timeout=0 ./internal/repoguard ./scripts
-            if git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"; then
-              (cd third_party/glade-apex-parser && go test -count=1 ./...)
-            fi
-          fi
           # The full CLI shard route delegates these four tests to the Node lane.
           if [[ "$SHARD" == 22 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
             go test -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli
@@ -2038,8 +2124,15 @@ jobs:
               go test -count=1 -timeout=0 "${packages[@]}"
             fi
           fi
+          # Workers 12-23 split the remaining packages by the measured
+          # durations in the CI package manifest. Every worker derives the
+          # same deterministic longest-first assignment from the same
+          # selection, so no shard may repartition or skip a package.
           packages=()
-          if (( SHARD >= 12 && SHARD < 24 )); then mapfile -t packages < <(jq -r --argjson shard "$SHARD" 'to_entries[] | select(.key % 12 == ($shard - 12)) | .value | select(. != "github.com/glade-sh/glade/scripts" and . != "github.com/glade-sh/glade/internal/repoguard" and . != "github.com/glade-sh/glade/internal/apextest" and . != "github.com/glade-sh/glade/internal/vm" and . != "github.com/glade-sh/glade/internal/gladecli" and . != "github.com/glade-sh/glade/internal/sema" and . != "github.com/glade-sh/glade/internal/lwc/compile" and . != "github.com/glade-sh/glade/internal/visualforce" and . != "github.com/glade-sh/glade/internal/server" and . != "github.com/glade-sh/glade/internal/playground")' "$RUNNER_TEMP/selected.json"); fi
+          if (( SHARD >= 12 && SHARD < 24 )); then
+            python3 scripts/ci-pr-assign.py --worker "$((SHARD - 12))" --workers 12 --manifest scripts/ci-package-lanes.json <"$RUNNER_TEMP/selected.json" >"$RUNNER_TEMP/assigned-packages.txt"
+            mapfile -t packages <"$RUNNER_TEMP/assigned-packages.txt"
+          fi
           if (( ${#packages[@]} )); then
             go test -count=1 -timeout=0 "${packages[@]}"
           fi
@@ -2049,6 +2142,7 @@ jobs:
     needs:
       - workflow-lint
       - pr-tests
+      - pr-guards
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2080,7 +2174,7 @@ jobs:
           # Train and release pull requests run the full suite, not the fast lane.
           event="$EVENT_NAME"
           case "$HEAD_REF" in train/* | release/*) [[ "$event" != pull_request ]] || event=full ;; esac
-          failures="$(jq -r --arg event "$event" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          failures="$(jq -r --arg event "$event" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests" and .key != "pr-guards") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1
