@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><enableReports>true</enableReports><label>Synthetic Work</label><nameField><label>Work Name</label><type>Text</type></nameField><pluralLabel>Synthetic Works</pluralLabel><sharingModel>Private</sharingModel></CustomObject>

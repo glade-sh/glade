@@ -16,15 +16,7 @@ import (
 // uraDirectCarryGaps pins captured ura_direct_carry rows whose Glade value
 // still differs from native, keyed by api/class/probe/object/grant/key. Any
 // other difference fails, and so does a pinned row that now matches.
-var uraDirectCarryGaps = map[string]bool{
-	// A without sharing class: WITH SYSTEM_MODE on all six fields does not
-	// warm the direct row at any API (g1), but HasDeleteAccess with
-	// HasTransferAccess alone does at 67.0 and not at 62.0 or 66.0 (g3).
-	"ReadWrite/67.0/LC2GO67/g3/Contract/edit/d":   true,
-	"ReadWrite/67.0/LC2GO67/g3/Contract/delete/d": true,
-	"ReadWrite/67.0/LC2GO67/g3/Order/edit/d":      true,
-	"ReadWrite/67.0/LC2GO67/g3/Order/delete/d":    true,
-}
+var uraDirectCarryGaps = map[string]bool{}
 
 const uraCarryDirect = "SELECT RecordId,HasReadAccess,HasEditAccess,HasDeleteAccess,HasTransferAccess,HasAllAccess,MaxAccessLevel FROM UserRecordAccess WHERE UserId=:uid AND RecordId=:"
 const uraCarryRelFields = "UserRecordAccess.HasReadAccess,UserRecordAccess.HasEditAccess,UserRecordAccess.HasDeleteAccess,UserRecordAccess.HasTransferAccess,UserRecordAccess.HasAllAccess,UserRecordAccess.MaxAccessLevel"

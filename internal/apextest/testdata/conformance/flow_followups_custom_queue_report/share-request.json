@@ -1,0 +1,9 @@
+{
+  "shares": [
+    {
+      "accessType": "View",
+      "shareType": "User",
+      "shareWithId": "<synthetic-actor-id>"
+    }
+  ]
+}

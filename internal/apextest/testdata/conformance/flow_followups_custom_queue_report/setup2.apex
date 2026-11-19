@@ -1,0 +1,1 @@
+Group q=[SELECT Id FROM Group WHERE DeveloperName='SyntheticQueue' AND Type='Queue' LIMIT 1];insert new List<SyntheticWork__c>{new SyntheticWork__c(Name='Synthetic Other',OwnerId=UserInfo.getUserId()),new SyntheticWork__c(Name='Synthetic Queue',OwnerId=q.Id)};

@@ -1,0 +1,1 @@
+@IsTest private class EntitySharingProbe67Test { @IsTest static void observe(){System.assert(false,'ENTITYOWD|'+JSON.serialize(EntitySharingProbe67.observe()));} }
