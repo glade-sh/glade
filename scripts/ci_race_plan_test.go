@@ -57,7 +57,7 @@ type racePlanPartition struct {
 	Runners         []racePlanRunner       `json:"runners"`
 }
 
-func racePlanVMConfig(t *testing.T) (shards, normalSeconds, slowestNormalSeconds int) {
+func racePlanVMConfig(t *testing.T) (shards int) {
 	t.Helper()
 	data, err := os.ReadFile("ci-race-plan.json")
 	if err != nil {
@@ -65,23 +65,62 @@ func racePlanVMConfig(t *testing.T) (shards, normalSeconds, slowestNormalSeconds
 	}
 	var config struct {
 		VMLane struct {
-			Shards                int `json:"shards"`
-			NormalSeconds         int `json:"normalSeconds"`
-			SlowestTestNormalSecs int `json:"slowestTestNormalSeconds"`
+			Shards int `json:"shards"`
 		} `json:"vmLane"`
 	}
 	if err := json.Unmarshal(data, &config); err != nil {
 		t.Fatal(err)
 	}
-	return config.VMLane.Shards, config.VMLane.NormalSeconds, config.VMLane.SlowestTestNormalSecs
+	return config.VMLane.Shards
 }
 
-// The VM lane must stay bounded: one shard per matrix leg, a per-shard test
-// deadline derived from the measured normal history times the documented
-// race multiplier, and a coherent batch, step and job deadline above it.
+type raceHistoryRow struct {
+	Name           string `json:"name"`
+	DurationMillis int64  `json:"durationMillis"`
+	Killed         bool   `json:"killed"`
+}
+
+type raceHistoryPackage struct {
+	Package    string           `json:"package"`
+	Tests      []raceHistoryRow `json:"tests"`
+	ShardWalls []struct {
+		ElapsedSeconds float64 `json:"elapsedSeconds"`
+		ExitStatus     int     `json:"exitStatus"`
+		Complete       bool    `json:"complete"`
+	} `json:"shardWalls"`
+}
+
+// readRaceHistory loads the checked-in measured race history keyed by
+// package, so tests can derive the same estimates the plan must produce.
+func readRaceHistory(t *testing.T) map[string]raceHistoryPackage {
+	t.Helper()
+	data, err := os.ReadFile("ci-race-history.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Packages []raceHistoryPackage `json:"packages"`
+	}
+	if err := json.Unmarshal(data, &document); err != nil {
+		t.Fatal(err)
+	}
+	packages := make(map[string]raceHistoryPackage, len(document.Packages))
+	for _, entry := range document.Packages {
+		packages[entry.Package] = entry
+	}
+	return packages
+}
+
+// The VM lane must stay bounded: one leg per balanced shard plus one leg per
+// isolated giant test, each with a test deadline derived from the measured
+// race history (the multiplier only for tests the recorded run never
+// measured), and a coherent batch, step and job deadline above it.
 func TestCIRacePlanLanesBoundVMShardsWithCoherentDeadlines(t *testing.T) {
+	output := runRacePlan(t, "lanes")
 	var lanes struct {
-		Include []struct {
+		ShardCount    int      `json:"shardCount"`
+		IsolatedTests []string `json:"isolatedTests"`
+		Include       []struct {
 			Shard               int `json:"shard"`
 			TestTimeoutSeconds  int `json:"testTimeoutSeconds"`
 			BatchTimeoutSeconds int `json:"batchTimeoutSeconds"`
@@ -89,31 +128,25 @@ func TestCIRacePlanLanesBoundVMShardsWithCoherentDeadlines(t *testing.T) {
 			TimeoutMinutes      int `json:"timeoutMinutes"`
 		} `json:"include"`
 	}
-	if err := json.Unmarshal([]byte(runRacePlan(t, "lanes")), &lanes); err != nil {
+	if err := json.Unmarshal([]byte(output), &lanes); err != nil {
 		t.Fatal(err)
 	}
-	shardCount, normalSeconds, slowestNormal := racePlanVMConfig(t)
-	if len(lanes.Include) != shardCount {
-		t.Fatalf("VM lane has %d legs, want %d", len(lanes.Include), shardCount)
+	balanced := racePlanVMConfig(t)
+	if len(lanes.Include) != lanes.ShardCount || lanes.ShardCount != balanced+len(lanes.IsolatedTests) {
+		t.Fatalf("VM lane has %d legs for %d shards and %d isolated tests", len(lanes.Include), lanes.ShardCount, len(lanes.IsolatedTests))
 	}
-	// Every leg uses the same conservative bound: the raced package average
-	// and the single slowest recorded VM test, both with 1.25x headroom,
-	// floored at fifteen minutes.
-	racedAverage := (normalSeconds*4 + shardCount - 1) / shardCount
-	racedSlowest := slowestNormal * 4
-	wantTest := (racedAverage*5 + 3) / 4
-	if wantSlowest := (racedSlowest*5 + 3) / 4; wantSlowest > wantTest {
-		wantTest = wantSlowest
-	}
-	if wantTest < 900 {
-		wantTest = 900
+	if len(lanes.IsolatedTests) == 0 {
+		t.Fatal("the recorded race run measured a test whose budget exceeds the balanced shard budget; the lane must isolate it")
 	}
 	for index, leg := range lanes.Include {
 		if leg.Shard != index {
 			t.Fatalf("VM leg %d has shard %d", index, leg.Shard)
 		}
-		if leg.TestTimeoutSeconds != wantTest {
-			t.Errorf("VM leg %d test timeout = %d, want %d", index, leg.TestTimeoutSeconds, wantTest)
+		if leg.TestTimeoutSeconds < 900 {
+			t.Errorf("VM leg %d test timeout = %d below the floor", index, leg.TestTimeoutSeconds)
+		}
+		if leg.TestTimeoutSeconds > 7200 {
+			t.Errorf("VM leg %d test timeout = %d above the shard cap", index, leg.TestTimeoutSeconds)
 		}
 		if leg.BatchTimeoutSeconds != leg.TestTimeoutSeconds+600 {
 			t.Errorf("VM leg %d batch = %d, want test timeout + 600", index, leg.BatchTimeoutSeconds)
@@ -127,6 +160,36 @@ func TestCIRacePlanLanesBoundVMShardsWithCoherentDeadlines(t *testing.T) {
 		}
 		if leg.TimeoutMinutes > 355 {
 			t.Errorf("VM leg %d job minutes = %d exceeds the GitHub job cap", index, leg.TimeoutMinutes)
+		}
+	}
+	// The isolated tests own the trailing legs with a budget derived from
+	// their own measurement, which must exceed every balanced leg's budget.
+	balancedBudget := lanes.Include[0].TestTimeoutSeconds
+	for index, leg := range lanes.Include[:balanced] {
+		if leg.TestTimeoutSeconds != balancedBudget {
+			t.Errorf("balanced leg %d budget = %d, want %d", index, leg.TestTimeoutSeconds, balancedBudget)
+		}
+	}
+	history := readRaceHistory(t)
+	vmRows := make(map[string]raceHistoryRow, len(history["github.com/glade-sh/glade/internal/vm"].Tests))
+	for _, row := range history["github.com/glade-sh/glade/internal/vm"].Tests {
+		vmRows[row.Name] = row
+	}
+	for offset, name := range lanes.IsolatedTests {
+		leg := lanes.Include[balanced+offset]
+		row, ok := vmRows[name]
+		if !ok {
+			t.Fatalf("isolated test %s is not in the measured race history", name)
+		}
+		want := int((row.DurationMillis*5 + 3999) / 4000)
+		if want < 900 {
+			want = 900
+		}
+		if leg.TestTimeoutSeconds != want {
+			t.Errorf("isolated leg %d budget = %d, want %d from its own measurement", balanced+offset, leg.TestTimeoutSeconds, want)
+		}
+		if leg.TestTimeoutSeconds <= balancedBudget {
+			t.Errorf("isolated leg %d budget = %d does not exceed the balanced budget %d", balanced+offset, leg.TestTimeoutSeconds, balancedBudget)
 		}
 	}
 }
@@ -389,16 +452,26 @@ func racePlanApexNormalHistory(t *testing.T) map[string]int {
 	return history
 }
 
-// The interim race cost model: the checked-in normal durations scaled by the
-// documented conservative multiplier and filtered to the discovered tests.
-func TestCIRacePlanHistoryScalesNormalDurationsToDiscovery(t *testing.T) {
+// The raced history prefers each test's measured race duration, so the
+// multiplier fallback binds only the tests the recorded run never measured:
+// those keep the checked-in normal duration scaled by the documented
+// multiplier, and a discovery with no coverage at all fails closed instead of
+// planning budgets with no weights behind them.
+func TestCIRacePlanHistoryScalesUnmeasuredTestsFromTheNormalTable(t *testing.T) {
 	history := racePlanApexNormalHistory(t)
+	raceRows := readRaceHistory(t)[racePlanApexPackage].Tests
+	measured := make(map[string]bool, len(raceRows))
+	for _, row := range raceRows {
+		measured[row.Name] = true
+	}
 	names := make([]string, 0, 8)
 	for name := range history {
-		names = append(names, name)
-		if len(names) == 8 {
-			break
+		if !measured[name] && history[name] > 0 && len(names) < 8 {
+			names = append(names, name)
 		}
+	}
+	if len(names) < 8 {
+		t.Fatal("the recorded race run measured the whole normal table; repoint this fallback test at unmeasured rows")
 	}
 	sort.Strings(names)
 	discovery := filepath.Join(t.TempDir(), "discovery.txt")
@@ -417,11 +490,11 @@ func TestCIRacePlanHistoryScalesNormalDurationsToDiscovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	if scaled.Version != 1 || !scaled.Complete || len(scaled.Tests) != len(names) {
-		t.Fatalf("scaled history header = %#v", scaled)
+		t.Fatalf("raced history header = %#v", scaled)
 	}
 	for _, row := range scaled.Tests {
 		if want := history[row.Name] * 4; row.DurationMillis != want {
-			t.Errorf("%s scaled to %d ms, want %d", row.Name, row.DurationMillis, want)
+			t.Errorf("%s raced to %d ms, want the unmeasured fallback %d", row.Name, row.DurationMillis, want)
 		}
 	}
 	// A discovery with no table coverage must fail closed instead of

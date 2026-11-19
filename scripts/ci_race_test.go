@@ -83,7 +83,7 @@ func playgroundRaceDiscovery(extra ...string) string {
 func racePlaygroundPlannerFixture() string {
 	return `#!/usr/bin/env bash
 set -euo pipefail
-while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 5 ]]; shift 2;; --tests) tests="$2"; shift 2;; *) exit 91;; esac; done
+while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 5 ]]; shift 2;; --tests) tests="$2"; shift 2;; --history) [[ -n "$2" && -s "$2" ]] || exit 94; grep -q '"tests":' "$2" || exit 95; shift 2;; *) exit 91;; esac; done
 names=(); while IFS= read -r name; do names+=("$name"); done <"$tests"
 printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
 for index in 0 1 2 3 4; do [[ "$index" == 0 ]] || printf ','; printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"; done
@@ -165,10 +165,10 @@ func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
 		t.Fatalf("full partition failed: %v\n%s", err, data)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 3 {
-		t.Fatalf("partition output has %d lines, want early, independent and generic JSON", len(lines))
+	if len(lines) != 4 {
+		t.Fatalf("partition output has %d lines, want early, independent, generic and dedicated JSON", len(lines))
 	}
-	var early, independent, generic []string
+	var early, independent, generic, dedicated []string
 	if err := json.Unmarshal([]byte(lines[0]), &early); err != nil {
 		t.Fatal(err)
 	}
@@ -178,11 +178,17 @@ func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
 	if err := json.Unmarshal([]byte(lines[2]), &generic); err != nil {
 		t.Fatal(err)
 	}
+	if err := json.Unmarshal([]byte(lines[3]), &dedicated); err != nil {
+		t.Fatal(err)
+	}
 	if want := []string{"./internal/gladecli"}; !reflect.DeepEqual(early, want) {
 		t.Fatalf("early packages = %v, want %v", early, want)
 	}
 	if want := []string{"./internal/repoguard"}; !reflect.DeepEqual(independent, want) {
 		t.Fatalf("independent packages = %v, want %v", independent, want)
+	}
+	if want := []string{"./internal/apextest", "./internal/visualforce", "./internal/lwc/compile", "./internal/vm"}; !reflect.DeepEqual(dedicated, want) {
+		t.Fatalf("dedicated packages = %v, want %v", dedicated, want)
 	}
 	// The long binary-free package runs on its own early lane, and the VM
 	// route is bounded by dedicated shards instead of the generic matrix.
@@ -191,7 +197,6 @@ func TestCIRaceClassifierPartitionsFullManifest(t *testing.T) {
 			t.Fatalf("generic packages still contain %s", excluded)
 		}
 	}
-	dedicated := []string{"./internal/apextest", "./internal/visualforce", "./internal/lwc/compile", "./internal/vm"}
 	combined := append(append(append(append([]string(nil), early...), independent...), generic...), dedicated...)
 	sort.Strings(combined)
 	if !reflect.DeepEqual(combined, full) || len(combined) != len(slices.Compact(combined)) {
@@ -418,8 +423,8 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	if !strings.Contains(planJob, `scripts/ci-race-packages.sh partition "$packages"`) {
 		t.Error("race plan must derive early, independent and generic packages from its one full manifest")
 	}
-	if !strings.Contains(planJob, `if [[ "${#partition[@]}" -ne 3 ]]; then`) {
-		t.Error("race plan must fail closed when package partitioning does not return all three lists")
+	if !strings.Contains(planJob, `if [[ "${#partition[@]}" -ne 4 ]]; then`) {
+		t.Error("race plan must fail closed when package partitioning does not return all four lists")
 	}
 	if !strings.Contains(planJob, "python3 scripts/ci-race-plan.py lanes") || !strings.Contains(planJob, "vm-matrix=") {
 		t.Error("race plan must publish the shared lane policy for the VM matrix")
@@ -450,9 +455,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	if strings.Contains(planJob, "cache: npm") {
 		t.Fatal("race plan setup-node must not own an implicit npm cache")
 	}
-	if !strings.Contains(earlyJob, "matrix:\n        package: ${{ fromJSON(needs.plan.outputs.early-packages) }}") ||
+	if !strings.Contains(earlyJob, "include: ${{ fromJSON(needs.plan.outputs.early-matrix).include }}") ||
 		strings.Contains(earlyJob, "./internal/apextest") {
-		t.Fatal("race early matrix must contain only the classified early packages")
+		t.Fatal("race early matrix must contain only the classified early packages behind their planned deadlines")
 	}
 	if !strings.Contains(raceJob, "matrix:\n        package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}") {
 		t.Fatal("race generic matrix must use only the classified generic packages")
@@ -700,6 +705,12 @@ while [[ "$#" -gt 0 ]]; do
     --package) package="$2"; shift 2 ;;
     --shards) shards="$2"; shift 2 ;;
     --tests) tests="$2"; shift 2 ;;
+    --history) [[ -n "$2" && -s "$2" ]] || exit 94
+      # A lane history is a JSON document with test rows; the LWC-only
+      # history file the browser test plants must never reach this
+      # planner.
+      grep -q '"tests":' "$2" || exit 95
+      shift 2 ;;
     *) exit 91 ;;
   esac
 done
@@ -925,7 +936,10 @@ exit "${CI_RACE_GO_STATUS:-0}"
 		t.Fatal(err)
 	}
 	log := string(data)
-	if strings.Count(log, "test -race -count=1 -timeout=60m ./internal/storage") != 1 {
+	// The default go test deadline sits below the flat 60m batch deadline,
+	// so a slow direct package ends in its own timeout panic with evidence
+	// instead of the outer job kill.
+	if strings.Count(log, "test -race -count=1 -timeout=55m ./internal/storage") != 1 {
 		t.Fatalf("direct native calls:\n%s", log)
 	}
 	if strings.Contains(log, "-list") || strings.Contains(log, "shard-") {
@@ -1126,6 +1140,9 @@ func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(
 			for index := range testNames {
 				testNames[index] = fmt.Sprintf("TestCase%02d", index)
 			}
+			// One row the recorded run measured, so the runner's lane
+			// history derivation holds real rows for the package.
+			testNames[0] = measuredRaceHistoryName(t, pkg)
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 if [[ "$*" == *"-list ."* ]]; then
 	printf 'discovery %s\n' "$*" >>"$CI_RACE_CALL_LOG"
@@ -1604,12 +1621,22 @@ func TestCIRacePackageRunnerApextestRecordsAssignedShardFailure(t *testing.T) {
 // assignments and deadlines that both the runner and the aggregate verify.
 func TestCIRacePackageRunnerApextestPartitionPlansOnceFromTheBinary(t *testing.T) {
 	history := racePlanApexNormalHistory(t)
+	raceRows := readRaceHistory(t)[racePlanApexPackage].Tests
+	measured := make(map[string]bool, len(raceRows))
+	for _, row := range raceRows {
+		measured[row.Name] = true
+	}
+	// The raced history prefers measured rows, so this partition fixture
+	// picks names the recorded run never measured: their raced rows are
+	// the table scaled by the multiplier, the contract the test asserts.
 	names := make([]string, 0, 16)
 	for name := range history {
-		names = append(names, name)
-		if len(names) == 16 {
-			break
+		if !measured[name] && len(names) < 16 {
+			names = append(names, name)
 		}
+	}
+	if len(names) < 16 {
+		t.Fatal("the recorded race run measured the whole normal table; repoint the partition fixture at unmeasured rows")
 	}
 	sort.Strings(names)
 	root := t.TempDir()
@@ -2505,7 +2532,9 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/playgroun
 `)
 	planner := writeRaceFixture(t, "fake-planner", `#!/usr/bin/env bash
 set -euo pipefail
-while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 5 ]]; shift 2;; --tests) tests="$2"; shift 2;; *) exit 91;; esac; done
+history=""
+while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 5 ]]; shift 2;; --tests) tests="$2"; shift 2;; --history) history="$2"; shift 2;; *) exit 91;; esac; done
+[[ -n "$history" && -s "$history" ]] && grep -q '"tests":' "$history"
 names=(); while IFS= read -r name; do names+=("$name"); done <"$tests"
 [[ "${#names[@]}" == 5 ]]
 printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"

@@ -55,14 +55,19 @@ func TestCIRaceProvisioningStepsBounded(t *testing.T) {
 			}
 		}
 	}
-	for job, minimum := range map[string]int{"race-browser": 145, "race": 145, "race-early": 80} {
+	for job, minimum := range map[string]int{"race-browser": 145, "race": 145} {
 		timeout, err := strconv.Atoi(workflow.Jobs[job].Timeout)
 		if err != nil || timeout < minimum {
 			t.Errorf("%s: job budget = %q, want at least %d minutes for provisioning, test, and cleanup", job, workflow.Jobs[job].Timeout, minimum)
 		}
 	}
-	if got := workflow.Jobs["race-push"].Timeout; got != "${{ matrix.timeoutMinutes }}" {
-		t.Errorf("race-push: job budget = %q, want the per-batch planned timeout", got)
+	// The measured lanes read their job budgets from the plan's per-leg
+	// matrix; the plan's own tests keep those budgets above the
+	// provisioning, test and cleanup floor and under the GitHub job cap.
+	for _, job := range []string{"race-early", "race-independent", "race-vm", "race-apextest", "race-push"} {
+		if got := workflow.Jobs[job].Timeout; got != "${{ matrix.timeoutMinutes }}" {
+			t.Errorf("%s: job budget = %q, want the per-leg planned timeout", job, got)
+		}
 	}
 }
 
