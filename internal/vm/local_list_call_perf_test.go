@@ -131,8 +131,11 @@ func TestLocalListCallArgumentAllocation(t *testing.T) {
 			})
 			t.Logf("ROW local-list %s outcome=4 allocations=%.0f", source, allocations)
 			// Preserve element conversion, alias publication and the bracket
-			// receiver's declared-view lookup; remove argument/dispatch storage.
-			if allocations > test.budget {
+			// receiver's declared-view lookup; remove argument/dispatch
+			// storage. The numeric budgets are a normal-build contract; race
+			// instrumentation inflates the counts, so an instrumented build
+			// only observes and logs them (see localListCallBudgetEnforced).
+			if localListCallBudgetEnforced && allocations > test.budget {
 				t.Fatalf("local list call allocated %.0f times; want at most %.0f", allocations, test.budget)
 			}
 		})
