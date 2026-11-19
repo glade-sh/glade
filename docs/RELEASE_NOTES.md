@@ -7,6 +7,10 @@
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
 - **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
 
+### Changes
+
+- **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
+
 ### CI
 
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
