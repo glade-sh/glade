@@ -1,0 +1,1 @@
+public class SyntheticGuard { public static Boolean busy=false; public static List<String> events=new List<String>(); public static List<String> outcomes=new List<String>(); }

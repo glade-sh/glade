@@ -1,0 +1,4 @@
+flow_api	test_api	observation
+67.0	62.0	"{""overlength"":""STRING_TOO_LONG"",""values"":[""Def-item:flow-value|Def-item"",""Other-item:before"",""Unset-item:|Unset-item""]}"
+67.0	67.0	"{""overlength"":""STRING_TOO_LONG"",""values"":[""Def-item:flow-value|Def-item"",""Other-item:before"",""Unset-item:|Unset-item""]}"
+62.0	62.0	"{""overlength"":""STRING_TOO_LONG"",""values"":[""Def-item:flow-value|Def-item"",""Other-item:before"",""Unset-item:|Unset-item""]}"
