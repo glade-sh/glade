@@ -12412,10 +12412,6 @@
    "durationMillis": 0
   },
   {
-   "name": "TestMethodReturnAliasBookkeepingAvoidsEagerSliceAllocation",
-   "durationMillis": 0
-  },
-  {
    "name": "TestMethodReturnAliasMutationCollectorKeepsFirstTargetInlineAndOrdered",
    "durationMillis": 0
   },

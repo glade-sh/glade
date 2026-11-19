@@ -2,6 +2,8 @@
   "version": 1,
   "apextestNormalHistory": "internal/apextest/testdata/shard_durations.json",
   "apextestNormalHistorySource": "The checked-in complete Apex duration registry maintained by scripts/apextest-duration-table.py; its own source field records the measurement provenance. Entries are pruned or merged by the table workflow, never here.",
+  "vmNormalHistory": "internal/vm/testdata/shard_durations.json",
+  "vmNormalHistorySource": "The checked-in VM duration table captured from a matched full-package run (its source field records the lane). The race runner scales it by the plan multiplier so the four VM shards balance by measured cost instead of the name hash that left shard 1 over its 4250s deadline in run 44515703479; rows for tests a race build excludes are pruned by the table guard.",
   "vmLane": {
     "shards": 4,
     "normalSeconds": 2764,

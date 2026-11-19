@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -94,26 +95,29 @@ func TestPublicScanBlobCacheSkipsUnchangedFilesAcrossRuns(t *testing.T) {
 	}
 	names := campaignNameMatcher(nil)
 	dir := t.TempDir()
-	countingDecode := func(counter *int) publicAssetDecoder {
+	// The cached scan decodes tracked files on concurrent workers, so the
+	// decode counter must be atomic: a plain counter races under the race
+	// detector and fails the package's own lane.
+	countingDecode := func(counter *atomic.Int64) publicAssetDecoder {
 		return func(rel, text string, visit func(string, string)) error {
-			*counter++
+			counter.Add(1)
 			return scanPublicAsset(rel, text, visit)
 		}
 	}
 
-	coldDecodes := 0
+	coldDecodes := &atomic.Int64{}
 	cold := loadPublicScanBlobCache(dir, "test-v1")
-	scans := scanTrackedFilesForPublicDataCached(files, names, countingDecode(&coldDecodes), cold, 2)
+	scans := scanTrackedFilesForPublicDataCached(files, names, countingDecode(coldDecodes), cold, 2)
 	cold.save()
-	if coldDecodes != len(files) {
-		t.Fatalf("cold run decodes = %d, want %d", coldDecodes, len(files))
+	if got := coldDecodes.Load(); got != int64(len(files)) {
+		t.Fatalf("cold run decodes = %d, want %d", got, len(files))
 	}
 
-	warmDecodes := 0
+	warmDecodes := &atomic.Int64{}
 	warm := loadPublicScanBlobCache(dir, "test-v1")
-	rescanned := scanTrackedFilesForPublicDataCached(files, names, countingDecode(&warmDecodes), warm, 2)
-	if warmDecodes != 0 {
-		t.Fatalf("decodes on the warm run = %d, want 0: unchanged files must not be rescanned", warmDecodes)
+	rescanned := scanTrackedFilesForPublicDataCached(files, names, countingDecode(warmDecodes), warm, 2)
+	if got := warmDecodes.Load(); got != 0 {
+		t.Fatalf("decodes on the warm run = %d, want 0: unchanged files must not be rescanned", got)
 	}
 	if index, equal := publicScanDivergence(scans, rescanned); !equal {
 		t.Fatalf("warm scan diverged from the cold scan at %d: %s vs %s", index, publicScanErrorText(scans[index].err), publicScanErrorText(rescanned[index].err))

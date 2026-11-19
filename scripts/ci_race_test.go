@@ -1298,7 +1298,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *test
 	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -trimpath -race -c -o") != 1 || strings.Count(log, "go tool test2json -t -p github.com/glade-sh/glade/internal/apextest") != 16 {
 		t.Fatalf("apextest build/test2json calls:\n%s", log)
 	}
-	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 16 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
+	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=55m -test.run=") != 16 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
 		t.Fatalf("apextest direct binary calls:\n%s", log)
 	}
 	for shard := 0; shard < 16; shard++ {
@@ -1891,6 +1891,7 @@ func writeApextestPartitionEvidence(t *testing.T, root string, testCount int) (p
 			"schema_version": 1, "runner": entry.Runner, "package": "github.com/glade-sh/glade/internal/apextest", "head_sha": headSHA,
 			"assigned_indexes": entry.ShardIndexes, "discovered_count": len(names), "discovery_sha256": discoverySHA, "plan_sha256": planSHA,
 			"partition_sha256": partitionSHA, "binary_sha256": binarySHA, "binary_size_bytes": 1048576, "binary_removed": true,
+			"outcome": "success", "failure": nil,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -2535,7 +2536,7 @@ printf ']}\n'
 		}
 		position += next + len(marker)
 	}
-	if strings.Count(log, "native test -json -race -count=1 -timeout=60m -run") != 9 {
+	if strings.Count(log, "native test -json -race -count=1 -timeout=55m -run") != 9 {
 		t.Fatalf("playground native lane count:\n%s", log)
 	}
 	var union struct {

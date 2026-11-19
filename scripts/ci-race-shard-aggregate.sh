@@ -45,15 +45,66 @@ def load(path):
     with open(path, encoding="utf-8") as source:
         return json.load(source, object_pairs_hook=reject_duplicates)
 
+def write_verdicts(verdicts):
+    """Record why shards failed and exit non-zero, so the aggregate's verdict
+    document survives a red run and triage sees one verdict per shard."""
+    result = {
+        "schema_version": 1,
+        "package": package,
+        "head_sha": head_sha,
+        "shard_count": shard_count,
+        "verdicts": verdicts,
+        "valid": False,
+    }
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    os.makedirs(output_dir, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=".race-shard-verdict.", dir=output_dir, text=True)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+        json.dump(result, target, sort_keys=True)
+        target.write("\n")
+    os.replace(temporary, output_path)
+    for verdict in verdicts:
+        print(f"race shard aggregate: {verdict}", file=sys.stderr)
+    raise SystemExit(f"race shard aggregate rejected shard evidence: {len(verdicts)} of {shard_count} shards failed")
+
 expected_discovery = expected_plan = None
 tested = []
 deferred = []
 counts = []
+verdicts = []
 for index, root in enumerate(roots):
-    runner = load(os.path.join(root, "runner-validation.json"))
-    keys = {"schema_version", "package", "head_sha", "shard_index", "discovery_sha256", "plan_sha256"}
+    if not os.path.isdir(root):
+        verdicts.append(f"shard {index} produced no evidence: the runner job was skipped, cancelled or failed before planning")
+        continue
+    record_path = os.path.join(root, "runner-validation.json")
+    if not os.path.isfile(record_path):
+        verdicts.append(f"shard {index} wrote no runner validation: the runner was killed or cancelled before its planning evidence")
+        continue
+    runner = load(record_path)
+    keys = {"schema_version", "package", "head_sha", "shard_index", "discovery_sha256", "plan_sha256", "outcome", "failure"}
     if not isinstance(runner, dict) or set(runner) != keys or type(runner["schema_version"]) is not int or runner["schema_version"] != 1 or runner["package"] != package or runner["head_sha"] != head_sha or type(runner["shard_index"]) is not int or runner["shard_index"] != index:
         raise SystemExit(f"race shard {index} has invalid runner identity")
+    if runner["outcome"] == "success":
+        if runner["failure"] is not None:
+            raise SystemExit(f"race shard {index} recorded a success outcome with failure detail")
+    elif runner["outcome"] == "incomplete":
+        if runner["failure"] is not None:
+            raise SystemExit(f"race shard {index} recorded failure detail on an incomplete shard")
+        verdicts.append(f"shard {index} did not finish: the runner was killed or cancelled before completing the shard")
+        continue
+    elif runner["outcome"] == "fail":
+        failure = runner["failure"]
+        if not isinstance(failure, dict) or set(failure) != {"exit_status", "failing_tests", "running_tests"} or type(failure["exit_status"]) is not int or not all(isinstance(name, str) for name in failure["failing_tests"] + failure["running_tests"]):
+            raise SystemExit(f"race shard {index} recorded an invalid failure detail")
+        detail = f"shard {index} failed: go test exit {failure['exit_status']}"
+        if failure["failing_tests"]:
+            detail += "; failing tests: " + ", ".join(failure["failing_tests"])
+        if failure["running_tests"]:
+            detail += "; still running: " + ", ".join(failure["running_tests"])
+        verdicts.append(detail)
+        continue
+    else:
+        raise SystemExit(f"race shard {index} recorded an unknown outcome {runner['outcome']!r}")
     data = []
     for name, filename in (("discovery", "discovery.txt"), ("plan", "plan.json")):
         with open(os.path.join(root, filename), "rb") as source:
@@ -120,6 +171,8 @@ for index, root in enumerate(roots):
     tested.extend(terminals)
     counts.append(len(terminals))
 
+if verdicts:
+    write_verdicts(verdicts)
 if sorted(tested) != names or len(tested) != len(set(tested)):
     raise SystemExit("race shard tested union does not exactly cover discovery")
 result = {"schema_version": 1, "package": package, "head_sha": head_sha, "discovered_count": len(names), "shard_counts": counts, "deferred": deferred, "valid": True}

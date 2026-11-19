@@ -509,7 +509,7 @@ func TestCIRacePlanShardsCommandDerivesCountFromScaledHistory(t *testing.T) {
 		}
 	})
 	t.Run("single test over the cap fails with its name", func(t *testing.T) {
-		names := []string{"TestOneSlowSeed", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestIota", "TestKappa", "TestLambda", "TestMu", "TestNu", "TestOmicron", "TestPi", "TestRho", "TestTheta", "TestZeta"}
+		names := []string{"TestASlowSeed", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestIota", "TestKappa", "TestLambda", "TestMu", "TestNu", "TestOmicron", "TestPi", "TestRho", "TestTheta", "TestZeta"}
 		_, discovery, history := racePlanScaledHistoryFixture(t, names, 1_000)
 		if err := os.WriteFile(history, []byte(strings.Replace(string(mustRead(t, history)), `"durationMillis":1000`, `"durationMillis":6100000`, 1)), 0o600); err != nil {
 			t.Fatal(err)
@@ -518,7 +518,7 @@ func TestCIRacePlanShardsCommandDerivesCountFromScaledHistory(t *testing.T) {
 		if err == nil {
 			t.Fatalf("single oversized test accepted:\n%s", out)
 		}
-		if !strings.Contains(out, "TestOneSlowSeed") {
+		if !strings.Contains(out, "TestASlowSeed") {
 			t.Fatalf("oversized test failure must name the test:\n%s", out)
 		}
 	})

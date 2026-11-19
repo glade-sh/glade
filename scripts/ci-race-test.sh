@@ -70,6 +70,12 @@ esac
 go_test_timeout="${test_timeout_arg}"
 if [[ "${go_test_timeout}" != "60m" ]]; then
 	go_test_timeout="${go_test_timeout}s"
+elif [[ "${batch_timeout}" == "60m" ]]; then
+	# With the default flat deadlines the go test timeout would fire together
+	# with the outer batch wrapper, so a slow shard dies to the outer kill with
+	# no timeout evidence. Keep the go test timeout below the batch: the slow
+	# test then ends in its own "test timed out" panic and stack.
+	go_test_timeout="55m"
 fi
 package_body="${package#./}"
 if [[ -z "${package_body}" || "${package_body}" == */ ]]; then
@@ -333,8 +339,8 @@ PY
 			printf '[ci] partition assigned no shards to runner %q\n' "${apextest_runner}" >&2
 			exit 2
 		fi
-		if [[ ! "${partition_shard_count}" =~ ^[0-9]+$ ]] || [[ "${partition_shard_count}" -ne 16 ]]; then
-			printf '[ci] partition shard count must be sixteen, got %q\n' "${partition_shard_count}" >&2
+		if [[ ! "${partition_shard_count}" =~ ^[0-9]+$ ]] || [[ "${partition_shard_count}" -lt 16 ]] || [[ "${partition_shard_count}" -gt 96 ]]; then
+			printf '[ci] partition shard count must stay between 16 and 96 shards, got %q\n' "${partition_shard_count}" >&2
 			exit 2
 		fi
 		for index in "${assigned_apextest_indexes[@]}"; do
@@ -586,10 +592,33 @@ planner_args=(--package "${package_name}" --shards "${planner_shards}" --tests "
 if [[ "${package}" == "./internal/lwc/compile" && -s "${CI_LWC_COMPILE_HISTORY_PATH:-}" ]]; then
 	planner_args+=(--history "${CI_LWC_COMPILE_HISTORY_PATH}")
 fi
+if [[ "${package}" == "./internal/vm" ]]; then
+	# The VM shards balance by the checked-in per-test durations scaled by the
+	# race multiplier; the name hash had left one shard carrying the slowest
+	# tests over its deadline while another finished in half the time.
+	vm_race_history="${artifact_dir}/vm-race-history.json"
+	python3 "${script_dir}/ci-race-plan.py" vm-history "${discovery}" >"${vm_race_history}"
+	planner_args+=(--history "${vm_race_history}")
+fi
 if [[ "${package}" == "./internal/apextest" && "${race_mode}" == "partition" ]]; then
 	race_history="${artifact_dir}/race-history.json"
 	python3 "${script_dir}/ci-race-plan.py" history "${discovery}" >"${race_history}"
-	planner_args+=(--history "${race_history}")
+	# Enough shards that the longest-processing-time bound fits the per-shard
+	# budget cap: a package total never lands in one shard, and a single test
+	# over the cap fails the derivation with its name.
+	planner_shards="$(python3 "${script_dir}/ci-race-plan.py" shards "${discovery}" "${race_history}" | python3 -c 'import json,sys
+print(json.load(sys.stdin)["shard_count"])')"
+	if ! python3 - "${planner_shards}" <<'PY'
+import sys
+count = int(sys.argv[1])
+if not 16 <= count <= 96:
+    raise SystemExit(f"planned Apex shard count {count} is outside the 16..96 lane range")
+PY
+	then
+		printf '[ci] the plan returned an invalid Apex shard count: %q\n' "${planner_shards}" >&2
+		exit 2
+	fi
+	planner_args=(--package "${package_name}" --shards "${planner_shards}" --tests "${planner_tests}" --history "${race_history}")
 fi
 if [[ "${apextest_assigned}" == true ]]; then
 	: # The partition's frozen plan already binds discovery to shard regexes.
@@ -679,10 +708,187 @@ if mode == "playground":
             target.write(selection["regex"] + "\n")
 PY
 
+# The per-runner validation record is written at three points: an incomplete
+# record before the lanes run (so a killed runner leaves evidence naming its
+# shard), a fail record when the lane's go test fails or times out, and the
+# success record after the union validates. The aggregates read the outcome
+# and report a failed or killed shard instead of dying on a missing file.
+race_lane_failure_summary() {
+	python3 - "${1:-}" <<'PY'
+import json
+import sys
+
+failing, running = [], []
+if sys.argv[1]:
+    terminals, started = {}, set()
+    try:
+        with open(sys.argv[1], encoding="utf-8") as source:
+            for line in source:
+                if not line.strip():
+                    continue
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                name, action = event.get("Test"), event.get("Action")
+                if not isinstance(name, str) or "/" in name:
+                    continue
+                if action in ("pass", "fail", "skip"):
+                    terminals.setdefault(name, []).append(action)
+                elif action == "run":
+                    started.add(name)
+        for name in sorted(terminals):
+            if "fail" in terminals[name]:
+                failing.append(name)
+        for name in sorted(started):
+            if name not in terminals:
+                running.append(name)
+    except OSError:
+        pass
+summary = {"failing_tests": failing, "running_tests": running}
+print(json.dumps(summary, sort_keys=True, separators=(",", ":")))
+PY
+}
+
+write_browser_shard_validation() {
+	local outcome="$1" exit_status="$2" events="${3:-}"
+	local failure_summary
+	failure_summary="$(race_lane_failure_summary "${events}")"
+	python3 - "${artifact_dir}" "${browser_shard_index}" "${apextest_head_sha}" "${package_name}" "${outcome}" "${exit_status}" "${failure_summary}" <<'PY'
+import hashlib
+import json
+import os
+import sys
+import tempfile
+
+root, index_text, head, package, outcome, exit_status_text, failure_summary = sys.argv[1:]
+index, exit_status = int(index_text), int(exit_status_text)
+result = {"schema_version": 1, "package": package, "head_sha": head, "shard_index": index, "outcome": outcome}
+for name, filename in (("discovery", "discovery.txt"), ("plan", "plan.json")):
+    with open(os.path.join(root, filename), "rb") as source:
+        result[name + "_sha256"] = hashlib.sha256(source.read()).hexdigest()
+result["failure"] = None
+if outcome == "fail":
+    result["failure"] = json.loads(failure_summary)
+    result["failure"]["exit_status"] = exit_status
+descriptor, temporary = tempfile.mkstemp(prefix=".runner-validation.", dir=root, text=True)
+try:
+    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+        json.dump(result, target, sort_keys=True, separators=(",", ":"))
+        target.write("\n")
+    os.replace(temporary, os.path.join(root, "runner-validation.json"))
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+if outcome == "fail":
+    detail = f"go test exit {exit_status}"
+    if result["failure"]["failing_tests"]:
+        detail += "; failing tests: " + ", ".join(result["failure"]["failing_tests"])
+    if result["failure"]["running_tests"]:
+        detail += "; still running: " + ", ".join(result["failure"]["running_tests"])
+    print(f"[ci] race shard {index} failed: {detail}", file=sys.stderr)
+PY
+}
+
+write_apextest_runner_validation() {
+	local outcome="$1" exit_status="$2" shard_index="$3" events="${4:-}"
+	local failure_summary
+	failure_summary="$(race_lane_failure_summary "${events}")"
+	python3 - "${discovery}" "${plan}" "${binary_metadata}" "${artifact_dir}/runner-validation.json" "${package_name}" "${apextest_runner}" "${actual_apextest_head}" "${partition_digest}" "${partition_shard_count}" "${outcome}" "${exit_status}" "${shard_index}" "${failure_summary}" "${assigned_apextest_indexes[@]}" <<'PY'
+import hashlib
+import json
+import os
+import sys
+import tempfile
+
+discovery_path, plan_path, binary_path, output_path, package, runner, head_sha, partition_sha256, shard_count_text, outcome, exit_status_text, shard_index_text, failure_summary, *indexes = sys.argv[1:]
+indexes = [int(index) for index in indexes]
+shard_count, exit_status, shard_index = int(shard_count_text), int(exit_status_text), int(shard_index_text)
+if len(indexes) != len(set(indexes)) or any(index < 0 or index >= shard_count for index in indexes):
+    raise SystemExit("race apextest runner indexes must be unique shard indexes")
+with open(discovery_path, "rb") as source:
+    discovery = source.read()
+with open(plan_path, "rb") as source:
+    plan = source.read()
+with open(binary_path, encoding="utf-8") as source:
+    binary = json.load(source)
+if not isinstance(binary, dict) or set(binary) != {"schema_version", "package", "sha256", "size_bytes", "removed"}:
+    raise SystemExit("race apextest binary metadata has an invalid schema after cleanup")
+if binary["schema_version"] != 1 or binary["package"] != package:
+    raise SystemExit("race apextest binary metadata has invalid state")
+if outcome == "success" and binary["removed"] is not True:
+    raise SystemExit("race apextest binary metadata has invalid cleanup state")
+value = {
+    "schema_version": 1,
+    "runner": runner,
+    "package": package,
+    "head_sha": head_sha,
+    "assigned_indexes": indexes,
+    "discovered_count": len(discovery.splitlines()),
+    "discovery_sha256": hashlib.sha256(discovery).hexdigest(),
+    "plan_sha256": hashlib.sha256(plan).hexdigest(),
+    "partition_sha256": partition_sha256,
+    "binary_sha256": binary["sha256"],
+    "binary_size_bytes": binary["size_bytes"],
+    "binary_removed": binary["removed"],
+    "outcome": outcome,
+    "failure": None,
+}
+if outcome == "fail":
+    value["failure"] = json.loads(failure_summary)
+    value["failure"]["exit_status"] = exit_status
+    value["failure"]["shard"] = shard_index
+descriptor, temporary = tempfile.mkstemp(prefix=".runner-validation.", dir=os.path.dirname(output_path), text=True)
+try:
+    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+        json.dump(value, target, sort_keys=True, separators=(",", ":"))
+        target.write("\n")
+    os.replace(temporary, output_path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+if outcome == "fail":
+    detail = f"assigned shard {shard_index} go test exit {exit_status}"
+    if value["failure"]["failing_tests"]:
+        detail += "; failing tests: " + ", ".join(value["failure"]["failing_tests"])
+    if value["failure"]["running_tests"]:
+        detail += "; still running: " + ", ".join(value["failure"]["running_tests"])
+    print(f"[ci] race apextest runner {runner} failed: {detail}", file=sys.stderr)
+PY
+}
+
+if [[ -n "${browser_shard_index}" ]]; then
+	write_browser_shard_validation incomplete 0 ""
+fi
+if [[ -n "${apextest_runner}" ]]; then
+	write_apextest_runner_validation incomplete 0 0 ""
+fi
+
 if [[ "${race_mode}" == "partition" ]]; then
 	partition_path="${artifact_dir}/partition.json"
 	python3 "${script_dir}/ci-race-plan.py" schedule "${discovery}" "${plan}" "${binary_sha256}" "${binary_size}" >"${partition_path}"
 	python3 "${script_dir}/ci-race-plan.py" verify "${artifact_dir}"
+	if ! python3 - "${partition_path}" "${planner_shards}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    partition = json.load(source)
+if partition["shard_count"] != int(sys.argv[2]):
+    raise SystemExit(f"scheduled shard count {partition['shard_count']} does not match the planned {sys.argv[2]}")
+PY
+	then
+		printf '[ci] the scheduled partition does not match the planned shard count\n' >&2
+		exit 2
+	fi
 	cleanup_apextest_binary
 	trap - EXIT HUP INT TERM
 	exit 0
@@ -743,10 +949,17 @@ exit "${statuses[1]}"
 		validate_resource_evidence "${resource}" "race-${slug}-${lane_name}" "${native_rc}"
 		validation_rc="$?"
 		set -e
-		if [[ "${native_rc}" -ne 0 ]]; then
-			exit "${native_rc}"
-		fi
-		if [[ "${validation_rc}" -ne 0 ]]; then
+		if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
+			if [[ -n "${apextest_runner}" ]]; then
+				if [[ "${native_rc}" -ne 0 ]]; then
+					write_apextest_runner_validation fail "${native_rc}" "${shard_index}" "${events}"
+				else
+					write_apextest_runner_validation fail "${validation_rc}" "${shard_index}" "${events}"
+				fi
+			fi
+			if [[ "${native_rc}" -ne 0 ]]; then
+				exit "${native_rc}"
+			fi
 			exit "${validation_rc}"
 		fi
 		validate_package_summary "${events}" "${shard_dir}/package-summary.json"
@@ -797,54 +1010,7 @@ PY
 	if [[ -n "${apextest_runner}" ]]; then
 		cleanup_apextest_binary
 		trap - EXIT HUP INT TERM
-		python3 - "${discovery}" "${plan}" "${binary_metadata}" "${artifact_dir}/runner-validation.json" "${package_name}" "${apextest_runner}" "${actual_apextest_head}" "${partition_digest}" "${assigned_apextest_indexes[@]}" <<'PY'
-import hashlib
-import json
-import os
-import sys
-import tempfile
-
-discovery_path, plan_path, binary_path, output_path, package, runner, head_sha, partition_sha256, *indexes = sys.argv[1:]
-indexes = [int(index) for index in indexes]
-if len(indexes) != len(set(indexes)) or any(index < 0 or index >= 16 for index in indexes):
-    raise SystemExit("race apextest runner indexes must be unique shard indexes")
-with open(discovery_path, "rb") as source:
-    discovery = source.read()
-with open(plan_path, "rb") as source:
-    plan = source.read()
-with open(binary_path, encoding="utf-8") as source:
-    binary = json.load(source)
-if not isinstance(binary, dict) or set(binary) != {"schema_version", "package", "sha256", "size_bytes", "removed"}:
-    raise SystemExit("race apextest binary metadata has an invalid schema after cleanup")
-if binary["schema_version"] != 1 or binary["package"] != package or binary["removed"] is not True:
-    raise SystemExit("race apextest binary metadata has invalid cleanup state")
-value = {
-    "schema_version": 1,
-    "runner": runner,
-    "package": package,
-    "head_sha": head_sha,
-    "assigned_indexes": indexes,
-    "discovered_count": len(discovery.splitlines()),
-    "discovery_sha256": hashlib.sha256(discovery).hexdigest(),
-    "plan_sha256": hashlib.sha256(plan).hexdigest(),
-    "partition_sha256": partition_sha256,
-    "binary_sha256": binary["sha256"],
-    "binary_size_bytes": binary["size_bytes"],
-    "binary_removed": True,
-}
-descriptor, temporary = tempfile.mkstemp(prefix=".runner-validation.", dir=os.path.dirname(output_path), text=True)
-try:
-    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
-        json.dump(value, target, sort_keys=True, separators=(",", ":"))
-        target.write("\n")
-    os.replace(temporary, output_path)
-except BaseException:
-    try:
-        os.unlink(temporary)
-    except FileNotFoundError:
-        pass
-    raise
-PY
+		write_apextest_runner_validation success 0 0 ""
 		exit 0
 	fi
 
@@ -929,10 +1095,17 @@ for lane_name in "${lane_names[@]}"; do
 	validate_resource_evidence "${resource}" "race-${slug}-${lane_name}" "${native_rc}"
 	validation_rc="$?"
 	set -e
-	if [[ "${native_rc}" -ne 0 ]]; then
-		exit "${native_rc}"
-	fi
-	if [[ "${validation_rc}" -ne 0 ]]; then
+	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
+		if [[ -n "${browser_shard_index}" ]]; then
+			if [[ "${native_rc}" -ne 0 ]]; then
+				write_browser_shard_validation fail "${native_rc}" "${events}"
+			else
+				write_browser_shard_validation fail "${validation_rc}" "${events}"
+			fi
+		fi
+		if [[ "${native_rc}" -ne 0 ]]; then
+			exit "${native_rc}"
+		fi
 		exit "${validation_rc}"
 	fi
 	validate_package_summary "${events}" "${shard_dir}/package-summary.json"
@@ -978,21 +1151,7 @@ PY
 done
 
 if [[ -n "${browser_shard_index}" ]]; then
-	python3 - "${artifact_dir}" "${browser_shard_index}" "${apextest_head_sha}" "${package_name}" <<'PY'
-import hashlib
-import json
-import os
-import sys
-root, index, head, package = sys.argv[1:]
-result = {"schema_version": 1, "package": package, "head_sha": head, "shard_index": int(index)}
-for name in ("discovery", "plan"):
-    filename = name + (".txt" if name == "discovery" else ".json")
-    with open(os.path.join(root, filename), "rb") as source:
-        result[name + "_sha256"] = hashlib.sha256(source.read()).hexdigest()
-with open(os.path.join(root, "runner-validation.json"), "w", encoding="utf-8") as target:
-    json.dump(result, target, sort_keys=True)
-    target.write("\n")
-PY
+	write_browser_shard_validation success 0 ""
 	exit 0
 fi
 

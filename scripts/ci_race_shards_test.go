@@ -524,6 +524,7 @@ printf ']}\n'
 		if !strings.Contains(string(calls), fmt.Sprintf("start race-internal-vm-shard-%d", index)) {
 			t.Fatalf("VM leg %d did not execute its one assigned shard:\n%s", index, calls)
 		}
+		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-vm")
 		// Every leg must plan from the same race-scaled VM duration table.
 		history, err := os.ReadFile(filepath.Join(roots[index], "vm-race-history.json"))
 		if err != nil {
@@ -543,7 +544,6 @@ printf ']}\n'
 				t.Fatalf("VM leg %d scaled %s to %d ms, want %d", index, row.Name, row.DurationMillis, want)
 			}
 		}
-		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-vm")
 	}
 	aggregate, err := filepath.Abs("ci-race-shard-aggregate.sh")
 	if err != nil {
@@ -590,11 +590,11 @@ printf ']}\n'
 		Valid    bool     `json:"valid"`
 		Verdicts []string `json:"verdicts"`
 	}
-	if json.Unmarshal(verdict, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 4 {
+	if json.Unmarshal(verdict, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 1 {
 		t.Fatalf("incomplete union verdict = %s err=%v", verdict, err)
 	}
-	if !strings.Contains(rejected.Verdicts[3], "shard 3") {
-		t.Fatalf("verdict for the missing shard = %q", rejected.Verdicts[3])
+	if !strings.Contains(rejected.Verdicts[0], "shard 3") {
+		t.Fatalf("verdict for the missing shard = %q", rejected.Verdicts[0])
 	}
 }
 
@@ -696,8 +696,8 @@ exit "${CI_RACE_GO_STATUS:-0}"
 		Valid    bool     `json:"valid"`
 		Verdicts []string `json:"verdicts"`
 	}
-	if json.Unmarshal(summary, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 4 ||
-		!strings.Contains(rejected.Verdicts[1], "TestCase01") {
+	if json.Unmarshal(summary, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 1 ||
+		!strings.Contains(rejected.Verdicts[0], "TestCase01") {
 		t.Fatalf("aggregate verdict = %s err=%v", summary, err)
 	}
 }

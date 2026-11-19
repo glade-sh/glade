@@ -175,8 +175,10 @@ def validate_events(path, expected_tests, index):
     return deferred
 
 runner_keys = {"schema_version", "runner", "package", "head_sha", "assigned_indexes", "discovered_count",
-               "discovery_sha256", "plan_sha256", "partition_sha256", "binary_sha256", "binary_size_bytes", "binary_removed"}
+               "discovery_sha256", "plan_sha256", "partition_sha256", "binary_sha256", "binary_size_bytes", "binary_removed",
+               "outcome", "failure"}
 validated = {}
+verdicts = []
 for runner in sorted(assignments):
     root = roots[runner]
     evidence = load_json(os.path.join(root, "runner-validation.json"), "runner validation")
@@ -194,7 +196,7 @@ for runner in sorted(assignments):
             raise SystemExit("race apextest aggregate has invalid runner validation")
     if evidence["discovery_sha256"] != partition["discovery_sha256"] or evidence["plan_sha256"] != partition["plan_sha256"]:
         raise SystemExit(f"race apextest aggregate runner {runner} identity does not match the partition")
-    if type(evidence["binary_size_bytes"]) is not int or evidence["binary_size_bytes"] <= 0 or evidence["binary_removed"] is not True:
+    if type(evidence["binary_size_bytes"]) is not int or evidence["binary_size_bytes"] <= 0 or type(evidence["binary_removed"]) is not bool:
         raise SystemExit("race apextest aggregate has invalid runner validation")
     if evidence["head_sha"] != expected_head_sha:
         raise SystemExit("race apextest aggregate runner checkout head does not match expected head")
@@ -203,6 +205,27 @@ for runner in sorted(assignments):
     with open(os.path.join(partition_dir, "partition.json"), "rb") as source:
         if hashlib.sha256(source.read()).hexdigest() != evidence["partition_sha256"]:
             raise SystemExit(f"race apextest aggregate runner {runner} recorded a different partition")
+    if evidence["outcome"] == "success":
+        if evidence["failure"] is not None or evidence["binary_removed"] is not True:
+            raise SystemExit(f"race apextest aggregate runner {runner} recorded success with failure detail or a live binary")
+    elif evidence["outcome"] in ("fail", "incomplete"):
+        failure = evidence["failure"]
+        if evidence["outcome"] == "fail":
+            if not isinstance(failure, dict) or set(failure) != {"shard", "exit_status", "failing_tests", "running_tests"} or type(failure["shard"]) is not int or failure["shard"] not in assignments[runner] or type(failure["exit_status"]) is not int or not all(isinstance(name, str) for name in failure["failing_tests"] + failure["running_tests"]):
+                raise SystemExit(f"race apextest aggregate runner {runner} recorded an invalid failure detail")
+            detail = f"runner {runner} failed assigned shard {failure['shard']}: go test exit {failure['exit_status']}"
+            if failure["failing_tests"]:
+                detail += "; failing tests: " + ", ".join(failure["failing_tests"])
+            if failure["running_tests"]:
+                detail += "; still running: " + ", ".join(failure["running_tests"])
+            verdicts.append(detail)
+        else:
+            if failure is not None:
+                raise SystemExit(f"race apextest aggregate runner {runner} recorded failure detail on an incomplete batch")
+            verdicts.append(f"runner {runner} did not finish its assigned shards: it was killed or cancelled before completing the batch")
+        continue
+    else:
+        raise SystemExit(f"race apextest aggregate runner {runner} recorded an unknown outcome {evidence['outcome']!r}")
 
     binary = load_json(os.path.join(root, "binary.json"), "binary metadata")
     require_exact_object(binary, {"schema_version", "package", "sha256", "size_bytes", "removed"}, "binary metadata")
@@ -225,6 +248,33 @@ for runner in sorted(assignments):
         validate_resource(resource_path, f"race-internal-apextest-shard-{index}")
         deferred.extend(validate_events(events_path, shard_tests[index], index))
     validated[runner] = {"deferred": deferred}
+
+if verdicts:
+    for verdict in verdicts:
+        print(f"race apextest aggregate: {verdict}", file=sys.stderr)
+    result = {
+        "schema_version": 1,
+        "package": package,
+        "head_sha": expected_head_sha,
+        "shard_count": shard_count,
+        "verdicts": verdicts,
+        "valid": False,
+    }
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    os.makedirs(output_dir, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=".apextest-aggregate-verdict.", dir=output_dir, text=True)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+            json.dump(result, target, sort_keys=True)
+            target.write("\n")
+        os.replace(temporary, output_path)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
+    raise SystemExit(f"race apextest aggregate rejected runner evidence: {len(verdicts)} of {len(assignments)} runners failed; see the per-runner verdicts above")
 
 if len(validated) != len(assignments):
     raise SystemExit("race apextest aggregate did not validate every planned runner")
