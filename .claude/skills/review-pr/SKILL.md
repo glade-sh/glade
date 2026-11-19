@@ -36,8 +36,9 @@ diff once and report every finding in one pass.
 6. Correctness. Wrong results, races, values shared with a cache, stale cache
    keys, unbounded memory.
 7. CI manifests. New packages, goroutines, `sync` use or `t.Parallel` tests
-   have entries in `scripts/ci-package-lanes.json` and
-   `scripts/ci-race-push.json`.
+   have entries in `scripts/ci-package-lanes.json`; race coverage needs no
+   manifest, the nightly race workflow runs every package outside the six
+   big ones whole.
 8. Public safety. No third-party names or content, org ids, usernames,
    personal paths or credentials, in the diff or in any commit of the branch.
    No file named for a ticket or review round.
