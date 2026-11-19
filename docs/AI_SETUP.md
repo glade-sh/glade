@@ -154,12 +154,24 @@ pushes to `main` run these workflows:
 
 | Workflow | Triggers | What it gates |
 | --- | --- | --- |
-| `CI` (`ci.yml`) | PR, merge queue, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries and test-binaries-apextest (separate producers, so the apextest shards do not wait on the other three binaries), vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` job (remaining Go packages plus repoguard) and the `lwc-vf` matrix (LWC compile and Visualforce shards), smoke-runtime, smoke-distribution and leak-scan (`scripts/leak-scan.sh` over the added lines of the change: personal and host paths, private temp paths, and the entries of the `LEAK_SCAN_DENYLIST` repository secret, with `.github/leak-scan-allow.txt` exempting named files from the denylist; a denylist with no entries fails the job, and only a pull request from a fork or another head repository — which cannot see repository secrets — passes `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skips the denylist with a warning while the path checks still run). `scripts/leak-scan-commits.sh A..B` re-runs the scan for every commit of a range on its own and names the commit with a finding, for release checks ([WORKFLOW.md](WORKFLOW.md) section 3.11). The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
+| `CI` (`ci.yml`) | PR, merge queue, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries and test-binaries-apextest (separate producers, so the apextest shards do not wait on the other three binaries), vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` job (remaining Go packages plus repoguard) and the `lwc-vf` matrix (LWC compile and Visualforce shards), smoke-runtime, smoke-distribution and leak-scan (`scripts/leak-scan.sh` over the added lines of the change: personal and host paths, private temp paths, and the entries of the `LEAK_SCAN_DENYLIST` repository secret, with `.github/leak-scan-allow.txt` exempting named files from the denylist; a denylist with no entries fails the job, and only a pull request from a fork or another head repository — which cannot see repository secrets — passes `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skips the denylist with a warning while the path checks still run). `scripts/leak-scan-commits.sh A..B` re-runs the scan for every commit of a range on its own and names the commit with a finding, for release checks ([WORKFLOW.md](WORKFLOW.md) section 3.11). Ordinary pull requests instead run the `pr-tests` worker matrix and the separate `pr-guards` repository-guard worker, both required. The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
 | `Browser` (`browser.yml`) | PR, push to `main`, daily, dispatch | LWC browser and L08 conformance. Missing or skipped browser results fail. |
 | `Race` (`race.yml`) | Nightly schedule, dispatch | The full race matrix, with apextest in three parts. It does not run on pushes or pull requests and is not a PR check. |
 | `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The fast CodeQL profile runs on PRs and main pushes; full runs on the schedule, tags and dispatch. |
 | `Repeat timing-sensitive tests` (`repeat.yml`) | Daily, dispatch | Reruns `scripts/ci-repeat-tests.txt` on Linux and macOS. |
 | `Release` (`release.yml`) | `v*` tags, dispatch | See [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md). |
+
+For pull requests the `CI` workflow runs the fast lane instead of the full
+suite: the `pr-tests` matrix runs only the packages `scripts/ci-pr-select.sh`
+selects, which are the changed packages plus every package that transitively
+imports them through production or test imports. A changed path inside the
+nested Apex parser module (`third_party/glade-apex-parser/**`) selects the
+root packages that import the parser and their consumers. A path outside
+every Go package, including the deleted files of a removed or renamed
+package, selects the full set, as do `go.mod` and `go.sum`; only `docs/**`
+and Markdown files outside `testdata` select nothing. The lane inventories in
+`scripts/ci-package-lanes.json` and `scripts/ci-race-push.json` name the
+packages the full lanes own.
 
 CodeQL has two profiles in one reusable workflow (`codeql.yml`). The fast
 profile runs in Security outside `Required CI`. The full profile runs in Security

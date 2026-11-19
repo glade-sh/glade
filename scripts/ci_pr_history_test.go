@@ -20,10 +20,11 @@ type prLaneStep struct {
 }
 
 type prLaneJob struct {
-	If    string            `yaml:"if"`
-	Needs yaml.Node         `yaml:"needs"`
-	Env   map[string]string `yaml:"env"`
-	Steps []prLaneStep      `yaml:"steps"`
+	If             string            `yaml:"if"`
+	Needs          yaml.Node         `yaml:"needs"`
+	TimeoutMinutes int               `yaml:"timeout-minutes"`
+	Env            map[string]string `yaml:"env"`
+	Steps          []prLaneStep      `yaml:"steps"`
 }
 
 func readPRLaneJobs(t *testing.T) map[string]prLaneJob {
@@ -55,13 +56,17 @@ func prLaneNeeds(t *testing.T, job prLaneJob) []string {
 	return needs
 }
 
-// The three long-pole packages in the PR lane plan from the same shared
-// duration history the full lane uses.
+// The six long-pole packages in the PR lane plan from the same shared
+// duration history the full lane uses: Apex, VM, CLI, sema, LWC compile and
+// Visualforce.
 var prLaneHistory = []struct {
 	job, artifact, env, dir, ifRange string
 	base, count                      int
 }{
 	{"history-input", "apextest-history-input", "CI_APEXTEST_HISTORY_PATH", "/tmp/glade-apextest-duration-history", "", 0, 12},
+	{"history-input", "vm-history-input", "CI_VM_HISTORY_PATH", "/tmp/glade-vm-duration-history", "", 12, 4},
+	{"history-input", "gladecli-history-input", "CI_GLADECLI_HISTORY_PATH", "/tmp/glade-gladecli-duration-history", "", 16, 4},
+	{"history-input", "sema-history-input", "CI_SEMA_HISTORY_PATH", "/tmp/glade-sema-duration-history", "", 20, 2},
 	{"history-input", "lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "/tmp/glade-lwc-compile-duration-history", "", 24, 12},
 	{"history-input", "visualforce-history-input", "CI_VISUALFORCE_HISTORY_PATH", "/tmp/glade-visualforce-duration-history", "", 36, 8},
 }
@@ -138,7 +143,7 @@ func TestCIPRLaneConsumesOneSharedHistoryArtifact(t *testing.T) {
 		}
 	}
 	// Download ranges match the shard routes the job actually runs.
-	spec := regexp.MustCompile(`(apex|lwc-compile|visualforce):[a-z/]+:(\d+):(\d+)`)
+	spec := regexp.MustCompile(`(apex|vm|gladecli|sema|lwc-compile|visualforce):[a-z/]+:(\d+):(\d+)`)
 	var run string
 	for _, step := range pr.Steps {
 		if strings.Contains(step.Run, "CI_APEXTEST_SHARDS") {
@@ -151,10 +156,53 @@ func TestCIPRLaneConsumesOneSharedHistoryArtifact(t *testing.T) {
 		count, _ := strconv.Atoi(m[3])
 		routes[m[1]] = [2]int{base, count}
 	}
-	for route, h := range map[string]int{"apex": 0, "lwc-compile": 1, "visualforce": 2} {
+	for route, h := range map[string]int{"apex": 0, "vm": 1, "gladecli": 2, "sema": 3, "lwc-compile": 4, "visualforce": 5} {
 		got, ok := routes[route]
 		if !ok || got != [2]int{prLaneHistory[h].base, prLaneHistory[h].count} {
 			t.Errorf("shard route %s = %v, history download covers %d+%d", route, got, prLaneHistory[h].base, prLaneHistory[h].count)
 		}
+	}
+}
+
+// The sema duration history has no dedicated full-lane input job: the sema
+// shards restore their cache directly. The PR lane needs the history-input job
+// to stage the same frozen artifact for its sema workers, or they plan from a
+// deterministic fallback while the full lane plans from history.
+func TestCIHistoryInputStagesSemaHistory(t *testing.T) {
+	jobs := readPRLaneJobs(t)
+	input, ok := jobs["history-input"]
+	if !ok {
+		t.Fatal("history-input job missing")
+	}
+	if got, want := input.Env["CI_SEMA_HISTORY_PATH"], "/tmp/glade-sema-duration-history/sema-duration-history.json"; got != want {
+		t.Errorf("history-input env CI_SEMA_HISTORY_PATH = %q, want %q", got, want)
+	}
+	restores := 0
+	for _, step := range input.Steps {
+		if step.With["path"] == "/tmp/glade-sema-duration-history" && strings.HasPrefix(step.Uses, "actions/cache/restore@") {
+			restores++
+			if !strings.Contains(step.With["key"], "sema-duration-history-v1-") || !strings.Contains(step.With["key"], "env.CI_DURATION_HISTORY_CACHE_REF") {
+				t.Errorf("sema history restore key = %q, want the duration-history cache key", step.With["key"])
+			}
+		}
+	}
+	if restores != 1 {
+		t.Errorf("history-input restores the sema duration history %d times, want once", restores)
+	}
+	uploads := 0
+	for _, step := range input.Steps {
+		if !strings.HasPrefix(step.Uses, "actions/upload-artifact@") || step.With["name"] != "sema-history-input" {
+			continue
+		}
+		uploads++
+		if step.With["path"] != "ci-artifacts/sema-history-input/" {
+			t.Errorf("sema-history-input upload path = %q, want the staged directory", step.With["path"])
+		}
+		if step.With["if-no-files-found"] != "error" {
+			t.Errorf("sema-history-input upload must fail when nothing staged, got if-no-files-found %q", step.With["if-no-files-found"])
+		}
+	}
+	if uploads != 1 {
+		t.Errorf("history-input uploads sema-history-input %d times, want once", uploads)
 	}
 }

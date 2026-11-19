@@ -1,7 +1,9 @@
 package scripts
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,50 +15,156 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestCIPRPackageSelection(t *testing.T) {
+// A synthetic repository for selection tests: a root Go module (example/*)
+// plus the nested Apex parser module under third_party/glade-apex-parser. The
+// chains mirror the real ones: b is a direct parser importer, d imports b in
+// production while e and f import d in internal and external tests, sema
+// imports b, vm imports version and the parser, and runner imports vm — the
+// internal/apexversion -> internal/vm -> internal/apextest chain.
+const (
+	selectionGraph = `[
+{"ImportPath":"example/a","Dir":"/repo/a"},
+{"ImportPath":"example/b","Dir":"/repo/b","Imports":["example/a","github.com/glade-sh/apex-parser"]},
+{"ImportPath":"example/c","Dir":"/repo/c","TestImports":["example/a"]},
+{"ImportPath":"example/d","Dir":"/repo/d","Imports":["example/b"]},
+{"ImportPath":"example/e","Dir":"/repo/e","TestImports":["example/d"]},
+{"ImportPath":"example/f","Dir":"/repo/f","XTestImports":["example/d"]},
+{"ImportPath":"example/sema","Dir":"/repo/sema","Imports":["example/b"]},
+{"ImportPath":"example/version","Dir":"/repo/version"},
+{"ImportPath":"example/vm","Dir":"/repo/vm","Imports":["example/version","github.com/glade-sh/apex-parser"]},
+{"ImportPath":"example/runner","Dir":"/repo/runner","Imports":["example/vm"]},
+{"ImportPath":"example/newpkg","Dir":"/repo/newpkg"},
+{"ImportPath":"example/renamednew","Dir":"/repo/renamednew"}
+]`
+	selectionParserGraph = `[
+{"ImportPath":"github.com/glade-sh/apex-parser","Dir":"/repo/third_party/glade-apex-parser","Imports":["github.com/glade-sh/apex-parser/internal/tsapex"]},
+{"ImportPath":"github.com/glade-sh/apex-parser/internal/tsapex","Dir":"/repo/third_party/glade-apex-parser/internal/tsapex"}
+]`
+	selectionManifest = `{"version":1,"lanes":{"remaining-go":[
+"example/a","example/b","example/c","example/d","example/e","example/f",
+"example/newpkg","example/renamednew","example/runner","example/sema",
+"example/version","example/vm"
+]}}`
+)
+
+var (
+	selectionAll = []string{
+		"example/a", "example/b", "example/c", "example/d", "example/e", "example/f",
+		"example/newpkg", "example/renamednew", "example/runner", "example/sema",
+		"example/version", "example/vm",
+	}
+	// A changed a reaches b, c and then, transitively, d, e, f and sema.
+	selectionFromA = []string{"example/a", "example/b", "example/c", "example/d", "example/e", "example/f", "example/sema"}
+	// Any parser path reaches every root package that imports the parser (b
+	// and vm) and closes over the reverse import graph from there.
+	selectionFromParser = []string{"example/b", "example/d", "example/e", "example/f", "example/runner", "example/sema", "example/vm"}
+)
+
+// runPRSelect runs scripts/ci-pr-select.py over fixture graph inputs and
+// returns the selected package list, or the command error.
+func runPRSelect(t *testing.T, files map[string]string, paths string) ([]string, error) {
+	t.Helper()
 	root := t.TempDir()
-	graph := `[{"ImportPath":"example/a","Dir":"/repo/a"},{"ImportPath":"example/b","Dir":"/repo/b","Imports":["example/a","github.com/glade-sh/apex-parser/parser"]},{"ImportPath":"example/c","Dir":"/repo/c","TestImports":["example/a"]},{"ImportPath":"example/d","Dir":"/repo/d","Imports":["example/b"]}]`
-	manifest := `{"version":1,"lanes":{"remaining-go":["example/a","example/b","example/c","example/d"]}}`
-	for name, data := range map[string]string{"graph.json": graph, "manifest.json": manifest} {
-		if err := os.WriteFile(filepath.Join(root, name), []byte(data), 0600); err != nil {
+	for name, data := range files {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(data), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	all := []string{"example/a", "example/b", "example/c", "example/d"}
+	cmd := exec.Command("python3", "ci-pr-select.py", "--root", "/repo",
+		"--graph", filepath.Join(root, "graph.json"),
+		"--parser-graph", filepath.Join(root, "parser-graph.json"),
+		"--manifest", filepath.Join(root, "manifest.json"))
+	cmd.Stdin = strings.NewReader(paths)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("selector: %w\n%s", err, stderr.String())
+	}
+	var got []string
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("invalid output: %v: %s", err, stdout.String())
+	}
+	sort.Strings(got)
+	return got, nil
+}
+
+func TestCIPRPackageSelection(t *testing.T) {
+	files := map[string]string{
+		"graph.json":        selectionGraph,
+		"parser-graph.json": selectionParserGraph,
+		"manifest.json":     selectionManifest,
+	}
 	cases := []struct {
 		name, paths string
 		want        []string
 	}{
-		{"direct and test importers", "a/a.go\n", []string{"example/a", "example/b", "example/c"}},
-		{"non go fixture", "a/testdata/input.cls\n", []string{"example/a", "example/b", "example/c"}},
+		{"direct and transitive importers", "a/a.go\n", selectionFromA},
+		{"second order edges", "b/b.go\n", []string{"example/b", "example/d", "example/e", "example/f", "example/sema"}},
+		{"version chain reaches the runner", "version/version.go\n", []string{"example/runner", "example/version", "example/vm"}},
+		{"parser file reaches semantic and runtime consumers", "third_party/glade-apex-parser/parser.go\n", selectionFromParser},
+		{"parser internal file reaches consumers", "third_party/glade-apex-parser/internal/tsapex/binding.go\n", selectionFromParser},
+		{"parser non package file", "third_party/glade-apex-parser/README.md\n", selectionFromParser},
+		{"non go fixture", "a/testdata/input.cls\n", selectionFromA},
+		{"native fixture in a package", "runner/testdata/conformance/x/org.tsv\n", []string{"example/runner"}},
+		{"deleted file in a surviving package", "vm/vm.go\n", []string{"example/runner", "example/vm"}},
+		{"new package", "newpkg/newpkg.go\n", []string{"example/newpkg"}},
+		{"removed package", "gone/gone.go\n", selectionAll},
+		{"renamed package", "oldname/helper.go\nrenamednew/helper.go\n", selectionAll},
 		{"unrelated docs", "docs/readme.md\n", []string{}},
 		{"docs tree non markdown", "docs/img/diagram.png\n", []string{}},
 		{"root markdown", "README.md\n", []string{}},
-		{"lwcruntime input", "lwcruntime/src/shell/workspace-service.mjs\n", all},
-		{"third party lwc", "third_party/lwc/package.json\n", all},
-		{"root testdata", "testdata/conformance/x/org.tsv\n", all},
-		{"root testdata markdown", "testdata/conformance/x/native-run.md\n", all},
-		{"root file", "glade.yml\n", all},
-		{"workflow", ".github/workflows/ci.yml\n", all},
-		{"docs plus unmapped", "docs/a.md\nlwcruntime/x.mjs\n", all},
-		{"multiple", "a/a.go\nd/d.go\n", []string{"example/a", "example/b", "example/c", "example/d"}},
-		{"nested parser", "third_party/glade-apex-parser/parser/file.go\n", []string{"example/b"}},
+		{"dependency manifest", "go.mod\n", selectionAll},
+		{"dependency checksums", "go.sum\n", selectionAll},
+		{"lwcruntime input", "lwcruntime/src/shell/workspace-service.mjs\n", selectionAll},
+		{"third party lwc", "third_party/lwc/package.json\n", selectionAll},
+		{"root testdata", "testdata/conformance/x/org.tsv\n", selectionAll},
+		{"root testdata markdown", "testdata/conformance/x/native-run.md\n", selectionAll},
+		{"root file", "glade.yml\n", selectionAll},
+		{"workflow", ".github/workflows/ci.yml\n", selectionAll},
+		{"docs plus unmapped", "docs/a.md\nlwcruntime/x.mjs\n", selectionAll},
+		{"multiple", "a/a.go\nd/d.go\n", selectionFromA},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("python3", "ci-pr-select.py", "--root", "/repo", "--graph", filepath.Join(root, "graph.json"), "--manifest", filepath.Join(root, "manifest.json"))
-			cmd.Stdin = strings.NewReader(tc.paths)
-			out, err := cmd.CombinedOutput()
+			got, err := runPRSelect(t, files, tc.paths)
 			if err != nil {
-				t.Fatalf("selector: %v\n%s", err, out)
+				t.Fatal(err)
 			}
-			var got []string
-			if err := json.Unmarshal(out, &got); err != nil {
-				t.Fatalf("invalid output: %v: %s", err, out)
-			}
-			sort.Strings(got)
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// A planning error must fail the selection instead of producing an empty
+// successful one: a malformed graph or manifest can never narrow what runs.
+func TestCIPRSelectionRejectsMalformedInputs(t *testing.T) {
+	cases := []struct{ name, graph, parser, manifest string }{
+		{"graph is not a list", "{}", selectionParserGraph, selectionManifest},
+		{"graph is invalid json", "[{\"ImportPath\":", selectionParserGraph, selectionManifest},
+		{"graph entry is not an object", "[\"example/a\"]", selectionParserGraph, selectionManifest},
+		{"graph entry has no import path", "[{\"Dir\":\"/repo/a\"}]", selectionParserGraph, selectionManifest},
+		{"graph entry has no dir", "[{\"ImportPath\":\"example/a\"}]", selectionParserGraph, selectionManifest},
+		{"graph lists a package twice", "[{\"ImportPath\":\"example/a\",\"Dir\":\"/repo/a\"},{\"ImportPath\":\"example/a\",\"Dir\":\"/repo/a2\"}]", selectionParserGraph, selectionManifest},
+		{"graph import list is malformed", "[{\"ImportPath\":\"example/a\",\"Dir\":\"/repo/a\",\"Imports\":\"example/b\"}]", selectionParserGraph, selectionManifest},
+		{"graph is empty", "[]", selectionParserGraph, selectionManifest},
+		{"graph does not match the manifest", selectionGraph, selectionParserGraph, `{"version":1,"lanes":{"remaining-go":["example/a"]}}`},
+		{"manifest is not an object", selectionGraph, selectionParserGraph, "[]"},
+		{"manifest has no lanes", selectionGraph, selectionParserGraph, `{"version":1}`},
+		{"manifest lane is malformed", selectionGraph, selectionParserGraph, `{"version":1,"lanes":{"remaining-go":"example/a"}}`},
+		{"manifest lists an unknown package", selectionGraph, selectionParserGraph, `{"version":1,"lanes":{"remaining-go":["example/ghost"]}}`},
+		{"parser graph is empty", selectionGraph, "[]", selectionManifest},
+		{"parser graph is not a list", "{}", selectionParserGraph, selectionManifest},
+		{"parser graph package outside the module", selectionGraph, `[{"ImportPath":"example/a","Dir":"/repo/third_party/glade-apex-parser/x"}]`, selectionManifest},
+		{"parser graph package outside the module directory", selectionGraph, `[{"ImportPath":"github.com/glade-sh/apex-parser","Dir":"/repo/other"}]`, selectionManifest},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			files := map[string]string{"graph.json": tc.graph, "parser-graph.json": tc.parser, "manifest.json": tc.manifest}
+			if _, err := runPRSelect(t, files, "a/a.go\n"); err == nil {
+				t.Fatal("selector accepted a malformed input")
 			}
 		})
 	}
@@ -121,7 +229,20 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		run(event, true)
 	}
 	run("pull_request", false)
+	// The repository guards moved to their own PR worker: a missing or
+	// skipped guard worker must fail the pull request gate, and the full
+	// routes keep excluding it because their test job owns the guards.
+	if _, ok := results["pr-guards"]; !ok {
+		t.Fatal("required-ci does not need pr-guards; the aggregate must expect the split guard worker")
+	}
+	results["pr-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	for _, event := range []string{"merge_group", "push", "schedule", "workflow_dispatch"} {
+		run(event, true)
+	}
+	results["pr-guards"]["result"] = "success"
 	results["pr-tests"]["result"] = "success"
+	run("pull_request", true)
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)
 	run("merge_group", false)
