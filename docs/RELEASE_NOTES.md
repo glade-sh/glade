@@ -12,6 +12,7 @@
 
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
 - **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
+- Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
 
 ### Changes
 
