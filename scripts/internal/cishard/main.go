@@ -13,6 +13,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -115,6 +116,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	requestedPackage := fs.String("package", apexTestPackage, "exact Go import path for the test package")
 	testsPath := fs.String("tests", "", "newline-delimited discovered tests (default: stdin)")
 	historyPath := fs.String("history", "", "JSON test duration history")
+	isolatedPath := fs.String("isolate", "", "comma-separated tests that must each run in a dedicated shard")
 	index := fs.Int("index", -1, "emit only the zero-based shard index")
 	packageManifestPath := fs.String("package-manifest", "", "checked CI package ownership manifest")
 	packagesPath := fs.String("packages", "", "newline-delimited current Go packages")
@@ -167,6 +169,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "cishard: --index must be between 0 and %d\n", *shards-1)
 		return 2
 	}
+	isolated, err := readIsolatedTests(*isolatedPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "cishard: --isolate: %v\n", err)
+		return 2
+	}
 
 	testReader := stdin
 	var testFile *os.File
@@ -193,7 +200,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "cishard: history rejected: %v; using deterministic fallback\n", err)
 		}
 	}
-	result, diagnostic, err := buildPlanForPackage(*requestedPackage, names, *shards, history)
+	result, diagnostic, err := buildPlanForPackage(*requestedPackage, names, *shards, history, isolated)
 	if err != nil {
 		fmt.Fprintf(stderr, "cishard: %v\n", err)
 		return 1
@@ -451,10 +458,33 @@ func readNames(r io.Reader) ([]string, error) {
 }
 
 func buildPlan(names []string, shardCount int, history []byte) (plan, string, error) {
-	return buildPlanForPackage(apexTestPackage, names, shardCount, history)
+	return buildPlanForPackage(apexTestPackage, names, shardCount, history, nil)
 }
 
-func buildPlanForPackage(packageName string, names []string, shardCount int, history []byte) (plan, string, error) {
+func readIsolatedTests(value string) ([]string, error) {
+	if value == "" {
+		return nil, nil
+	}
+	seen := make(map[string]bool)
+	var isolated []string
+	for _, name := range strings.Split(value, ",") {
+		if name == "" {
+			return nil, errors.New("empty test name")
+		}
+		if !testNamePattern.MatchString(name) {
+			return nil, fmt.Errorf("invalid test name %q", name)
+		}
+		if seen[name] {
+			return nil, fmt.Errorf("duplicate test name %q", name)
+		}
+		seen[name] = true
+		isolated = append(isolated, name)
+	}
+	sort.Strings(isolated)
+	return isolated, nil
+}
+
+func buildPlanForPackage(packageName string, names []string, shardCount int, history []byte, isolated []string) (plan, string, error) {
 	if err := validateImportPath(packageName); err != nil {
 		return plan{}, "", err
 	}
@@ -467,6 +497,16 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 	}
 	if shardCount > len(canonical) {
 		return plan{}, "", fmt.Errorf("shard count %d exceeds test count %d", shardCount, len(canonical))
+	}
+	if len(isolated) >= shardCount {
+		return plan{}, "", fmt.Errorf("isolated test count %d leaves no balanced shard in %d shards", len(isolated), shardCount)
+	}
+	isolatedSet := make(map[string]bool, len(isolated))
+	for _, name := range isolated {
+		if !slices.Contains(canonical, name) {
+			return plan{}, "", fmt.Errorf("isolated test %q is not in the discovery", name)
+		}
+		isolatedSet[name] = true
 	}
 
 	weights, diagnostic := historyWeightsForPackage(packageName, canonical, history)
@@ -519,6 +559,11 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 		}
 		items = append(items, weightedTest{name: name, duration: duration, hash: sha256.Sum256([]byte(name))})
 	}
+	balancedCount := shardCount - len(isolated)
+	itemsByTest := make(map[string]int64, len(isolated))
+	for _, item := range items {
+		itemsByTest[item.name] = item.duration
+	}
 	if historyUsed {
 		sort.Slice(items, func(i, j int) bool {
 			// Preserve placement of observed tests before missing tests.
@@ -547,15 +592,30 @@ func buildPlanForPackage(packageName string, names []string, shardCount int, his
 		result.Shards[i].Index = i
 		result.Shards[i].Tests = []string{}
 	}
+	// Isolated tests own the trailing shards, one each, in the same sorted
+	// order the lane matrix assigns their indexes; the lane derives that a
+	// single test's raced budget exceeds the balanced per-shard budget, so
+	// no balanced shard may carry it. Sorting here keeps the shard mapping
+	// stable regardless of the order the names arrived in.
+	ordered := append([]string(nil), isolated...)
+	sort.Strings(ordered)
+	for offset, name := range ordered {
+		result.Shards[balancedCount+offset].Tests = append(result.Shards[balancedCount+offset].Tests, name)
+		result.Shards[balancedCount+offset].EstimatedDurationMillis += itemsByTest[name]
+		counts[balancedCount+offset]++
+	}
 	for _, item := range items {
+		if isolatedSet[item.name] {
+			continue
+		}
 		target := 0
-		for i := 0; i < shardCount; i++ {
+		for i := 0; i < balancedCount; i++ {
 			if counts[i] == 0 {
 				target = i
 				break
 			}
 		}
-		for i := 1; counts[target] != 0 && i < shardCount; i++ {
+		for i := 1; counts[target] != 0 && i < balancedCount; i++ {
 			if historyUsed {
 				if result.Shards[i].EstimatedDurationMillis < result.Shards[target].EstimatedDurationMillis {
 					target = i

@@ -30,6 +30,37 @@ PY
 }
 
 case "${1:-}" in
+	select)
+		if [[ "$#" -ne 3 ]]; then
+			echo "usage: scripts/ci-race-packages.sh select <full-packages-json> <comma-separated-selection>" >&2
+			exit 2
+		fi
+		python3 - "${manifest}" "$2" "$3" <<'PY'
+import json
+import sys
+
+module = "github.com/glade-sh/glade"
+with open(sys.argv[1], encoding="utf-8") as source:
+    manifest = json.load(source)
+if manifest.get("version") != 1 or not isinstance(manifest.get("lanes"), dict):
+    raise SystemExit("race classifier rejected invalid package manifest")
+expected = []
+for lane in manifest["lanes"].values():
+    if not isinstance(lane, list):
+        raise SystemExit("race classifier rejected invalid package lane")
+    expected.extend("." + value[len(module):] for value in lane)
+if not expected or len(set(expected)) != len(expected):
+    raise SystemExit("race classifier requires unique manifest packages")
+requested = sys.argv[3]
+if not requested or any(not item for item in requested.split(",")):
+    raise SystemExit("the packages selection is empty or has blank entries")
+unknown = sorted(set(requested.split(",")) - set(expected))
+if unknown:
+    raise SystemExit("unknown race package(s): " + ", ".join(unknown))
+print(json.dumps(sorted(set(requested.split(","))), separators=(",", ":")))
+PY
+		exit 0
+		;;
 	partition)
 		if [[ "$#" -ne 2 ]]; then
 			echo "usage: scripts/ci-race-packages.sh partition <full-packages-json>" >&2
@@ -49,25 +80,31 @@ for lane in manifest["lanes"].values():
     if not isinstance(lane, list):
         raise SystemExit("race classifier rejected invalid package lane")
     expected.extend("." + value[len(module):] for value in lane)
+if not expected or len(set(expected)) != len(expected):
+    raise SystemExit("race classifier requires unique manifest packages")
 packages = json.loads(sys.argv[2])
-if not isinstance(packages, list) or sorted(packages) != sorted(expected) or len(packages) != len(set(packages)):
-	raise SystemExit("race partition requires the exact unique full-manifest packages")
+if not isinstance(packages, list) or not packages or len(packages) != len(set(packages)):
+    raise SystemExit("race partition requires a nonempty unique package list")
+unknown = sorted(set(packages) - set(expected))
+if unknown:
+    raise SystemExit("race partition requires manifest packages; unknown: " + ", ".join(unknown))
 # gladecli consumes the shared race binary, so it can only start after the
 # binary producer; repoguard needs no binary and gets its own early lane so
 # the slowest generic package is not queued behind the generic matrix.
-early = ["./internal/gladecli"]
-independent = ["./internal/repoguard"]
+early = ["./internal/gladecli"] if "./internal/gladecli" in packages else []
+independent = ["./internal/repoguard"] if "./internal/repoguard" in packages else []
 # apextest, visualforce, lwc/compile and vm run dedicated shard lanes; vm is
 # bounded by its own shards instead of one unsharded generic route.
 dedicated = ["./internal/apextest", "./internal/visualforce", "./internal/lwc/compile", "./internal/vm"]
 excluded = set(early + independent + dedicated)
 generic = [package for package in packages if package not in excluded]
-combined = early + independent + generic + dedicated
+combined = early + independent + generic + [package for package in dedicated if package in packages]
 if sorted(combined) != sorted(packages) or len(combined) != len(set(combined)):
-    raise SystemExit("race package partition does not exactly cover the full manifest")
+    raise SystemExit("race package partition does not exactly cover the requested packages")
 print(json.dumps(early, separators=(",", ":")))
 print(json.dumps(independent, separators=(",", ":")))
 print(json.dumps(generic, separators=(",", ":")))
+print(json.dumps([package for package in dedicated if package in packages], separators=(",", ":")))
 PY
 		exit 0
 		;;
@@ -88,7 +125,7 @@ PY
 		head_sha="$3"
 		;;
 	*)
-		echo "usage: scripts/ci-race-packages.sh <partition FULL_JSON|high-risk|full|changed BASE HEAD>" >&2
+		echo "usage: scripts/ci-race-packages.sh <partition FULL_JSON|select FULL_JSON SELECTION|high-risk|full|changed BASE HEAD>" >&2
 		exit 2
 		;;
 esac

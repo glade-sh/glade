@@ -6,6 +6,12 @@ on:
     # it runs nightly only.
     - cron: '43 10 * * *'
   workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Comma-separated race packages to run (default: all). Unknown packages fail the run; scheduled runs ignore this input.'
+        required: false
+        default: 'all'
+        type: string
 
 permissions:
   contents: read
@@ -32,13 +38,23 @@ jobs:
       early-packages: ${{ steps.classify.outputs.early-packages }}
       independent-packages: ${{ steps.classify.outputs.independent-packages }}
       generic-packages: ${{ steps.classify.outputs.generic-packages }}
+      dedicated-packages: ${{ steps.classify.outputs.dedicated-packages }}
       has-packages: ${{ steps.classify.outputs.has-packages }}
       has-early-packages: ${{ steps.classify.outputs.has-early-packages }}
       has-independent-packages: ${{ steps.classify.outputs.has-independent-packages }}
       has-generic-packages: ${{ steps.classify.outputs.has-generic-packages }}
+      has-binary-packages: ${{ steps.classify.outputs.has-binary-packages }}
       mode: ${{ steps.classify.outputs.mode }}
       push-matrix: ${{ steps.classify.outputs.push-matrix }}
       vm-matrix: ${{ steps.lanes.outputs.vm-matrix }}
+      vm-shard-count: ${{ steps.lanes.outputs.vm-shard-count }}
+      vm-isolated-tests: ${{ steps.lanes.outputs.vm-isolated-tests }}
+      early-matrix: ${{ steps.lanes.outputs.early-matrix }}
+      independent-matrix: ${{ steps.lanes.outputs.independent-matrix }}
+      generic-batches: ${{ steps.lanes.outputs.generic-batches }}
+      browser-matrix: ${{ steps.lanes.outputs.browser-matrix }}
+      browser-aggregate-matrix: ${{ steps.lanes.outputs.browser-aggregate-matrix }}
+      has-browser-packages: ${{ steps.lanes.outputs.has-browser-packages }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -49,6 +65,8 @@ jobs:
           cache: false
       - name: Classify race packages
         id: classify
+        env:
+          RACE_PACKAGES_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.packages || '' }}
         run: |
           case "${{ github.event_name }}" in
             push)
@@ -64,18 +82,37 @@ jobs:
               exit 2
               ;;
           esac
+          # A dispatched run may narrow the race to requested packages; the
+          # selection is validated against the manifest so an unknown package
+          # fails the run. Scheduled runs never see a selection.
+          if [[ -n "${RACE_PACKAGES_INPUT}" && "${RACE_PACKAGES_INPUT}" != "all" ]]; then
+            if [[ "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+              echo "a packages selection is only valid on workflow_dispatch" >&2
+              exit 2
+            fi
+            packages="$(scripts/ci-race-packages.sh select "$packages" "${RACE_PACKAGES_INPUT}")"
+          fi
           if [[ "$packages" == "[]" ]]; then has_packages=false; else has_packages=true; fi
           mapfile -t partition < <(scripts/ci-race-packages.sh partition "$packages")
-          if [[ "${#partition[@]}" -ne 3 ]]; then
-            echo "race package partition did not return early, independent and generic lists" >&2
+          if [[ "${#partition[@]}" -ne 4 ]]; then
+            echo "race package partition did not return early, independent, generic and dedicated lists" >&2
             exit 2
           fi
           early_packages="${partition[0]}"
           independent_packages="${partition[1]}"
           generic_packages="${partition[2]}"
+          dedicated_packages="${partition[3]}"
           if [[ "$early_packages" == "[]" ]]; then has_early_packages=false; else has_early_packages=true; fi
           if [[ "$independent_packages" == "[]" ]]; then has_independent_packages=false; else has_independent_packages=true; fi
           if [[ "$generic_packages" == "[]" ]]; then has_generic_packages=false; else has_generic_packages=true; fi
+          # The shared test binaries feed exactly the early lane and the
+          # dedicated browser and Apex lanes; a narrowed run that selects
+          # none of them skips the binary producer.
+          has_binary_packages=false
+          if [[ "$early_packages" != "[]" ]]; then has_binary_packages=true; fi
+          for binary_package in ./internal/apextest ./internal/visualforce ./internal/lwc/compile; do
+            if grep -Fq "\"${binary_package}\"" <<<"$dedicated_packages"; then has_binary_packages=true; fi
+          done
           push_matrix="$(python3 scripts/ci-race-push.py plan)"
           echo "push-matrix=$push_matrix" >>"$GITHUB_OUTPUT"
           echo "mode=$mode" >>"$GITHUB_OUTPUT"
@@ -83,18 +120,53 @@ jobs:
           echo "early-packages=$early_packages" >>"$GITHUB_OUTPUT"
           echo "independent-packages=$independent_packages" >>"$GITHUB_OUTPUT"
           echo "generic-packages=$generic_packages" >>"$GITHUB_OUTPUT"
+          echo "dedicated-packages=$dedicated_packages" >>"$GITHUB_OUTPUT"
           echo "has-packages=$has_packages" >>"$GITHUB_OUTPUT"
           echo "has-early-packages=$has_early_packages" >>"$GITHUB_OUTPUT"
           echo "has-independent-packages=$has_independent_packages" >>"$GITHUB_OUTPUT"
           echo "has-generic-packages=$has_generic_packages" >>"$GITHUB_OUTPUT"
+          echo "has-binary-packages=$has_binary_packages" >>"$GITHUB_OUTPUT"
           mkdir -p ci-artifacts/race-plan
-          printf '{"mode":"%s","packages":%s,"early_packages":%s,"independent_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$independent_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
+          printf '{"mode":"%s","packages":%s,"early_packages":%s,"independent_packages":%s,"generic_packages":%s,"dedicated_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$independent_packages" "$generic_packages" "$dedicated_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
       - name: Plan bounded race lanes
         id: lanes
-        # Static lane policy from the shared race plan; the VM lane runs as
-        # its own matrix so the long package is eligible immediately after
-        # this job instead of queueing behind the generic matrix.
-        run: echo "vm-matrix=$(python3 scripts/ci-race-plan.py lanes)" >>"$GITHUB_OUTPUT"
+        env:
+          DEDICATED_PACKAGES: ${{ steps.classify.outputs.dedicated-packages }}
+        # Lane deadlines come from the measured race history: the VM matrix
+        # balances its shards and isolates giant tests, the early lane gets a
+        # batch from its measured shard walls, the independent lane gets the
+        # multiplier on its measured warm normal wall, and heavy generic
+        # lanes whose measured batch passes the flat default get their own.
+        # The browser matrices carry only the selected dedicated browser
+        # packages, so a narrowed dispatched run schedules only those legs.
+        run: |
+          mkdir -p ci-artifacts/race-plan
+          printf '%s\n' "$DEDICATED_PACKAGES" >ci-artifacts/race-plan/dedicated-packages.json
+          python3 scripts/ci-race-plan.py browser-lanes ci-artifacts/race-plan/dedicated-packages.json >ci-artifacts/race-plan/browser-lanes.json
+          python3 - ci-artifacts/race-plan/browser-lanes.json <<'PY' >>"$GITHUB_OUTPUT"
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as source:
+              document = json.load(source)
+          print("browser-matrix=" + json.dumps(document["runners"], separators=(",", ":")))
+          print("browser-aggregate-matrix=" + json.dumps(document["aggregate"], separators=(",", ":")))
+          print("has-browser-packages=" + ("true" if document["runners"]["include"] else "false"))
+          PY
+          python3 scripts/ci-race-plan.py lanes >ci-artifacts/race-plan/vm-lanes.json
+          python3 - ci-artifacts/race-plan/vm-lanes.json <<'PY' >>"$GITHUB_OUTPUT"
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as source:
+              document = json.load(source)
+          print("vm-matrix=" + json.dumps({"include": document["include"]}, separators=(",", ":")))
+          print(f"vm-shard-count={document['shardCount']}")
+          print("vm-isolated-tests=" + ",".join(document["isolatedTests"]))
+          PY
+          echo "early-matrix=$(python3 scripts/ci-race-plan.py early-lanes)" >>"$GITHUB_OUTPUT"
+          echo "independent-matrix=$(python3 scripts/ci-race-plan.py independent-lanes)" >>"$GITHUB_OUTPUT"
+          echo "generic-batches=$(python3 scripts/ci-race-plan.py generic-batches)" >>"$GITHUB_OUTPUT"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         with:
@@ -192,7 +264,7 @@ jobs:
 
   test-binaries:
     needs: plan
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-binary-packages == 'true'
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -303,50 +375,16 @@ jobs:
 
   race-browser:
     needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
+    # The plan job emits only the selected browser packages' legs, so a
+    # narrowed dispatched run schedules no shard of an unselected package.
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-browser-packages == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 145
     strategy:
       fail-fast: false
       max-parallel: 8
       matrix:
-        include:
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 0
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 1
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 2
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 3
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 0
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 1
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 2
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 3
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 4
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 5
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 6
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 7
+        include: ${{ fromJSON(needs.plan.outputs.browser-matrix).include }}
     env:
       GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
@@ -404,19 +442,13 @@ jobs:
 
   race-browser-aggregate:
     needs: [plan, race-browser]
-    if: always() && needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
+    if: always() && needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-browser-packages == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shards: 4
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shards: 8
+        include: ${{ fromJSON(needs.plan.outputs.browser-aggregate-matrix).include }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download browser race evidence
@@ -450,15 +482,16 @@ jobs:
     needs: [plan, test-binaries]
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-early-packages == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 80
+    timeout-minutes: ${{ matrix.timeoutMinutes }}
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.plan.outputs.early-packages) }}
+        include: ${{ fromJSON(needs.plan.outputs.early-matrix).include }}
     env:
       GLADE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: ${{ matrix.package == './internal/gladecli' && '/tmp/glade-race-test-binaries' || '' }}
+      CI_RACE_BATCH_TIMEOUT_SECONDS: ${{ matrix.batchTimeoutSeconds }}
       GOMAXPROCS: "2"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -504,6 +537,7 @@ jobs:
           GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}
           PACKAGE: ${{ matrix.package }}
           SLUG: ${{ steps.artifact.outputs.slug }}
+        timeout-minutes: ${{ matrix.stepMinutes }}
         run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
       - name: Upload early race evidence
         if: always()
@@ -517,11 +551,11 @@ jobs:
     needs: [plan]
     if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-independent-packages == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 80
+    timeout-minutes: ${{ matrix.timeoutMinutes }}
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.plan.outputs.independent-packages) }}
+        include: ${{ fromJSON(needs.plan.outputs.independent-matrix).include }}
     env:
       GLADE_ROOT: ${{ github.workspace }}
       GOMAXPROCS: "2"
@@ -531,6 +565,29 @@ jobs:
         with:
           go-version: "1.26.11"
           cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-independent-${{ hashFiles('go.sum') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        # The repository guard scans every tracked file once and caches the
+        # findings per git blob under GOCACHE, the same build cache the CI
+        # lanes persist; without a restored cache the cold full-repository
+        # scan exceeds the lane's whole budget under race, which is why
+        # every recorded race run of this lane timed out at about 3700 s.
+        # A cache miss restores nothing and proceeds cold; a failed restore
+        # fails the lane instead of silently repeating that cold timeout.
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-independent-${{ hashFiles('go.sum') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Resolve artifact name
         id: artifact
         env:
@@ -544,6 +601,8 @@ jobs:
         env:
           PACKAGE: ${{ matrix.package }}
           SLUG: ${{ steps.artifact.outputs.slug }}
+          CI_RACE_TEST_TIMEOUT_SECONDS: ${{ matrix.testTimeoutSeconds }}
+        timeout-minutes: ${{ matrix.stepMinutes }}
         run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
       - name: Upload independent race evidence
         if: always()
@@ -570,6 +629,8 @@ jobs:
       CI_RACE_HEAD_SHA: ${{ github.sha }}
       CI_RACE_TEST_TIMEOUT_SECONDS: ${{ matrix.testTimeoutSeconds }}
       CI_RACE_BATCH_TIMEOUT_SECONDS: ${{ matrix.batchTimeoutSeconds }}
+      CI_RACE_SHARD_COUNT: ${{ needs.plan.outputs.vm-shard-count }}
+      CI_RACE_ISOLATED_TESTS: ${{ needs.plan.outputs.vm-isolated-tests }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
@@ -603,12 +664,13 @@ jobs:
         env:
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          VM_SHARD_COUNT: ${{ needs.plan.outputs.vm-shard-count }}
         run: |
           roots=()
-          for ((index=0; index<4; index++)); do
+          for ((index=0; index<VM_SHARD_COUNT; index++)); do
             roots+=("ci-artifacts/race/vm-runners/race-internal-vm-${index}-${RUN_ID}-${RUN_ATTEMPT}")
           done
-          scripts/ci-race-shard-aggregate.sh ./internal/vm ci-artifacts/race/internal-vm-aggregate/union-validation.json "${{ github.sha }}" "${roots[@]}"
+          CI_RACE_VM_SHARDS="${VM_SHARD_COUNT}" scripts/ci-race-shard-aggregate.sh ./internal/vm ci-artifacts/race/internal-vm-aggregate/union-validation.json "${{ github.sha }}" "${roots[@]}"
       - name: Upload combined VM race evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -678,6 +740,7 @@ jobs:
         env:
           PACKAGE: ${{ matrix.package }}
           SLUG: ${{ steps.artifact.outputs.slug }}
+          CI_RACE_BATCH_TIMEOUT_SECONDS: ${{ fromJSON(needs.plan.outputs.generic-batches)[matrix.package] || 3600 }}
         run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
       - name: Upload race evidence
         if: always()

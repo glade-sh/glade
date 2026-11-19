@@ -200,7 +200,7 @@ func TestRequestedPackageAndHistoryMustBeExact(t *testing.T) {
 	}
 	const semaPackage = "github.com/glade-sh/glade/internal/sema"
 	history := []byte(`{"version":1,"version":1,"package":"` + semaPackage + `","complete":true,"tests":[{"name":"TestA","durationMillis":1},{"name":"TestB","durationMillis":1}]}`)
-	got, diagnostic, err := buildPlanForPackage(semaPackage, []string{"TestA", "TestB"}, 2, history)
+	got, diagnostic, err := buildPlanForPackage(semaPackage, []string{"TestA", "TestB"}, 2, history, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,7 +8,15 @@ fi
 case "$1" in
 	./internal/visualforce) shard_count=4 ;;
 	./internal/lwc/compile) shard_count=8 ;;
-	./internal/vm) shard_count=4 ;;
+	./internal/vm)
+		# The plan job derives the VM shard count (balanced shards plus one
+		# per isolated giant test) from the measured race history.
+		shard_count="${CI_RACE_VM_SHARDS:-4}"
+		if [[ ! "${shard_count}" =~ ^[0-9]+$ ]] || [[ "${shard_count}" -lt 1 ]] || [[ "${shard_count}" -gt 16 ]]; then
+			echo "CI_RACE_VM_SHARDS must be a shard count between 1 and 16" >&2
+			exit 2
+		fi
+		;;
 	*) echo "unsupported browser race aggregate package: $1" >&2; exit 2 ;;
 esac
 if [[ "$#" -ne "$((shard_count + 3))" ]]; then
@@ -29,7 +37,12 @@ import tempfile
 summary_runner, relative_package, output_path, head_sha, *roots = sys.argv[1:]
 package = "github.com/glade-sh/glade/" + relative_package.removeprefix("./")
 slug = relative_package.removeprefix("./").replace("/", "-")
-shard_count = {"./internal/visualforce": 4, "./internal/lwc/compile": 8, "./internal/vm": 4}[relative_package]
+if relative_package == "./internal/vm":
+    shard_count = int(os.environ.get("CI_RACE_VM_SHARDS", "4"))
+    if not 1 <= shard_count <= 16:
+        raise SystemExit("CI_RACE_VM_SHARDS must be a shard count between 1 and 16")
+else:
+    shard_count = {"./internal/visualforce": 4, "./internal/lwc/compile": 8}[relative_package]
 if not re.fullmatch(r"[0-9a-f]{40}", head_sha):
     raise SystemExit("race shard aggregate requires the expected checkout head SHA")
 

@@ -9,37 +9,59 @@ authority that replaces those duplicated, hard-coded budgets.
 
 Policy, applied to every planned lane:
 
-  raced estimate   = normal duration * NORMAL_DURATION_MULTIPLIER
+  raced estimate   = measured race duration from the checked-in race
+                     history when the recorded run measured the test;
+                     otherwise normal duration * NORMAL_DURATION_MULTIPLIER.
+                     A test the run killed mid-flight is measured at its
+                     elapsed time at the kill (a lower bound) and keeps the
+                     multiplier's estimate wherever that is larger.
   shard budget     = ceil(raced estimate * SHARD_TEST_HEADROOM), with a floor
+  isolated shard   = any single test whose own raced budget exceeds the
+                     balanced per-shard budget runs in a shard of its own
+                     with a budget derived from its own measurement, under
+                     the shard cap
   shard count      = enough shards that the longest-processing-time bound
-                     (package average + slowest test, both raced) fits the
-                     budget under the cap, floored at APEXTEST_SHARD_FLOOR
-  batch deadline   = sum of the assigned shard budgets + BATCH_RESERVE_SECONDS
+                      (package average + slowest test, both raced) fits the
+                      budget under the cap, floored at APEXTEST_SHARD_FLOOR
+  batch deadline   = sum of the assigned shard budgets + BATCH_RESERVE_SECONDS,
+                     or for one sequential lane the measured complete shard
+                     walls scaled by the shard count with test headroom
   step deadline    = ceil(batch / 60) + STEP_RESERVE_MINUTES
   job deadline     = step deadline + JOB_RESERVE_MINUTES, capped well under
-                     GitHub's 6-hour job limit
+                      GitHub's 6-hour job limit
 
-The multiplier is applied exactly once: `history` and `vm-history` scale the
-checked-in normal durations before the shard planner balances them, so the
-plan's per-shard estimates are already raced and the budget adds headroom
-only. The multiplier is a conservative interim: the one measured scheduled
-observation is Apex shard 0 (hash-partitioned) still running at 3,416 s when
-its one-hour batch deadline expired, against about 745 s of recorded normal
-durations for its 141 table-known tests; charging its 68 unknown tests the
-table median puts that shard near 1,000 s normal, an implied >= 3.4x. 4x is
-the conservative rounding of that observation until measured race durations
-replace it. The multiplier is a scheduling input only: budgets derived from
-it surface an underestimated cost as a bounded, visible timeout with partial
-evidence, never as silent under-coverage.
+The multiplier is now a fallback, not the plan: it was derived from the one
+measured scheduled observation (Apex shard 0, hash-partitioned, still
+running at 3,416 s when its one-hour batch deadline expired, against about
+745 s of recorded normal durations for its 141 table-known tests; charging
+its 68 unknown tests the table median put that shard near 1,000 s normal, an
+implied >= 3.4x, rounded to 4x), and it applies only to tests the recorded
+race run never measured. The multiplier is a scheduling input only: budgets
+derived from it surface an underestimated cost as a bounded, visible
+timeout with partial evidence, never as silent under-coverage.
 
 Subcommands:
 
-  lanes                      emit the early lane matrix (VM shards) for the
-                             Race plan job
-  history DISCOVERY          emit the race-scaled Apex duration history for
-                             the shared shard planner
-  vm-history DISCOVERY       emit the race-scaled VM duration history so the
-                             VM shards balance by measured cost, not names
+  lanes                      emit the VM lane document (shard matrix,
+                             isolated giant-test shards and budgets) for the
+                              Race plan job
+  early-lanes                emit the early lane matrix (sequential shards in
+                              one job) with deadlines from measured walls
+  independent-lanes          emit the independent lane matrix with a budget
+                              from the measured warm normal wall
+  generic-batches            emit batch deadlines for heavy generic lanes whose
+                              measured budget exceeds the flat default
+  history DISCOVERY          emit the raced Apex duration history (measured
+                              first, multiplier fallback) for the planner
+  vm-history DISCOVERY       emit the raced VM duration history so the VM
+                              shards balance by measured cost, not names
+  lane-history SLUG DISCOVERY
+                              emit the raced history for a lane with measured
+                              rows but no normal duration table
+  browser-lanes PACKAGES_JSON
+                              emit the browser lane matrices for the selected
+                              dedicated browser packages, so a narrowed
+                              dispatched run schedules only those legs
   shards DISCOVERY HISTORY   emit the Apex shard count that keeps every
                              shard budget under the cap
   schedule DISCOVERY PLAN BINARY_SHA256 BINARY_SIZE
@@ -60,8 +82,9 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-APEXTEST_PACKAGE = "github.com/glade-sh/glade/internal/apextest"
-VM_PACKAGE = "github.com/glade-sh/glade/internal/vm"
+MODULE_PREFIX = "github.com/glade-sh/glade/"
+APEXTEST_PACKAGE = MODULE_PREFIX + "internal/apextest"
+VM_PACKAGE = MODULE_PREFIX + "internal/vm"
 TEST_NAME = re.compile(r"Test[A-Za-z0-9_]*\Z")
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -74,6 +97,9 @@ STEP_RESERVE_MINUTES = 5
 JOB_RESERVE_MINUTES = 15
 # GitHub-hosted jobs stop at 6 hours; stay under it with margin.
 JOB_TIMEOUT_CAP_MINUTES = 355
+# The flat batch deadline heavy lanes get when no measured budget covers
+# them; lanes whose measured budget stays under it keep the default.
+DEFAULT_BATCH_SECONDS = 3600
 # The Apex partition grows past its sixteen-shard floor when the suite's
 # raced total no longer fits under the per-shard cap; beyond the ceiling the
 # runner-count search fails loudly instead of planning unrunnable batches.
@@ -82,6 +108,20 @@ APEXTEST_SHARD_CEILING = 96
 RUNNER_IDS = "abcdefgh"
 RUNNER_COUNT_MIN = 3
 RUNNER_COUNT_MAX = 8
+# Heavy generic lanes that run their shards sequentially in one job; the
+# shard counts mirror the runner's planner_shards case values, which the
+# scripts tests cross-check against this table.
+GENERIC_LANE_PACKAGES = ("./internal/server", "./internal/testdaemon", "./internal/playground")
+# Browser lanes have a fixed shard topology the shard aggregate already
+# pins; the plan emits the runner and aggregate matrices from the selected
+# dedicated packages so a narrowed dispatched run schedules only those legs.
+# Together with the non-browser dedicated packages the topology covers the
+# classifier's whole dedicated partition, and the scripts tests cross-check
+# that coverage against the manifest, so an entry outside it fails the plan
+# instead of silently skipping browser coverage.
+BROWSER_LANE_SHARDS = {"./internal/visualforce": 4, "./internal/lwc/compile": 8}
+NON_BROWSER_DEDICATED = ("./internal/apextest", "./internal/vm")
+PACKAGE_PATH = re.compile(r"\./internal/[A-Za-z0-9._/-]+\Z")
 
 
 class PlanError(SystemExit):
@@ -139,21 +179,165 @@ def load_config():
     config = load_json(ROOT / "scripts/ci-race-plan.json")
     require(isinstance(config, dict) and set(config) ==
             {"version", "apextestNormalHistory", "apextestNormalHistorySource",
-             "vmNormalHistory", "vmNormalHistorySource", "vmLane"},
+             "vmNormalHistory", "vmNormalHistorySource", "raceHistory", "raceHistorySource",
+             "vmLane", "earlyLane", "independentLane", "genericLanes"},
             "race plan config has an invalid schema")
     require(config["version"] == 1, "race plan config version must be 1")
-    require(isinstance(config["apextestNormalHistory"], str) and config["apextestNormalHistory"],
-            "race plan config needs the Apex normal history path")
-    require(isinstance(config["vmNormalHistory"], str) and config["vmNormalHistory"],
-            "race plan config needs the VM normal history path")
+    for field in ("apextestNormalHistory", "vmNormalHistory", "raceHistory"):
+        require(isinstance(config[field], str) and config[field],
+                f"race plan config needs the {field} path")
     lane = config["vmLane"]
-    require(isinstance(lane, dict) and set(lane) ==
-            {"shards", "normalSeconds", "slowestTestNormalSeconds", "source"},
+    require(isinstance(lane, dict) and set(lane) == {"shards", "source"},
             "race plan VM lane has an invalid schema")
-    for field in ("shards", "normalSeconds", "slowestTestNormalSeconds"):
-        require(type(lane[field]) is int and lane[field] > 0, f"race plan VM lane has an invalid {field}")
-    require(1 <= lane["shards"] <= 16, "race plan VM lane needs between 1 and 16 shards")
+    require(type(lane["shards"]) is int and 1 <= lane["shards"] <= 16,
+            "race plan VM lane needs between 1 and 16 shards")
+    early = config["earlyLane"]
+    require(isinstance(early, dict) and set(early) == {"package", "shards", "source"},
+            "race plan early lane has an invalid schema")
+    require(early["package"] == "./internal/gladecli",
+            "race plan early lane must be the CLI package")
+    require(type(early["shards"]) is int and 1 <= early["shards"] <= 16,
+            "race plan early lane needs between 1 and 16 shards")
+    independent = config["independentLane"]
+    require(isinstance(independent, dict) and
+            set(independent) == {"package", "normalSeconds", "normalSecondsSource"},
+            "race plan independent lane has an invalid schema")
+    require(independent["package"] == "./internal/repoguard",
+            "race plan independent lane must be the repository guard package")
+    require(type(independent["normalSeconds"]) is int and independent["normalSeconds"] > 0,
+            "race plan independent lane needs a positive measured normal wall")
+    generic = config["genericLanes"]
+    require(isinstance(generic, dict) and set(generic) == set(GENERIC_LANE_PACKAGES),
+            "race plan generic lanes must list exactly the heavy generic packages")
+    for package, lane in generic.items():
+        require(isinstance(lane, dict) and set(lane) == {"shards", "source"},
+                f"race plan generic lane {package} has an invalid schema")
+        require(type(lane["shards"]) is int and 1 <= lane["shards"] <= 16,
+                f"race plan generic lane {package} needs between 1 and 16 shards")
     return config
+
+
+def generic_lane_shard_counts():
+    config = load_config()
+    return {package: lane["shards"] for package, lane in config["genericLanes"].items()}
+
+
+def load_race_history():
+    """Read the checked-in measured race history.
+
+    Returns {package: {"tests": {name: {"durationMillis", "killed"}},
+    "completeWalls": [seconds, ...]}}. Rows are measurements from one named
+    run; a killed row is the test's elapsed time at the kill, a lower bound.
+    """
+    config = load_config()
+    document = load_json(ROOT / config["raceHistory"])
+    require(isinstance(document, dict) and set(document) ==
+            {"schema_version", "source_run_id", "source_run_url", "packages"},
+            "race history has an invalid schema")
+    require(type(document["schema_version"]) is int and document["schema_version"] == 1,
+            "race history has an invalid schema version")
+    require(type(document["source_run_id"]) is int and document["source_run_id"] > 0,
+            "race history needs its source run id")
+    require(isinstance(document["source_run_url"], str) and document["source_run_url"],
+            "race history needs its source run URL")
+    packages = {}
+    for entry in document["packages"]:
+        require(isinstance(entry, dict) and set(entry) == {"package", "tests", "shardWalls"},
+                "race history package has an invalid schema")
+        package = entry["package"]
+        require(isinstance(package, str) and package.startswith("github.com/glade-sh/glade/"),
+                "race history package has an invalid name")
+        require(package not in packages, f"race history lists {package} twice")
+        tests = {}
+        for row in entry["tests"]:
+            require(isinstance(row, dict) and set(row) == {"name", "durationMillis", "killed"},
+                    f"race history row for {package} has an invalid schema")
+            name, duration, killed = row["name"], row["durationMillis"], row["killed"]
+            require(isinstance(name, str) and TEST_NAME.fullmatch(name),
+                    f"race history row for {package} has an invalid name")
+            require(type(duration) is int and duration >= 1,
+                    f"race history row for {package} {name} has an invalid duration")
+            require(type(killed) is bool, f"race history row for {package} {name} has an invalid killed flag")
+            require(name not in tests, f"race history lists {package} {name} twice")
+            tests[name] = {"durationMillis": duration, "killed": killed}
+        walls = []
+        for wall in entry["shardWalls"]:
+            require(isinstance(wall, dict) and set(wall) == {"elapsedSeconds", "exitStatus", "complete"},
+                    f"race history wall for {package} has an invalid schema")
+            elapsed, status = wall["elapsedSeconds"], wall["exitStatus"]
+            require(isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool) and
+                    math.isfinite(elapsed) and elapsed >= 0,
+                    f"race history wall for {package} has an invalid elapsed time")
+            require(type(status) is int, f"race history wall for {package} has an invalid exit status")
+            if wall["complete"]:
+                walls.append(elapsed)
+        packages[package] = {"tests": tests, "completeWalls": walls}
+    return packages
+
+
+def load_normal_table(table_path, package):
+    """Read one checked-in normal duration table as {name: millis}."""
+    table = load_json(ROOT / table_path)
+    require(isinstance(table, dict) and type(table.get("version")) is int and table["version"] == 1,
+            f"{table_path} has an invalid schema")
+    require(table.get("package") == package, f"{table_path} has the wrong package")
+    rows = table.get("tests")
+    require(isinstance(rows, list), f"{table_path} has no test rows")
+    normal = {}
+    for row in rows:
+        require(isinstance(row, dict) and set(row) == {"name", "durationMillis"},
+                f"{table_path} has an invalid row")
+        name, duration = row["name"], row["durationMillis"]
+        require(isinstance(name, str) and TEST_NAME.fullmatch(name), f"{table_path} has an invalid name")
+        require(type(duration) is int and duration >= 0, f"{table_path} has an invalid duration")
+        require(name not in normal, f"{table_path} lists {name} twice")
+        normal[name] = duration
+    return normal
+
+
+def raced_estimate(name, race_rows, normal_rows):
+    """One test's raced estimate: measured first, multiplier as fallback.
+
+    A killed row is the test's elapsed time at the kill, a lower bound, so
+    it also keeps the multiplier's estimate wherever that is larger.
+    Returns (estimate_millis, known): known is false only when the
+    recorded run never measured the test and the table holds no row for
+    it, which the raced history leaves to the planner's own median
+    estimate; a table row at zero stays a known row the planner can weigh.
+    """
+    measured = race_rows.get(name)
+    if measured is not None and not measured["killed"]:
+        return measured["durationMillis"], True
+    scaled = normal_rows.get(name, 0) * NORMAL_DURATION_MULTIPLIER
+    if measured is not None:
+        return max(measured["durationMillis"], scaled), True
+    if name in normal_rows:
+        return scaled, True
+    return 0, False
+
+
+def raced_history_document(discovery_path, package, table_path):
+    """Emit one package's raced durations for the shard planner.
+
+    The measured race history wins for every test the recorded run
+    measured; tests it never measured fall back to the normal table scaled
+    by the multiplier; tests known to neither keep the planner's own
+    median estimate.
+    """
+    names = discovery_names(read_discovery(discovery_path))
+    discovered = set(names)
+    history = load_race_history()
+    race_rows = history.get(package, {}).get("tests", {})
+    normal_rows = load_normal_table(table_path, package) if table_path else {}
+    raced = []
+    for name in names:
+        estimate, known = raced_estimate(name, race_rows, normal_rows)
+        if known:
+            raced.append({"name": name, "durationMillis": estimate})
+    if not raced:
+        fail(f"the {package} raced history has no entries for the discovered tests; "
+             f"refresh {table_path or 'the race history'} before planning race budgets")
+    return {"version": 1, "package": package, "complete": True, "tests": raced}
 
 
 def shard_test_timeout_seconds(estimate_ms):
@@ -281,57 +465,157 @@ def emit(document):
     sys.stdout.write("\n")
 
 
-def cmd_lanes():
-    config = load_config()
-    lane = config["vmLane"]
-    raced_total = lane["normalSeconds"] * NORMAL_DURATION_MULTIPLIER
-    raced_slowest = lane["slowestTestNormalSeconds"] * NORMAL_DURATION_MULTIPLIER
-    per_shard = max(math.ceil(raced_total / lane["shards"] * SHARD_TEST_HEADROOM),
-                    math.ceil(raced_slowest * SHARD_TEST_HEADROOM),
-                    SHARD_TEST_FLOOR_SECONDS)
-    batch_seconds = per_shard + BATCH_RESERVE_SECONDS
+def shard_budget_seconds(estimate_ms):
+    """One shard's test budget from its raced estimate: headroom once."""
+    return max(math.ceil(estimate_ms / 1000 * SHARD_TEST_HEADROOM), SHARD_TEST_FLOOR_SECONDS)
+
+
+def lane_matrix_entry(shard, test_budget_seconds):
+    batch_seconds = test_budget_seconds + BATCH_RESERVE_SECONDS
     step_minutes, job_minutes = runner_minutes(batch_seconds)
-    require(job_minutes <= JOB_TIMEOUT_CAP_MINUTES, "VM lane exceeds the job deadline cap")
-    include = []
-    for shard in range(lane["shards"]):
-        include.append({
-            "shard": shard,
-            "testTimeoutSeconds": per_shard,
-            "batchTimeoutSeconds": batch_seconds,
-            "stepMinutes": step_minutes,
-            "timeoutMinutes": job_minutes,
-        })
-    emit({"include": include})
+    return {
+        "shard": shard,
+        "testTimeoutSeconds": test_budget_seconds,
+        "batchTimeoutSeconds": batch_seconds,
+        "stepMinutes": step_minutes,
+        "timeoutMinutes": job_minutes,
+    }
 
 
-def scaled_history_document(discovery_path, package, table_path):
-    """Scale one package's checked-in normal durations for the shard planner.
+def cmd_lanes():
+    """Emit the VM lane: balanced shards plus isolated giant-test shards.
 
-    The scaling is the single place the race multiplier enters the plan: the
-    planner balances these raced estimates and the schedule turns them into
-    shard budgets with headroom alone.
+    The plan-time universe is every test the recorded run measured plus
+    every row of the normal table; discovery at run time can only add tests
+    the planner estimates at its median. Any single test whose own raced
+    budget exceeds the balanced per-shard budget gets a shard of its own
+    with a budget derived from its own measurement, under the shard cap.
     """
-    names = discovery_names(read_discovery(discovery_path))
-    discovered = set(names)
-    table = load_json(ROOT / table_path)
-    require(isinstance(table, dict) and type(table.get("version")) is int and table["version"] == 1,
-            f"{table_path} has an invalid schema")
-    require(table.get("package") == package, f"{table_path} has the wrong package")
-    rows = table.get("tests")
-    require(isinstance(rows, list), f"{table_path} has no test rows")
-    scaled = []
-    for row in rows:
-        require(isinstance(row, dict) and set(row) == {"name", "durationMillis"},
-                f"{table_path} has an invalid row")
-        name, duration = row["name"], row["durationMillis"]
-        require(isinstance(name, str) and TEST_NAME.fullmatch(name), f"{table_path} has an invalid name")
-        require(type(duration) is int and duration >= 0, f"{table_path} has an invalid duration")
-        if name in discovered:
-            scaled.append({"name": name, "durationMillis": duration * NORMAL_DURATION_MULTIPLIER})
-    if not scaled:
-        fail(f"the {package} normal history has no entries for the discovered tests; "
-             f"refresh {table_path} before planning race budgets")
-    return {"version": 1, "package": package, "complete": True, "tests": scaled}
+    config = load_config()
+    package = VM_PACKAGE
+    history = load_race_history()
+    race_rows = history.get(package, {}).get("tests", {})
+    normal_rows = load_normal_table(config["vmNormalHistory"], package)
+    universe = {}
+    for name in set(race_rows) | set(normal_rows):
+        universe[name] = raced_estimate(name, race_rows, normal_rows)[0]
+    balanced_count = config["vmLane"]["shards"]
+    total_ms = sum(universe.values())
+    # A test is a giant when its own budget exceeds the balanced per-shard
+    # budget computed without the giants; solving that by iteration keeps
+    # the definition independent of evaluation order.
+    giants = {name for name in universe if shard_budget_seconds(universe[name]) > SHARD_TEST_CAP_SECONDS}
+    for _ in range(len(universe) + 1):
+        balanced_budget = max(
+            math.ceil((total_ms - sum(universe[name] for name in giants)) / balanced_count / 1000
+                      * SHARD_TEST_HEADROOM),
+            SHARD_TEST_FLOOR_SECONDS)
+        detected = {name for name, estimate in universe.items()
+                    if shard_budget_seconds(estimate) > balanced_budget}
+        if detected == giants:
+            break
+        giants = detected
+    else:
+        fail("the VM lane giant-test derivation did not converge")
+    if len(giants) >= balanced_count:
+        fail(f"the VM lane has {len(giants)} isolated giant tests for {balanced_count} balanced shards; "
+             f"raise the VM lane shard count in scripts/ci-race-plan.json")
+    if balanced_budget > SHARD_TEST_CAP_SECONDS:
+        fail(f"the balanced VM shard budget {balanced_budget}s exceeds the {SHARD_TEST_CAP_SECONDS}s "
+             f"cap; raise the VM lane shard count in scripts/ci-race-plan.json")
+    for name in sorted(giants):
+        budget = shard_budget_seconds(universe[name])
+        if budget > SHARD_TEST_CAP_SECONDS:
+            fail(f"test {name} alone needs {budget}s of test budget, above the "
+                 f"{SHARD_TEST_CAP_SECONDS}s cap; a single test cannot be sharded")
+    include = [lane_matrix_entry(shard, balanced_budget) for shard in range(balanced_count)]
+    for offset, name in enumerate(sorted(giants)):
+        include.append(lane_matrix_entry(balanced_count + offset, shard_budget_seconds(universe[name])))
+    for entry in include:
+        require(entry["timeoutMinutes"] <= JOB_TIMEOUT_CAP_MINUTES,
+                f"the VM lane shard budget {entry['testTimeoutSeconds']}s exceeds the job deadline cap")
+    emit({
+        "shardCount": len(include),
+        "isolatedTests": sorted(giants),
+        "include": include,
+    })
+
+
+def sequential_lane_batch(package, shard_count, history):
+    """One sequential lane's batch deadline from its measured shard walls.
+
+    Per-test sums overstate a sequential lane's wall several times over when
+    subtests run in parallel, so the batch comes from the walls of complete
+    shards: their average scaled by the shard count with test headroom.
+    """
+    walls = history.get(MODULE_PREFIX + package[2:], {}).get("completeWalls", [])
+    if not walls:
+        fail(f"the race history holds no complete shard wall for {package}; "
+             f"refresh scripts/ci-race-history.json before planning its batch")
+    average = sum(walls) / len(walls)
+    return math.ceil(average * shard_count * SHARD_TEST_HEADROOM) + BATCH_RESERVE_SECONDS
+
+
+def cmd_early_lanes():
+    """Emit the early lane matrix: one job runs every shard sequentially."""
+    config = load_config()
+    early = config["earlyLane"]
+    package = early["package"]
+    batch_seconds = sequential_lane_batch(package, early["shards"], load_race_history())
+    step_minutes, job_minutes = runner_minutes(batch_seconds)
+    require(job_minutes <= JOB_TIMEOUT_CAP_MINUTES,
+            f"the early lane batch {batch_seconds}s exceeds the job deadline cap; "
+            f"the lane's measured walls outgrew one sequential job")
+    emit({"include": [{
+        "package": package,
+        "batchTimeoutSeconds": batch_seconds,
+        "stepMinutes": step_minutes,
+        "timeoutMinutes": job_minutes,
+    }]})
+
+
+def cmd_independent_lanes():
+    """Emit the independent lane matrix from the measured warm normal wall.
+
+    The repository guard lane has no race measurement: every recorded race
+    run died on its cold scan cache (the lane restored no Go build cache, so
+    the per-blob repository scan rebuilt from nothing and exceeded the hour).
+    The race workflow restores the cache family the CI lanes persist, so the
+    scan arrives warm, and the raced budget is the multiplier on the lane's
+    measured warm normal wall with the shard floor covering the day's
+    changed blobs.
+    """
+    config = load_config()
+    lane = config["independentLane"]
+    package = lane["package"]
+    raced_seconds = lane["normalSeconds"] * NORMAL_DURATION_MULTIPLIER
+    test_budget = max(math.ceil(raced_seconds * SHARD_TEST_HEADROOM), SHARD_TEST_FLOOR_SECONDS)
+    step_minutes, job_minutes = runner_minutes(test_budget)
+    require(job_minutes <= JOB_TIMEOUT_CAP_MINUTES, "the independent lane exceeds the job deadline cap")
+    emit({"include": [{
+        "package": package,
+        "testTimeoutSeconds": test_budget,
+        "stepMinutes": step_minutes,
+        "timeoutMinutes": job_minutes,
+    }]})
+
+
+def cmd_generic_batches():
+    """Emit batch deadlines for heavy generic lanes past the flat default.
+
+    A heavy generic lane runs its shards sequentially in one job behind the
+    flat default batch; lanes whose measured budget exceeds that default get
+    their own deadline, and lanes under it keep the default.
+    """
+    config = load_config()
+    history = load_race_history()
+    runner_shards = generic_lane_shard_counts()
+    batches = {}
+    for package in GENERIC_LANE_PACKAGES:
+        batch_seconds = sequential_lane_batch(package, runner_shards[package], history)
+        if batch_seconds > DEFAULT_BATCH_SECONDS:
+            batches[package] = batch_seconds
+    emit(batches)
 
 
 def minimum_apextest_shards(discovery_names, scaled_rows):
@@ -381,12 +665,67 @@ def minimum_apextest_shards(discovery_names, scaled_rows):
 
 def cmd_history(discovery_path):
     config = load_config()
-    emit(scaled_history_document(discovery_path, APEXTEST_PACKAGE, config["apextestNormalHistory"]))
+    emit(raced_history_document(discovery_path, APEXTEST_PACKAGE, config["apextestNormalHistory"]))
 
 
 def cmd_vm_history(discovery_path):
     config = load_config()
-    emit(scaled_history_document(discovery_path, VM_PACKAGE, config["vmNormalHistory"]))
+    emit(raced_history_document(discovery_path, VM_PACKAGE, config["vmNormalHistory"]))
+
+
+def cmd_lane_history(slug, discovery_path):
+    """Emit the raced history for a lane with measured rows but no table.
+
+    Packages without a checked-in normal duration table plan from the
+    measured race rows alone; the planner estimates tests the run never
+    measured at the measured median.
+    """
+    package = MODULE_PREFIX + slug.replace("-", "/")
+    names = discovery_names(read_discovery(discovery_path))
+    history = load_race_history()
+    race_rows = history.get(package, {}).get("tests", {})
+    raced = []
+    for name in names:
+        measured = race_rows.get(name)
+        if measured is None:
+            continue
+        raced.append({"name": name, "durationMillis": measured["durationMillis"]})
+    if not raced:
+        fail(f"the race history holds no measured rows for {package}; "
+             f"refresh scripts/ci-race-history.json before planning this lane")
+    emit({"version": 1, "package": package, "complete": True, "tests": raced})
+
+
+def cmd_browser_lanes(packages_path):
+    """Emit the browser lane matrices for the selected dedicated packages.
+
+    The input is the plan's dedicated package list, already validated
+    against the manifest by the classifier: browser packages select their
+    legs, non-browser dedicated packages select none, and an entry outside
+    the dedicated partition fails the plan instead of silently dropping
+    browser coverage. The shard topology mirrors the shard aggregate
+    (scripts/ci-race-shard-aggregate.sh), which the scripts tests
+    cross-check against this table.
+    """
+    packages = load_json(packages_path)
+    require(isinstance(packages, list), "browser lane input must be a package list")
+    selected = set()
+    for package in packages:
+        require(isinstance(package, str) and PACKAGE_PATH.fullmatch(package),
+                f"browser lane input has an invalid package {package!r}")
+        require(package not in selected, f"browser lane input lists {package} twice")
+        require(package in BROWSER_LANE_SHARDS or package in NON_BROWSER_DEDICATED,
+                f"browser lane input holds {package}, which is not a dedicated race package")
+        selected.add(package)
+    runners, aggregate = [], []
+    for package, shard_count in BROWSER_LANE_SHARDS.items():
+        if package not in selected:
+            continue
+        slug = package[2:].replace("/", "-")
+        for shard in range(shard_count):
+            runners.append({"package": package, "slug": slug, "shard": shard})
+        aggregate.append({"package": package, "slug": slug, "shards": shard_count})
+    emit({"runners": {"include": runners}, "aggregate": {"include": aggregate}})
 
 
 def cmd_shards(discovery_path, history_path):
@@ -457,10 +796,20 @@ def main():
     arguments = sys.argv[1:]
     if arguments == ["lanes"]:
         cmd_lanes()
+    elif arguments == ["early-lanes"]:
+        cmd_early_lanes()
+    elif arguments == ["independent-lanes"]:
+        cmd_independent_lanes()
+    elif arguments == ["generic-batches"]:
+        cmd_generic_batches()
     elif len(arguments) == 2 and arguments[0] == "history":
         cmd_history(arguments[1])
     elif len(arguments) == 2 and arguments[0] == "vm-history":
         cmd_vm_history(arguments[1])
+    elif len(arguments) == 3 and arguments[0] == "lane-history":
+        cmd_lane_history(arguments[1], arguments[2])
+    elif len(arguments) == 2 and arguments[0] == "browser-lanes":
+        cmd_browser_lanes(arguments[1])
     elif len(arguments) == 3 and arguments[0] == "shards":
         cmd_shards(arguments[1], arguments[2])
     elif len(arguments) == 5 and arguments[0] == "schedule":
@@ -470,7 +819,9 @@ def main():
     elif len(arguments) == 2 and arguments[0] == "verify":
         cmd_verify(arguments[1])
     else:
-        fail("usage: ci-race-plan.py lanes | history DISCOVERY | vm-history DISCOVERY | "
+        fail("usage: ci-race-plan.py lanes | early-lanes | independent-lanes | generic-batches | "
+             "history DISCOVERY | vm-history DISCOVERY | lane-history SLUG DISCOVERY | "
+             "browser-lanes PACKAGES_JSON | "
              "shards DISCOVERY HISTORY | schedule DISCOVERY PLAN BINARY_SHA256 BINARY_SIZE | "
              "matrix PARTITION_JSON | verify PARTITION_DIR")
 

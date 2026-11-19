@@ -32,10 +32,27 @@ if [[ -n "${CI_RACE_APEXTEST_SHARD_INDEXES:-}" ]]; then
 fi
 browser_shard_index="${CI_RACE_SHARD_INDEX:-}"
 browser_shard_count=0
+vm_shard_count="${CI_RACE_SHARD_COUNT:-}"
 case "${package}" in
 	./internal/visualforce) browser_shard_count=4 ;;
 	./internal/lwc/compile) browser_shard_count=8 ;;
-	./internal/vm) browser_shard_count=4 ;;
+	./internal/vm)
+		# The plan job derives the VM shard count (balanced shards plus one
+		# per isolated giant test) from the measured race history; a bare
+		# local run without the plan keeps the four balanced shards.
+		if [[ -z "${vm_shard_count}" ]]; then
+			if [[ -n "${CI_RACE_ISOLATED_TESTS:-}" ]]; then
+				printf '[ci] the VM lane needs CI_RACE_SHARD_COUNT when tests are isolated\n' >&2
+				exit 2
+			fi
+			vm_shard_count=4
+		fi
+		if [[ ! "${vm_shard_count}" =~ ^[0-9]+$ ]] || [[ "${vm_shard_count}" -lt 1 ]] || [[ "${vm_shard_count}" -gt 16 ]]; then
+			printf '[ci] CI_RACE_SHARD_COUNT must be a shard count between 1 and 16\n' >&2
+			exit 2
+		fi
+		browser_shard_count="${vm_shard_count}"
+		;;
 esac
 
 if [[ "${race_mode}" == "partition" ]]; then
@@ -53,8 +70,8 @@ if [[ ! "${package}" =~ ^\./[A-Za-z0-9._/-]+$ ]] || [[ "${package}" == *...* ]];
 	printf '[ci] invalid exact race package %q\n' "${package}" >&2
 	exit 2
 fi
-if [[ -n "${browser_shard_index}" ]] && { [[ ! "${browser_shard_index}" =~ ^[0-7]$ ]] || [[ "${browser_shard_index}" -ge "${browser_shard_count}" ]]; }; then
-	echo "[ci] race shard index must select one of the four Visualforce, eight LWC compile or four VM shards" >&2
+if [[ -n "${browser_shard_index}" ]] && { [[ ! "${browser_shard_index}" =~ ^[0-9]+$ ]] || [[ "${browser_shard_index}" -ge "${browser_shard_count}" ]]; }; then
+	echo "[ci] race shard index must select one of the lane's ${browser_shard_count} shards" >&2
 	exit 2
 fi
 case "${batch_timeout}" in
@@ -163,7 +180,7 @@ case "${package}" in
 	*)
 		set +e
 		"${resource_runner}" "${artifact_dir}/resource.json" "race-${slug}" -- \
-			"${go_command}" test -race -count=1 -timeout=60m "${package}"
+			"${go_command}" test -race -count=1 -timeout="${go_test_timeout}" "${package}"
 		native_rc="$?"
 		set -e
 		set +e
@@ -585,6 +602,8 @@ elif [[ "${package}" == "./internal/apextest" ]]; then
 	plan_mode=apextest
 elif [[ "${package}" == "./internal/gladecli" ]]; then
 	planner_shards=16
+elif [[ "${package}" == "./internal/vm" ]]; then
+	planner_shards="${browser_shard_count}"
 elif [[ "${package}" == "./internal/server" || "${package}" == "./internal/lwc/compile" ]]; then
 	planner_shards=8
 fi
@@ -593,13 +612,28 @@ if [[ "${package}" == "./internal/lwc/compile" && -s "${CI_LWC_COMPILE_HISTORY_P
 	planner_args+=(--history "${CI_LWC_COMPILE_HISTORY_PATH}")
 fi
 if [[ "${package}" == "./internal/vm" ]]; then
-	# The VM shards balance by the checked-in per-test durations scaled by the
-	# race multiplier; the name hash had left one shard carrying the slowest
-	# tests over its deadline while another finished in half the time.
+	# The VM shards balance by the raced durations: the measured history
+	# first, the checked-in normal table scaled by the multiplier for tests
+	# the recorded run never measured. The plan also derives the shard
+	# count and the isolated giant tests from that history; the isolated
+	# names pin one test per trailing shard.
 	vm_race_history="${artifact_dir}/vm-race-history.json"
 	python3 "${script_dir}/ci-race-plan.py" vm-history "${discovery}" >"${vm_race_history}"
 	planner_args+=(--history "${vm_race_history}")
+	if [[ -n "${CI_RACE_ISOLATED_TESTS:-}" ]]; then
+		planner_args+=(--isolate "${CI_RACE_ISOLATED_TESTS}")
+	fi
 fi
+case "${package}" in
+	./internal/gladecli|./internal/server|./internal/testdaemon|./internal/playground|./internal/visualforce)
+		# These lanes have no checked-in normal duration table, so their
+		# plans balance by the measured race rows alone; the planner weighs
+		# tests the recorded run never measured at the measured median.
+		lane_race_history="${artifact_dir}/lane-race-history.json"
+		python3 "${script_dir}/ci-race-plan.py" lane-history "${slug}" "${discovery}" >"${lane_race_history}"
+		planner_args+=(--history "${lane_race_history}")
+		;;
+esac
 if [[ "${package}" == "./internal/apextest" && "${race_mode}" == "partition" ]]; then
 	race_history="${artifact_dir}/race-history.json"
 	python3 "${script_dir}/ci-race-plan.py" history "${discovery}" >"${race_history}"

@@ -4,10 +4,34 @@
   "apextestNormalHistorySource": "The checked-in complete Apex duration registry maintained by scripts/apextest-duration-table.py; its own source field records the measurement provenance. Entries are pruned or merged by the table workflow, never here.",
   "vmNormalHistory": "internal/vm/testdata/shard_durations.json",
   "vmNormalHistorySource": "The checked-in VM duration table captured from a matched full-package run (its source field records the lane). The race runner scales it by the plan multiplier so the four VM shards balance by measured cost instead of the name hash that left shard 1 over its 4250s deadline in run 44515703479; rows for tests a race build excludes are pruned by the table guard.",
+  "raceHistory": "scripts/ci-race-history.json",
+  "raceHistorySource": "Measured race durations recorded from one named Race run by scripts/ci-race-history.py; the file records its source run. The plan prefers these measurements and applies the multiplier only to tests the run never measured, so a test the run killed mid-flight is budgeted from its elapsed time at the kill (a lower bound that grows on the next refresh). Regenerate after a scheduled race run: download the run's lane artifacts (one directory per artifact, excluding the test-binary and partition artifacts) and run scripts/ci-race-history.py RUN_ID ARTIFACTS_ROOT scripts/ci-race-history.json.",
   "vmLane": {
     "shards": 4,
-    "normalSeconds": 2764,
-    "slowestTestNormalSeconds": 850,
-    "source": "normalSeconds is the sum of the four measured normal-mode PR VM shard walls (717/550/652/846 s, Required CI run 44461362525), the same measurement recorded in scripts/ci-package-lanes.json prPoolDedicatedSeconds. slowestTestNormalSeconds is TestAssignmentSaveVMAnonymousAndIsTestAPIRoutes as recorded in scripts/ci-race-push.json isolatedTests. Re-measure both when the VM suite drifts."
+    "source": "Balanced VM shard count. The per-shard budgets and the isolated giant-test shards are derived at plan time from the measured race history plus the normal table, so they are not stored here; re-derive by running scripts/ci-race-plan.py lanes."
+  },
+  "earlyLane": {
+    "package": "./internal/gladecli",
+    "shards": 16,
+    "source": "The early lane runs its shards sequentially in one job, so its batch deadline covers the whole package: the average complete measured shard wall from the race history times the shard count with test headroom. The lane was killed at its flat 60m batch in run 44541836806 during its third shard; the measured walls are 657.48s and 685.51s."
+  },
+  "independentLane": {
+    "package": "./internal/repoguard",
+    "normalSeconds": 26,
+    "normalSecondsSource": "Warm normal-mode wall of the same package on ci.yml's remaining-go lane (run 44545514980 resource evidence, 25.944s elapsed): the lane restores the Go build cache that persists the per-blob repository scan records, so the scan arrives warm. The race lane restored no cache, so every recorded race run timed out at about 3700s on the cold full-repository scan (runs 43281596536, 43478936186, 43760345507, 44158211531, 44515703479 and 44541836806); the race workflow now restores the same cache family, and the raced budget is the multiplier on this measured warm wall with the shard floor."
+  },
+  "genericLanes": {
+    "./internal/server": {
+      "shards": 8,
+      "source": "Heavy generic lanes run every lane sequentially in one job behind a flat batch deadline. The shard counts are the lane counts the runner creates (the playground lane adds its four example-group lanes to its five ordinary shards); scripts/ci_race_generic_lane_shards_test.go cross-checks them against the runner so they cannot drift."
+    },
+    "./internal/testdaemon": {
+      "shards": 4,
+      "source": "Heavy generic lanes run every lane sequentially in one job behind a flat batch deadline. The shard counts are the lane counts the runner creates (the playground lane adds its four example-group lanes to its five ordinary shards); scripts/ci_race_generic_lane_shards_test.go cross-checks them against the runner so they cannot drift."
+    },
+    "./internal/playground": {
+      "shards": 9,
+      "source": "Heavy generic lanes run every lane sequentially in one job behind a flat batch deadline. The shard counts are the lane counts the runner creates (the playground lane adds its four example-group lanes to its five ordinary shards); scripts/ci_race_generic_lane_shards_test.go cross-checks them against the runner so they cannot drift."
+    }
   }
 }
