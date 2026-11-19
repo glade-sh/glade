@@ -400,6 +400,26 @@ func TestMessagingCustomFieldMissingPackageRemainsDeferred(t *testing.T) {
 	}
 }
 
+// The custom-field native rows cover only the captured field families; every
+// other custom field on the captured object keeps the partial-schema deferral
+// of an org the local project does not describe.
+func TestMessagingUncapturedCustomFieldRemainsDeferred(t *testing.T) {
+	body := "MessagingSession x=new MessagingSession(); System.debug(x.UnlistedProbe__c); x.UnlistedProbe__c=null;"
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DeferredUncaptured.cls"), "public class DeferredUncaptured { public static void check(){ "+body+" } }")
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DeferredUncaptured.cls-meta.xml"), `<ApexClass><apiVersion>67.0</apiVersion></ApexClass>`)
+	idx := loadTestIndex(t, root)
+	analysis := sema.Analyze(idx)
+	if idx.HasErrors() || analysis.HasErrors() {
+		t.Fatalf("named uncaptured custom field no longer defers: %v %v", idx.Diagnostics, analysis.Diagnostics)
+	}
+	anonymous := sema.AnalyzeAnonymous(idx, body, "67.0")
+	if anonymous.HasErrors() {
+		t.Fatalf("anonymous uncaptured custom field no longer defers: %v", anonymous.Diagnostics)
+	}
+}
+
 func TestMessagingCustomFieldVersionNativeCompileRoutes(t *testing.T) {
 	const dir = "testdata/conformance/messaging_campaign_presence"
 	f, err := os.Open(filepath.Join(dir, "custom-versions.tsv"))
