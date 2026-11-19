@@ -30,10 +30,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Every package outside the six big ones, whole, split into two halves so
-  # the race compile is shared. repoguard is excluded here (its full suite
-  # runs in normal CI and in the weekly backstop); its concurrency-bearing
-  # scan-cache unit tests run in concurrent-tests below.
+  # Every package outside the six big ones and outside the browser set, whole,
+  # split into two halves so the race compile is shared. The packages whose
+  # tests drive Node, the vendored LWC toolchain and Playwright (lwc,
+  # lwcbrowser, lwcruntime) run in browser-packages below with those
+  # prerequisites; repoguard is excluded here (its full suite runs in normal
+  # CI and in the weekly backstop); its concurrency-bearing scan-cache unit
+  # tests run in concurrent-tests below.
   small-packages:
     name: Small packages whole (half ${{ matrix.half }})
     if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
@@ -54,13 +57,56 @@ jobs:
       - name: Run race detector over the small packages
         run: |
           mapfile -t packages < <(go list ./... | grep -Ev \
-            '^github\.com/glade-sh/glade/internal/(apextest|gladecli|gladehome|playground|repoguard|sema|server|storage|testdaemon|vm|visualforce)$|^github\.com/glade-sh/glade/internal/lwc/compile$' \
+            '^github\.com/glade-sh/glade/internal/(apextest|gladecli|gladehome|lwc|lwcbrowser|lwcruntime(/embed)?|playground|repoguard|sema|server|storage|testdaemon|vm|visualforce)$|^github\.com/glade-sh/glade/internal/lwc/compile$' \
             | awk -v half='${{ matrix.half }}' 'NR % 2 == half')
           echo "half ${{ matrix.half }}: ${#packages[@]} packages"
           go test -race -timeout=50m "${packages[@]}"
       - name: Summary
         if: always()
         run: 'echo "small packages, half ${{ matrix.half }}: ${{ job.status }}"'
+
+  # The packages whose tests drive Node, the vendored LWC toolchain and
+  # Playwright, whole: the LWC compiler routes of internal/lwc fail without
+  # node and third_party/lwc/node_modules, the Playwright suites of
+  # internal/lwcbrowser skip or fail without them plus the lwcruntime
+  # dependencies and Chromium, and internal/lwcruntime runs the lwcruntime
+  # npm test suite under GLADE_LWC_BROWSER=1. The install steps are the same
+  # as weekly-browser's; the timeout covers those steps' 5+5+65 minute caps
+  # plus the 60m per-package test budget the old nightly gave each of these.
+  browser-packages:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 145
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      GLADE_LWC_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC toolchain
+        timeout-minutes: 5
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
+        timeout-minutes: 5
+        run: npm ci --prefix lwcruntime
+      # Three times the observed 19m39s install plus backoff fits in 65m.
+      - name: Install conformance Chromium
+        timeout-minutes: 65
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run race detector over the browser packages
+        run: go test -race -timeout=60m ./internal/lwc ./internal/lwcbrowser ./internal/lwcruntime
+      - name: Summary
+        if: always()
+        run: 'echo "browser packages whole: ${{ job.status }}"'
 
   # The packages outside the big six that deliberately run concurrent code,
   # whole: storage, sema, gladehome, playground and testdaemon.
@@ -92,13 +138,20 @@ jobs:
 
   # Only the tests whose names mark concurrency in the six big packages, one
   # -run regex per package. The lwc/compile and visualforce entries are their
-  # nightly smoke: browser conformance is excluded under race (the weekly
-  # backstop runs it), and the regex-matched tests are pure Go.
+  # nightly smoke; browser conformance is excluded under race (the weekly
+  # backstop runs it). The gladecli selection synthesizes its own toolchain
+  # layout, but regex-matched server tests serve compiled Lightning modules
+  # and skip without the vendored LWC compiler, so Node and the toolchain are
+  # installed here. No regex-matched test drives Playwright — the only browser
+  # suite in these packages is server's L08 conformance, which the regex does
+  # not match and GLADE_LWC_BROWSER=1 gates — so the lwcruntime dependencies
+  # and Chromium stay out of this job.
   concurrent-tests:
     if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
+      GLADE_ROOT: ${{ github.workspace }}
       CONCURRENCY_TEST_RE: 'Concurren|Parallel|Race|Goroutine|Cancel|Daemon|Watch|Async|Queue|Listener|Lock|Shutdown|GracefulStop|Interrupt|Pool|Worker|Serve|Stream|Heartbeat|Debounce|Singleflight|Reentrant|ThreadSafe|Overlap|Signal'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -108,6 +161,12 @@ jobs:
         with:
           go-version: "1.26.11"
           cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC toolchain
+        timeout-minutes: 5
+        run: npm ci --prefix third_party/lwc
       - name: Run concurrency-named tests per package
         run: |
           go test -race -timeout=25m -run "$CONCURRENCY_TEST_RE" ./internal/apextest
