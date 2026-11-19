@@ -16,7 +16,7 @@ func TestCIRaceProvisioningStepsBounded(t *testing.T) {
 				Name    string
 				Run     string
 				If      string
-				Timeout int `yaml:"timeout-minutes"`
+				Timeout string `yaml:"timeout-minutes"`
 			}
 		}
 	}
@@ -43,7 +43,7 @@ func TestCIRaceProvisioningStepsBounded(t *testing.T) {
 				if strings.Contains(command, "playwright") {
 					limit = 65
 				}
-				if strings.TrimSpace(step.Run) != command || step.Name == "" || step.Timeout != limit {
+				if strings.TrimSpace(step.Run) != command || step.Name == "" || strings.TrimSpace(step.Timeout) != strconv.Itoa(limit) {
 					t.Errorf("%s: %q must have its own named %d-minute step: %+v", job, command, limit, step)
 				}
 				if job == "race-push" && (!strings.Contains(step.If, "./internal/gladecli") || !strings.Contains(step.If, "./internal/server")) {
@@ -78,7 +78,10 @@ func TestCIRaceProvisioningRetainsTestAndEvidenceRoutes(t *testing.T) {
 	for _, route := range []struct{ job, test, command, upload string }{
 		{"race-browser", "Run assigned browser race shard", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "Upload browser race evidence"},
 		{"race-early", "Run early race detector", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "Upload early race evidence"},
+		{"race-independent", "Run independent race detector", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "Upload independent race evidence"},
+		{"race-vm", "Run assigned VM race shard", `scripts/ci-race-test.sh ./internal/vm internal-vm`, "Upload VM race evidence"},
 		{"race", "Run race detector", `scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "Upload race evidence"},
+		{"race-apextest", "Run assigned Apex race shards", `scripts/ci-race-test.sh ./internal/apextest internal-apextest`, "Upload Apex runner evidence"},
 		{"race-push", "Run concurrent Go tests", `python3 scripts/ci-race-push.py run "${{ matrix.index }}"`, "Upload push race evidence"},
 	} {
 		testIndex, uploadIndex := -1, -1

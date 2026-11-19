@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -183,10 +184,29 @@ func TestCIRaceApextestAggregateRevalidatesDeferredPrerequisites(t *testing.T) {
 	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
 	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
 	git := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' "+head+"\n")
-	roots := make([]string, 3)
-	for index, assignment := range []string{"0,3,5,8,11,13", "4,7,12,15", "1,2,6,9,10,14"} {
-		runner := string(rune('a' + index))
-		workdir := filepath.Join(root, runner)
+	partitionDir, _, _ := writeRaceApextestPartitionForFixture(t, root, goCommand, names)
+	partitionData, err := os.ReadFile(filepath.Join(partitionDir, "partition.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var partition struct {
+		Runners []struct {
+			Runner              string `json:"runner"`
+			BatchTimeoutSeconds int    `json:"batch_timeout_seconds"`
+		} `json:"runners"`
+	}
+	if err := json.Unmarshal(partitionData, &partition); err != nil {
+		t.Fatal(err)
+	}
+	if len(partition.Runners) < 3 {
+		t.Fatalf("fixture partition has %d runners", len(partition.Runners))
+	}
+	runnersRoot := filepath.Join(root, "runners")
+	if err := os.MkdirAll(runnersRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range partition.Runners {
+		workdir := filepath.Join(root, entry.Runner)
 		if err := os.MkdirAll(workdir, 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -194,22 +214,25 @@ func TestCIRaceApextestAggregateRevalidatesDeferredPrerequisites(t *testing.T) {
 			"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
 			"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + filepath.Join(workdir, "calls.log"),
 			"CI_RACE_GIT_COMMAND=" + git, "CI_RACE_HEAD_SHA=" + head,
-			"CI_RACE_APEXTEST_RUNNER=" + runner, "CI_RACE_APEXTEST_SHARD_INDEXES=" + assignment,
+			"CI_RACE_TIMEOUT_COMMAND=" + raceBatchTimeoutFixture(t),
+			"CI_RACE_PARTITION_DIR=" + partitionDir, "CI_RACE_APEXTEST_RUNNER=" + entry.Runner,
+			"CI_RACE_BATCH_TIMEOUT_SECONDS=" + strconv.Itoa(entry.BatchTimeoutSeconds),
 			"CI_RACE_TEST_NAMES=" + strings.Join(names, "\n") + "\n", "TMPDIR=" + workdir,
 			"CI_RACE_DEFERRED_TEST=" + names[0],
 		}, "./internal/apextest", "internal-apextest")
 		if err != nil {
-			t.Fatalf("runner %s failed: %v\n%s", runner, err, out)
+			t.Fatalf("runner %s failed: %v\n%s", entry.Runner, err, out)
 		}
-		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-apextest")
+		if err := os.CopyFS(filepath.Join(runnersRoot, fmt.Sprintf("race-internal-apextest-%s-44158211531-1", entry.Runner)), os.DirFS(filepath.Join(workdir, "ci-artifacts/race/internal-apextest"))); err != nil {
+			t.Fatal(err)
+		}
 	}
 	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
 	output := filepath.Join(root, "union.json")
-	args := append([]string{script}, roots...)
-	args = append(args, output, head)
+	args := []string{script, partitionDir, runnersRoot, output, head}
 	if out, err := exec.Command("bash", args...).CombinedOutput(); err != nil {
 		t.Fatalf("aggregate rejected deferred prerequisite: %v\n%s", err, out)
 	}
@@ -400,5 +423,127 @@ func TestCIRaceWorkflowSchedulesBrowserPackagesSeparately(t *testing.T) {
 		if !strings.Contains(workflowJobBlocksText(workflow)[name], "GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright") {
 			t.Errorf("%s must resolve the installed Playwright module", name)
 		}
+	}
+}
+
+// The VM package runs as its own bounded shard matrix: every leg executes
+// exactly one planned shard with the lane's test deadline, and the aggregate
+// proves the complete tested union. The package is pure Go, so no binary
+// producer or browser setup may gate or provision these lanes.
+func TestCIRacePackageRunnerVMBoundedShardsCompleteUnion(t *testing.T) {
+	const packageName = "github.com/glade-sh/glade/internal/vm"
+	head := strings.Repeat("d", 40)
+	names := make([]string, 4)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestVMCase%02d", index)
+	}
+	var lanes struct {
+		Include []struct {
+			TestTimeoutSeconds  int `json:"testTimeoutSeconds"`
+			BatchTimeoutSeconds int `json:"batchTimeoutSeconds"`
+		} `json:"include"`
+	}
+	if err := json.Unmarshal([]byte(runRacePlan(t, "lanes")), &lanes); err != nil {
+		t.Fatal(err)
+	}
+	if len(lanes.Include) != 4 {
+		t.Fatalf("VM lane has %d legs, want four", len(lanes.Include))
+	}
+	testTimeout := lanes.Include[0].TestTimeoutSeconds
+	batchTimeout := lanes.Include[0].BatchTimeoutSeconds
+	root := t.TempDir()
+	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *"-list ."* ]]; then
+  printf '%b' "$CI_RACE_TEST_NAMES"
+  printf 'ok   github.com/glade-sh/glade/internal/vm 0.001s\n'
+  exit 0
+fi
+printf 'native %s\n' "$*" >>"$CI_RACE_CALL_LOG"
+while IFS= read -r name; do
+  [[ -n "$name" ]] || continue
+  if [[ "$*" == *"$name"* ]]; then
+    printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/vm","Test":"%s","Elapsed":0.01}\n' "$name"
+  fi
+done <<<"$CI_RACE_TEST_NAMES"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/vm"}\n'
+`)
+	planner := writeRaceFixture(t, "fake-planner", `#!/usr/bin/env bash
+set -euo pipefail
+while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 4 ]]; shift 2;; --tests) tests="$2"; shift 2;; *) exit 91;; esac; done
+names=(); while IFS= read -r name; do names+=("$name"); done <"$tests"
+[[ "${#names[@]}" == 4 ]]
+printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
+for index in 0 1 2 3; do [[ "$index" == 0 ]] || printf ','; printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"; done
+printf ']}\n'
+`)
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	git := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' "+head+"\n")
+	roots := make([]string, 4)
+	for index := range roots {
+		workdir := filepath.Join(root, fmt.Sprintf("runner-%d", index))
+		if err := os.MkdirAll(workdir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		log := filepath.Join(workdir, "calls.log")
+		out, err := runRacePackage(t, workdir, []string{
+			"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+			"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + log,
+			"CI_RACE_GIT_COMMAND=" + git, "CI_RACE_HEAD_SHA=" + head,
+			"CI_RACE_TIMEOUT_COMMAND=" + raceBatchTimeoutFixture(t),
+			fmt.Sprintf("CI_RACE_SHARD_INDEX=%d", index),
+			fmt.Sprintf("CI_RACE_TEST_TIMEOUT_SECONDS=%d", testTimeout),
+			fmt.Sprintf("CI_RACE_BATCH_TIMEOUT_SECONDS=%d", batchTimeout),
+			"CI_RACE_TEST_NAMES=" + strings.Join(names, "\n") + "\n",
+		}, "./internal/vm", "internal-vm")
+		if err != nil {
+			t.Fatalf("VM leg %d failed: %v\n%s", index, err, out)
+		}
+		calls, err := os.ReadFile(log)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(calls), fmt.Sprintf("deadline %d", batchTimeout)) {
+			t.Fatalf("VM leg %d did not use the planned batch deadline:\n%s", index, calls)
+		}
+		if !strings.Contains(string(calls), fmt.Sprintf("native test -json -race -count=1 -timeout=%ds -run", testTimeout)) {
+			t.Fatalf("VM leg %d did not use the planned shard deadline:\n%s", index, calls)
+		}
+		if !strings.Contains(string(calls), fmt.Sprintf("start race-internal-vm-shard-%d", index)) {
+			t.Fatalf("VM leg %d did not execute its one assigned shard:\n%s", index, calls)
+		}
+		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-vm")
+	}
+	aggregate, err := filepath.Abs("ci-race-shard-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(root, "union.json")
+	args := append([]string{aggregate, "./internal/vm", output, head}, roots...)
+	if out, err := exec.Command("bash", args...).CombinedOutput(); err != nil {
+		t.Fatalf("VM aggregate rejected full coverage: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(output)
+	var result struct {
+		Valid      bool `json:"valid"`
+		Discovered int  `json:"discovered_count"`
+	}
+	if err != nil || json.Unmarshal(data, &result) != nil || !result.Valid || result.Discovered != 4 {
+		t.Fatalf("VM union summary=%s err=%v", data, err)
+	}
+	// A missing leg must fail the complete-union validation.
+	copies := make([]string, 4)
+	for index, source := range roots {
+		copies[index] = filepath.Join(t.TempDir(), "artifact")
+		if err := os.CopyFS(copies[index], os.DirFS(source)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.RemoveAll(copies[3]); err != nil {
+		t.Fatal(err)
+	}
+	brokenArgs := append([]string{aggregate, "./internal/vm", filepath.Join(t.TempDir(), "broken.json"), head}, copies...)
+	if out, err := exec.Command("bash", brokenArgs...).CombinedOutput(); err == nil {
+		t.Fatalf("VM aggregate accepted an incomplete shard union:\n%s", out)
 	}
 }

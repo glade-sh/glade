@@ -1,0 +1,508 @@
+package scripts
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+)
+
+// runRacePlan invokes the one race plan authority. The Race workflow, the
+// package runner and the Apex aggregate all consume its output, so every
+// scheduling rule tested here is a rule the scheduled race route follows.
+func runRacePlan(t *testing.T, args ...string) string {
+	t.Helper()
+	out, err := exec.Command("python3", append([]string{"ci-race-plan.py"}, args...)...).CombinedOutput()
+	if err != nil {
+		t.Fatalf("ci-race-plan.py %s failed: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return string(out)
+}
+
+func runRacePlanErr(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+	out, err := exec.Command("python3", append([]string{"ci-race-plan.py"}, args...)...).CombinedOutput()
+	return string(out), err
+}
+
+const racePlanApexPackage = "github.com/glade-sh/glade/internal/apextest"
+
+type racePlanShardTimeout struct {
+	Index              int `json:"index"`
+	TestTimeoutSeconds int `json:"test_timeout_seconds"`
+}
+
+type racePlanRunner struct {
+	Runner              string `json:"runner"`
+	ShardIndexes        []int  `json:"shard_indexes"`
+	BatchTimeoutSeconds int    `json:"batch_timeout_seconds"`
+	StepTimeoutMinutes  int    `json:"step_timeout_minutes"`
+	JobTimeoutMinutes   int    `json:"job_timeout_minutes"`
+}
+
+type racePlanPartition struct {
+	SchemaVersion   int                    `json:"schema_version"`
+	Package         string                 `json:"package"`
+	Multiplier      int                    `json:"normal_duration_multiplier"`
+	ShardCount      int                    `json:"shard_count"`
+	DiscoverySHA256 string                 `json:"discovery_sha256"`
+	PlanSHA256      string                 `json:"plan_sha256"`
+	BinarySHA256    string                 `json:"binary_sha256"`
+	BinarySizeBytes int                    `json:"binary_size_bytes"`
+	Shards          []racePlanShardTimeout `json:"shards"`
+	Runners         []racePlanRunner       `json:"runners"`
+}
+
+func racePlanVMConfig(t *testing.T) (shards, normalSeconds, slowestNormalSeconds int) {
+	t.Helper()
+	data, err := os.ReadFile("ci-race-plan.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		VMLane struct {
+			Shards                int `json:"shards"`
+			NormalSeconds         int `json:"normalSeconds"`
+			SlowestTestNormalSecs int `json:"slowestTestNormalSeconds"`
+		} `json:"vmLane"`
+	}
+	if err := json.Unmarshal(data, &config); err != nil {
+		t.Fatal(err)
+	}
+	return config.VMLane.Shards, config.VMLane.NormalSeconds, config.VMLane.SlowestTestNormalSecs
+}
+
+// The VM lane must stay bounded: one shard per matrix leg, a per-shard test
+// deadline derived from the measured normal history times the documented
+// race multiplier, and a coherent batch, step and job deadline above it.
+func TestCIRacePlanLanesBoundVMShardsWithCoherentDeadlines(t *testing.T) {
+	var lanes struct {
+		Include []struct {
+			Shard               int `json:"shard"`
+			TestTimeoutSeconds  int `json:"testTimeoutSeconds"`
+			BatchTimeoutSeconds int `json:"batchTimeoutSeconds"`
+			StepMinutes         int `json:"stepMinutes"`
+			TimeoutMinutes      int `json:"timeoutMinutes"`
+		} `json:"include"`
+	}
+	if err := json.Unmarshal([]byte(runRacePlan(t, "lanes")), &lanes); err != nil {
+		t.Fatal(err)
+	}
+	shardCount, normalSeconds, slowestNormal := racePlanVMConfig(t)
+	if len(lanes.Include) != shardCount {
+		t.Fatalf("VM lane has %d legs, want %d", len(lanes.Include), shardCount)
+	}
+	// Every leg uses the same conservative bound: the raced package average
+	// and the single slowest recorded VM test, both with 1.25x headroom,
+	// floored at fifteen minutes.
+	racedAverage := (normalSeconds*4 + shardCount - 1) / shardCount
+	racedSlowest := slowestNormal * 4
+	wantTest := (racedAverage*5 + 3) / 4
+	if wantSlowest := (racedSlowest*5 + 3) / 4; wantSlowest > wantTest {
+		wantTest = wantSlowest
+	}
+	if wantTest < 900 {
+		wantTest = 900
+	}
+	for index, leg := range lanes.Include {
+		if leg.Shard != index {
+			t.Fatalf("VM leg %d has shard %d", index, leg.Shard)
+		}
+		if leg.TestTimeoutSeconds != wantTest {
+			t.Errorf("VM leg %d test timeout = %d, want %d", index, leg.TestTimeoutSeconds, wantTest)
+		}
+		if leg.BatchTimeoutSeconds != leg.TestTimeoutSeconds+600 {
+			t.Errorf("VM leg %d batch = %d, want test timeout + 600", index, leg.BatchTimeoutSeconds)
+		}
+		wantStep := (leg.BatchTimeoutSeconds+59)/60 + 5
+		if leg.StepMinutes != wantStep {
+			t.Errorf("VM leg %d step minutes = %d, want %d", index, leg.StepMinutes, wantStep)
+		}
+		if leg.TimeoutMinutes != leg.StepMinutes+15 {
+			t.Errorf("VM leg %d job minutes = %d, want step + 15", index, leg.TimeoutMinutes)
+		}
+		if leg.TimeoutMinutes > 355 {
+			t.Errorf("VM leg %d job minutes = %d exceeds the GitHub job cap", index, leg.TimeoutMinutes)
+		}
+	}
+}
+
+// racePlanFixture writes one canonical discovery file and a matching shard
+// plan whose per-shard estimates are supplied by the caller.
+func racePlanFixture(t *testing.T, names []string, estimatesMs []int) (dir, discovery, plan string) {
+	t.Helper()
+	dir = t.TempDir()
+	discovery = filepath.Join(dir, "discovery.txt")
+	if err := os.WriteFile(discovery, []byte(strings.Join(names, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shards := make([]map[string]any, len(names))
+	for index, name := range names {
+		estimate := 0
+		if estimatesMs != nil {
+			estimate = estimatesMs[index]
+		}
+		shards[index] = map[string]any{
+			"index":                   index,
+			"tests":                   []string{name},
+			"estimatedDurationMillis": estimate,
+			"regex":                   "^(?:" + name + ")$",
+		}
+	}
+	planDocument := map[string]any{"version": 1, "package": racePlanApexPackage, "historyUsed": false, "shards": shards}
+	planData, err := json.Marshal(planDocument)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan = filepath.Join(dir, "plan.json")
+	if err := os.WriteFile(plan, append(planData, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir, discovery, plan
+}
+
+func racePlanSchedule(t *testing.T, discovery, plan string) racePlanPartition {
+	t.Helper()
+	output := runRacePlan(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576")
+	var partition racePlanPartition
+	if err := json.Unmarshal([]byte(output), &partition); err != nil {
+		t.Fatalf("partition JSON: %v\n%s", err, output)
+	}
+	return partition
+}
+
+func TestCIRacePlanScheduleBindsAssignmentsAndDeadlineFloor(t *testing.T) {
+	names := make([]string, 16)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%02d", index)
+	}
+	_, discovery, plan := racePlanFixture(t, names, nil)
+	partition := racePlanSchedule(t, discovery, plan)
+	if partition.SchemaVersion != 1 || partition.Package != racePlanApexPackage || partition.Multiplier != 4 {
+		t.Fatalf("partition header = %#v", partition)
+	}
+	if partition.ShardCount != 16 || len(partition.Shards) != 16 {
+		t.Fatalf("partition shards = %d, want 16", partition.ShardCount)
+	}
+	assigned := map[int]bool{}
+	runners := partition.Runners
+	if len(runners) < 3 {
+		t.Fatalf("partition has %d runners, want at least three", len(runners))
+	}
+	for _, runner := range runners {
+		if runner.BatchTimeoutSeconds != len(runner.ShardIndexes)*900+600 {
+			t.Errorf("runner %s batch = %d, want %d shard budgets plus reserve", runner.Runner, runner.BatchTimeoutSeconds, len(runner.ShardIndexes)*900)
+		}
+		wantStep := (runner.BatchTimeoutSeconds+59)/60 + 5
+		if runner.StepTimeoutMinutes != wantStep {
+			t.Errorf("runner %s step minutes = %d, want %d", runner.Runner, runner.StepTimeoutMinutes, wantStep)
+		}
+		if runner.JobTimeoutMinutes != runner.StepTimeoutMinutes+15 {
+			t.Errorf("runner %s job minutes = %d, want step + 15", runner.Runner, runner.JobTimeoutMinutes)
+		}
+		for _, index := range runner.ShardIndexes {
+			if assigned[index] {
+				t.Errorf("shard %d assigned twice", index)
+			}
+			assigned[index] = true
+			if partition.Shards[index].TestTimeoutSeconds != 900 {
+				t.Errorf("shard %d timeout = %d, want the 900s floor for a zero estimate", index, partition.Shards[index].TestTimeoutSeconds)
+			}
+		}
+	}
+	for index := 0; index < 16; index++ {
+		if !assigned[index] {
+			t.Errorf("shard %d was not assigned to any runner", index)
+		}
+	}
+
+	// The workflow matrix entries must carry the same deadlines the
+	// partition recorded, so the YAML job and step budgets cannot drift
+	// from the plan the runner verifies.
+	var matrix struct {
+		Include []struct {
+			Runner              string `json:"runner"`
+			BatchTimeoutSeconds int    `json:"batchTimeoutSeconds"`
+			StepMinutes         int    `json:"stepMinutes"`
+			TimeoutMinutes      int    `json:"timeoutMinutes"`
+		} `json:"include"`
+	}
+	if err := json.Unmarshal([]byte(runRacePlan(t, "matrix", planPartitionPath(t, discovery, plan))), &matrix); err != nil {
+		t.Fatal(err)
+	}
+	if len(matrix.Include) != len(runners) {
+		t.Fatalf("matrix has %d entries, want %d runners", len(matrix.Include), len(runners))
+	}
+	for index, entry := range matrix.Include {
+		if entry.Runner != runners[index].Runner || entry.BatchTimeoutSeconds != runners[index].BatchTimeoutSeconds ||
+			entry.StepMinutes != runners[index].StepTimeoutMinutes || entry.TimeoutMinutes != runners[index].JobTimeoutMinutes {
+			t.Errorf("matrix entry %d = %#v, want runner %#v", index, entry, runners[index])
+		}
+	}
+}
+
+func planPartitionPath(t *testing.T, discovery, plan string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "partition.json")
+	if err := os.WriteFile(path, []byte(runRacePlan(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestCIRacePlanScheduleBalancesShardsByRacedEstimate(t *testing.T) {
+	names := make([]string, 16)
+	estimates := make([]int, 16)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%02d", index)
+		estimates[index] = 1_000_000
+	}
+	// One heavy shard: its raced estimate dominates, so the schedule must
+	// balance the remaining load and keep every job under the deadline cap.
+	estimates[0] = 1_400_000
+	_, discovery, plan := racePlanFixture(t, names, estimates)
+	partition := racePlanSchedule(t, discovery, plan)
+	if got, want := partition.Shards[0].TestTimeoutSeconds, 7_000; got != want {
+		t.Fatalf("heavy shard timeout = %d, want %d", got, want)
+	}
+	for index := 1; index < 16; index++ {
+		if partition.Shards[index].TestTimeoutSeconds != 5_000 {
+			t.Fatalf("light shard %d timeout = %d, want 5000", index, partition.Shards[index].TestTimeoutSeconds)
+		}
+	}
+	loads := map[string]int{}
+	for _, runner := range partition.Runners {
+		for _, index := range runner.ShardIndexes {
+			loads[runner.Runner] += partition.Shards[index].TestTimeoutSeconds
+		}
+		if runner.JobTimeoutMinutes > 355 {
+			t.Errorf("runner %s job minutes = %d exceeds the cap", runner.Runner, runner.JobTimeoutMinutes)
+		}
+	}
+	if len(loads) < 3 {
+		t.Fatalf("heavy plan used %d runners, want at least three", len(loads))
+	}
+	var minLoad, maxLoad int
+	for position, load := range sortedRacePlanLoads(loads) {
+		if position == 0 {
+			minLoad, maxLoad = load, load
+		} else if load < minLoad {
+			minLoad = load
+		} else if load > maxLoad {
+			maxLoad = load
+		}
+	}
+	if maxLoad-minLoad > partition.Shards[0].TestTimeoutSeconds {
+		t.Fatalf("assignment is unbalanced: loads %v", loads)
+	}
+}
+
+func sortedRacePlanLoads(loads map[string]int) []int {
+	keys := make([]string, 0, len(loads))
+	for key := range loads {
+		keys = append(keys, key)
+	}
+	for i := 1; i < len(keys); i++ {
+		for j := i; j > 0 && keys[j] < keys[j-1]; j-- {
+			keys[j], keys[j-1] = keys[j-1], keys[j]
+		}
+	}
+	values := make([]int, 0, len(keys))
+	for _, key := range keys {
+		values = append(values, loads[key])
+	}
+	return values
+}
+
+// A shard whose raced budget exceeds the per-shard cap must fail the
+// schedule instead of silently planning a batch that can never finish.
+func TestCIRacePlanScheduleRejectsOversizedShards(t *testing.T) {
+	names := make([]string, 16)
+	estimates := make([]int, 16)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%02d", index)
+	}
+	estimates[0] = 2_000_000
+	_, discovery, plan := racePlanFixture(t, names, estimates)
+	if out, err := runRacePlanErr(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576"); err == nil {
+		t.Fatalf("oversized shard accepted:\n%s", out)
+	}
+}
+
+func racePlanApexNormalHistory(t *testing.T) map[string]int {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "internal", "apextest", "testdata", "shard_durations.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var table struct {
+		Tests []struct {
+			Name           string `json:"name"`
+			DurationMillis int    `json:"durationMillis"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(data, &table); err != nil {
+		t.Fatal(err)
+	}
+	if len(table.Tests) == 0 {
+		t.Fatal("checked-in Apex normal history is empty")
+	}
+	history := make(map[string]int, len(table.Tests))
+	for _, row := range table.Tests {
+		history[row.Name] = row.DurationMillis
+	}
+	return history
+}
+
+// The interim race cost model: the checked-in normal durations scaled by the
+// documented conservative multiplier and filtered to the discovered tests.
+func TestCIRacePlanHistoryScalesNormalDurationsToDiscovery(t *testing.T) {
+	history := racePlanApexNormalHistory(t)
+	names := make([]string, 0, 8)
+	for name := range history {
+		names = append(names, name)
+		if len(names) == 8 {
+			break
+		}
+	}
+	sort.Strings(names)
+	discovery := filepath.Join(t.TempDir(), "discovery.txt")
+	if err := os.WriteFile(discovery, []byte(strings.Join(names, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var scaled struct {
+		Version  int  `json:"version"`
+		Complete bool `json:"complete"`
+		Tests    []struct {
+			Name           string `json:"name"`
+			DurationMillis int    `json:"durationMillis"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal([]byte(runRacePlan(t, "history", discovery)), &scaled); err != nil {
+		t.Fatal(err)
+	}
+	if scaled.Version != 1 || !scaled.Complete || len(scaled.Tests) != len(names) {
+		t.Fatalf("scaled history header = %#v", scaled)
+	}
+	for _, row := range scaled.Tests {
+		if want := history[row.Name] * 4; row.DurationMillis != want {
+			t.Errorf("%s scaled to %d ms, want %d", row.Name, row.DurationMillis, want)
+		}
+	}
+	// A discovery with no table coverage must fail closed instead of
+	// planning budgets with no weights behind them.
+	unknown := filepath.Join(t.TempDir(), "discovery.txt")
+	if err := os.WriteFile(unknown, []byte("TestUnknownToTheTable\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runRacePlanErr(t, "history", unknown); err == nil {
+		t.Fatalf("unknown discovery accepted:\n%s", out)
+	}
+}
+
+func writeRacePlanPartition(t *testing.T, names []string, estimates []int) string {
+	t.Helper()
+	dir, discovery, plan := racePlanFixture(t, names, estimates)
+	if err := os.WriteFile(filepath.Join(dir, "partition.json"), []byte(runRacePlan(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runRacePlanErr(t, "verify", dir); err != nil {
+		t.Fatalf("produced partition does not verify: %v\n%s", err, out)
+	}
+	return dir
+}
+
+// verify re-derives the whole partition from its own discovery and plan, so
+// any drift between the published manifest and the policy is rejected before
+// a runner spends hours executing it.
+func TestCIRacePlanVerifyRejectsTamperedPartitions(t *testing.T) {
+	names := make([]string, 16)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%02d", index)
+	}
+	mutations := map[string]func(t *testing.T, root string){
+		"tightened shard deadline": func(t *testing.T, root string) {
+			path := filepath.Join(root, "partition.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"test_timeout_seconds":900`, `"test_timeout_seconds":600`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"tightened batch deadline": func(t *testing.T, root string) {
+			path := filepath.Join(root, "partition.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"batch_timeout_seconds":6000`, `"batch_timeout_seconds":100`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"removed runner": func(t *testing.T, root string) {
+			path := filepath.Join(root, "partition.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var partition map[string]any
+			if err := json.Unmarshal(data, &partition); err != nil {
+				t.Fatal(err)
+			}
+			partition["runners"] = partition["runners"].([]any)[:2]
+			updated, err := json.Marshal(partition)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, append(updated, '\n'), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"swapped multiplier": func(t *testing.T, root string) {
+			path := filepath.Join(root, "partition.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"normal_duration_multiplier":4`, `"normal_duration_multiplier":2`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"tampered discovery": func(t *testing.T, root string) {
+			if err := os.WriteFile(filepath.Join(root, "discovery.txt"), []byte("TestIntruder\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"tampered plan union": func(t *testing.T, root string) {
+			path := filepath.Join(root, "plan.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"TestCase00"`, `"TestCase99"`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"missing partition": func(t *testing.T, root string) {
+			if err := os.Remove(filepath.Join(root, "partition.json")); err != nil {
+				t.Fatal(err)
+			}
+		},
+	}
+	for name, mutate := range mutations {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			root := writeRacePlanPartition(t, names, nil)
+			mutate(t, root)
+			if out, err := runRacePlanErr(t, "verify", root); err == nil {
+				t.Fatalf("tampered partition verified:\n%s", out)
+			}
+		})
+	}
+}
