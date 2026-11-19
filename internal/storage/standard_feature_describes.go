@@ -10,8 +10,9 @@ import (
 	"sync"
 )
 
-// Generated from the owned feature-profile and messaging campaign presence
-// capture packets; regenerate with scripts/generate-standard-feature-describes.py.
+// Generated from the owned feature-profile, messaging campaign presence and
+// auth-flow capture packets; regenerate with
+// scripts/generate-standard-feature-describes.py.
 //
 //go:embed standard_feature_describes.json.gz
 var standardFeatureDescribeData []byte
@@ -36,6 +37,10 @@ var standardFeatureDescribeCache struct {
 	// standardFeatureDescribeName first and almost always misses, so the miss
 	// path must not iterate a map or allocate (v0.3.5 b5b9features perf).
 	canonical []string
+	// Lowercase object name to canonical FieldVersions key. The sema
+	// field-access path resolves versioned objects on every field reference,
+	// so the lookup must not scan the FieldVersions map (auth-flow rows).
+	versionedNames map[string]string
 }
 
 func loadStandardFeatureDescribes() *standardFeatureDescribeBundle {
@@ -60,6 +65,10 @@ func loadStandardFeatureDescribes() *standardFeatureDescribeBundle {
 			standardFeatureDescribeCache.canonical = append(standardFeatureDescribeCache.canonical, name)
 		}
 		sort.Strings(standardFeatureDescribeCache.canonical)
+		standardFeatureDescribeCache.versionedNames = make(map[string]string, len(standardFeatureDescribeCache.bundle.FieldVersions))
+		for name := range standardFeatureDescribeCache.bundle.FieldVersions {
+			standardFeatureDescribeCache.versionedNames[strings.ToLower(name)] = name
+		}
 	})
 	return &standardFeatureDescribeCache.bundle
 }
@@ -110,23 +119,29 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 	return false
 }
 
+// standardFeatureVersionedObjectName canonicalizes an object that carries
+// captured per-API field versions. Most are feature-profile describes, but the
+// version matrix also covers standard catalog objects that no profile owns.
+func standardFeatureVersionedObjectName(object string) (string, bool) {
+	loadStandardFeatureDescribes()
+	name, ok := standardFeatureDescribeCache.versionedNames[strings.ToLower(object)]
+	return name, ok
+}
+
 // StandardFeatureFieldVersion reports captured source-version membership for
 // the isolated feature surfaces. The second value is false for unmeasured
 // fields or API versions, which retain the ordinary catalog behavior.
 func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 	bundle := loadStandardFeatureDescribes()
-	object = strings.TrimSpace(object)
-	for name, fields := range bundle.FieldVersions {
-		if !strings.EqualFold(name, object) {
-			continue
-		}
-		for key, versions := range fields {
-			if strings.EqualFold(key, field) {
-				value, found := versions[api]
-				return value, found
-			}
-		}
+	name, ok := standardFeatureVersionedObjectName(object)
+	if !ok {
 		return false, false
+	}
+	for key, versions := range bundle.FieldVersions[name] {
+		if strings.EqualFold(key, field) {
+			value, found := versions[api]
+			return value, found
+		}
 	}
 	return false, false
 }
@@ -134,14 +149,8 @@ func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 // StandardFeatureHasVersionedFields reports whether any per-API field
 // membership was captured for the object.
 func StandardFeatureHasVersionedFields(object string) bool {
-	bundle := loadStandardFeatureDescribes()
-	object = strings.TrimSpace(object)
-	for name, fields := range bundle.FieldVersions {
-		if strings.EqualFold(name, object) {
-			return len(fields) > 0
-		}
-	}
-	return false
+	_, ok := standardFeatureVersionedObjectName(object)
+	return ok
 }
 
 // StandardFeatureQueryVersion reports captured dynamic-query membership for

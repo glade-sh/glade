@@ -10,6 +10,8 @@
 
 - Messaging session campaign fields now follow the captured API version and package-qualified field routes in describe, compile, query and REST describe.
 
+- Authentication flow default objects now follow the captured API version, field access and query clause boundaries for static and dynamic access.
+
 ### Apex
 
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
