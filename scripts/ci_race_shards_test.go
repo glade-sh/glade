@@ -317,8 +317,8 @@ printf '{"Action":"pass","Package":"%s"}\n' "$CI_RACE_TEST_PACKAGE"
 					t.Fatalf("runner %d: %v\n%s", index, err, out)
 				}
 				calls, err := os.ReadFile(log)
-				if err != nil || strings.Count(string(calls), "native test -json -race -count=1 -timeout=60m -run") != 1 || !strings.Contains(string(calls), fmt.Sprintf("start race-%s-shard-%d", topology.slug, index)) {
-					t.Fatalf("runner %d must execute its one assigned race shard: %s, %v", index, calls, err)
+				if err != nil || strings.Count(string(calls), "native test -json -race -count=1 -timeout=55m -run") != 1 || !strings.Contains(string(calls), fmt.Sprintf("start race-%s-shard-%d", topology.slug, index)) {
+					t.Fatalf("runner %d must run its one shard under the default go test deadline below the batch deadline: %s, %v", index, calls, err)
 				}
 				roots[index] = filepath.Join(workdir, "ci-artifacts/race", topology.slug)
 			}
@@ -427,16 +427,17 @@ func TestCIRaceWorkflowSchedulesBrowserPackagesSeparately(t *testing.T) {
 }
 
 // The VM package runs as its own bounded shard matrix: every leg executes
-// exactly one planned shard with the lane's test deadline, and the aggregate
-// proves the complete tested union. The package is pure Go, so no binary
-// producer or browser setup may gate or provision these lanes.
+// exactly one planned shard with the lane's test deadline, balanced with the
+// checked-in per-test durations scaled by the race multiplier, and the
+// aggregate proves the complete tested union. The package is pure Go, so no
+// binary producer or browser setup may gate or provision these lanes.
 func TestCIRacePackageRunnerVMBoundedShardsCompleteUnion(t *testing.T) {
 	const packageName = "github.com/glade-sh/glade/internal/vm"
 	head := strings.Repeat("d", 40)
-	names := make([]string, 4)
-	for index := range names {
-		names[index] = fmt.Sprintf("TestVMCase%02d", index)
-	}
+	// Real rows of the checked-in VM duration table, so the scaled history
+	// the runner passes to the planner carries measured weights.
+	names := []string{"TestAssignmentSaveVMAnonymousAndIsTestAPIRoutes", "TestCPUTimeNativeConformance", "TestDMLScopeAliasActualTestProject", "TestOrgObjectAvailabilityPublicNativeRoutes"}
+	vmTable := readVMDurationTable(t)
 	var lanes struct {
 		Include []struct {
 			TestTimeoutSeconds  int `json:"testTimeoutSeconds"`
@@ -470,10 +471,21 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/vm"}\n'
 `)
 	planner := writeRaceFixture(t, "fake-planner", `#!/usr/bin/env bash
 set -euo pipefail
-while [[ "$#" -gt 0 ]]; do case "$1" in --package) package="$2"; shift 2;; --shards) [[ "$2" == 4 ]]; shift 2;; --tests) tests="$2"; shift 2;; *) exit 91;; esac; done
+package=""
+tests=""
+history=""
+while [[ "$#" -gt 0 ]]; do case "$1" in
+  --package) package="$2"; shift 2;;
+  --shards) [[ "$2" == 4 ]]; shift 2;;
+  --tests) tests="$2"; shift 2;;
+  --history) history="$2"; shift 2;;
+  *) exit 91;;
+esac; done
+[[ -n "$history" && -s "$history" ]] || exit 95
+cp "$history" "$CI_RACE_CALL_LOG.history"
 names=(); while IFS= read -r name; do names+=("$name"); done <"$tests"
 [[ "${#names[@]}" == 4 ]]
-printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
+printf '{"version":1,"package":"%s","historyUsed":true,"shards":[' "$package"
 for index in 0 1 2 3; do [[ "$index" == 0 ]] || printf ','; printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"; done
 printf ']}\n'
 `)
@@ -512,6 +524,25 @@ printf ']}\n'
 		if !strings.Contains(string(calls), fmt.Sprintf("start race-internal-vm-shard-%d", index)) {
 			t.Fatalf("VM leg %d did not execute its one assigned shard:\n%s", index, calls)
 		}
+		// Every leg must plan from the same race-scaled VM duration table.
+		history, err := os.ReadFile(filepath.Join(roots[index], "vm-race-history.json"))
+		if err != nil {
+			t.Fatalf("VM leg %d scaled history evidence: %v", index, err)
+		}
+		var scaled struct {
+			Tests []struct {
+				Name           string `json:"name"`
+				DurationMillis int64  `json:"durationMillis"`
+			} `json:"tests"`
+		}
+		if err := json.Unmarshal(history, &scaled); err != nil || len(scaled.Tests) != len(names) {
+			t.Fatalf("VM leg %d scaled history = %s err=%v", index, history, err)
+		}
+		for _, row := range scaled.Tests {
+			if want := vmTable[row.Name] * 4; row.DurationMillis != want {
+				t.Fatalf("VM leg %d scaled %s to %d ms, want %d", index, row.Name, row.DurationMillis, want)
+			}
+		}
 		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-vm")
 	}
 	aggregate, err := filepath.Abs("ci-race-shard-aggregate.sh")
@@ -542,8 +573,155 @@ printf ']}\n'
 	if err := os.RemoveAll(copies[3]); err != nil {
 		t.Fatal(err)
 	}
-	brokenArgs := append([]string{aggregate, "./internal/vm", filepath.Join(t.TempDir(), "broken.json"), head}, copies...)
-	if out, err := exec.Command("bash", brokenArgs...).CombinedOutput(); err == nil {
-		t.Fatalf("VM aggregate accepted an incomplete shard union:\n%s", out)
+	brokenOutput := filepath.Join(t.TempDir(), "broken.json")
+	brokenArgs := append([]string{aggregate, "./internal/vm", brokenOutput, head}, copies...)
+	broken, err := exec.Command("bash", brokenArgs...).CombinedOutput()
+	if err == nil {
+		t.Fatalf("VM aggregate accepted an incomplete shard union:\n%s", broken)
 	}
+	if !strings.Contains(string(broken), "shard 3") {
+		t.Fatalf("incomplete union must name the missing shard:\n%s", broken)
+	}
+	verdict, err := os.ReadFile(brokenOutput)
+	if err != nil {
+		t.Fatalf("incomplete union must still write its verdict document: %v", err)
+	}
+	var rejected struct {
+		Valid    bool     `json:"valid"`
+		Verdicts []string `json:"verdicts"`
+	}
+	if json.Unmarshal(verdict, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 4 {
+		t.Fatalf("incomplete union verdict = %s err=%v", verdict, err)
+	}
+	if !strings.Contains(rejected.Verdicts[3], "shard 3") {
+		t.Fatalf("verdict for the missing shard = %q", rejected.Verdicts[3])
+	}
+}
+
+// A shard runner whose go test fails or times out must still write its
+// runner-validation record naming the failing test, so the aggregate
+// reports that failure instead of crashing on missing evidence.
+func TestCIRaceBrowserShardRunnerRecordsFailOutcomeForAggregate(t *testing.T) {
+	const packageName = "github.com/glade-sh/glade/internal/visualforce"
+	head := strings.Repeat("e", 40)
+	names := []string{"TestCase00", "TestCase01", "TestCase02", "TestCase03"}
+	root := t.TempDir()
+	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *"-list ."* ]]; then
+  printf '%b' "$CI_RACE_TEST_NAMES"
+  printf 'ok   github.com/glade-sh/glade/internal/visualforce 0.001s\n'
+  exit 0
+fi
+printf 'native %s\n' "$*" >>"$CI_RACE_CALL_LOG"
+while IFS= read -r name; do
+  [[ -n "$name" ]] || continue
+  if [[ "$*" == *"$name"* ]]; then
+    if [[ "$name" == "${CI_RACE_FAILING_TEST:-}" ]]; then
+      printf '{"Action":"run","Package":"github.com/glade-sh/glade/internal/visualforce","Test":"%s"}\n' "$name"
+      printf '{"Action":"fail","Package":"github.com/glade-sh/glade/internal/visualforce","Test":"%s"}\n' "$name"
+    else
+      printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/visualforce","Test":"%s","Elapsed":0.01}\n' "$name"
+    fi
+  fi
+done <<<"$CI_RACE_TEST_NAMES"
+printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/visualforce"}\n'
+exit "${CI_RACE_GO_STATUS:-0}"
+`)
+	planner := writeRaceFixture(t, "fake-planner", racePlannerFixture())
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	git := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' "+head+"\n")
+	roots := make([]string, 4)
+	for index := range roots {
+		workdir := filepath.Join(root, fmt.Sprintf("runner-%d", index))
+		if err := os.MkdirAll(workdir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		env := []string{
+			"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+			"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + filepath.Join(workdir, "calls.log"),
+			"CI_RACE_GIT_COMMAND=" + git, "CI_RACE_HEAD_SHA=" + head,
+			"CI_RACE_TEST_NAMES=" + strings.Join(names, "\n") + "\n", "CI_RACE_TEST_PACKAGE=" + packageName,
+			fmt.Sprintf("CI_RACE_SHARD_INDEX=%d", index),
+		}
+		if index == 1 {
+			env = append(env, "CI_RACE_FAILING_TEST=TestCase01", "CI_RACE_GO_STATUS=31")
+		}
+		out, err := runRacePackage(t, workdir, env, "./internal/visualforce", "internal-visualforce")
+		roots[index] = filepath.Join(workdir, "ci-artifacts/race/internal-visualforce")
+		if index != 1 {
+			if err != nil {
+				t.Fatalf("clean runner %d failed: %v\n%s", index, err, out)
+			}
+			continue
+		}
+		if exit := raceExitCode(err); exit != 31 {
+			t.Fatalf("failing runner exit = %d, want the go test status 31:\n%s", exit, out)
+		}
+		record, err := os.ReadFile(filepath.Join(roots[index], "runner-validation.json"))
+		if err != nil {
+			t.Fatalf("failing runner wrote no validation record: %v\n%s", err, out)
+		}
+		var validation struct {
+			Outcome string `json:"outcome"`
+			Failure struct {
+				ExitStatus   int      `json:"exit_status"`
+				FailingTests []string `json:"failing_tests"`
+				RunningTests []string `json:"running_tests"`
+			} `json:"failure"`
+		}
+		if err := json.Unmarshal(record, &validation); err != nil || validation.Outcome != "fail" ||
+			validation.Failure.ExitStatus != 31 || fmt.Sprint(validation.Failure.FailingTests) != fmt.Sprint([]string{"TestCase01"}) {
+			t.Fatalf("failing runner validation = %s err=%v", record, err)
+		}
+	}
+	aggregate, err := filepath.Abs("ci-race-shard-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(root, "union.json")
+	args := append([]string{aggregate, "./internal/visualforce", output, head}, roots...)
+	verdict, err := exec.Command("bash", args...).CombinedOutput()
+	if err == nil {
+		t.Fatalf("aggregate accepted a failed shard:\n%s", verdict)
+	}
+	if !strings.Contains(string(verdict), "shard 1") || !strings.Contains(string(verdict), "TestCase01") {
+		t.Fatalf("aggregate must name the failed shard and its failing test:\n%s", verdict)
+	}
+	summary, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("aggregate must still write its verdict document: %v", err)
+	}
+	var rejected struct {
+		Valid    bool     `json:"valid"`
+		Verdicts []string `json:"verdicts"`
+	}
+	if json.Unmarshal(summary, &rejected) != nil || rejected.Valid || len(rejected.Verdicts) != 4 ||
+		!strings.Contains(rejected.Verdicts[1], "TestCase01") {
+		t.Fatalf("aggregate verdict = %s err=%v", summary, err)
+	}
+}
+
+// readVMDurationTable loads the checked-in VM duration rows the race plan
+// scales for shard balancing.
+func readVMDurationTable(t *testing.T) map[string]int64 {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "internal", "vm", "testdata", "shard_durations.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var table struct {
+		Tests []struct {
+			Name           string `json:"name"`
+			DurationMillis int64  `json:"durationMillis"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(data, &table); err != nil {
+		t.Fatal(err)
+	}
+	durations := make(map[string]int64, len(table.Tests))
+	for _, row := range table.Tests {
+		durations[row.Name] = row.DurationMillis
+	}
+	return durations
 }

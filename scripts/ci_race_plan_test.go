@@ -266,12 +266,14 @@ func TestCIRacePlanScheduleBalancesShardsByRacedEstimate(t *testing.T) {
 	estimates[0] = 1_400_000
 	_, discovery, plan := racePlanFixture(t, names, estimates)
 	partition := racePlanSchedule(t, discovery, plan)
-	if got, want := partition.Shards[0].TestTimeoutSeconds, 7_000; got != want {
+	// The plan's estimates are already race-scaled (the history subcommand
+	// applies the multiplier), so the budget adds headroom only once.
+	if got, want := partition.Shards[0].TestTimeoutSeconds, 1_750; got != want {
 		t.Fatalf("heavy shard timeout = %d, want %d", got, want)
 	}
 	for index := 1; index < 16; index++ {
-		if partition.Shards[index].TestTimeoutSeconds != 5_000 {
-			t.Fatalf("light shard %d timeout = %d, want 5000", index, partition.Shards[index].TestTimeoutSeconds)
+		if partition.Shards[index].TestTimeoutSeconds != 1_250 {
+			t.Fatalf("light shard %d timeout = %d, want 1250", index, partition.Shards[index].TestTimeoutSeconds)
 		}
 	}
 	loads := map[string]int{}
@@ -318,18 +320,47 @@ func sortedRacePlanLoads(loads map[string]int) []int {
 	return values
 }
 
-// A shard whose raced budget exceeds the per-shard cap must fail the
-// schedule instead of silently planning a batch that can never finish.
+// A single test whose own raced budget exceeds the per-shard cap must fail
+// the schedule naming that test: no shard count can schedule around it.
 func TestCIRacePlanScheduleRejectsOversizedShards(t *testing.T) {
 	names := make([]string, 16)
 	estimates := make([]int, 16)
 	for index := range names {
 		names[index] = fmt.Sprintf("TestCase%02d", index)
 	}
-	estimates[0] = 2_000_000
+	// 6,100,000 ms of raced estimate is 7,625 s of budget after headroom,
+	// above the 7,200 s cap, so the schedule must name TestCase00.
+	estimates[0] = 6_100_000
 	_, discovery, plan := racePlanFixture(t, names, estimates)
-	if out, err := runRacePlanErr(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576"); err == nil {
+	out, err := runRacePlanErr(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576")
+	if err == nil {
 		t.Fatalf("oversized shard accepted:\n%s", out)
+	}
+	if !strings.Contains(out, "TestCase00") {
+		t.Fatalf("oversized shard failure must name the unshardable test:\n%s", out)
+	}
+}
+
+// A package whose total raced budget exceeds the cap must still schedule:
+// the plan spreads it across shards, so the total never lands in one shard.
+func TestCIRacePlanScheduleSpreadsPackageTotalOverCapIntoShards(t *testing.T) {
+	names := make([]string, 16)
+	estimates := make([]int, 16)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%02d", index)
+		estimates[index] = 1_500_000
+	}
+	_, discovery, plan := racePlanFixture(t, names, estimates)
+	// The package total is 24,000 s of raced estimate, far above the 7,200 s
+	// per-shard cap, yet every shard must stay under it.
+	partition := racePlanSchedule(t, discovery, plan)
+	for index, shard := range partition.Shards {
+		if shard.TestTimeoutSeconds > 7200 {
+			t.Fatalf("shard %d budget = %d, want at most the 7200s cap", index, shard.TestTimeoutSeconds)
+		}
+		if shard.TestTimeoutSeconds != 1_875 {
+			t.Fatalf("shard %d budget = %d, want 1875s of raced estimate plus headroom", index, shard.TestTimeoutSeconds)
+		}
 	}
 }
 
@@ -402,6 +433,104 @@ func TestCIRacePlanHistoryScalesNormalDurationsToDiscovery(t *testing.T) {
 	if out, err := runRacePlanErr(t, "history", unknown); err == nil {
 		t.Fatalf("unknown discovery accepted:\n%s", out)
 	}
+}
+
+// racePlanScaledHistoryFixture writes one canonical discovery file and a
+// matching race-scaled history document for the shard-count derivation.
+func racePlanScaledHistoryFixture(t *testing.T, names []string, scaledMillis int) (dir, discovery, history string) {
+	t.Helper()
+	dir = t.TempDir()
+	discovery = filepath.Join(dir, "discovery.txt")
+	if err := os.WriteFile(discovery, []byte(strings.Join(names, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	rows := make([]map[string]any, 0, len(names))
+	for _, name := range names {
+		rows = append(rows, map[string]any{"name": name, "durationMillis": scaledMillis})
+	}
+	historyData, err := json.Marshal(map[string]any{"version": 1, "package": racePlanApexPackage, "complete": true, "tests": rows})
+	if err != nil {
+		t.Fatal(err)
+	}
+	history = filepath.Join(dir, "race-history.json")
+	if err := os.WriteFile(history, append(historyData, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir, discovery, history
+}
+
+func racePlanShardCount(t *testing.T, discovery, history string) int {
+	t.Helper()
+	var document struct {
+		ShardCount int `json:"shard_count"`
+	}
+	if err := json.Unmarshal([]byte(runRacePlan(t, "shards", discovery, history)), &document); err != nil {
+		t.Fatal(err)
+	}
+	return document.ShardCount
+}
+
+// The plan owns the Apex shard count: at least sixteen shards, and more when
+// the suite's raced total no longer fits under the per-shard cap at sixteen.
+// A single test over the cap fails the derivation with its name instead.
+func TestCIRacePlanShardsCommandDerivesCountFromScaledHistory(t *testing.T) {
+	t.Run("floor", func(t *testing.T) {
+		names := make([]string, 20)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+		}
+		_, discovery, history := racePlanScaledHistoryFixture(t, names, 1_500_000)
+		if got := racePlanShardCount(t, discovery, history); got != 16 {
+			t.Fatalf("shard count = %d, want the sixteen-shard floor", got)
+		}
+	})
+	t.Run("missing tests weigh the median", func(t *testing.T) {
+		// Four discovered tests have no history row; they must count at the
+		// history median, not at zero, so the derived count stays bounded.
+		names := make([]string, 20)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+		}
+		_, discovery, history := racePlanScaledHistoryFixture(t, names[:16], 1_500_000)
+		if got := racePlanShardCount(t, discovery, history); got != 16 {
+			t.Fatalf("shard count = %d, want sixteen with median-weighted gaps", got)
+		}
+	})
+	t.Run("grows past the floor", func(t *testing.T) {
+		names := make([]string, 40)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+		}
+		// Forty tests at 2,000 s of raced estimate give an LPT bound over the
+		// cap at sixteen shards; the derivation must grow to twenty-two.
+		_, discovery, history := racePlanScaledHistoryFixture(t, names, 2_000_000)
+		if got := racePlanShardCount(t, discovery, history); got != 22 {
+			t.Fatalf("shard count = %d, want 22 shards for a total over the cap", got)
+		}
+	})
+	t.Run("single test over the cap fails with its name", func(t *testing.T) {
+		names := []string{"TestOneSlowSeed", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestIota", "TestKappa", "TestLambda", "TestMu", "TestNu", "TestOmicron", "TestPi", "TestRho", "TestTheta", "TestZeta"}
+		_, discovery, history := racePlanScaledHistoryFixture(t, names, 1_000)
+		if err := os.WriteFile(history, []byte(strings.Replace(string(mustRead(t, history)), `"durationMillis":1000`, `"durationMillis":6100000`, 1)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		out, err := runRacePlanErr(t, "shards", discovery, history)
+		if err == nil {
+			t.Fatalf("single oversized test accepted:\n%s", out)
+		}
+		if !strings.Contains(out, "TestOneSlowSeed") {
+			t.Fatalf("oversized test failure must name the test:\n%s", out)
+		}
+	})
+}
+
+func mustRead(t *testing.T, path string) []byte {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }
 
 func writeRacePlanPartition(t *testing.T, names []string, estimates []int) string {

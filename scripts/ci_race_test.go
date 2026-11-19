@@ -1175,7 +1175,9 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s"}\n' "${CI_RACE
 			if pkg == "./internal/server" {
 				testPrefix = "test -p=1"
 			}
-			if strings.Count(log, "native "+testPrefix+" -json -race -count=1 -timeout=60m -run") != shardCount {
+			// The default go test deadline sits below the flat 60m batch so a
+			// hung shard ends in its own timeout panic, not the outer kill.
+			if strings.Count(log, "native "+testPrefix+" -json -race -count=1 -timeout=55m -run") != shardCount {
 				t.Fatalf("native heavy calls:\n%s", log)
 			}
 			if strings.Count(log, "discovery "+testPrefix+" -race -list . "+pkg) != 1 {
@@ -1431,11 +1433,16 @@ func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
 		DiscoveredCount int    `json:"discovered_count"`
 		PartitionSHA256 string `json:"partition_sha256"`
 		BinaryRemoved   bool   `json:"binary_removed"`
+		Outcome         string `json:"outcome"`
+		Failure         any    `json:"failure"`
 	}
 	if err := json.Unmarshal(runnerData, &runnerEvidence); err != nil || runnerEvidence.Runner != runner ||
 		runnerEvidence.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runnerEvidence.AssignedIndexes, raceAssignedShardIndexes(assignment)) ||
 		runnerEvidence.DiscoveredCount != 16 || len(runnerEvidence.PartitionSHA256) != 64 || !runnerEvidence.BinaryRemoved {
 		t.Fatalf("runner validation = %#v err=%v data=%s", runnerEvidence, err, runnerData)
+	}
+	if runnerEvidence.Outcome != "success" || runnerEvidence.Failure != nil {
+		t.Fatalf("completed runner validation = %#v, want a success outcome with no failure detail", runnerEvidence)
 	}
 }
 
@@ -1471,6 +1478,124 @@ func TestCIRacePackageRunnerApextestRejectsUnexpectedCheckoutHead(t *testing.T) 
 	}
 	if data, readErr := os.ReadFile(logPath); readErr == nil && strings.Contains(string(data), "start race-") {
 		t.Fatalf("unexpected checkout started a resource lane:\n%s", data)
+	}
+}
+
+// An assigned Apex runner whose shard fails or times out must record the
+// failing shard and test with a fail outcome, and the aggregate must report
+// that runner's failure by name instead of dying on missing evidence.
+func TestCIRacePackageRunnerApextestRecordsAssignedShardFailure(t *testing.T) {
+	root := t.TempDir()
+	testNames := raceApextestTestNames()
+	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	gitCommand := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' 0123456789abcdef0123456789abcdef01234567\n")
+	partitionDir, _, _ := writeRaceApextestPartitionForFixture(t, root, goCommand, testNames)
+	partitionData, err := os.ReadFile(filepath.Join(partitionDir, "partition.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var partition struct {
+		Runners []struct {
+			Runner              string `json:"runner"`
+			ShardIndexes        []int  `json:"shard_indexes"`
+			BatchTimeoutSeconds int    `json:"batch_timeout_seconds"`
+		} `json:"runners"`
+	}
+	if err := json.Unmarshal(partitionData, &partition); err != nil {
+		t.Fatal(err)
+	}
+	sortedNames := append([]string(nil), testNames...)
+	sort.Strings(sortedNames)
+	const failingShard = 1
+	failingTest := sortedNames[failingShard]
+	var failingRunner string
+	for _, entry := range partition.Runners {
+		if slices.Contains(entry.ShardIndexes, failingShard) {
+			failingRunner = entry.Runner
+		}
+	}
+	if failingRunner == "" {
+		t.Fatalf("fixture partition assigns shard %d to no runner", failingShard)
+	}
+	runnersRoot := filepath.Join(root, "runners")
+	if err := os.MkdirAll(runnersRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range partition.Runners {
+		workdir := filepath.Join(root, entry.Runner)
+		if err := os.MkdirAll(workdir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		env := []string{
+			"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+			"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + filepath.Join(workdir, "calls.log"),
+			"CI_RACE_GIT_COMMAND=" + gitCommand, "CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567",
+			"CI_RACE_TIMEOUT_COMMAND=" + raceBatchTimeoutFixture(t),
+			"CI_RACE_PARTITION_DIR=" + partitionDir, "CI_RACE_APEXTEST_RUNNER=" + entry.Runner,
+			"CI_RACE_BATCH_TIMEOUT_SECONDS=" + strconv.Itoa(entry.BatchTimeoutSeconds),
+			"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n", "TMPDIR=" + workdir,
+		}
+		if entry.Runner == failingRunner {
+			env = append(env, "CI_RACE_DIRECT_EVENTS=fail", "CI_RACE_DIRECT_FAIL_TEST="+failingTest, "CI_RACE_DIRECT_STATUS=31")
+		}
+		out, err := runRacePackage(t, workdir, env, "./internal/apextest", "internal-apextest")
+		if entry.Runner == failingRunner {
+			if exit := raceExitCode(err); exit != 31 {
+				t.Fatalf("failing runner exit = %d, want the go test status 31:\n%s", exit, out)
+			}
+			record, err := os.ReadFile(filepath.Join(workdir, "ci-artifacts/race/internal-apextest/runner-validation.json"))
+			if err != nil {
+				t.Fatalf("failing runner wrote no validation record: %v\n%s", err, out)
+			}
+			var validation struct {
+				Outcome string `json:"outcome"`
+				Failure struct {
+					Shard        int      `json:"shard"`
+					ExitStatus   int      `json:"exit_status"`
+					FailingTests []string `json:"failing_tests"`
+				} `json:"failure"`
+			}
+			if err := json.Unmarshal(record, &validation); err != nil || validation.Outcome != "fail" ||
+				validation.Failure.Shard != failingShard || validation.Failure.ExitStatus != 31 ||
+				fmt.Sprint(validation.Failure.FailingTests) != fmt.Sprint([]string{failingTest}) {
+				t.Fatalf("failing runner validation = %s err=%v", record, err)
+			}
+		} else if err != nil {
+			t.Fatalf("clean runner %s failed: %v\n%s", entry.Runner, err, out)
+		}
+		if err := os.CopyFS(filepath.Join(runnersRoot, fmt.Sprintf("race-internal-apextest-%s-44158211531-1", entry.Runner)), os.DirFS(filepath.Join(workdir, "ci-artifacts/race/internal-apextest"))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := filepath.Join(root, "aggregate.json")
+	args := []string{script, partitionDir, runnersRoot, output, "0123456789abcdef0123456789abcdef01234567"}
+	verdict, err := exec.Command("bash", args...).CombinedOutput()
+	if err == nil {
+		t.Fatalf("aggregate accepted a failed assigned shard:\n%s", verdict)
+	}
+	if !strings.Contains(string(verdict), failingRunner) || !strings.Contains(string(verdict), "shard 1") || !strings.Contains(string(verdict), failingTest) {
+		t.Fatalf("aggregate must name the failing runner, shard and test:\n%s", verdict)
+	}
+	summary, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("aggregate must still write its verdict document: %v", err)
+	}
+	var rejected struct {
+		Valid    bool     `json:"valid"`
+		Verdicts []string `json:"verdicts"`
+	}
+	if json.Unmarshal(summary, &rejected) != nil || rejected.Valid {
+		t.Fatalf("aggregate verdict = %s", summary)
+	}
+	joined := strings.Join(rejected.Verdicts, "\n")
+	if !strings.Contains(joined, failingRunner) || !strings.Contains(joined, failingTest) {
+		t.Fatalf("aggregate verdicts = %s", summary)
 	}
 }
 
