@@ -427,6 +427,125 @@ func TestCIRacePlanScheduleSpreadsPackageTotalOverCapIntoShards(t *testing.T) {
 	}
 }
 
+// Hosted runners cost the nightly run nothing extra while every dispatch
+// waits on its slowest job, so the schedule must spread the shards over the
+// runner count that minimizes the slowest runner's job instead of packing
+// them onto the fewest runners that fit the job cap.
+func TestCIRacePlanScheduleMinimizesSlowestRunnerJob(t *testing.T) {
+	slowestJobMinutes := func(t *testing.T, partition racePlanPartition) int {
+		t.Helper()
+		slowest := 0
+		for _, runner := range partition.Runners {
+			if runner.JobTimeoutMinutes > slowest {
+				slowest = runner.JobTimeoutMinutes
+			}
+		}
+		return slowest
+	}
+	t.Run("sixteen equal shards get one runner each", func(t *testing.T) {
+		names := make([]string, 16)
+		estimates := make([]int, 16)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+			estimates[index] = 1_000_000
+		}
+		_, discovery, plan := racePlanFixture(t, names, estimates)
+		partition := racePlanSchedule(t, discovery, plan)
+		if len(partition.Runners) != 16 {
+			t.Fatalf("plan used %d runners for 16 equal shards, want one shard per runner", len(partition.Runners))
+		}
+		assigned := map[int]string{}
+		for _, runner := range partition.Runners {
+			if len(runner.ShardIndexes) != 1 {
+				t.Fatalf("runner %s holds %v, want exactly one shard", runner.Runner, runner.ShardIndexes)
+			}
+			if other, ok := assigned[runner.ShardIndexes[0]]; ok {
+				t.Fatalf("shard %d is held by runners %s and %s", runner.ShardIndexes[0], other, runner.Runner)
+			}
+			assigned[runner.ShardIndexes[0]] = runner.Runner
+		}
+		if len(assigned) != 16 {
+			t.Fatalf("runners cover %d distinct shards, want 16", len(assigned))
+		}
+		// The slowest job is one shard budget (1250s) plus the reserves:
+		// batch 1850s, step ceil(batch/60)+5, job step+15.
+		if got, want := slowestJobMinutes(t, partition), (1250+600+59)/60+5+15; got != want {
+			t.Fatalf("slowest job = %d minutes, want %d (one shard budget plus reserves)", got, want)
+		}
+	})
+	t.Run("a dominant shard stops adding runners at its own budget", func(t *testing.T) {
+		names := make([]string, 16)
+		estimates := make([]int, 16)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+		}
+		// One shard's own 4000s budget exceeds every balanced load the
+		// remaining floor-budget shards can form, so the fifth runner puts
+		// it alone; no further runner can reduce the slowest job below it.
+		estimates[0] = 3_200_000
+		_, discovery, plan := racePlanFixture(t, names, estimates)
+		partition := racePlanSchedule(t, discovery, plan)
+		if len(partition.Runners) != 5 {
+			t.Fatalf("plan used %d runners, want the five that isolate the dominant shard", len(partition.Runners))
+		}
+		dominant := false
+		for _, runner := range partition.Runners {
+			if len(runner.ShardIndexes) == 1 && runner.ShardIndexes[0] == 0 {
+				dominant = true
+				if got, want := runner.JobTimeoutMinutes, (4000+600+59)/60+5+15; got != want {
+					t.Fatalf("dominant runner job = %d minutes, want %d", got, want)
+				}
+			}
+		}
+		if !dominant {
+			t.Fatalf("no runner holds the dominant shard alone: %#v", partition.Runners)
+		}
+		if got, want := slowestJobMinutes(t, partition), (4000+600+59)/60+5+15; got != want {
+			t.Fatalf("slowest job = %d minutes, want %d (the dominant shard alone plus reserves)", got, want)
+		}
+	})
+	t.Run("a plan past the runner ceiling keeps the fewest minimal runners", func(t *testing.T) {
+		names := make([]string, 20)
+		estimates := make([]int, 20)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+			estimates[index] = 1_000_000
+		}
+		_, discovery, plan := racePlanFixture(t, names, estimates)
+		partition := racePlanSchedule(t, discovery, plan)
+		// Twenty shards cannot reach one shard per runner under the
+		// sixteen-runner ceiling, so the minimum slowest load is two shard
+		// budgets and the plan keeps the first count that reaches it.
+		if len(partition.Runners) != 10 {
+			t.Fatalf("plan used %d runners, want the first ten that halve the load", len(partition.Runners))
+		}
+		for _, runner := range partition.Runners {
+			if len(runner.ShardIndexes) > 2 {
+				t.Fatalf("runner %s holds %v, want at most two shards", runner.Runner, runner.ShardIndexes)
+			}
+		}
+		if got, want := slowestJobMinutes(t, partition), (2500+600+59)/60+5+15; got != want {
+			t.Fatalf("slowest job = %d minutes, want %d (two shard budgets plus reserves)", got, want)
+		}
+	})
+	t.Run("a plan no ceiling count fits fails naming the ceiling", func(t *testing.T) {
+		names := make([]string, 40)
+		estimates := make([]int, 40)
+		for index := range names {
+			names[index] = fmt.Sprintf("TestCase%02d", index)
+			estimates[index] = 5_760_000
+		}
+		_, discovery, plan := racePlanFixture(t, names, estimates)
+		out, err := runRacePlanErr(t, "schedule", discovery, plan, strings.Repeat("a", 64), "1048576")
+		if err == nil {
+			t.Fatalf("unfittable plan accepted:\n%s", out)
+		}
+		if !strings.Contains(out, "up to 16 runners") {
+			t.Fatalf("failure must name the runner ceiling:\n%s", out)
+		}
+	})
+}
+
 func racePlanApexNormalHistory(t *testing.T) map[string]int {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("..", "internal", "apextest", "testdata", "shard_durations.json"))
@@ -643,7 +762,7 @@ func TestCIRacePlanVerifyRejectsTamperedPartitions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"batch_timeout_seconds":6000`, `"batch_timeout_seconds":100`, 1)), 0o600); err != nil {
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"batch_timeout_seconds":1500`, `"batch_timeout_seconds":100`, 1)), 0o600); err != nil {
 				t.Fatal(err)
 			}
 		},
