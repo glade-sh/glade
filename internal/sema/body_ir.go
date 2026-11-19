@@ -3830,6 +3830,9 @@ func (a *Analyzer) checkIRCollectionCall(typ typesys.TypeSymbol, member typesys.
 	if diagnostics, handled := inlineQueryListSetDiagnostic(typ, member, receiverType, method, args, argTypes, bodyOffset+pos, source, model, capturedIndexedQueryAssignment(expr, source, bodyOffset+pos)); handled {
 		return diagnostics, true
 	}
+	if d, rejected := semaMapDeepCloneValueTypeDiagnostic(typ, model, receiverType, method, len(args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source); rejected {
+		return []diagnostic.Diagnostic{d}, true
+	}
 	if strings.EqualFold(method, "addError") && semaAddErrorArgsAccepted(argTypes, model) {
 		return nil, true
 	}
