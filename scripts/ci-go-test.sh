@@ -827,6 +827,21 @@ try:
                             reason = r"\s+process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive\s*$"
                     if reason and any(re.fullmatch(reason, line) for output in test_output.get(identity, ()) for line in output.splitlines()):
                         continue
+                    # The early gladecli race route spends its single processor
+                    # on race instrumentation, and the runner caps simultaneous
+                    # test execution owners at GOMAXPROCS, so the parallel
+                    # route reports the processor shortfall instead of running
+                    # two tests at once. Only this exact identity and reason
+                    # defer, and only on the race lane: normal lanes run with
+                    # two processors and must still observe the overlap.
+                    procs_shortfall = "the parallel route needs two processors for two tests in flight; testExecutionParallelism caps execution owners to GOMAXPROCS"
+                    if (lane == "race" and identity == (module + "/internal/gladecli", "TestRunTestMemoryLimitsParallelMethodAndClassRoutes")
+                            and any(re.fullmatch(r"\s+\S+_test\.go:\d+: " + re.escape(procs_shortfall) + r"\s*$", line)
+                                    for output in test_output.get(identity, ()) for line in output.splitlines())):
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": procs_shortfall,
+                            "reason": "parallel route overlap needs two execution owners; the race route spends one on instrumentation"})
+                        continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
                     reason_pattern = r"\s+\S+_test.go:\d+: " + re.escape(cause) + r"\s*$"
