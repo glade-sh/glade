@@ -6,7 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -330,4 +333,200 @@ func TestPublicScanBlobCacheFallsBackToFullScanWhenStoreMissingOrCorrupt(t *test
 			t.Fatalf("findings without a cache location = %v, want the planted mailbox", got)
 		}
 	})
+}
+
+// The record store's ruleset version must follow the rules it guards with.
+// A manual constant silently keeps cached 'clean' records suppressing a
+// new ruleset's findings whenever someone edits a rule, table or decoder
+// and forgets to bump it, so the version is derived from the guard
+// package's own sources and the running toolchain instead. These
+// regressions pin that derivation and its effect on the store.
+
+// publicScanOverrideRulesetInputs pins the version derivation's inputs for
+// one test, so a ruleset edit is a byte difference the derivation must
+// see, and restores the repository checkout's inputs afterwards.
+func publicScanOverrideRulesetInputs(t *testing.T, inputs []publicScanRulesetInput, goVersion string) {
+	t.Helper()
+	previous := publicScanRulesetInputs
+	publicScanRulesetInputs = func() ([]publicScanRulesetInput, string) {
+		return inputs, goVersion
+	}
+	t.Cleanup(func() {
+		publicScanRulesetInputs = previous
+	})
+}
+
+func TestPublicScanRulesetVersionDerivation(t *testing.T) {
+	rules := []publicScanRulesetInput{
+		{rel: "internal/repoguard/public_campaign_test.go", data: "campaign rules\n"},
+		{rel: "internal/repoguard/public_safety_test.go", data: "release rules\n"},
+	}
+	version := publicScanRulesetVersion(rules, "go1.26.11")
+	if len(version) != 64 {
+		t.Fatalf("ruleset version %q is not a SHA-256 digest", version)
+	}
+	if again := publicScanRulesetVersion(rules, "go1.26.11"); again != version {
+		t.Fatalf("ruleset version is not deterministic: %q vs %q", version, again)
+	}
+	if reordered := publicScanRulesetVersion([]publicScanRulesetInput{rules[1], rules[0]}, "go1.26.11"); reordered != version {
+		t.Fatalf("ruleset version depends on input order: %q vs %q; a reader refactor must not flap the store cold", reordered, version)
+	}
+	edited := slices.Clone(rules)
+	edited[0].data += "// one more rule\n"
+	if got := publicScanRulesetVersion(edited, "go1.26.11"); got == version {
+		t.Fatal("ruleset version ignores a rule-source edit; stored records must not survive a ruleset change")
+	}
+	renamed := slices.Clone(rules)
+	renamed[0].rel = "internal/repoguard/moved_test.go"
+	if got := publicScanRulesetVersion(renamed, "go1.26.11"); got == version {
+		t.Fatal("ruleset version ignores a rule-source rename")
+	}
+	if got := publicScanRulesetVersion(rules[:1], "go1.26.11"); got == version {
+		t.Fatal("ruleset version ignores a dropped rule source")
+	}
+	if got := publicScanRulesetVersion(rules, "go1.27.0"); got == version {
+		t.Fatal("ruleset version ignores the Go toolchain")
+	}
+}
+
+func TestPublicScanRulesetInputsCoverGuardSources(t *testing.T) {
+	inputs, goVersion := publicScanRulesetInputs()
+	if goVersion != runtime.Version() {
+		t.Fatalf("ruleset inputs carry Go version %q, want the running toolchain %q", goVersion, runtime.Version())
+	}
+	// The hashed sources are the checkout's own guard package: every Go file,
+	// including the ones defining the rules, matchers, normalizers, tables
+	// and the asset decoder, so none of them can silently drop out of the
+	// version.
+	entries, err := os.ReadDir(filepath.Join(repoRoot(t), "internal", "repoguard"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".go") {
+			want = append(want, "internal/repoguard/"+entry.Name())
+		}
+	}
+	slices.Sort(want)
+	got := make([]string, 0, len(inputs))
+	for _, input := range inputs {
+		got = append(got, input.rel)
+	}
+	slices.Sort(got)
+	if !slices.Equal(got, want) {
+		t.Fatalf("ruleset inputs = %v, want every guard package source %v", got, want)
+	}
+	for _, input := range inputs {
+		if input.data == "" {
+			t.Fatalf("%s contributes no bytes to the ruleset version", input.rel)
+		}
+	}
+	campaign := "internal/repoguard/public_campaign_test.go"
+	for _, input := range inputs {
+		if input.rel == campaign && input.data != readRepoFile(t, repoRoot(t), input.rel) {
+			t.Fatal("ruleset inputs do not carry the checkout's bytes for the campaign rules")
+		}
+	}
+	edited := slices.Clone(inputs)
+	edited[0].data += "// one more rule\n"
+	if publicScanRulesetVersion(edited, goVersion) == publicScanRulesetVersion(inputs, goVersion) {
+		t.Fatal("ruleset version ignores the guard sources' bytes")
+	}
+}
+
+func TestPublicScanRulesetChangeForcesFullRescan(t *testing.T) {
+	cleanNames := campaignNameMatcher(nil)
+	strictNames := publicScanPlantedMatcher()
+	files := []repoScanFile{
+		{rel: "docs/glade-planted-x/notes.md", text: "public notes\n"},
+	}
+	ruleset := []publicScanRulesetInput{
+		{rel: "internal/repoguard/public_campaign_test.go", data: "campaign rules\n"},
+	}
+	dir := t.TempDir()
+	decodes := 0
+	counting := func(rel, text string, visit func(string, string)) error {
+		decodes++
+		return scanPublicAsset(rel, text, visit)
+	}
+
+	publicScanOverrideRulesetInputs(t, ruleset, "testgo1")
+	old := loadPublicScanBlobCache(dir, currentPublicScanRulesetVersion())
+	scans := scanTrackedFilesForPublicDataCached(files, cleanNames, counting, old, 2)
+	old.save()
+	if decodes != 1 {
+		t.Fatalf("cold run decodes = %d, want 1", decodes)
+	}
+	if len(scans[0].campaignPath) != 0 {
+		t.Fatalf("the first ruleset already flagged the planted alias: %v", scans[0].campaignPath)
+	}
+	warm := loadPublicScanBlobCache(dir, currentPublicScanRulesetVersion())
+	if len(warm.records) != 1 {
+		t.Fatalf("warm records = %d, want the one scanned file", len(warm.records))
+	}
+	decodes = 0
+	scanTrackedFilesForPublicDataCached(files, cleanNames, counting, warm, 2)
+	if decodes != 0 {
+		t.Fatalf("warm run decodes = %d, want 0: unchanged files are not rescanned", decodes)
+	}
+
+	// One rule-source byte changes: the derived version moves, so the stored
+	// clean record cannot be read, and the strict ruleset's finding surfaces.
+	edited := slices.Clone(ruleset)
+	edited[0].data += "// one more name\n"
+	publicScanOverrideRulesetInputs(t, edited, "testgo1")
+	if updated := currentPublicScanRulesetVersion(); updated == old.version {
+		t.Fatal("a rule-source edit did not change the ruleset version")
+	}
+	decodes = 0
+	rescanned := scanTrackedFilesForPublicDataCached(files, strictNames, counting, loadPublicScanBlobCache(dir, currentPublicScanRulesetVersion()), 2)
+	if decodes != 1 {
+		t.Fatalf("decodes after the ruleset change = %d, want 1: stored records must not be reused", decodes)
+	}
+	if got := rescanned[0].campaignPath; len(got) != 1 || got[0] != "private org alias or host name" {
+		t.Fatalf("records under the old ruleset suppressed the new ruleset's finding: %v", got)
+	}
+}
+
+func TestPublicScanBlobCacheNeverReadAcrossVersions(t *testing.T) {
+	names := publicScanPlantedMatcher()
+	files := []repoScanFile{
+		{rel: "docs/mail.md", text: "contact person" + "@gmail.com\n"},
+	}
+	ruleset := []publicScanRulesetInput{
+		{rel: "internal/repoguard/public_safety_test.go", data: "release rules\n"},
+	}
+	dir := t.TempDir()
+
+	publicScanOverrideRulesetInputs(t, ruleset, "testgo1")
+	first := loadPublicScanBlobCache(dir, currentPublicScanRulesetVersion())
+	scans := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, first, 2)
+	first.save()
+	if got := scans[0].release; len(got) != 1 || got[0].kind != "personal-provider mailbox" {
+		t.Fatalf("findings under the first version = %v, want the planted mailbox", got)
+	}
+	if _, err := os.Stat(first.path); err != nil {
+		t.Fatalf("the first version's store was not written: %v", err)
+	}
+
+	// The toolchain moves: the derived version follows, and the warm store
+	// built under the old version is never read under the new one.
+	publicScanOverrideRulesetInputs(t, ruleset, "testgo2")
+	second := currentPublicScanRulesetVersion()
+	if second == first.version {
+		t.Fatal("the derived ruleset version did not move with the toolchain")
+	}
+	foreign := loadPublicScanBlobCache(dir, second)
+	if len(foreign.records) != 0 {
+		t.Fatalf("records built under one ruleset version were read under another: %d records", len(foreign.records))
+	}
+	rescans := scanTrackedFilesForPublicDataCached(files, names, scanPublicAsset, foreign, 2)
+	if got := rescans[0].release; len(got) != 1 || got[0].kind != "personal-provider mailbox" {
+		t.Fatalf("findings under the new version = %v, want the planted mailbox", got)
+	}
+	foreign.save()
+	if reloaded := loadPublicScanBlobCache(dir, first.version); len(reloaded.records) != 0 {
+		t.Fatalf("the old version's store survived a save under the new version: %d records", len(reloaded.records))
+	}
 }

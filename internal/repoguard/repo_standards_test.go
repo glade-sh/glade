@@ -668,11 +668,40 @@ func scanTrackedFilesForPublicData(files []repoScanFile, names *campaignNameMatc
 	return scans
 }
 
-// publicScanRulesetVersion pins both public-data rulesets: the release rules
-// in public_safety_test.go and the campaign rules in public_campaign_test.go.
-// Bump it whenever either ruleset changes, so stored records cannot suppress
-// the new ruleset's findings.
-const publicScanRulesetVersion = "1"
+// publicScanRulesetInput is one hashed source that pins the public-data
+// scan's ruleset version: a repository-relative guard source and its bytes.
+type publicScanRulesetInput struct {
+	rel  string
+	data string
+}
+
+// publicScanRulesetVersion derives the record store's ruleset version from
+// the guard sources and the Go toolchain running them, so a rule, matcher,
+// normalizer, table or decoder edit moves the version and stored records
+// cannot suppress the edited ruleset's findings. The derivation is not
+// implemented yet: this draft ignores its inputs and returns the manual
+// constant, so an edited ruleset silently keeps reusing stored records;
+// the next commit hashes the inputs for real.
+func publicScanRulesetVersion(inputs []publicScanRulesetInput, goVersion string) string {
+	return "1"
+}
+
+// publicScanRulesetInputs feeds the version derivation. The default must
+// read this guard package's own Go sources from the repository checkout and
+// report the running Go toolchain, since the release rules, the campaign
+// rules and name tables, the normalizers and the asset decoder all live in
+// this package. This draft returns no inputs, so the version cannot see the
+// rules it guards with; the next commit reads them.
+var publicScanRulesetInputs = func() ([]publicScanRulesetInput, string) {
+	return nil, ""
+}
+
+// currentPublicScanRulesetVersion derives the ruleset version the canonical
+// scan keys its records on.
+func currentPublicScanRulesetVersion() string {
+	inputs, goVersion := publicScanRulesetInputs()
+	return publicScanRulesetVersion(inputs, goVersion)
+}
 
 // scanTrackedFilesForPublicDataCached scans every tracked file whose
 // (ruleset version, path, blob) has no stored record and reuses the stored
@@ -921,7 +950,7 @@ var canonicalPublicDataScan = repoScanCache[[]publicScanFile]{build: func() ([]p
 	if err != nil {
 		return nil, err
 	}
-	cache := loadPublicScanBlobCache(publicScanCacheDir(), publicScanRulesetVersion)
+	cache := loadPublicScanBlobCache(publicScanCacheDir(), currentPublicScanRulesetVersion())
 	scans := scanTrackedFilesForPublicDataCached(snapshot.files, campaignNameMatcher(campaignNameTable), scanPublicAsset, cache, publicScanWorkerBound())
 	cache.save()
 	return scans, nil
