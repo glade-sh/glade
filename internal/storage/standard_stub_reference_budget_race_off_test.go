@@ -6,7 +6,9 @@ import "testing"
 
 // stubReferenceFieldsBudgetEnforced states whether
 // TestStandardStubReferenceFieldsAllocationBudget enforces its one-third
-// allocation budget in this build.
+// allocation budget in this build. Normal builds enforce it; the race
+// build's counterpart explains why instrumented builds only observe the
+// ratio.
 const stubReferenceFieldsBudgetEnforced = true
 
 func TestStubReferenceFieldsBudgetEnforcedInNormalBuilds(t *testing.T) {
