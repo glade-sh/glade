@@ -110,6 +110,7 @@ type Condition struct {
 	DateLiteralTimeZoneID string
 	Values                []storage.Value
 	Subquery              *Query
+	semiJoinIDs           *semiJoinIDMembership
 }
 type Result struct {
 	Records []storage.Record `json:"records"`
