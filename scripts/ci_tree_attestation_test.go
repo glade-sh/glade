@@ -21,12 +21,18 @@ func TestCITreeAttestation(t *testing.T) {
 	}{
 		{"same tree", tree, "success", merge, head, true},
 		{"squash merge", tree, "success", merge, head, true},
+		{"API omits pull association", tree, "success", merge, head, true},
+		{"API names another pull", tree, "success", merge, head, false},
 		{"different tree", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "success", merge, head, false},
 		{"failed run", tree, "failure", merge, head, false},
 		{"missing receipt", tree, "success", "", head, false},
 		{"wrong merge parent", tree, "success", merge, base, false},
+		{"wrong checkout base", tree, "success", merge, head, false},
 		{"receipt for another run", tree, "success", merge, head, false},
 		{"fast-only pull request", tree, "success", merge, head, false},
+		{"release pull request", tree, "success", merge, head, false},
+		{"fork head", tree, "success", merge, head, false},
+		{"changed run branch", tree, "success", merge, head, false},
 		{"missing coverage", tree, "success", merge, head, false},
 		{"failed coverage", tree, "success", merge, head, false},
 		{"skipped required job", tree, "success", merge, head, false},
@@ -42,12 +48,12 @@ func TestCITreeAttestation(t *testing.T) {
 			d := t.TempDir()
 			gh := `#!/usr/bin/env bash
 case "$*" in
- *"/commits/` + push + `/pulls"*) printf '[{"number":7,"merged_at":"2026-01-01","merge_commit_sha":"` + push + `","base":{"ref":"main","repo":{"full_name":"glade-sh/glade"}},"head":{"sha":"` + head + `","ref":"%s","repo":{"full_name":"glade-sh/glade"}}}]' "$PR_REF" ;;
+ *"/commits/` + push + `/pulls"*) printf '[{"number":7,"merged_at":"2026-01-01","merge_commit_sha":"` + push + `","base":{"ref":"main","repo":{"full_name":"glade-sh/glade"}},"head":{"sha":"` + head + `","ref":"%s","repo":{"full_name":"%s"}}}]' "$PR_REF" "$HEAD_REPO" ;;
  *"/contents/.github/workflows/ci.yml"*) if [[ "$*" == *".content"* ]]; then base64 < ../.github/workflows/ci.yml; elif [[ "$SCENARIO" == 'changed workflow' && "$*" == *"ref=` + push + `"* ]]; then printf 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'; else printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; fi ;;
- *"/actions/workflows/ci.yml/runs"*) printf '{"workflow_runs":[{"id":101,"run_attempt":1,"head_sha":"` + head + `","head_branch":"%s","event":"pull_request","status":"%s","conclusion":"%s","pull_requests":[{"number":7}]}]}' "$PR_REF" "${RUN_STATUS:-completed}" "$CONCLUSION" ;;
+ *"/actions/workflows/ci.yml/runs"*) printf '{"workflow_runs":[{"id":101,"run_attempt":1,"head_sha":"` + head + `","head_branch":"%s","event":"pull_request","status":"%s","conclusion":"%s","pull_requests":%s}]}' "$RUN_BRANCH" "${RUN_STATUS:-completed}" "$CONCLUSION" "$RUN_PULLS" ;;
  *"/actions/runs/101/attempts/1/jobs"*) if [[ "$SCENARIO" == "missing receipt job" ]]; then printf '[{"jobs":[{"name":"Required CI","status":"completed","conclusion":"success"}]}]'; else printf '[{"jobs":[{"name":"Required CI","status":"completed","conclusion":"success"},{"name":"Tree receipt","status":"completed","conclusion":"success"}]}]'; fi ;;
  *"/commits/` + push + `"*) if [[ "$SCENARIO" == 'squash merge' ]]; then printf '{"sha":"` + push + `","commit":{"tree":{"sha":"%s"}},"parents":[{"sha":"` + base + `"}]}' "$PUSH_TREE"; else printf '{"sha":"` + push + `","commit":{"tree":{"sha":"%s"}},"parents":[{"sha":"` + base + `"},{"sha":"%s"}]}' "$PUSH_TREE" "${PUSH_HEAD:-` + head + `}"; fi ;;
- *"/commits/` + merge + `"*) printf '{"sha":"` + merge + `","commit":{"tree":{"sha":"` + tree + `"}},"parents":[{"sha":"` + base + `"},{"sha":"%s"}]}' "$PARENT" ;;
+ *"/commits/` + merge + `"*) printf '{"sha":"` + merge + `","commit":{"tree":{"sha":"` + tree + `"}},"parents":[{"sha":"%s"},{"sha":"%s"}]}' "$CHECKOUT_BASE" "$PARENT" ;;
  *"run download 101"*)
    out=""; while [[ $# -gt 0 ]]; do [[ "$1" == "-D" ]] && out="$2"; shift; done
    [[ -n "$RECEIPT" ]] || exit 1
@@ -65,7 +71,21 @@ esac`
 				t.Fatal(err)
 			}
 			cmd := exec.Command("bash", "ci-verify-pr-tree.sh", "glade-sh/glade", push)
-			cmd.Env = append(os.Environ(), "PATH="+d+":"+os.Getenv("PATH"), "PUSH_TREE="+tc.pushTree, "CONCLUSION="+tc.conclusion, "RECEIPT="+tc.receipt, "RECEIPT_RUN="+map[bool]string{true: "999", false: "101"}[tc.name == "receipt for another run"], "PARENT="+tc.parent, "PR_REF="+map[bool]string{true: "feature/example", false: "train/example"}[tc.name == "fast-only pull request"], "SCENARIO="+tc.name, "PUSH_HEAD="+map[bool]string{true: base, false: head}[tc.name == "wrong push parent"], "RUN_STATUS="+map[bool]string{true: "in_progress", false: "completed"}[tc.name == "incomplete run"], "RECEIPT_ATTEMPT="+map[bool]string{true: "2", false: "1"}[tc.name == "wrong attempt"])
+			prRef := "train/example"
+			if tc.name == "fast-only pull request" {
+				prRef = "feature/example"
+			}
+			if tc.name == "release pull request" {
+				prRef = "release/example"
+			}
+			runPulls := `[{"number":7}]`
+			if tc.name == "API omits pull association" {
+				runPulls = `[]`
+			}
+			if tc.name == "API names another pull" {
+				runPulls = `[{"number":8}]`
+			}
+			cmd.Env = append(os.Environ(), "PATH="+d+":"+os.Getenv("PATH"), "PUSH_TREE="+tc.pushTree, "CONCLUSION="+tc.conclusion, "RECEIPT="+tc.receipt, "RECEIPT_RUN="+map[bool]string{true: "999", false: "101"}[tc.name == "receipt for another run"], "PARENT="+tc.parent, "PR_REF="+prRef, "RUN_BRANCH="+map[bool]string{true: "train/other", false: prRef}[tc.name == "changed run branch"], "RUN_PULLS="+runPulls, "HEAD_REPO="+map[bool]string{true: "example/fork", false: "glade-sh/glade"}[tc.name == "fork head"], "CHECKOUT_BASE="+map[bool]string{true: head, false: base}[tc.name == "wrong checkout base"], "SCENARIO="+tc.name, "PUSH_HEAD="+map[bool]string{true: base, false: head}[tc.name == "wrong push parent"], "RUN_STATUS="+map[bool]string{true: "in_progress", false: "completed"}[tc.name == "incomplete run"], "RECEIPT_ATTEMPT="+map[bool]string{true: "2", false: "1"}[tc.name == "wrong attempt"])
 			out, err := cmd.CombinedOutput()
 			if (err == nil) != tc.ok {
 				t.Fatalf("unexpected result %v: %s", err, out)
