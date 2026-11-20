@@ -278,10 +278,13 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 			t.Fatalf("head %q results %s: err=%v want pass=%v\n%s", headRef, encoded, err, want, out)
 		}
 	}
-	// Ordinary pull request: only the fast lane is required.
+	// Ordinary pull requests require the site and fast-lane jobs.
 	results["site"]["result"] = "skipped"
 	results["pr-tests"]["result"] = "success"
+	run("feature/example", false)
+	results["site"]["result"] = "success"
 	run("feature/example", true)
+	results["site"]["result"] = "skipped"
 	// Train and release pull requests: the full suite is required.
 	results["pr-tests"]["result"] = "skipped"
 	run("train/example", false)

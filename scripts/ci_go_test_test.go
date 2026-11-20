@@ -2138,7 +2138,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
 		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
