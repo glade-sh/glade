@@ -1,0 +1,117 @@
+{
+  "Page": {
+    "name": "Example",
+    "file": "Example.page",
+    "apiVersion": "67.0"
+  },
+  "PageError": "",
+  "Tree": {
+    "Type": 0,
+    "Namespace": "",
+    "Name": "_vfroot",
+    "RawName": "",
+    "Attributes": {},
+    "RawAttributes": null,
+    "Text": "",
+    "Children": [
+      {
+        "Type": 0,
+        "Namespace": "apex",
+        "Name": "page",
+        "RawName": "apex:page",
+        "Attributes": {},
+        "RawAttributes": {},
+        "Text": "",
+        "Children": [
+          {
+            "Type": 1,
+            "Namespace": "",
+            "Name": "",
+            "RawName": "",
+            "Attributes": null,
+            "RawAttributes": null,
+            "Text": "\n",
+            "Children": null,
+            "Line": 0,
+            "Column": 0,
+            "NameEndLine": 0,
+            "NameEndColumn": 0
+          },
+          {
+            "Type": 0,
+            "Namespace": "apex",
+            "Name": "outputtext",
+            "RawName": "apex:outputText",
+            "Attributes": {
+              "value": "hello"
+            },
+            "RawAttributes": {
+              "value": "hello"
+            },
+            "Text": "",
+            "Children": null,
+            "Line": 2,
+            "Column": 1,
+            "NameEndLine": 2,
+            "NameEndColumn": 17
+          },
+          {
+            "Type": 1,
+            "Namespace": "",
+            "Name": "",
+            "RawName": "",
+            "Attributes": null,
+            "RawAttributes": null,
+            "Text": "é",
+            "Children": null,
+            "Line": 0,
+            "Column": 0,
+            "NameEndLine": 0,
+            "NameEndColumn": 0
+          },
+          {
+            "Type": 0,
+            "Namespace": "",
+            "Name": "b",
+            "RawName": "b",
+            "Attributes": {},
+            "RawAttributes": {},
+            "Text": "",
+            "Children": [
+              {
+                "Type": 1,
+                "Namespace": "",
+                "Name": "",
+                "RawName": "",
+                "Attributes": null,
+                "RawAttributes": null,
+                "Text": "text",
+                "Children": null,
+                "Line": 0,
+                "Column": 0,
+                "NameEndLine": 0,
+                "NameEndColumn": 0
+              }
+            ],
+            "Line": 2,
+            "Column": 34,
+            "NameEndLine": 2,
+            "NameEndColumn": 36
+          }
+        ],
+        "Line": 1,
+        "Column": 1,
+        "NameEndLine": 1,
+        "NameEndColumn": 11
+      }
+    ],
+    "Line": 0,
+    "Column": 0,
+    "NameEndLine": 0,
+    "NameEndColumn": 0
+  },
+  "TreeError": "",
+  "HTML": "3bfae037d2882d4b72baf9683ae8d6f612f5b204678398d055084d31a8740a38",
+  "RenderError": "",
+  "Diagnostic": ""
+}

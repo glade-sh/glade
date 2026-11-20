@@ -30,22 +30,13 @@ const (
 )
 
 func Major(raw string) (int, bool) {
-	parts := strings.Split(strings.TrimSpace(raw), ".")
-	if len(parts) == 0 || parts[0] == "" {
-		return 0, false
-	}
-	major, ok := unsignedComponent(parts[0])
+	majorText, minorText, hasMinor := strings.Cut(strings.TrimSpace(raw), ".")
+	major, ok := unsignedComponent(majorText)
 	if !ok || major < 1 {
 		return 0, false
 	}
-	if len(parts) > 2 {
-		return 0, false
-	}
-	if len(parts) == 2 {
-		if parts[1] == "" {
-			return 0, false
-		}
-		if _, ok := unsignedComponent(parts[1]); !ok {
+	if hasMinor {
+		if _, ok := unsignedComponent(minorText); !ok {
 			return 0, false
 		}
 	}

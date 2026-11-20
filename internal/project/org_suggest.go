@@ -161,9 +161,13 @@ func SuggestOrgSetup(root string) []OrgSetupSuggestion {
 			rel = path
 		}
 		rel = filepath.ToSlash(rel)
+		scan := setupEvidenceScan{raw: text, metadata: strings.HasSuffix(name, ".xml")}
 		for _, rule := range featureEvidenceRules {
+			if anyDeclared(declared, rule.covered) {
+				continue
+			}
 			rule.customPersonFields = customPersonFields
-			if matchesSetupFeature(rule, text, strings.HasSuffix(name, ".xml")) {
+			if scan.matches(rule) {
 				files[rule.feature] = append(files[rule.feature], rel)
 			}
 		}

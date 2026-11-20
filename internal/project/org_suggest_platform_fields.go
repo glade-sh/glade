@@ -20,43 +20,48 @@ var (
 // Labels and local declarations are not field usage. Require a typed platform
 // receiver, a schema reference, a constructor field, or an executed query.
 func matchesPlatformFieldFeature(rule featureEvidence, source string, metadata bool) bool {
-	if metadata {
-		return setupMetadataUsesFeature(source, rule.feature)
+	scan := setupEvidenceScan{raw: source, metadata: metadata}
+	return scan.platform(rule)
+}
+func (scan *setupEvidenceScan) platform(rule featureEvidence) bool {
+	if scan.metadata {
+		return scan.metadataUses(rule.feature)
 	}
-	source = stripApexComments(source)
-	code := maskSetupStrings(source)
+	source, code := scan.text()
 	for _, loc := range schemaImportRE.FindAllStringSubmatchIndex(source, -1) {
 		if code[loc[0]] == source[loc[0]] && setupMetadataReference(source[loc[2]:loc[3]], rule.feature) {
 			return true
 		}
 	}
-	objects := []string{"Account", "Contact"}
-	field := personAccountFieldPattern
-	if rule.feature == "MultiCurrency" {
-		field = `CurrencyIsoCode`
-		objects = nil
-		seen := map[string]bool{}
-		// Include type names in schema lookups, which are string arguments.
-		for _, object := range setupIdentifierRE.FindAllString(source, -1) {
-			key := strings.ToLower(object)
-			if currencyObjectRE.MatchString(object) && !seen[key] {
-				objects = append(objects, object)
-				seen[key] = true
+	if rule.feature == "MultiCurrency" && scan.mayContain("currencyisocode") || rule.feature == "PersonAccounts" && scan.mayContain("person", "__pc") || rule.feature != "MultiCurrency" && rule.feature != "PersonAccounts" {
+		objects := []string{"Account", "Contact"}
+		field := personAccountFieldPattern
+		if rule.feature == "MultiCurrency" {
+			field = `CurrencyIsoCode`
+			objects = nil
+			seen := map[string]bool{}
+			// Include type names in schema lookups, which are string arguments.
+			for _, object := range setupIdentifierRE.FindAllString(source, -1) {
+				key := strings.ToLower(object)
+				if currencyObjectRE.MatchString(object) && !seen[key] {
+					objects = append(objects, object)
+					seen[key] = true
+				}
+			}
+		}
+		for _, object := range objects {
+			objectField := field
+			if rule.feature == "PersonAccounts" && strings.EqualFold(object, "Contact") {
+				objectField = `IsPersonAccount`
+			}
+			fields := objectField + `\b|(?:get|put)\s*\(\s*'` + objectField + `'`
+			assignment := regexp.MustCompile(`(?i)\b` + objectField + `\s*=`)
+			if typedSetupFieldEvidence(source, code, regexp.QuoteMeta(object), fields) || setupConstructorEvidence(source, code, regexp.QuoteMeta(object), assignment) {
+				return true
 			}
 		}
 	}
-	for _, object := range objects {
-		objectField := field
-		if rule.feature == "PersonAccounts" && strings.EqualFold(object, "Contact") {
-			objectField = `IsPersonAccount`
-		}
-		fields := objectField + `\b|(?:get|put)\s*\(\s*'` + objectField + `'`
-		assignment := regexp.MustCompile(`(?i)\b` + objectField + `\s*=`)
-		if typedSetupFieldEvidence(source, code, regexp.QuoteMeta(object), fields) || setupConstructorEvidence(source, code, regexp.QuoteMeta(object), assignment) {
-			return true
-		}
-	}
-	for _, query := range setupExecutedQueries(source, code) {
+	for _, query := range scan.executedQueries() {
 		if setupQueryUsesPlatformFeature(query, rule.feature, rule.customPersonFields) {
 			return true
 		}
@@ -68,6 +73,12 @@ func matchesPlatformFieldFeature(rule featureEvidence, source string, metadata b
 // bind expressions and literal values. Only field nodes consult standard or
 // project field metadata.
 func setupQueryUsesPlatformFeature(query, feature string, customPersonFields map[string]bool) bool {
+	if !queryCouldUseSetupFeature(query, feature, customPersonFields) {
+		return false
+	}
+	return parsedSetupQueryUsesFeature(query, feature, customPersonFields)
+}
+func parsedSetupQueryUsesFeature(query, feature string, customPersonFields map[string]bool) bool {
 	query = strings.TrimSuffix(strings.TrimPrefix(strings.TrimSpace(query), "["), "]")
 	source := "class SetupQuery { Object rows = [" + query + "]; }"
 	parsed := apexast.ParseSourceAST("SetupQuery.cls", source)

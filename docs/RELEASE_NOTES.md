@@ -34,6 +34,11 @@
 - **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 278 ms to 3.6 ms while returning identical ordered results.
 
 - **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 additional setup records fell from about 778 ms to 617 ms with identical results and governor counts.
+- **API version parsing.** Parsing common version strings avoids a temporary allocation.
+
+- **Setup advice after test failures.** Source and metadata scans reuse intermediate work when producing setup suggestions.
+
+- **Visualforce page validation.** Large pages use a forward position cursor while checking presentation tags.
 
 ### CI
 

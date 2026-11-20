@@ -30,14 +30,20 @@ var (
 // Only explicit platform contexts count as optional-feature evidence.
 // Local declarations and labels can use the same spellings without org setup.
 func matchesSetupFeature(rule featureEvidence, source string, metadata bool) bool {
+	scan := setupEvidenceScan{raw: source, metadata: metadata}
+	return scan.matches(rule)
+}
+func (scan *setupEvidenceScan) matches(rule featureEvidence) bool {
 	if rule.feature == "PersonAccounts" || rule.feature == "MultiCurrency" {
-		return matchesPlatformFieldFeature(rule, source, metadata)
+		return scan.platform(rule)
 	}
-	if metadata {
-		return setupMetadataUsesFeature(source, rule.feature)
+	if scan.metadata {
+		return scan.metadataUses(rule.feature)
 	}
-	source = stripApexComments(source)
-	code := maskSetupStrings(source)
+	if rule.feature == "Sites" && !strings.Contains(scan.raw, "Site") {
+		return false
+	}
+	source, code := scan.text()
 	if rule.feature == "Sites" {
 		// Match an identifier, member access, method identifier and call token.
 		// Comments and literal contents cannot supply any of these tokens.
@@ -57,15 +63,15 @@ func matchesSetupFeature(rule featureEvidence, source string, metadata bool) boo
 	// NetworksEnabled needs no pattern here: only queries and schema references
 	// of the objects count, and the Network class calls are Communities evidence.
 	if rule.feature == "Communities" {
-		if networkCallRE.MatchString(code) || typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE) {
+		if networkCallRE.MatchString(code) || scan.mayContain("isportalenabled", "usertype") && (typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE)) {
 			return true
 		}
 	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE, source, code)) {
 		return true
-	} else if rule.feature == "Territory2" && (territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE)) {
+	} else if rule.feature == "Territory2" && (territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || scan.mayContain("territory2id") && (typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE))) {
 		return true
 	}
-	for _, query := range setupExecutedQueries(source, code) {
+	for _, query := range scan.executedQueries() {
 		root := fromObjectRE.FindStringSubmatch(query)
 		if len(root) != 2 {
 			continue
@@ -150,6 +156,9 @@ func setupMetadataUsesFeature(source, feature string) bool {
 	if xml.Unmarshal([]byte(source), &root) != nil {
 		return false
 	}
+	return setupMetadataNodeUsesFeature(root, feature)
+}
+func setupMetadataNodeUsesFeature(root setupMetadataNode, feature string) bool {
 	var visit func(setupMetadataNode, string) bool
 	visit = func(node setupMetadataNode, object string) bool {
 		for _, child := range node.Children {
