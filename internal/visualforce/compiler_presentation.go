@@ -19,6 +19,7 @@ func validatePresentationSource(source, sourceName string) error {
 	z := html.NewTokenizer(strings.NewReader(source))
 	z.AllowCDATA(true)
 	offset := 0
+	positions := sourcePositionCursor{source: source, line: 1, column: 1}
 	linkDepth := 0
 	for {
 		kind := z.Next()
@@ -47,7 +48,7 @@ func validatePresentationSource(source, sourceName string) error {
 		if kind == html.SelfClosingTagToken {
 			z.NextIsNotRawText()
 		}
-		line, column := lineColumnAt(source, offset)
+		line, column := positions.at(offset)
 		location := fmt.Sprintf(" in %s at line %d column %d", sourceName, line, column)
 		if sourceName == "" {
 			location = fmt.Sprintf(" at line %d column %d", line, column)
