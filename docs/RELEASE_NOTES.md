@@ -18,10 +18,12 @@
 - **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
 - Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
 - **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
+- JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
 
 ### Changes
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
+- **Go toolchain.** Source builds and release binaries use Go 1.27.4.
 
 ### Performance
 

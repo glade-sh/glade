@@ -146,7 +146,7 @@ before a release is cut.
 
 Prerequisites:
 
-- Go 1.26 or newer
+- Go 1.27.4 or newer
 - Git
 - A C compiler with CGO enabled (CGO is on by default). glade's Apex parser is a
   generated tree-sitter grammar that requires CGO; without it, `check`, `test`,
