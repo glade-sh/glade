@@ -63,6 +63,15 @@ func TestClassSharingModeMatchesParent(t *testing.T) {
 	}
 }
 
+func TestClassSharingModeAvoidsRedundantNormalization(t *testing.T) {
+	machine := sharingModeFixture()
+	optimized := testing.AllocsPerRun(100, func() { _, _ = machine.classSharingMode("Explicit") })
+	baseline := testing.AllocsPerRun(100, func() { _, _ = classSharingModeBaseline(machine, "Explicit") })
+	if optimized >= baseline {
+		t.Fatalf("sharing lookup allocations = %v, parent = %v", optimized, baseline)
+	}
+}
+
 func BenchmarkClassSharingMode(b *testing.B) {
 	machine := sharingModeFixture()
 	names := []string{"Legacy", "Modern", "Explicit", "Child", "LoopA", "ωMEGA", "missing"}
