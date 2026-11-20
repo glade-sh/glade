@@ -191,7 +191,16 @@ def main():
             # imports the parser.
             parser_unknown = True
             continue
-        if docs_only(path):
+        if path.startswith('.do/') or path.startswith('contrib/vscode-glade/'):
+            # These inputs are read by playground and CLI tests respectively.
+            owner = ('internal/playground' if path.startswith('.do/')
+                     else 'internal/gladecli')
+            if owner not in by_dir:
+                fail(f'no package for {owner}')
+            changed.add(by_dir[owner])
+            continue
+        if (path.startswith('site/') or path.startswith('.github/ISSUE_TEMPLATE/')
+                or path == '.gitattributes' or docs_only(path)):
             continue
         # Safe by default: a path outside every Go package (lwcruntime/**,
         # third_party/lwc/**, root testdata/**, workflows, root files, and the
