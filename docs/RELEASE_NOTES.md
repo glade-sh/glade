@@ -24,6 +24,8 @@
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
 - **Go toolchain.** Source builds and release binaries use Go 1.27.4.
+- **Language server references and rename.** References and rename now find the same textual matches in files containing Unicode whether buffers are open, closed, or reopened after a language server restart.
+- The language server refreshes workspace symbols when `.forceignore` or legacy `.object` files change.
 
 ### Performance
 
@@ -31,6 +33,9 @@
 - **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
 - **Apex parsing and CLI startup.** The parser uses an updated native allocator and makes fewer calls while checking declarations. The SQLite driver and runtime are updated to reduce startup overhead on macOS.
 - **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
+
+- **Locale sorting startup.** The first root-locale SOQL text sort loads a prebuilt collation table, reducing first-use work while preserving the existing ordering.
+- **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
 
 ### CI
 
