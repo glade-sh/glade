@@ -1754,7 +1754,9 @@ func decodeJSONValueForDeserialize(text string, strict, reportColumnKeyDiagnosti
 			return nil, fmt.Errorf("Malformed JSON: %s", err)
 		}
 		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-			err = jsonTokenEOFAtInput(err, source, offset)
+			if errors.Is(jsonTokenEOFAtInput(err, source, offset), io.ErrUnexpectedEOF) {
+				err = io.EOF
+			}
 		}
 		if errors.Is(err, io.ErrUnexpectedEOF) && strings.HasPrefix(strings.TrimSpace(text), `"`) {
 			return nil, fmt.Errorf("malformed JSON: %s", err.Error())

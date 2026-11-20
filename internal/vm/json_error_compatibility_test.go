@@ -27,6 +27,19 @@ func TestJSONTypedMalformedInputDiagnostics(t *testing.T) {
 	}
 }
 
+func TestJSONTypedDiagnosticsToolchainParity(t *testing.T) {
+	for _, tc := range []struct{ source, want string }{
+		{`{"bad: JSON"}`, "Malformed JSON: invalid character '}' after object key"},
+		{`[{"Name":"Acme"`, "Unexpected end-of-input: EOF"},
+		{`{"Name":`, "Unexpected end-of-input: EOF"},
+	} {
+		_, err := decodeJSONValueForDeserialize(tc.source, false, false)
+		if err == nil || err.Error() != tc.want {
+			t.Errorf("%q: got %v, want %q", tc.source, err, tc.want)
+		}
+	}
+}
+
 func TestJSONMissingValueDiagnostics(t *testing.T) {
 	object := `{"a":}`
 	wantObject := "Unexpected character ('}' (code 125)): expected a value at [line:1, column:7]"
