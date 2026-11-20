@@ -205,3 +205,111 @@ func TestSnapshotLargeResourceUsesBoundedMemory(t *testing.T) {
 		t.Fatalf("capture allocated %d bytes for an 8 MiB resource; want at most 1 MiB", got)
 	}
 }
+
+func TestSnapshotResourceContentAtEnd(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "staticresources", "asset.resource")
+	prefix := strings.Repeat("a", 128<<10)
+	writeWatchFile(t, path, prefix+"x")
+	stamp := time.Unix(1600000000, 0)
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	before, err := CapturePaths([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeWatchFile(t, path, prefix+"y")
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	after, err := CapturePaths([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes := DiffSnapshots(before, after)
+	if len(changes) != 1 || changes[0].Path != path || changes[0].Op != ChangeModified {
+		t.Fatalf("changes = %#v", changes)
+	}
+}
+
+func TestPollingContentStampInvalidation(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Example.cls")
+	writeWatchFile(t, path, "class Example { void first() {} }")
+	stamp := time.Unix(1600000000, 0)
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	scope := Scope{Roots: []string{root}}
+	// A freshly written file must not be trusted until the filesystem clock's
+	// safety window has passed.
+	young, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if young.Files[path].stampValid {
+		t.Fatal("recent file stamp was trusted")
+	}
+	time.Sleep(2100 * time.Millisecond)
+	before, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := before.Files[path]
+	if !state.stampValid {
+		t.Skip("filesystem does not provide a trusted stamp")
+	}
+	// A sentinel digest makes reuse observable without relying on timing.
+	sentinel := state
+	sentinel.contentHash[0] ^= 0xff
+	before.Files[path] = sentinel
+	reused, err := captureScopeWithPrevious(scope, before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reused.Files[path].contentHash != sentinel.contentHash {
+		t.Fatal("unchanged trusted stamp did not reuse the digest")
+	}
+	// Without trust, the previous digest may not stand in for a read.
+	untrusted := sentinel
+	untrusted.stampValid = false
+	before.Files[path] = untrusted
+	refreshed, err := captureScopeWithPrevious(scope, before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refreshed.Files[path].contentHash != state.contentHash {
+		t.Fatal("untrusted stamp did not trigger a read")
+	}
+	before.Files[path] = state
+	writeWatchFile(t, path, "class Example { void other() {} }")
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	after, err := captureScopeWithPrevious(scope, before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes := DiffSnapshots(before, after); len(changes) != 1 || changes[0].Op != ChangeModified {
+		t.Fatalf("restored edit: %#v", changes)
+	}
+	if after.Files[path].stampValid {
+		t.Fatal("recent edit was trusted")
+	}
+	// Atomic replacement at the same path, size and mtime changes inode.
+	replacement := filepath.Join(root, "replacement")
+	writeWatchFile(t, replacement, "class Example { void third() {} }")
+	if err := os.Chtimes(replacement, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(replacement, path); err != nil {
+		t.Fatal(err)
+	}
+	replaced, err := captureScopeWithPrevious(scope, after)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes := DiffSnapshots(after, replaced); len(changes) != 1 || changes[0].Op != ChangeModified {
+		t.Fatalf("replacement: %#v", changes)
+	}
+}
