@@ -33,6 +33,7 @@
 - **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
 - **Apex parsing and CLI startup.** The parser uses an updated native allocator and makes fewer calls while checking declarations. The SQLite driver and runtime are updated to reduce startup overhead on macOS.
 
+- **Locale sorting startup.** The first root-locale SOQL text sort loads a prebuilt collation table, reducing first-use work while preserving the existing ordering.
 - **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
 
 ### CI
