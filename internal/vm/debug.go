@@ -184,6 +184,7 @@ func cloneValues(in map[string]Value) map[string]Value {
 }
 
 func cloneValue(value Value) Value {
+	value.jsonGeneratorBuffer = nil
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
 		return cloneValueWithSeen(value, make(map[uint64]bool))
@@ -204,6 +205,7 @@ func cloneValue(value Value) Value {
 func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	value = value.currentMapKeySet()
 	out := value
+	out.jsonGeneratorBuffer = nil
 	out.primitiveSetState = clonePrimitiveSetState(value.primitiveSetState)
 	out.mapKeySetSource = nil
 	out.mapKeySetHashes = nil

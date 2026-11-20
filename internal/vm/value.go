@@ -43,6 +43,7 @@ type Value struct {
 
 	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
 	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
+	jsonGeneratorBuffer     *jsonGeneratorBuffer
 	// Projection-only anonymous callers for captured exception text boundaries.
 	exceptionAnonymousCallerLine int
 
