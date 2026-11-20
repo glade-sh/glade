@@ -302,3 +302,13 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 	results["vet"]["result"] = "failure"
 	run("release/example", false)
 }
+
+func TestCIPlannedMatrixHasBoundedBudget(t *testing.T) {
+	_, widths := readCIJobIfs(t)
+	if widths["pr-tests"] <= 1 {
+		t.Fatalf("planned PR matrix width = %d; expected the full occupied plan", widths["pr-tests"])
+	}
+	if widths["pr-tests"] >= ciPushJobBudget {
+		t.Fatalf("planned PR matrix alone exhausts budget: %d", widths["pr-tests"])
+	}
+}
