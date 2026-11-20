@@ -71,7 +71,7 @@ func (w *PollingWatcher) run(ctx context.Context, cfg Config, previous Snapshot)
 			close(w.errors)
 			return
 		case <-ticker.C:
-			current, err := CaptureScope(cfg.Scope)
+			current, err := captureScopeWithPrevious(cfg.Scope, previous)
 			if err != nil {
 				sendWatchError(ctx, w.errors, err)
 				continue
@@ -323,6 +323,7 @@ func snapshotPendingScope(scope Scope, previous Snapshot, paths []string, full b
 
 func captureScopePaths(scope Scope, paths []string) (Snapshot, error) {
 	files := make(map[string]FileState)
+	var capturer fileCapturer
 	for _, path := range paths {
 		absPath, err := filepath.Abs(path)
 		if err != nil {
@@ -333,7 +334,7 @@ func captureScopePaths(scope Scope, paths []string) (Snapshot, error) {
 		if !scopeCapturesPath(scope, absPath, classification) {
 			continue
 		}
-		state, ok, err := capturePath(absPath)
+		state, ok, err := capturer.capturePath(absPath)
 		if err != nil {
 			return Snapshot{}, err
 		}

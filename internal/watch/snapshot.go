@@ -3,10 +3,15 @@ package watch
 import (
 	"crypto/sha256"
 	"errors"
+	"hash"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/glade-sh/glade/internal/filestamp"
 )
 
 type FileMetadata struct {
@@ -16,6 +21,8 @@ type FileMetadata struct {
 
 type FileState struct {
 	contentHash [sha256.Size]byte
+	stamp       filestamp.Stamp
+	stampValid  bool
 	Path        string       `json:"path"`
 	Kind        FileKind     `json:"kind"`
 	Name        string       `json:"name,omitempty"`
@@ -58,6 +65,7 @@ func CaptureSnapshot(root string) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	files := make(map[string]FileState)
+	var capturer fileCapturer
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -65,7 +73,7 @@ func CaptureSnapshot(root string) (Snapshot, error) {
 		if d.IsDir() {
 			return nil
 		}
-		state, ok, err := capturePath(path)
+		state, ok, err := capturer.capturePath(path)
 		if err != nil || !ok {
 			return err
 		}
@@ -82,8 +90,15 @@ func CaptureSnapshot(root string) (Snapshot, error) {
 // exact configuration files named by the scope. Missing roots and files are
 // valid so their later creation can be observed.
 func CaptureScope(scope Scope) (Snapshot, error) {
+	return captureScopeWithPrevious(scope, Snapshot{})
+}
+
+// Only polling reuses old, verified local-file stamps. Native events always
+// read the affected files, including full reconciliations.
+func captureScopeWithPrevious(scope Scope, previous Snapshot) (Snapshot, error) {
 	scope = NormalizeScope(scope)
 	files := make(map[string]FileState)
+	capturer := fileCapturer{previous: previous.Files, stampFiles: true, now: time.Now()}
 	for _, root := range scope.Roots {
 		err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
@@ -101,12 +116,13 @@ func CaptureScope(scope Scope) (Snapshot, error) {
 			if d.IsDir() {
 				return nil
 			}
-			state, ok, err := capturePath(path)
+			classification := ClassifyPath(path)
+			if classification.Kind == FileKindIgnored && !isScopeConfigPath(path, root) {
+				return nil
+			}
+			state, ok, err := capturer.capturePath(path)
 			if err != nil || !ok {
 				return err
-			}
-			if state.Kind == FileKindIgnored && !isScopeConfigPath(state.Path, root) {
-				return nil
 			}
 			files[state.Path] = state
 			return nil
@@ -116,7 +132,7 @@ func CaptureScope(scope Scope) (Snapshot, error) {
 		}
 	}
 	for _, path := range scope.Files {
-		state, ok, err := capturePath(path)
+		state, ok, err := capturer.capturePath(path)
 		if err != nil {
 			return Snapshot{}, err
 		}
@@ -189,8 +205,9 @@ func isScopeConfigPath(path, root string) bool {
 
 func CapturePaths(paths []string) (Snapshot, error) {
 	files := make(map[string]FileState)
+	var capturer fileCapturer
 	for _, path := range paths {
-		state, ok, err := capturePath(path)
+		state, ok, err := capturer.capturePath(path)
 		if err != nil {
 			return Snapshot{}, err
 		}
@@ -272,7 +289,15 @@ func captureTopology(path string) (TopologyState, bool, error) {
 	return state, true, nil
 }
 
-func capturePath(path string) (FileState, bool, error) {
+type fileCapturer struct {
+	buffer     []byte
+	digest     hash.Hash
+	previous   map[string]FileState
+	stampFiles bool
+	now        time.Time
+}
+
+func (c *fileCapturer) capturePath(path string) (FileState, bool, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return FileState{}, false, err
@@ -282,7 +307,15 @@ func capturePath(path string) (FileState, bool, error) {
 		return FileState{}, false, nil
 	}
 
-	info, err := os.Stat(absPath)
+	var stamp filestamp.Stamp
+	var stamped bool
+	var info os.FileInfo
+	if c.stampFiles {
+		info, stamp, stamped = filestamp.StatWithInfo(absPath)
+	}
+	if info == nil {
+		info, err = os.Stat(absPath)
+	}
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return FileState{}, false, nil
@@ -294,19 +327,54 @@ func capturePath(path string) (FileState, bool, error) {
 	}
 
 	var contentHash [sha256.Size]byte
+	var stableStamp bool
 	if info.Mode().IsRegular() {
-		content, err := os.ReadFile(absPath)
-		if errors.Is(err, os.ErrNotExist) {
-			return FileState{}, false, nil
+		if old, ok := c.previous[absPath]; ok && stamped && old.stampValid && old.stamp == stamp {
+			contentHash, stableStamp = old.contentHash, true
+		} else {
+			file, err := os.Open(absPath)
+			if errors.Is(err, os.ErrNotExist) {
+				return FileState{}, false, nil
+			}
+			if err != nil {
+				return FileState{}, false, err
+			}
+			var before filestamp.Stamp
+			var beforeOK bool
+			if stamped && stamp.OlderThan(c.now, 2*time.Second) {
+				before, beforeOK = filestamp.Fstat(file)
+			}
+			if c.buffer == nil {
+				c.buffer = make([]byte, 32*1024)
+				c.digest = sha256.New()
+			}
+			c.digest.Reset()
+			for {
+				n, readErr := file.Read(c.buffer)
+				if n > 0 {
+					_, _ = c.digest.Write(c.buffer[:n])
+				}
+				if readErr != nil {
+					if readErr != io.EOF {
+						_ = file.Close()
+						return FileState{}, false, readErr
+					}
+					break
+				}
+			}
+			c.digest.Sum(contentHash[:0])
+			if beforeOK && before == stamp {
+				after, ok := filestamp.Fstat(file)
+				stableStamp = ok && after == stamp
+			}
+			_ = file.Close()
 		}
-		if err != nil {
-			return FileState{}, false, err
-		}
-		contentHash = sha256.Sum256(content)
 	}
 
 	return FileState{
 		contentHash: contentHash,
+		stamp:       stamp,
+		stampValid:  stableStamp,
 		Path:        absPath,
 		Kind:        classification.Kind,
 		Name:        classification.Name,
