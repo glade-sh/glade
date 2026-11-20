@@ -16,7 +16,9 @@ func platformVersionTypeName(typeName string) bool {
 	return strings.EqualFold(typeName, "Version") || strings.EqualFold(typeName, "Package.Version")
 }
 func (vm *VM) resolveTypeNameInCurrentExecutionContext(typeName string) string {
-	for _, owner := range vm.currentTypeResolutionOwners() {
+	var owners [3]string
+	ownerCount := vm.fillCurrentTypeResolutionOwners(&owners)
+	for _, owner := range owners[:ownerCount] {
 		if resolved := vm.resolveTypeNameInClass(owner, typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
 			return resolved
 		}
@@ -27,7 +29,9 @@ func (vm *VM) resolveNestedTypeNameInCurrentExecutionContext(typeName string) st
 	if strings.TrimSpace(typeName) == "" || strings.Contains(typeName, ".") {
 		return ""
 	}
-	for _, owner := range vm.currentTypeResolutionOwners() {
+	var owners [3]string
+	ownerCount := vm.fillCurrentTypeResolutionOwners(&owners)
+	for _, owner := range owners[:ownerCount] {
 		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(owner, typeName); ok {
 			return resolved
 		}
