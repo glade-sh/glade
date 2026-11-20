@@ -51,9 +51,29 @@ func TestJSONMissingValueInputScan(t *testing.T) {
 	for _, tc := range []struct {
 		source string
 		offset int
-	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}, {`{"a"::}`, 4}, {`{"a"::}`, 5}, {`[1,,]`, 2}, {`[1,,]`, 3}, {`{x}`, 1}, {`{"a":1,x}`, 6}, {`nullx`, 0}} {
+	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}, {`{x}`, 1}, {`{"a":1,x}`, 6}, {`nullx`, 0}} {
 		if got := jsonSyntaxErrorAtInput(original, tc.source, tc.offset); got != original {
 			t.Errorf("neighbor %q: got %v, want original error", tc.source, got)
+		}
+	}
+}
+
+func TestJSONInvalidValueNeighbors(t *testing.T) {
+	for _, tc := range []struct{ source, want string }{
+		{`{"a"::}`, "Unexpected character (':' (code 58)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]"},
+		{`[1,,]`, "Unexpected character (',' (code 44)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:5]"},
+	} {
+		_, err := decodeJSONUntypedValue(tc.source)
+		if err == nil || err.Error() != tc.want {
+			t.Errorf("%q: got %v, want baseline %s", tc.source, err, tc.want)
+		}
+	}
+}
+
+func TestJSONDeserializeEscapedInputRetry(t *testing.T) {
+	for _, source := range []string{`{\"a\":1}`, `{"a":"\""}`} {
+		if _, err := decodeJSONValueForDeserialize(source, false, false); err != nil {
+			t.Errorf("%q: %v", source, err)
 		}
 	}
 }
