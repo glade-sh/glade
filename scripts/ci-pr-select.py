@@ -6,14 +6,23 @@ the nested Apex parser module. A changed path maps to its nearest enclosing
 package in either module; from there the selector walks reverse production,
 internal-test and external-test import edges to a fixed point, so a change
 reaches every package that compiles or tests against it directly or
-transitively (for example apexversion -> vm -> apextest). The nested parser
-module's packages are connector nodes: they are never executed by the root
-module's lanes, but they connect a parser change to the root packages that
-import the parser. A path outside every package, including the files of a
-deleted, renamed or removed package, whose former consumers must stay
-selected, conservatively selects the full set, as do `go.mod` and `go.sum`.
-A malformed graph or lane manifest fails the selection instead of producing
-an empty successful one.
+transitively (for example apexversion -> vm -> apextest). A changed
+*_test.go file directly in a package directory is an exception: it compiles
+only into that package's own test binary, as the internal test package or
+the external <P>_test package, so it selects that package alone and never
+walks to importers, and a parser module test file selects nothing, because
+no root lane executes parser packages. Every other changed path below a
+package keeps the package mapping and the reverse walk, including a helper
+package's production files, which other packages' tests import, testdata,
+and a *_test.go file below a non-package directory such as testdata, which
+other packages' tests may read. The nested parser module's packages are
+connector nodes: they are never executed by the root module's lanes, but
+they connect a parser change to the root packages that import the parser.
+A path outside every package, including the files of a deleted, renamed or
+removed package, whose former consumers must stay selected, conservatively
+selects the full set, as do `go.mod` and `go.sum`. A malformed graph or
+lane manifest fails the selection instead of producing an empty successful
+one.
 """
 import argparse
 import json
@@ -159,6 +168,7 @@ def main():
     load_manifest(a.manifest, packages)
 
     changed = set()
+    test_changed = set()
     parser_changed = set()
     parser_unknown = False
     unmapped = []
@@ -170,6 +180,7 @@ def main():
             full = True
             continue
         directory = os.path.dirname(path)
+        package_dir = directory in by_dir or directory in parser_by_dir
         mapped = None
         while directory and directory != '.':
             if directory in by_dir:
@@ -180,6 +191,16 @@ def main():
                 break
             directory = os.path.dirname(directory)
         if mapped is not None:
+            if package_dir and path.endswith('_test.go'):
+                # A *_test.go file directly in a package directory compiles
+                # only into that package's own test binary, as the internal
+                # test package or the external <P>_test package, so no
+                # importer can see the change. A parser module test file
+                # reaches no root lane either; the pr-guards worker runs the
+                # parser module's own tests whenever any parser path changes.
+                if mapped not in parser_packages:
+                    test_changed.add(mapped)
+                continue
             if mapped in parser_packages:
                 parser_changed.add(mapped)
             else:
@@ -217,6 +238,9 @@ def main():
     else:
         selected = reverse_consumers(packages, parser_packages, changed,
                                      parser_changed, parser_unknown)
+        # A test-only change still selects the changed package itself, so its
+        # own lane runs its tests.
+        selected |= test_changed
     print(json.dumps(sorted(selected)))
 
 

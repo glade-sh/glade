@@ -20,16 +20,21 @@ import (
 // chains mirror the real ones: b is a direct parser importer, d imports b in
 // production while e and f import d in internal and external tests, sema
 // imports b, vm imports version and the parser, and runner imports vm — the
-// internal/apexversion -> internal/vm -> internal/apextest chain.
+// internal/apexversion -> internal/vm -> internal/apextest chain. cli imports
+// sema the way internal/gladecli imports internal/sema, and testutil is a
+// helper package like internal/testutil whose only importers are e's and f's
+// tests.
 const (
 	selectionGraph = `[
 {"ImportPath":"example/a","Dir":"/repo/a"},
 {"ImportPath":"example/b","Dir":"/repo/b","Imports":["example/a","github.com/glade-sh/apex-parser"]},
 {"ImportPath":"example/c","Dir":"/repo/c","TestImports":["example/a"]},
 {"ImportPath":"example/d","Dir":"/repo/d","Imports":["example/b"]},
-{"ImportPath":"example/e","Dir":"/repo/e","TestImports":["example/d"]},
-{"ImportPath":"example/f","Dir":"/repo/f","XTestImports":["example/d"]},
+{"ImportPath":"example/e","Dir":"/repo/e","TestImports":["example/d","example/testutil"]},
+{"ImportPath":"example/f","Dir":"/repo/f","XTestImports":["example/d","example/testutil"]},
 {"ImportPath":"example/sema","Dir":"/repo/sema","Imports":["example/b"]},
+{"ImportPath":"example/cli","Dir":"/repo/cli","Imports":["example/sema"]},
+{"ImportPath":"example/testutil","Dir":"/repo/testutil"},
 {"ImportPath":"example/version","Dir":"/repo/version"},
 {"ImportPath":"example/vm","Dir":"/repo/vm","Imports":["example/version","github.com/glade-sh/apex-parser"]},
 {"ImportPath":"example/runner","Dir":"/repo/runner","Imports":["example/vm"]},
@@ -43,23 +48,26 @@ const (
 {"ImportPath":"github.com/glade-sh/apex-parser/internal/tsapex","Dir":"/repo/third_party/glade-apex-parser/internal/tsapex"}
 ]`
 	selectionManifest = `{"version":1,"lanes":{"remaining-go":[
-"example/a","example/b","example/c","example/d","example/e","example/f",
-"example/newpkg","example/renamednew","example/runner","example/sema",
-"example/version","example/vm", "github.com/glade-sh/glade/internal/playground", "github.com/glade-sh/glade/internal/gladecli"
+"example/a","example/b","example/c","example/cli","example/d","example/e",
+"example/f","example/newpkg","example/renamednew","example/runner",
+"example/sema","example/testutil","example/version","example/vm",
+"github.com/glade-sh/glade/internal/playground","github.com/glade-sh/glade/internal/gladecli"
 ]}}`
 )
 
 var (
 	selectionAll = []string{
-		"example/a", "example/b", "example/c", "example/d", "example/e", "example/f",
-		"example/newpkg", "example/renamednew", "example/runner", "example/sema",
-		"example/version", "example/vm", "github.com/glade-sh/glade/internal/gladecli", "github.com/glade-sh/glade/internal/playground",
+		"example/a", "example/b", "example/c", "example/cli", "example/d", "example/e",
+		"example/f", "example/newpkg", "example/renamednew", "example/runner",
+		"example/sema", "example/testutil", "example/version", "example/vm",
+		"github.com/glade-sh/glade/internal/gladecli", "github.com/glade-sh/glade/internal/playground",
 	}
-	// A changed a reaches b, c and then, transitively, d, e, f and sema.
-	selectionFromA = []string{"example/a", "example/b", "example/c", "example/d", "example/e", "example/f", "example/sema"}
+	// A changed a reaches b, c and then, transitively, d, e, f, sema and
+	// sema's importer cli.
+	selectionFromA = []string{"example/a", "example/b", "example/c", "example/cli", "example/d", "example/e", "example/f", "example/sema"}
 	// Any parser path reaches every root package that imports the parser (b
 	// and vm) and closes over the reverse import graph from there.
-	selectionFromParser = []string{"example/b", "example/d", "example/e", "example/f", "example/runner", "example/sema", "example/vm"}
+	selectionFromParser = []string{"example/b", "example/cli", "example/d", "example/e", "example/f", "example/runner", "example/sema", "example/vm"}
 )
 
 // runPRSelect runs scripts/ci-pr-select.py over fixture graph inputs and
@@ -102,7 +110,28 @@ func TestCIPRPackageSelection(t *testing.T) {
 		want        []string
 	}{
 		{"direct and transitive importers", "a/a.go\n", selectionFromA},
-		{"second order edges", "b/b.go\n", []string{"example/b", "example/d", "example/e", "example/f", "example/sema"}},
+		{"second order edges", "b/b.go\n", []string{"example/b", "example/cli", "example/d", "example/e", "example/f", "example/sema"}},
+		// A *_test.go file in a package directory compiles only into that
+		// package's own test binary, so the change selects the package
+		// alone: importers, production or test, cannot see another
+		// package's test files.
+		{"sema test file selects only sema", "sema/parallel_unknown_test.go\n", []string{"example/sema"}},
+		{"sema production change keeps its importers", "sema/sema.go\n", []string{"example/cli", "example/sema"}},
+		{"sema test and production change is transitive", "sema/sema.go\nsema/parallel_unknown_test.go\n", []string{"example/cli", "example/sema"}},
+		{"external test file selects only its package", "d/export_test.go\n", []string{"example/d"}},
+		// A helper package imported only by tests keeps the reverse walk
+		// over test edges for its production files; only its own test
+		// files narrow to the helper itself.
+		{"test helper production file reaches its test importers", "testutil/helper.go\n", []string{"example/e", "example/f", "example/testutil"}},
+		{"test helper test file selects only the helper", "testutil/helper_test.go\n", []string{"example/testutil"}},
+		// Testdata below a package keeps the transitive package mapping,
+		// whatever the file is named: other packages' tests may read it.
+		{"sema testdata keeps the transitive selection", "sema/testdata/case.tsv\n", []string{"example/cli", "example/sema"}},
+		{"sema testdata test file keeps the transitive selection", "sema/testdata/captured_test.go\n", []string{"example/cli", "example/sema"}},
+		// No root lane executes the nested parser module's packages, so a
+		// parser test file selects nothing; the pr-guards worker runs the
+		// parser module's own tests whenever any parser path changes.
+		{"parser test file selects no root package", "third_party/glade-apex-parser/parser_test.go\n", []string{}},
 		{"version chain reaches the runner", "version/version.go\n", []string{"example/runner", "example/version", "example/vm"}},
 		{"parser file reaches semantic and runtime consumers", "third_party/glade-apex-parser/parser.go\n", selectionFromParser},
 		{"parser internal file reaches consumers", "third_party/glade-apex-parser/internal/tsapex/binding.go\n", selectionFromParser},
