@@ -30,6 +30,7 @@ type blindHasher struct {
 	h    hash.Hash
 	seen map[uintptr]bool
 	buf  [8]byte
+	text [128]byte
 }
 
 func (b *blindHasher) tag(t byte) {
@@ -44,7 +45,11 @@ func (b *blindHasher) uint(v uint64) {
 
 func (b *blindHasher) str(s string) {
 	b.uint(uint64(len(s)))
-	b.h.Write([]byte(s))
+	for len(s) > 0 {
+		n := copy(b.text[:], s)
+		b.h.Write(b.text[:n])
+		s = s[n:]
+	}
 }
 
 func (b *blindHasher) value(v reflect.Value) {
