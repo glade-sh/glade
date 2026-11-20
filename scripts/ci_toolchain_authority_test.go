@@ -13,7 +13,7 @@ func TestCIExplicitlyAuthorizesLWCCheckout(t *testing.T) {
 	}{
 		{"../.github/workflows/ci.yml", "${{ github.workspace }}", []string{"node-integration", "server-and-playground", "test"}},
 		{"../.github/workflows/browser.yml", "${{ github.workspace }}/source", []string{"browser"}},
-		{"../.github/workflows/race.yml", "${{ github.workspace }}", []string{"plan", "race-browser", "race-early", "race", "race-push"}},
+		{"../.github/workflows/race.yml", "${{ github.workspace }}", []string{"concurrent-packages", "concurrent-tests", "browser-packages", "weekly-browser", "weekly-rest"}},
 	} {
 		data, err := os.ReadFile(spec.file)
 		if err != nil {

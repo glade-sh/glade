@@ -3859,8 +3859,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"`,
 		"CI_SHARD_PLANNER",
 		"validation-summary.json",
-		`run_package_lane "gladecli"`,
-		`run_package_lane "sema"`,
+		`run_named_package_lane "gladecli"`,
+		`run_named_package_lane "sema"`,
 		"go test -json",
 		"run_json_with_heartbeat",
 		"CI_VERBOSE",
@@ -4179,7 +4179,6 @@ func TestCIGoTestLogModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
 		{name: "default", wantApex: true, wantTestCalls: 7},
 		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 7},
 		{name: "core", args: []string{"core"}, wantTestCalls: 6},
-		{name: "race", args: []string{"race"}, wantApex: true, wantRace: true, wantTestCalls: 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()

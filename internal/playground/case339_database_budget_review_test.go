@@ -111,7 +111,14 @@ func TestCase339PublicDatabaseAfterRunReturnsVisitorData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewServer(ws, ServerOptions{Public: true, RatePerMinute: 1000})
+	opts := ServerOptions{Public: true, RatePerMinute: 1000}
+	if case339RaceRunBudget > 0 {
+		// The race detector slows the anonymous compile past the 5s product
+		// limit; give this test's server the race-only run budget instead of
+		// loosening the product default the policy endpoint reports.
+		opts.RunTimeout = case339RaceRunBudget
+	}
+	s := NewServer(ws, opts)
 	defer s.Close()
 	rec := httptest.NewRecorder()
 	s.ServeHTTP(case339ResponseWriter{rec}, httptest.NewRequest(http.MethodGet, "/playground/", nil))
