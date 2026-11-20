@@ -205,11 +205,9 @@ func (o OrgState) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON keeps decoding behavior unchanged and restores the shared
 // registry for source-backed states written before the registry existed.
 func (o *OrgState) UnmarshalJSON(data []byte) error {
-	type orgStateJSON OrgState
-	if err := json.Unmarshal(data, (*orgStateJSON)(o)); err != nil {
-		if typeErr, ok := err.(*json.UnmarshalTypeError); ok && typeErr.Struct == "orgStateJSON" {
-			typeErr.Struct = "OrgState"
-		}
+	type originalOrgState = OrgState
+	type OrgState originalOrgState
+	if err := json.Unmarshal(data, (*OrgState)(o)); err != nil {
 		return err
 	}
 	if o.StandardSpreadCapturedPlain && o.StandardSpread != "" {
