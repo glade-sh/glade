@@ -127,6 +127,10 @@ func TestJSONInvalidValueNeighbors(t *testing.T) {
 		if err == nil || err.Error() != tc.want {
 			t.Errorf("%q: got %v, want baseline %s", tc.source, err, tc.want)
 		}
+		_, err = decodeJSONValueForDeserialize(tc.source, false, false)
+		if err == nil || err.Error() != tc.want {
+			t.Errorf("typed %q: got %v, want baseline %s", tc.source, err, tc.want)
+		}
 	}
 }
 
