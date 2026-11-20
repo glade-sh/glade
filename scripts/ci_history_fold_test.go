@@ -73,6 +73,23 @@ func TestCIFoldedHistoryJobFailsRequiredCIForAnyUnsuccessfulProducer(t *testing.
 		if name == "" || strings.HasPrefix(name, "Require every history producer") || strings.Contains(name, "after balance failure") {
 			continue
 		}
+		if name == "Download verified history" {
+			if !strings.Contains(step, "github.event_name == 'push'") {
+				t.Error("history reuse must be limited to push runs")
+			}
+			for _, producer := range producers {
+				if !strings.Contains(step, "needs."+producer+".result == 'skipped'") {
+					t.Errorf("history reuse does not require skipped %s", producer)
+				}
+			}
+			continue
+		}
+		if name == "Restore verified history" {
+			if !strings.Contains(step, "steps.reuse-history.outcome == 'success'") {
+				t.Error("history restore must require the transferred artifact")
+			}
+			continue
+		}
 		if !strings.Contains(step, "needs.") || !strings.Contains(step, ".result == 'success'") {
 			t.Errorf("history step %q is not gated on its producer's result", name)
 		}

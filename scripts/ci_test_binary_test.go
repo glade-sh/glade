@@ -205,8 +205,8 @@ func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"test"} {
-		if strings.Contains(jobs[name], "needs:") {
-			t.Errorf("%s uses no shared binary or history input and must not wait on one", name)
+		if !strings.Contains(jobs[name], "    needs: tree-reuse-gate\n") || strings.Count(jobs[name], "    needs:") != 1 {
+			t.Errorf("%s must wait only for the reuse decision, not a shared binary or history input", name)
 		}
 	}
 	for _, producer := range []string{"test-binaries", "test-binaries-apextest"} {

@@ -32,8 +32,28 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 	}
 	counts := map[string]int{"push": 0, "pull_request": 0}
 	for name, job := range workflow.Jobs {
-		// These two jobs run serially and each uses one runner.
-		if name == "workflow-lint" && job.Needs.Kind == yaml.ScalarNode && job.Needs.Value == "leak-scan" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "" {
+		// The gate precedes the full jobs, and the reused marker is mutually
+		// exclusive with those jobs. Neither adds to the full-run peak.
+		if name == "tree-reuse-gate" {
+			continue
+		}
+		if name == "reused-tree-ci" {
+			if !strings.Contains(job.If, "needs.tree-reuse-gate.outputs.reuse == 'true'") {
+				t.Fatal("reuse marker is not conditional on the gate")
+			}
+			continue
+		}
+		// Workflow lint and the leak scan still run serially, with the gate
+		// as an additional prerequisite for workflow lint.
+		var dependencies []string
+		if job.Needs.Kind == yaml.ScalarNode {
+			dependencies = []string{job.Needs.Value}
+		} else if job.Needs.Kind != 0 {
+			if err := job.Needs.Decode(&dependencies); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if name == "workflow-lint" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "" && containsDependency(dependencies, "leak-scan") {
 			continue
 		}
 		width := 1
@@ -72,4 +92,13 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 		t.Errorf("pull_request run schedules %d jobs, budget %d (org limit 60)", counts["pull_request"], ciPushJobBudget)
 	}
 	t.Logf("push=%d pull_request=%d", counts["push"], counts["pull_request"])
+}
+
+func containsDependency(dependencies []string, name string) bool {
+	for _, dependency := range dependencies {
+		if dependency == name {
+			return true
+		}
+	}
+	return false
 }

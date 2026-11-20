@@ -30,7 +30,7 @@ func runRequiredCIFixture(t *testing.T, runs, jobs string) (string, error) {
 printf '%s\n' "$*" >>"$VERIFY_CI_CALLS"
 case "$*" in
   *"/actions/workflows/ci.yml/runs"*) cat "$VERIFY_CI_RUNS" ;;
-  *"/actions/runs/101/jobs"*) cat "$VERIFY_CI_JOBS" ;;
+  *"/actions/runs/101/jobs"*) jq -s . "$VERIFY_CI_JOBS" ;;
   *) echo "unexpected gh call: $*" >&2; exit 97 ;;
 esac
 `
@@ -102,6 +102,15 @@ func TestVerifyRequiredCIRejectsMissingOrFailedAuthority(t *testing.T) {
 				t.Fatalf("invalid authority accepted: err=%v\n%s", err, out)
 			}
 		})
+	}
+}
+
+func TestVerifyRequiredCIRejectsReusedPush(t *testing.T) {
+	runs := `{"workflow_runs":[{"id":101,"head_sha":"` + requiredCISHA + `","conclusion":"success","event":"push","created_at":"2026-01-03T00:00:00Z"}]}`
+	jobs := `{"jobs":[{"id":501,"name":"Required CI","head_sha":"` + requiredCISHA + `","status":"completed","conclusion":"success"},{"name":"Reused tree CI","status":"completed","conclusion":"success"}]}`
+	out, err := runRequiredCIFixture(t, runs, jobs)
+	if err == nil || !strings.Contains(out, "no successful Required CI authority") {
+		t.Fatalf("reused push accepted as exact full CI: err=%v\n%s", err, out)
 	}
 }
 
