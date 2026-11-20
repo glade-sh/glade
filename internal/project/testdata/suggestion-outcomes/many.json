@@ -1,0 +1,67 @@
+[
+  {
+    "kind": "feature",
+    "feature": "PersonAccounts",
+    "reason": "source uses Person Account fields (IsPersonAccount, PersonContactId, Person* contact fields, or __pc fields)",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ],
+    "yaml": "org:\n  features: [PersonAccounts, Communities, NetworksEnabled, Sites, MultiCurrency]\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+  },
+  {
+    "kind": "feature",
+    "feature": "Communities",
+    "reason": "source uses the Network class or Experience Cloud users (IsPortalEnabled or an external UserType)",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ],
+    "yaml": "org:\n  features: [PersonAccounts, Communities, NetworksEnabled, Sites, MultiCurrency]\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+  },
+  {
+    "kind": "feature",
+    "feature": "NetworksEnabled",
+    "reason": "source uses the Network or NetworkMember object; Salesforce adds them with the communitiesSettings enableNetworksEnabled setting (scratch definition or settings file), and the Communities feature alone does not",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ],
+    "yaml": "org:\n  features: [PersonAccounts, Communities, NetworksEnabled, Sites, MultiCurrency]\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+  },
+  {
+    "kind": "feature",
+    "feature": "Sites",
+    "reason": "source calls the Site class",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ],
+    "yaml": "org:\n  features: [PersonAccounts, Communities, NetworksEnabled, Sites, MultiCurrency]\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+  },
+  {
+    "kind": "feature",
+    "feature": "MultiCurrency",
+    "reason": "source uses CurrencyIsoCode, CurrencyType, DatedConversionRate, or convertCurrency",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ],
+    "yaml": "org:\n  features: [PersonAccounts, Communities, NetworksEnabled, Sites, MultiCurrency]\n  # NetworksEnabled mirrors the native communitiesSettings enableNetworksEnabled setting"
+  },
+  {
+    "kind": "unsupportedFeature",
+    "feature": "Territory2",
+    "reason": "source uses Territory2; Enterprise Territory Management setup is not modelled by org.features",
+    "files": [
+      "force-app/main/default/classes/Sample0000.cls",
+      "force-app/main/default/classes/Sample0001.cls",
+      "force-app/main/default/classes/Sample0002.cls"
+    ]
+  }
+]
