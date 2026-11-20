@@ -1,113 +1,60 @@
 package vm
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// The unpruned implementation from the baseline supplies a differential oracle.
-func (vm *VM) baselineDescribeChildRelationships(name string) []Value {
-	vm.materializeLazyStandardSpread()
-	vm.ensureMetadataCacheGeneration()
-	if vm == nil || vm.Org == nil {
-		return nil
+// The golden bytes were captured from origin/main using the same fixture and call sequence.
+var childDescribeGoldenCalls = map[string]int{}
+
+func goldenChildDescribe(t *testing.T, _ *VM, name string) []byte {
+	t.Helper()
+	base := t.Name() + "|" + name
+	ordinal := childDescribeGoldenCalls[base]
+	childDescribeGoldenCalls[base] = ordinal + 1
+	key := fmt.Sprintf("%s|%d", base, ordinal)
+	file, err := os.Open("testdata/child_describe_parent.json.gz")
+	if err != nil {
+		t.Fatal(err)
 	}
-	target := strings.ToLower(strings.TrimSpace(name))
-	if target == "" {
-		return nil
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if vm.childRelCache == nil {
-		vm.childRelCache = newChildRelationshipCache()
+	defer reader.Close()
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
 	}
-	cacheKey := target + "\x00" + vm.currentSourceExecutionPolicy().APIVersion
-	if cached, ok := vm.childRelCache.load(cacheKey); ok {
-		return cached
+	var entries map[string]json.RawMessage
+	if err := json.Unmarshal(data, &entries); err != nil {
+		t.Fatal(err)
 	}
-	platformChildren := vm.contentChildRelationships(name)
-	storage.VisitVersionedPlatformChildRelationships(name, vm.currentSourceExecutionPolicy().APIVersion, func(child string, relation storage.Relationship) {
-		platformChildren = append(platformChildren, contentChildRelationship{childObject: child, relationship: relation})
-	})
-	platformByField := make(map[string]storage.Relationship, len(platformChildren))
-	childFieldKey := func(child, field string) string { return strings.ToLower(child) + "\x00" + strings.ToLower(field) }
-	for _, child := range platformChildren {
-		platformByField[childFieldKey(child.childObject, child.relationship.Field)] = child.relationship
+	want, ok := entries[key]
+	if !ok {
+		t.Fatalf("missing parent golden for %s", key)
 	}
-	seenPlatformFields := make(map[string]bool, len(platformChildren))
-	childRelationships := make([]Value, 0)
-	childObjects := make([]string, 0, len(vm.Org.Objects))
-	for childName := range vm.Org.Objects {
-		childObjects = append(childObjects, childName)
-	}
-	sort.Strings(childObjects)
-	for _, childName := range childObjects {
-		if eventDefinition := vm.Org.Objects[childName].Definition; storage.IsChangeEventObject(eventDefinition) {
-			childRelationships = append(childRelationships, vm.standardChangeEventChildRelationships(name, childName, eventDefinition)...)
-			continue
-		}
-		childDefinition := vm.describePreparedDefinition(childName, vm.Org.Objects[childName].Definition)
-		relationships := append([]storage.Relationship(nil), childDefinition.Relations...)
-		relationships = append(relationships, syntheticSystemParentRelationsForDefinition(childDefinition)...)
-		sort.Slice(relationships, func(i, j int) bool {
-			if relationships[i].Field == relationships[j].Field {
-				return relationships[i].ChildRelationship < relationships[j].ChildRelationship
-			}
-			return relationships[i].Field < relationships[j].Field
-		})
-		for _, relationship := range relationships {
-			if !storage.PlatformChildRelationshipAvailableAtVersion(name, childName, relationship.Field, vm.currentSourceExecutionPolicy().APIVersion) {
-				continue
-			}
-			// A208/A217: inherited Activity lookups are not separate Task/Event
-			// entries in the referenced object's child relationship describe.
-			if relationship.InheritedFrom != "" {
-				continue
-			}
-			if relationshipTargetsObject(relationship, name) {
-				if len(platformChildren) != 0 {
-					key := childFieldKey(childName, relationship.Field)
-					if platform, ok := platformByField[key]; ok {
-						relationship = platform
-					}
-					seenPlatformFields[key] = true
-				}
-				if relationship.ChildRelationship == "" && !vm.capturedTaskAccountChildRelationship(childName, relationship) && canDeriveChildRelationshipName(name, childName, relationship) {
-					relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
-				}
-				if !vm.contentChildDescribeRelationshipVisible(name, relationship.ChildRelationship) {
-					continue
-				}
-				childRelationships = append(childRelationships, vm.childRelationshipValue(childName, relationship))
-			}
-		}
-	}
-	for _, child := range platformChildren {
-		if !seenPlatformFields[childFieldKey(child.childObject, child.relationship.Field)] {
-			childRelationships = append(childRelationships, vm.childRelationshipValue(child.childObject, child.relationship))
-		}
-	}
-	return vm.childRelCache.store(cacheKey, childRelationships)
+	return want
 }
 
 func compareChildDescribeWithBaseline(t *testing.T, machine *VM, name string) {
 	t.Helper()
-	got := machine.describeChildRelationships(name)
-	machine.childRelCache = newChildRelationshipCache()
-	want := machine.baselineDescribeChildRelationships(name)
-	gotJSON, err := json.Marshal(got)
+	got, err := json.Marshal(machine.describeChildRelationships(name))
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantJSON, err := json.Marshal(want)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(gotJSON) != string(wantJSON) {
-		t.Fatalf("child describe %q differs from unpruned baseline (got %d bytes, want %d)", name, len(gotJSON), len(wantJSON))
+	want := goldenChildDescribe(t, machine, name)
+	if !bytes.Equal(got, want) {
+		t.Fatalf("child describe %q differs from parent (got %d bytes, want %d)", name, len(got), len(want))
 	}
 }
 

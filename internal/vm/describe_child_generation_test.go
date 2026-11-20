@@ -40,10 +40,7 @@ func TestDescribeChildPruningGenerationBoundaries(t *testing.T) {
 func TestDescribeChildPruningConcurrentClones(t *testing.T) {
 	template := describePruningTemplate()
 	control := describePruningClone(template)
-	want, err := json.Marshal(control.baselineDescribeChildRelationships("Root000__c"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	want := goldenChildDescribe(t, control, "Root000__c")
 	var wg sync.WaitGroup
 	errors := make(chan error, 4)
 	for range 4 {
