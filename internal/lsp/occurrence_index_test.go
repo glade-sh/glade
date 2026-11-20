@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -384,5 +385,106 @@ func BenchmarkReferenceAndRenameUnicodeWorkspace(b *testing.B) {
 		if len(refs) != 2 || edit == nil || len(edit.Changes) != 2 {
 			b.Fatalf("references = %#v, edit = %#v", refs, edit)
 		}
+	}
+}
+
+func TestReferenceCandidateUnicodeContentChanges(t *testing.T) {
+	for _, tc := range []struct {
+		name, before, after string
+	}{
+		{"ascii to unicode", "abc", "K"},
+		{"unicode to ascii", "K", "abc"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "Other.cls")
+			write := func(value string) {
+				t.Helper()
+				if err := os.WriteFile(path, []byte("class Other { String s = '"+value+"'; }"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write(tc.before)
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			h := NewHandler(typesys.Index{Types: []typesys.TypeSymbol{{File: path}}}).snapshot()
+			h.referenceCandidates("K")
+			write(tc.after)
+			if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+				t.Fatal(err)
+			}
+			text, ok := h.documentText(path)
+			if !ok {
+				t.Fatal(path)
+			}
+			var want []Location
+			for _, r := range wordRanges(text, "K") {
+				want = append(want, Location{URI: uriFromPath(path), Range: r})
+			}
+			if got := h.referenceLocations("K"); !reflect.DeepEqual(got, want) {
+				t.Fatalf("references = %#v; full scan = %#v", got, want)
+			}
+		})
+	}
+}
+
+func TestReferenceAndRenameConcurrentUnicodeBuffers(t *testing.T) {
+	dir := t.TempDir()
+	declaration := filepath.Join(dir, "K.cls")
+	other := filepath.Join(dir, "Other.cls")
+	otherText := "class Other { String s = 'K'; }"
+	for path, text := range map[string]string{declaration: "class K {}", other: otherText} {
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := NewHandler(typesys.Index{Types: []typesys.TypeSymbol{{Name: "K", File: declaration}, {Name: "Other", File: other}}})
+	uri := uriFromPath(declaration)
+	otherURI := uriFromPath(other)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 6}, Context: ReferenceContext{IncludeDeclaration: true}}
+	rename := RenameParams{TextDocument: params.TextDocument, Position: params.Position, NewName: "Renamed"}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 20; j++ {
+				refs := h.References(params)
+				edit := h.Rename(rename)
+				if len(refs) != 2 || edit == nil || len(edit.Changes) != 2 {
+					t.Errorf("references = %#v, rename = %#v", refs, edit)
+					return
+				}
+			}
+		}()
+	}
+	for i := 0; i < 20; i++ {
+		h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: otherURI, Text: otherText}})
+		h.applyClose(otherURI)
+	}
+	wg.Wait()
+}
+
+func TestReferenceCandidateGenerationFiles(t *testing.T) {
+	dir := t.TempDir()
+	paths := make([]string, 4)
+	for i, text := range []string{"class Other {}", "trigger Other on Account (before insert) { String s = 'K'; }", "class K {}", "trigger Other on Account (before insert) { String s = 'K'; }"} {
+		paths[i] = filepath.Join(dir, fmt.Sprintf("%d.cls", i))
+		if err := os.WriteFile(paths[i], []byte(text), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first := typesys.Index{Types: []typesys.TypeSymbol{{File: paths[0]}}, Triggers: []typesys.TriggerSymbol{{File: paths[1]}}}
+	h := NewHandler(first)
+	if got, want := h.snapshot().referenceCandidates("K"), []string{paths[1]}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("first generation = %#v, want %#v", got, want)
+	}
+	second := typesys.Index{Types: []typesys.TypeSymbol{{File: paths[2]}}, Triggers: []typesys.TriggerSymbol{{File: paths[3]}}}
+	h.refreshMu.Lock()
+	h.installBaseLocked(Base{Index: second}, func(g *generation) { h.gen.Store(g) })
+	h.refreshMu.Unlock()
+	if got, want := h.snapshot().referenceCandidates("K"), []string{paths[2], paths[3]}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("second generation = %#v, want %#v", got, want)
 	}
 }
