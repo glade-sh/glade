@@ -240,18 +240,25 @@ jobs:
         if: always()
         run: 'echo "1-in-25 conformance sample of apextest and vm: ${{ job.status }}"'
 
-  # Weekly full backstop: one job per big package, whole, no sharding. If a
-  # package outgrows the job timeout, split it by test-name initial
-  # (-run '^Test[A-L]' and -run '^Test[M-Z]') instead of adding scheduling.
+  # Weekly full backstop: split apextest by initial after it outgrew the
+  # timeout; run the remaining big packages whole.
   weekly-big:
-    name: Weekly full race (${{ matrix.package }})
+    name: Weekly full race (${{ matrix.package }} ${{ matrix.selection }})
     if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.full) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 330
     strategy:
       fail-fast: false
       matrix:
-        package: ['./internal/apextest', './internal/vm', './internal/gladecli', './internal/server']
+        include:
+          - package: ./internal/apextest
+            selection: '^Test[A-L]'
+          - package: ./internal/apextest
+            selection: '^Test[M-Z]'
+          - package: ./internal/vm
+            selection: '.'
+          - package: ./internal/gladecli
+            selection: '.'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -261,10 +268,25 @@ jobs:
           go-version: "1.27.4"
           cache: false
       - name: Run the full package under the race detector
-        run: go test -race -timeout=320m ${{ matrix.package }}
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SELECTION: ${{ matrix.selection }}
+        run: |
+          if [ "$PACKAGE" = ./internal/apextest ]; then
+            listed="$(go test -list . "$PACKAGE")"
+            if printf '%s\n' "$listed" | grep '^Test' | grep -Ev '^Test[A-Z]' ; then
+              echo "apextest has test names outside the initial ranges" >&2
+              exit 1
+            fi
+            if ! printf '%s\n' "$listed" | grep -Eq "$SELECTION"; then
+              echo "apextest selection is empty: $SELECTION" >&2
+              exit 1
+            fi
+          fi
+          go test -race -timeout=320m -run "$SELECTION" "$PACKAGE"
       - name: Summary
         if: always()
-        run: 'echo "weekly full race, ${{ matrix.package }}: ${{ job.status }}"'
+        run: 'echo "weekly full race, ${{ matrix.package }} ${{ matrix.selection }}: ${{ job.status }}"'
 
   weekly-browser:
     name: Weekly full race (${{ matrix.package }})
@@ -274,11 +296,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ['./internal/lwc/compile', './internal/visualforce']
+        package: ['./internal/lwc/compile', './internal/visualforce', './internal/server']
     env:
       GLADE_ROOT: ${{ github.workspace }}
       GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
       GLADE_LWC_COMPILE: "1"
+      GLADE_LWC_BROWSER: "1"
       NO_COLOR: "1"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -292,7 +315,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install LWC toolchain
-        if: ${{ matrix.package == './internal/lwc/compile' }}
+        if: ${{ matrix.package == './internal/lwc/compile' || matrix.package == './internal/server' }}
         timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
