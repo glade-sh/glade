@@ -149,11 +149,12 @@ var Null = Value{Kind: ValueNull}
 // JSONBudgetSnapshot exposes the same current collection view used by JSON
 // serialization, so a host can budget it before invoking the encoder.
 func (v Value) JSONBudgetSnapshot() Value {
-	return v.currentMapKeySet()
+	return jsonParserMaterializedView(v.currentMapKeySet())
 }
 
 func (v Value) MarshalJSON() ([]byte, error) {
 	v = v.currentMapKeySet()
+	v = jsonParserMaterializedView(v)
 	type jsonValue Value
 	if !strings.EqualFold(v.Type, "AccessLevel") {
 		return json.Marshal(jsonValue(v))
@@ -309,6 +310,7 @@ func (v Value) writeText(w *textWriter) {
 	if w.full {
 		return
 	}
+	v = jsonParserMaterializedView(v)
 	switch v.Kind {
 	case ValueDecimal:
 		if w.bounded {
@@ -828,6 +830,7 @@ func writeValueTextWithSeen(w *textWriter, v Value, seen map[uint64]bool) {
 	if w.full {
 		return
 	}
+	v = jsonParserMaterializedView(v)
 	v = v.currentMapKeySet()
 	switch v.Kind {
 	case ValueList, ValueSet:

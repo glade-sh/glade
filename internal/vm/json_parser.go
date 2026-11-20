@@ -2,9 +2,11 @@ package vm
 
 import (
 	"encoding/base64"
+	encodingbinary "encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +26,7 @@ func newJSONParser(text string) (Value, error) {
 		return Null, jsonParserException("%s", jsonParserInputErrorMessage(err, text))
 	}
 	parser := Object("JSONParser")
-	parser.Fields["tokens"] = List(tokens...)
+	parser.Fields["tokens"] = jsonParserPackTokens(tokens)
 	parser.Fields["index"] = Int(-1)
 	parser.Fields["cleared"] = Bool(false)
 	parser.Fields["lastClearedToken"] = Null
@@ -216,6 +218,7 @@ func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) 
 		updated := receiver
 		if token, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
 			updated.Fields["cleared"] = Bool(true)
+			token.Runtime = strconv.FormatInt(jsonParserIndex(receiver), 10)
 			updated.Fields["lastClearedToken"] = token
 		}
 		return Null, updated, true, true, nil
@@ -255,7 +258,7 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 	if index >= 0 {
 		tokens := jsonParserTokens(receiver)
 		var next int64
-		raw, next, err = jsonParserRawValueAt(tokens.List, index, source.Text)
+		raw, next, err = jsonParserRawValueAt(tokens, index, source.Text)
 		if err != nil {
 			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
 		}
@@ -266,13 +269,13 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 			return Null, receiver, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
 		}
 		tokens := jsonParserTokens(receiver)
-		if len(tokens.List) > 0 {
-			receiver.Fields["index"] = Int(int64(len(tokens.List) - 1))
+		if tokens.len() > 0 {
+			receiver.Fields["index"] = Int(int64(tokens.len() - 1))
 		}
 	}
 	// N10/N11 capture nextToken-positioned scalar-null documents only.
 	// Unstarted, nested and quoted-null parser inputs keep their prior path.
-	if index == 0 && raw == nil && len(jsonParserTokens(receiver).List) == 1 {
+	if index == 0 && raw == nil && jsonParserTokens(receiver).len() == 1 {
 		if err := vm.jsonRootDatetimeNullError(typeName, jsonTypedInput{value: raw, root: true}); err != nil {
 			return Null, receiver, err
 		}
@@ -284,17 +287,17 @@ func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value, strict bool) 
 	return value, receiver, err
 }
 
-func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int64, error) {
-	if index < 0 || index >= int64(len(tokens)) {
+func jsonParserRawValueAt(tokens jsonParserTokenList, index int64, source string) (any, int64, error) {
+	if index < 0 || index >= int64(tokens.len()) {
 		return nil, index, fmt.Errorf("JSONParser.readValueAs requires a current token")
 	}
-	token := tokens[index]
+	token := tokens.at(index)
 	switch kind := jsonParserTokenKind(token); kind {
 	case "START_OBJECT":
 		out := orderedJSONObject{}
 		i := index + 1
-		for i < int64(len(tokens)) {
-			current := tokens[i]
+		for i < int64(tokens.len()) {
+			current := tokens.at(i)
 			switch jsonParserTokenKind(current) {
 			case "END_OBJECT":
 				return out, i + 1, nil
@@ -305,7 +308,7 @@ func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int6
 					return nil, index, err
 				}
 				out = append(out, orderedJSONField{name: name, value: value, source: source,
-					start: int(current.Fields["start"].Int), end: int(tokens[next-1].Fields["end"].Int)})
+					start: int(current.Fields["start"].Int), end: int(tokens.at(next - 1).Fields["end"].Int)})
 				i = next
 			default:
 				return nil, index, fmt.Errorf("JSONParser.readValueAs expected object field name, got %s", jsonParserTokenKind(current))
@@ -315,8 +318,8 @@ func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int6
 	case "START_ARRAY":
 		out := []any{}
 		i := index + 1
-		for i < int64(len(tokens)) {
-			if jsonParserTokenKind(tokens[i]) == "END_ARRAY" {
+		for i < int64(tokens.len()) {
+			if jsonParserTokenKind(tokens.at(i)) == "END_ARRAY" {
 				return out, i + 1, nil
 			}
 			value, next, err := jsonParserRawValueAt(tokens, i, source)
@@ -342,9 +345,20 @@ func jsonParserRawValueAt(tokens []Value, index int64, source string) (any, int6
 	}
 }
 
-func jsonParserTokenize(text string) ([]Value, error) {
+func jsonParserTokenize(text string) ([]jsonParserCompactToken, error) {
+	return jsonParserTokenizeWithRefs(text, true)
+}
+
+func jsonParserTokenizeWithRefs(text string, allocateRefs bool) ([]jsonParserCompactToken, error) {
+	jsonParserCompact := func(kind, text, name, number string) jsonParserCompactToken {
+		token := jsonParserCompactToken{kind: kind, text: text, name: name, number: number}
+		if allocateRefs {
+			token.ref = newValueRef()
+		}
+		return token
+	}
 	decoder, text := newApexJSONDecoder(text)
-	var tokens []Value
+	var tokens []jsonParserCompactToken
 	var stack []jsonParserFrame
 	rootWritten := false
 	for {
@@ -364,7 +378,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 				if err != nil {
 					return nil, err
 				}
-				tokens = append(tokens, jsonParserToken("START_OBJECT", "{", name, ""))
+				tokens = append(tokens, jsonParserCompact("START_OBJECT", "{", name, ""))
 				line, column := jsonInputPosition(text, start)
 				stack = append(stack, jsonParserFrame{kind: "object", expectingName: true, currentName: name, valueName: name, line: line, column: column - 1})
 			case '[':
@@ -372,7 +386,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 				if err != nil {
 					return nil, err
 				}
-				tokens = append(tokens, jsonParserToken("START_ARRAY", "[", name, ""))
+				tokens = append(tokens, jsonParserCompact("START_ARRAY", "[", name, ""))
 				line, column := jsonInputPosition(text, start)
 				stack = append(stack, jsonParserFrame{kind: "array", currentName: name, valueName: name, line: line, column: column - 1})
 			case '}':
@@ -381,20 +395,20 @@ func jsonParserTokenize(text string) ([]Value, error) {
 				}
 				name := stack[len(stack)-1].valueName
 				stack = stack[:len(stack)-1]
-				tokens = append(tokens, jsonParserToken("END_OBJECT", "}", name, ""))
+				tokens = append(tokens, jsonParserCompact("END_OBJECT", "}", name, ""))
 			case ']':
 				if len(stack) == 0 || stack[len(stack)-1].kind != "array" {
 					return nil, fmt.Errorf("JSONParser encountered unmatched array end")
 				}
 				name := stack[len(stack)-1].valueName
 				stack = stack[:len(stack)-1]
-				tokens = append(tokens, jsonParserToken("END_ARRAY", "]", name, ""))
+				tokens = append(tokens, jsonParserCompact("END_ARRAY", "]", name, ""))
 			}
 		case string:
 			if len(stack) > 0 && stack[len(stack)-1].kind == "object" && stack[len(stack)-1].expectingName {
 				stack[len(stack)-1].expectingName = false
 				stack[len(stack)-1].currentName = token
-				tokens = append(tokens, jsonParserToken("FIELD_NAME", token, token, ""))
+				tokens = append(tokens, jsonParserCompact("FIELD_NAME", token, token, ""))
 				jsonParserSetTokenLocation(&tokens[len(tokens)-1], start, int(decoder.InputOffset()))
 				continue
 			}
@@ -402,7 +416,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			if err != nil {
 				return nil, err
 			}
-			tokens = append(tokens, jsonParserToken("VALUE_STRING", token, name, ""))
+			tokens = append(tokens, jsonParserCompact("VALUE_STRING", token, name, ""))
 		case json.Number:
 			end := int(decoder.InputOffset())
 			if strings.TrimPrefix(token.String(), "-") == "0" && end < len(text) && text[end] >= '0' && text[end] <= '9' {
@@ -417,7 +431,7 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			if strings.ContainsAny(token.String(), ".eE") {
 				kind = "VALUE_NUMBER_FLOAT"
 			}
-			value := jsonParserToken(kind, token.String(), name, "number")
+			value := jsonParserCompact(kind, token.String(), name, "number")
 			tokens = append(tokens, value)
 		case bool:
 			name, err := jsonParserBeforeValue(&stack, &rootWritten)
@@ -425,16 +439,16 @@ func jsonParserTokenize(text string) ([]Value, error) {
 				return nil, err
 			}
 			if token {
-				tokens = append(tokens, jsonParserToken("VALUE_TRUE", "true", name, ""))
+				tokens = append(tokens, jsonParserCompact("VALUE_TRUE", "true", name, ""))
 			} else {
-				tokens = append(tokens, jsonParserToken("VALUE_FALSE", "false", name, ""))
+				tokens = append(tokens, jsonParserCompact("VALUE_FALSE", "false", name, ""))
 			}
 		case nil:
 			name, err := jsonParserBeforeValue(&stack, &rootWritten)
 			if err != nil {
 				return nil, err
 			}
-			tokens = append(tokens, jsonParserToken("VALUE_NULL", "null", name, ""))
+			tokens = append(tokens, jsonParserCompact("VALUE_NULL", "null", name, ""))
 		}
 		jsonParserSetTokenLocation(&tokens[len(tokens)-1], start, int(decoder.InputOffset()))
 		if rootWritten && len(stack) == 0 {
@@ -470,8 +484,8 @@ func jsonParserInputErrorMessage(err error, source string) string {
 	return fmt.Sprintf("JSONParser invalid JSON input: %v", err)
 }
 
-func jsonParserSetTokenLocation(token *Value, start, end int) {
-	token.Fields["start"], token.Fields["end"] = Int(int64(start)), Int(int64(end))
+func jsonParserSetTokenLocation(token *jsonParserCompactToken, start, end int) {
+	token.start, token.end = start, end
 }
 
 func jsonParserInputLocation(receiver, token Value) (int, int) {
@@ -513,7 +527,7 @@ func jsonParserBeforeValue(stack *[]jsonParserFrame, rootWritten *bool) (string,
 }
 
 func jsonParserToken(kind, text, name, number string) Value {
-	token := Object("JSONParser.Token")
+	token := Value{Kind: ValueObject, Type: "JSONParser.Token", Fields: make(map[string]Value)}
 	token.Fields["kind"] = String(kind)
 	token.Fields["text"] = String(text)
 	token.Fields["name"] = String(name)
@@ -525,14 +539,19 @@ func jsonParserNextToken(receiver Value) (Value, Value, bool, bool, error) {
 	updated := receiver
 	next := jsonParserIndex(updated) + 1
 	tokens := jsonParserTokens(updated)
-	if next >= int64(len(tokens.List)) {
-		updated.Fields["index"] = Int(int64(len(tokens.List)))
+	if next >= int64(tokens.len()) {
+		updated.Fields["index"] = Int(int64(tokens.len()))
+		if tokens.value.Type == jsonParserPackedType {
+			compact := tokens.value
+			compact.Text = ""
+			updated.Fields["tokens"] = compact
+		}
 		updated.Fields["cleared"] = Bool(false)
 		return Null, updated, true, true, nil
 	}
 	updated.Fields["index"] = Int(next)
 	updated.Fields["cleared"] = Bool(false)
-	return jsonTokenValue(jsonParserTokenKind(tokens.List[next])), updated, true, true, nil
+	return jsonTokenValue(strings.Clone(tokens.kindAt(next))), updated, true, true, nil
 }
 
 func jsonParserNextValue(receiver Value) (Value, Value, bool, bool, error) {
@@ -559,8 +578,8 @@ func jsonParserSkipChildren(receiver Value) (Value, error) {
 	index := jsonParserIndex(receiver)
 	tokens := jsonParserTokens(receiver)
 	depth := int64(0)
-	for i := index; i < int64(len(tokens.List)); i++ {
-		switch jsonParserTokenKind(tokens.List[i]) {
+	for i := index; i < int64(tokens.len()); i++ {
+		switch tokens.kindAt(i) {
 		case "START_OBJECT", "START_ARRAY":
 			depth++
 		case "END_OBJECT", "END_ARRAY":
@@ -679,17 +698,18 @@ func jsonParserCurrent(receiver Value) (Value, bool) {
 func jsonParserCurrentTokenEvenIfCleared(receiver Value) (Value, bool) {
 	index := jsonParserIndex(receiver)
 	tokens := jsonParserTokens(receiver)
-	if index < 0 || index >= int64(len(tokens.List)) {
+	if index < 0 || index >= int64(tokens.len()) {
 		return Null, false
 	}
-	return tokens.List[index], true
+	return tokens.at(index), true
 }
 
-func jsonParserTokens(receiver Value) Value {
-	if tokens, ok := receiver.Fields["tokens"]; ok && tokens.Kind == ValueList {
-		return tokens
+func jsonParserTokens(receiver Value) jsonParserTokenList {
+	tokens, ok := receiver.Fields["tokens"]
+	if !ok || tokens.Kind != ValueList {
+		tokens = List()
 	}
-	return List()
+	return jsonParserTokenList{value: tokens, source: receiver.Fields["source"].Text}
 }
 
 func jsonParserIndex(receiver Value) int64 {
@@ -739,4 +759,174 @@ func canonicalJSONTokenName(name string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+type jsonParserCompactToken struct {
+	kind, text, name, number string
+	start, end               int
+	ref                      uint64
+}
+
+// Packed tokens use fixed-width offsets and immutable string data. Runtime holds
+// the logical heap size, which remains valid after the payload is dropped at EOF.
+// The original source permits debugger snapshots to reconstruct token fields.
+const jsonParserPackedType = "JSONParser.packedTokens"
+const jsonParserPackedHeader = 88
+
+func jsonParserPackTokens(tokens []jsonParserCompactToken) Value {
+	size := len(tokens) * jsonParserPackedHeader
+	logicalSize := 24
+	for _, token := range tokens {
+		logicalSize += 32 + len("JSONParser.Token") + len("kind") + len(token.kind) + len("text") + len(token.text) + len("name") + len(token.name) + len("number") + len(token.number) + len("start") + 8 + len("end") + 8
+		size += len(token.kind) + len(token.text) + len(token.name) + len(token.number)
+	}
+	data := make([]byte, size)
+	offset := len(tokens) * jsonParserPackedHeader
+	for i, token := range tokens {
+		header := data[i*jsonParserPackedHeader:]
+		for j, s := range []string{token.kind, token.text, token.name, token.number} {
+			encodingbinary.LittleEndian.PutUint64(header[j*16:], uint64(offset))
+			encodingbinary.LittleEndian.PutUint64(header[j*16+8:], uint64(len(s)))
+			offset += copy(data[offset:], s)
+		}
+		encodingbinary.LittleEndian.PutUint64(header[64:], uint64(token.start))
+		encodingbinary.LittleEndian.PutUint64(header[72:], uint64(token.end))
+		encodingbinary.LittleEndian.PutUint64(header[80:], token.ref)
+	}
+	value := List()
+	value.Type, value.Text, value.Int, value.Runtime = jsonParserPackedType, string(data), int64(len(tokens)), strconv.Itoa(logicalSize)
+	return value
+}
+
+type jsonParserTokenList struct {
+	value  Value
+	source string
+}
+
+func (tokens jsonParserTokenList) len() int {
+	if tokens.value.Type == jsonParserPackedType {
+		return int(tokens.value.Int)
+	}
+	return len(tokens.value.List)
+}
+
+func (tokens jsonParserTokenList) kindAt(index int64) string {
+	if tokens.value.Type != jsonParserPackedType || tokens.value.Text == "" {
+		return jsonParserTokenKind(tokens.at(index))
+	}
+	data := tokens.value.Text
+	header := data[int(index)*jsonParserPackedHeader:]
+	start := encodingbinary.LittleEndian.Uint64([]byte(header[:8]))
+	size := encodingbinary.LittleEndian.Uint64([]byte(header[8:16]))
+	return data[start : start+size]
+}
+
+func (tokens jsonParserTokenList) at(index int64) Value {
+	if tokens.value.Type != jsonParserPackedType {
+		return tokens.value.List[index]
+	}
+	var token jsonParserCompactToken
+	if tokens.value.Text == "" {
+		all, err := jsonParserTokenizeWithRefs(tokens.source, false)
+		if err != nil {
+			return Null
+		}
+		token = all[index]
+	} else {
+		data := tokens.value.Text
+		header := data[int(index)*jsonParserPackedHeader:]
+		fields := [4]string{}
+		for i := range fields {
+			start := encodingbinary.LittleEndian.Uint64([]byte(header[i*16 : i*16+8]))
+			size := encodingbinary.LittleEndian.Uint64([]byte(header[i*16+8 : i*16+16]))
+			fields[i] = strings.Clone(data[start : start+size])
+		}
+		token = jsonParserCompactToken{kind: fields[0], text: fields[1], name: fields[2], number: fields[3], start: int(encodingbinary.LittleEndian.Uint64([]byte(header[64:72]))), end: int(encodingbinary.LittleEndian.Uint64([]byte(header[72:80]))), ref: encodingbinary.LittleEndian.Uint64([]byte(header[80:88]))}
+	}
+	value := jsonParserToken(token.kind, token.text, token.name, token.number)
+	value.Ref = token.ref
+	value.Fields["start"], value.Fields["end"] = Int(int64(token.start)), Int(int64(token.end))
+	return value
+}
+
+func jsonParserMaterializedTokens(receiver Value) Value {
+	tokens := jsonParserTokens(receiver)
+	if tokens.value.Type != jsonParserPackedType {
+		return tokens.value
+	}
+	values := make([]Value, tokens.len())
+	if tokens.value.Text == "" && len(values) > 0 {
+		unpacked, err := jsonParserTokenizeWithRefs(tokens.source, false)
+		if err == nil {
+			for i, token := range unpacked {
+				value := jsonParserToken(token.kind, token.text, token.name, token.number)
+				cleared := receiver.Fields["lastClearedToken"]
+				clearedIndex, err := strconv.Atoi(cleared.Runtime)
+				if err == nil && clearedIndex == i {
+					value.Ref = cleared.Ref
+				}
+				value.Fields["start"], value.Fields["end"] = Int(int64(token.start)), Int(int64(token.end))
+				values[i] = value
+			}
+		}
+	} else {
+		for i := range values {
+			values[i] = tokens.at(int64(i))
+		}
+	}
+	return Value{Kind: ValueList, List: values, Ref: tokens.value.Ref}
+}
+
+func jsonParserMaterializedView(value Value) Value {
+	if value.Type != "JSONParser" || value.Fields["tokens"].Type != jsonParserPackedType {
+		return value
+	}
+	fields := make(map[string]Value, len(value.Fields))
+	for name, child := range value.Fields {
+		fields[name] = child
+	}
+	fields["tokens"] = jsonParserMaterializedTokens(value)
+	value.Fields = fields
+	return value
+}
+
+// jsonParserHeapSize counts the original logical token graph without building it.
+func jsonParserHeapSize(value Value, seen map[approxVisitKey]bool) int {
+	key := approxVisitKey{kind: ValueObject, ref: value.Ref}
+	if key.ref == 0 && value.Fields != nil {
+		key.ptr = reflect.ValueOf(value.Fields).Pointer()
+	}
+	if key.ref != 0 || key.ptr != 0 {
+		if seen[key] {
+			return 0
+		}
+		seen[key] = true
+	}
+	total := 32 + len(value.Type)
+	tokens := value.Fields["tokens"]
+	tokenKey := approxVisitKey{kind: ValueList, ref: tokens.Ref}
+	if tokenKey.ref == 0 && len(tokens.List) > 0 {
+		tokenKey.ptr = reflect.ValueOf(tokens.List).Pointer()
+	}
+	listSize, _ := strconv.Atoi(tokens.Runtime)
+	if tokenKey.ref != 0 || tokenKey.ptr != 0 {
+		if seen[tokenKey] {
+			listSize = 0
+		} else {
+			seen[tokenKey] = true
+		}
+	}
+	total += len("tokens") + listSize
+	if listSize != 0 {
+		cleared := value.Fields["lastClearedToken"]
+		if _, err := strconv.Atoi(cleared.Runtime); err == nil && cleared.Ref != 0 {
+			seen[approxVisitKey{kind: ValueObject, ref: cleared.Ref}] = true
+		}
+	}
+	for name, child := range value.Fields {
+		if name != "tokens" {
+			total += len(name) + approxValueSizeSeen(child, seen)
+		}
+	}
+	return total
 }
