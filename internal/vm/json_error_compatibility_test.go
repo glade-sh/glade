@@ -40,6 +40,31 @@ func TestJSONTypedDiagnosticsToolchainParity(t *testing.T) {
 	}
 }
 
+func TestExecJSONStrictMalformedDiagnostics(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	Account value = JSON.deserializeStrict('{"bad: JSON"}', Account.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assert(caught.startsWith('Malformed JSON:'), caught);
+caught = '';
+try {
+	List<Account> value = (List<Account>)JSON.deserializeStrict('[{"Name":"Acme"', List<Account>.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assertEquals('Unexpected end-of-input: EOF', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestJSONMissingValueDiagnostics(t *testing.T) {
 	object := `{"a":}`
 	wantObject := "Unexpected character ('}' (code 125)): expected a value at [line:1, column:7]"
