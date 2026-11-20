@@ -1,0 +1,94 @@
+name: PR race pilot
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CGO_ENABLED: "1"
+  GOMAXPROCS: "2"
+  GOMEMLIMIT: "6GiB"
+
+concurrency:
+  group: pr-race-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      packages: ${{ steps.plan.outputs.packages }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Check for documentation-only changes
+        id: paths
+        run: |
+          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed-paths"
+          docs=$(python3 scripts/ci-pr-race-select.py --docs-only < "$RUNNER_TEMP/changed-paths")
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        if: steps.paths.outputs.docs != 'true'
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Select affected concurrency candidates
+        id: plan
+        env:
+          DOCS_ONLY: ${{ steps.paths.outputs.docs }}
+        run: |
+          if [ "$DOCS_ONLY" = true ]; then
+            echo 'packages=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          go list -json ./... | jq -s . > "$RUNNER_TEMP/graph.json"
+          (cd third_party/glade-apex-parser && go list -json ./...) | jq -s . > "$RUNNER_TEMP/parser.json"
+          jq -r '.[].ImportPath' "$RUNNER_TEMP/graph.json" > "$RUNNER_TEMP/packages.txt"
+          go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$RUNNER_TEMP/packages.txt" >/dev/null
+          python3 scripts/ci-pr-select.py --root "$PWD" --graph "$RUNNER_TEMP/graph.json" --parser-graph "$RUNNER_TEMP/parser.json" --manifest scripts/ci-package-lanes.json < "$RUNNER_TEMP/changed-paths" > "$RUNNER_TEMP/selected.json"
+          packages=$(python3 scripts/ci-pr-race-select.py --graph "$RUNNER_TEMP/graph.json" < "$RUNNER_TEMP/selected.json")
+          echo "Selected race candidates: $packages"
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+  race:
+    needs: select
+    if: needs.select.outputs.packages != '[]'
+    name: Race pilot (${{ matrix.package }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 11
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.select.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC toolchain
+        run: npm ci --prefix third_party/lwc
+      - name: Run concurrency-named tests under the race detector
+        env:
+          PACKAGE: ${{ matrix.package }}
+          GLADE_ROOT: ${{ github.workspace }}
+        run: |
+          regex='Concurren|Parallel|Race|Goroutine|Cancel|Daemon|Watch|Listener|Shutdown|Graceful|Interrupt|Pool|Worker|Heartbeat|Debounce|Singleflight|Reentrant|ThreadSafe|Overlap'
+          listed=$(go test -race -list "$regex" "$PACKAGE")
+          count=$(printf '%s\n' "$listed" | grep -c '^Test' || true)
+          echo "$PACKAGE: $count concurrency-named tests"
+          if [ "$count" -eq 0 ]; then
+            echo 'No matching tests; this package has no PR race coverage.'
+            exit 0
+          fi
+          go test -race -timeout=9m -run "$regex" "$PACKAGE"
