@@ -305,6 +305,17 @@ func TestPollingContentStampInvalidation(t *testing.T) {
 		t.Fatal("untrusted stamp did not trigger a read")
 	}
 	before.Files[path] = state
+	if err := os.Chmod(path, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.ReadFile(path); err != nil {
+		if _, err := captureScopeWithPrevious(scope, before); err == nil {
+			t.Fatal("permission change reused an unreadable file")
+		}
+	}
+	if err := os.Chmod(path, 0600); err != nil {
+		t.Fatal(err)
+	}
 	writeWatchFile(t, path, "class Example { void other() {} }")
 	if err := os.Chtimes(path, stamp, stamp); err != nil {
 		t.Fatal(err)
@@ -334,6 +345,24 @@ func TestPollingContentStampInvalidation(t *testing.T) {
 	}
 	if changes := DiffSnapshots(after, replaced); len(changes) != 1 || changes[0].Op != ChangeModified {
 		t.Fatalf("replacement: %#v", changes)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	deleted, err := captureScopeWithPrevious(scope, replaced)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes := DiffSnapshots(replaced, deleted); len(changes) != 1 || changes[0].Op != ChangeDeleted {
+		t.Fatalf("deletion: %#v", changes)
+	}
+	writeWatchFile(t, path, "class Example { void first() {} }")
+	added, err := captureScopeWithPrevious(scope, deleted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes := DiffSnapshots(deleted, added); len(changes) != 1 || changes[0].Op != ChangeAdded {
+		t.Fatalf("creation: %#v", changes)
 	}
 }
 
