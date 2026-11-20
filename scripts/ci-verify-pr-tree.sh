@@ -60,6 +60,15 @@ awk '
 ' "$work/ci.yml" > "$work/needs"
 [[ -s "$work/needs" ]] || fail "cannot read Required CI job inventory"
 required_jobs="$(jq -Rsc 'split("\n") | map(select(length > 0)) | sort' < "$work/needs")"
+awk '
+  /^  required-ci:$/ {job=1; next}
+  job && /^  [a-zA-Z0-9_-]+:$/ {exit}
+  job && /^      - name: Require all CI jobs$/ {step=1; next}
+  step && /^        run: \|$/ {run=1; next}
+  run && /^          / {sub(/^          /, ""); print; next}
+  run {exit}
+' "$work/ci.yml" > "$work/check-coverage.sh"
+[[ -s "$work/check-coverage.sh" ]] || fail "cannot read Required CI coverage rule"
 
 runs_json="$(gh api --method GET \
   "/repos/$repository/actions/workflows/ci.yml/runs" \
@@ -92,11 +101,12 @@ while IFS=$'\t' read -r run_id attempt run_url; do
   [[ "$checkout_sha" =~ $hex40 ]] || continue
   jq -e --argjson jobs "$required_jobs" '
     (.coverage | type) == "object" and
-    (.coverage | keys | sort) == $jobs and
-    all(.coverage | to_entries[];
-      if (.key == "pr-tests" or .key == "pr-guards")
-      then .value.result == "skipped" else .value.result == "success" end)
+    (.coverage | keys | sort) == $jobs
   ' <<<"$receipt" >/dev/null || continue
+  # Reuse the trusted workflow's own full-train rule so its inventory and
+  # coverage policy cannot drift from a separate allowlist in this verifier.
+  REQUIRED_RESULTS="$(jq -c .coverage <<<"$receipt")" EVENT_NAME=pull_request HEAD_REF="$head_ref" GITHUB_OUTPUT="$work/coverage-output" \
+    bash "$work/check-coverage.sh" >/dev/null || continue
 
   # Independent check of the claimed checkout: a GitHub merge commit whose
   # second parent is the pull request head and whose tree equals the main tree.

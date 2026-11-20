@@ -27,6 +27,7 @@ func TestCITreeAttestation(t *testing.T) {
 		{"fast-only pull request", tree, "success", merge, head, false},
 		{"missing coverage", tree, "success", merge, head, false},
 		{"failed coverage", tree, "success", merge, head, false},
+		{"skipped required job", tree, "success", merge, head, false},
 		{"missing job", tree, "success", merge, head, false},
 		{"changed workflow", tree, "success", merge, head, false},
 		{"wrong attempt", tree, "success", merge, head, false},
@@ -51,6 +52,7 @@ case "$*" in
    awk '/^  required-ci:$/ {job=1; next} job && /^  [a-zA-Z0-9_-]+:$/ {exit} job && /^    needs:$/ {needs=1; next} needs && /^      - [a-zA-Z0-9_-]+$/ {print $2; next} needs {exit}' ../.github/workflows/ci.yml | jq -Rsc 'split("\n") | map(select(length > 0)) | map({key: ., value: {result: (if . == "pr-tests" or . == "pr-guards" then "skipped" else "success" end)}}) | from_entries' > "$out/coverage.json"
    case "$SCENARIO" in
      'missing job') jq 'del(.site)' "$out/coverage.json" > "$out/c.tmp" && mv "$out/c.tmp" "$out/coverage.json" ;;
+     'skipped required job') jq '.site.result = "skipped"' "$out/coverage.json" > "$out/c.tmp" && mv "$out/c.tmp" "$out/coverage.json" ;;
      'failed coverage') jq '.site.result = "failure"' "$out/coverage.json" > "$out/c.tmp" && mv "$out/c.tmp" "$out/coverage.json" ;;
    esac
    jq -n --arg checkout "$RECEIPT" --argjson run "${RECEIPT_RUN:-101}" --argjson coverage "$(cat "$out/coverage.json")" --argjson attempt "$RECEIPT_ATTEMPT" '{checkout_sha:$checkout, run_id:$run, run_attempt:$attempt, pr_number:7, coverage:$coverage}' > "$out/ci-tree.json"
