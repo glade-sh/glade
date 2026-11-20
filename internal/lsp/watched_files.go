@@ -41,7 +41,7 @@ const (
 
 func registerWatchersRequest() map[string]any {
 	watchers := []map[string]any{}
-	for _, glob := range []string{"**/*.cls", "**/*.trigger", "**/*-meta.xml", "**/sfdx-project.json", "**/glade.yml"} {
+	for _, glob := range []string{"**/*.cls", "**/*.trigger", "**/*-meta.xml", "**/sfdx-project.json", "**/glade.yml", "**/.forceignore", "**/*.object"} {
 		watchers = append(watchers, map[string]any{"globPattern": glob})
 	}
 	return map[string]any{
