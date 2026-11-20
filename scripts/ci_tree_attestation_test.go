@@ -20,6 +20,7 @@ func TestCITreeAttestation(t *testing.T) {
 		ok                                          bool
 	}{
 		{"same tree", tree, "success", merge, head, true},
+		{"squash merge", tree, "success", merge, head, true},
 		{"different tree", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "success", merge, head, false},
 		{"failed run", tree, "failure", merge, head, false},
 		{"missing receipt", tree, "success", "", head, false},
@@ -45,7 +46,7 @@ case "$*" in
  *"/contents/.github/workflows/ci.yml"*) if [[ "$*" == *".content"* ]]; then base64 < ../.github/workflows/ci.yml; elif [[ "$SCENARIO" == 'changed workflow' && "$*" == *"ref=` + push + `"* ]]; then printf 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'; else printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; fi ;;
  *"/actions/workflows/ci.yml/runs"*) printf '{"workflow_runs":[{"id":101,"run_attempt":1,"head_sha":"` + head + `","head_branch":"%s","event":"pull_request","status":"%s","conclusion":"%s","pull_requests":[{"number":7}]}]}' "$PR_REF" "${RUN_STATUS:-completed}" "$CONCLUSION" ;;
  *"/actions/runs/101/attempts/1/jobs"*) if [[ "$SCENARIO" == "missing receipt job" ]]; then printf '[{"jobs":[{"name":"Required CI","status":"completed","conclusion":"success"}]}]'; else printf '[{"jobs":[{"name":"Required CI","status":"completed","conclusion":"success"},{"name":"Tree receipt","status":"completed","conclusion":"success"}]}]'; fi ;;
- *"/commits/` + push + `"*) printf '{"sha":"` + push + `","commit":{"tree":{"sha":"%s"}},"parents":[{"sha":"` + base + `"},{"sha":"%s"}]}' "$PUSH_TREE" "${PUSH_HEAD:-` + head + `}" ;;
+ *"/commits/` + push + `"*) if [[ "$SCENARIO" == 'squash merge' ]]; then printf '{"sha":"` + push + `","commit":{"tree":{"sha":"%s"}},"parents":[{"sha":"` + base + `"}]}' "$PUSH_TREE"; else printf '{"sha":"` + push + `","commit":{"tree":{"sha":"%s"}},"parents":[{"sha":"` + base + `"},{"sha":"%s"}]}' "$PUSH_TREE" "${PUSH_HEAD:-` + head + `}"; fi ;;
  *"/commits/` + merge + `"*) printf '{"sha":"` + merge + `","commit":{"tree":{"sha":"` + tree + `"}},"parents":[{"sha":"` + base + `"},{"sha":"%s"}]}' "$PARENT" ;;
  *"run download 101"*)
    out=""; while [[ $# -gt 0 ]]; do [[ "$1" == "-D" ]] && out="$2"; shift; done
