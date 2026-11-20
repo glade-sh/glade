@@ -11,5 +11,8 @@
     "@salesforce-ux/design-system-2": "^2.0.2",
     "esbuild": "^0.28.1",
     "playwright": "^1.60.0"
+  },
+  "overrides": {
+    "source-map-js": "1.2.4"
   }
 }
