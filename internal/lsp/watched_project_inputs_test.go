@@ -94,12 +94,16 @@ func TestRegisteredProjectInputChangesMatchFreshWorkspaceSymbols(t *testing.T) {
 			}
 			query := func(client *serveClient) []byte {
 				client.send(map[string]any{"id": 2, "method": "workspace/symbol", "params": map[string]any{"query": tc.query}})
-				response := client.mustNext(10 * time.Second)
-				raw, err := json.Marshal(response)
-				if err != nil {
-					t.Fatal(err)
+				select {
+				case raw, ok := <-client.out:
+					if !ok {
+						t.Fatal("server closed before symbol response")
+					}
+					return raw
+				case <-time.After(10 * time.Second):
+					t.Fatal("no symbol response")
+					return nil
 				}
-				return raw
 			}
 			initial := query(c)
 			if !bytes.Contains(initial, []byte(tc.originalSymbol)) {
