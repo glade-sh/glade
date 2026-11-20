@@ -40,6 +40,7 @@
 - **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
 - **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
 - **Wide test classes.** The test runner prepares sibling methods once per class and source file, then shares them with isolated test VMs. In a synthetic 256-method class, measured allocations fell from about 174 MB to 43 MB per run.
+- **Repeated Apex matcher searches.** A matcher can reuse decoded input across repeated searches in the same transaction. In a 4,096-match benchmark, one transaction used about 6.3 MB instead of 174 MB and took 49–63 ms instead of 278–314 ms.
 
 ### CI
 
