@@ -556,16 +556,10 @@ func TestCIPRDedicatedPackagesMatchWorkflowRoutes(t *testing.T) {
 			t.Errorf("dedicated package %s is not in any lane", pkg)
 		}
 	}
-	for _, marker := range []string{
-		"scripts/ci-pr-assign.py",
-		"SHARD >= 12 && SHARD < 24",
-		`--worker "$((SHARD - 12))"`,
-		"--workers 12",
-	} {
-		if !strings.Contains(run, marker) {
-			t.Errorf("pool assignment missing %q:\n%s", marker, run)
-		}
+	if !strings.Contains(run, `jq -r '.[]' "$RUNNER_TEMP/pool.json"`) {
+		t.Error("workers must consume the assigned pool from the plan")
 	}
+
 }
 
 // The balancing table records the measured train durations for the remaining

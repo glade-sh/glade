@@ -56,6 +56,7 @@
 
 - **PR race pilot.** Pull requests select affected concurrency-bearing packages and run their concurrency-named tests under the race detector. This pilot uses heuristic selection; nightly race coverage and the weekly full backstop remain in place.
 - **CI tree receipts.** A main push can reuse a train pull request’s full CI coverage when its receipt, trusted workflow, merge parents and tree match. Missing or incomplete proof runs the full push checks. Push leak scanning and history maintenance still run, and releases require exact-SHA push CI.
+- **Lean PR workers.** The PR lane starts only workers with selected tests, and installs browser dependencies only on workers that need them.
 
 ### Flow
 
