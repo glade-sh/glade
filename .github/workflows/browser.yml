@@ -80,7 +80,7 @@ jobs:
             run_expensive=false
             while IFS= read -r -d '' changed_path; do
               case "$changed_path" in
-                *.go|go.mod|go.sum|lwcruntime/**|third_party/lwc/**|testdata/local-tests/lwc-shell/**|testdata/local-tests/lightning-out-vf/**|internal/server/testdata/l08*|.github/workflows/browser.yml)
+                *.go|go.mod|go.sum|lwcruntime/**|third_party/lwc/**|testdata/local-tests/lwc-shell/**|testdata/local-tests/lightning-out-vf/**|internal/server/testdata/l08*|scripts/ci-install-playwright.sh|.github/workflows/browser.yml)
                   run_expensive=true
                   break
                   ;;

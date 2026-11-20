@@ -226,7 +226,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	if err := yaml.Unmarshal(data, &workflow); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"site", "test", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"test", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(workflow.Jobs[name].If, "github.event_name != 'pull_request'") {
 			t.Errorf("%s does not exclude PRs", name)
 		}
@@ -260,7 +260,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		}
 	}
 	results["site"]["result"] = "skipped"
-	run("pull_request", true)
+	run("pull_request", false)
 	run("merge_group", false)
 	results["site"]["result"] = "success"
 	results["pr-tests"]["result"] = "skipped"

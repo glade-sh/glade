@@ -90,3 +90,55 @@ func TestCIPathScope(t *testing.T) {
 		})
 	}
 }
+
+func TestCISiteScopeFailClosed(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	job := workflowJobBlocksText(string(data))["site"]
+	script := workflowRunScriptText(workflowStepBlockText(job, "      - name: Determine site test scope"))
+	if script == "" {
+		t.Fatal("site scope script missing")
+	}
+	for _, tc := range []struct {
+		name, unconditional, base, head string
+		success                         bool
+		output                          string
+	}{
+		{"missing SHAs", "false", "", "", false, ""}, {"invalid diff", "false", "missing", "missing", false, ""}, {"full run", "true", "", "", true, "run_expensive=true\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			output := filepath.Join(t.TempDir(), "output")
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Env = append(os.Environ(), "BASE_SHA="+tc.base, "HEAD_SHA="+tc.head, "UNCONDITIONAL="+tc.unconditional, "GITHUB_OUTPUT="+output, "RUNNER_TEMP="+t.TempDir())
+			out, err := cmd.CombinedOutput()
+			if (err == nil) != tc.success {
+				t.Fatalf("scope error %v: %s", err, out)
+			}
+			if tc.success {
+				got, err := os.ReadFile(output)
+				if err != nil || string(got) != tc.output {
+					t.Fatalf("output %q: %v", got, err)
+				}
+			}
+		})
+	}
+	if !strings.Contains(job, "github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')") {
+		t.Fatal("full-run scope lost")
+	}
+	for _, name := range []string{"npm test --prefix site", "npm run build --prefix site", "npm run check:built --prefix site", "Install Playwright Chromium", "Run rendered site checks", "Smoke-test the built preview"} {
+		if !strings.Contains(job, name) {
+			t.Errorf("site job missing %s", name)
+		}
+	}
+	_, parsed := readCIWorkflow(t)
+	aggregate := requiredAggregateShell(t, parsed["required-ci"])
+	for _, result := range []string{"failure", "skipped", "cancelled"} {
+		cmd := exec.Command("bash", "-c", aggregate)
+		cmd.Env = append(os.Environ(), `REQUIRED_RESULTS={"site":{"result":"`+result+`"}}`, "EVENT_NAME=pull_request", "HEAD_REF=feature")
+		if out, err := cmd.CombinedOutput(); err == nil || !strings.Contains(string(out), "site="+result) {
+			t.Fatalf("site %s accepted: %v %s", result, err, out)
+		}
+	}
+}
