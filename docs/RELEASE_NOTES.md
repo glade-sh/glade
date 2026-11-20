@@ -26,6 +26,7 @@
 - **Go toolchain.** Source builds and release binaries use Go 1.27.4.
 - **Language server references and rename.** References and rename now find the same textual matches in files containing Unicode whether buffers are open, closed, or reopened after a language server restart.
 - The language server refreshes workspace symbols when `.forceignore` or legacy `.object` files change.
+- Test daemon watchers now detect restored files whose size and modification time are unchanged, keeping test selection current.
 
 ### Performance
 
