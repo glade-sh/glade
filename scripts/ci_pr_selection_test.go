@@ -39,7 +39,9 @@ const (
 {"ImportPath":"example/vm","Dir":"/repo/vm","Imports":["example/version","github.com/glade-sh/apex-parser"]},
 {"ImportPath":"example/runner","Dir":"/repo/runner","Imports":["example/vm"]},
 {"ImportPath":"example/newpkg","Dir":"/repo/newpkg"},
-{"ImportPath":"example/renamednew","Dir":"/repo/renamednew"}
+{"ImportPath":"example/renamednew","Dir":"/repo/renamednew"},
+{"ImportPath":"github.com/glade-sh/glade/internal/playground","Dir":"/repo/internal/playground"},
+{"ImportPath":"github.com/glade-sh/glade/internal/gladecli","Dir":"/repo/internal/gladecli"}
 ]`
 	selectionParserGraph = `[
 {"ImportPath":"github.com/glade-sh/apex-parser","Dir":"/repo/third_party/glade-apex-parser","Imports":["github.com/glade-sh/apex-parser/internal/tsapex"]},
@@ -48,7 +50,8 @@ const (
 	selectionManifest = `{"version":1,"lanes":{"remaining-go":[
 "example/a","example/b","example/c","example/cli","example/d","example/e",
 "example/f","example/newpkg","example/renamednew","example/runner",
-"example/sema","example/testutil","example/version","example/vm"
+"example/sema","example/testutil","example/version","example/vm",
+"github.com/glade-sh/glade/internal/playground","github.com/glade-sh/glade/internal/gladecli"
 ]}}`
 )
 
@@ -57,6 +60,7 @@ var (
 		"example/a", "example/b", "example/c", "example/cli", "example/d", "example/e",
 		"example/f", "example/newpkg", "example/renamednew", "example/runner",
 		"example/sema", "example/testutil", "example/version", "example/vm",
+		"github.com/glade-sh/glade/internal/gladecli", "github.com/glade-sh/glade/internal/playground",
 	}
 	// A changed a reaches b, c and then, transitively, d, e, f, sema and
 	// sema's importer cli.
@@ -147,6 +151,14 @@ func TestCIPRPackageSelection(t *testing.T) {
 		{"third party lwc", "third_party/lwc/package.json\n", selectionAll},
 		{"root testdata", "testdata/conformance/x/org.tsv\n", selectionAll},
 		{"root testdata markdown", "testdata/conformance/x/native-run.md\n", selectionAll},
+		{"site", "site/src/index.html\n", []string{}},
+		{"hosting config", ".do/app.yaml\n", []string{"github.com/glade-sh/glade/internal/playground"}},
+		{"attributes", ".gitattributes\n", []string{}},
+		{"issue template", ".github/ISSUE_TEMPLATE/bug.yml\n", []string{}},
+		{"editor extension", "contrib/vscode-glade/src/main.ts\n", []string{"github.com/glade-sh/glade/internal/gladecli"}},
+		{"similar site prefix", "site-other/a.js\n", selectionAll},
+		{"similar config prefix", ".do-other/app.yaml\n", selectionAll},
+		{"site and go", "site/src/index.html\na/a.go\n", selectionFromA},
 		{"root file", "glade.yml\n", selectionAll},
 		{"workflow", ".github/workflows/ci.yml\n", selectionAll},
 		{"docs plus unmapped", "docs/a.md\nlwcruntime/x.mjs\n", selectionAll},
@@ -214,7 +226,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	if err := yaml.Unmarshal(data, &workflow); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"site", "test", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"test", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(workflow.Jobs[name].If, "github.event_name != 'pull_request'") {
 			t.Errorf("%s does not exclude PRs", name)
 		}
@@ -248,7 +260,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		}
 	}
 	results["site"]["result"] = "skipped"
-	run("pull_request", true)
+	run("pull_request", false)
 	run("merge_group", false)
 	results["site"]["result"] = "success"
 	results["pr-tests"]["result"] = "skipped"
