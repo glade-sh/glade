@@ -1304,3 +1304,32 @@ func hasProblem(errs []string, want string) bool {
 	}
 	return false
 }
+
+func TestExpressionMatrixAllowsReadsButRejectsUnprovenWriters(t *testing.T) {
+	base := `
+jobs:
+  test:
+    strategy:
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+`
+	for _, tc := range []struct {
+		name        string
+		step        string
+		wantProblem string
+	}{
+		{"restore", "      - uses: actions/cache/restore@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n        with:\n          path: /tmp/cache\n          key: go-v1-${{ runner.os }}\n", ""},
+		{"save", "      - uses: actions/cache/save@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n        with:\n          path: /tmp/cache\n          key: go-v1-${{ runner.os }}\n", "dynamic matrix"},
+		{"npm", "      - uses: actions/setup-node@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n        with:\n          node-version: '22'\n          cache: npm\n", "dynamic matrix"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			problems := checkWorkflow("fixture.yml", []byte(base+tc.step))
+			if tc.wantProblem == "" && len(problems) != 0 {
+				t.Fatalf("unexpected problems: %v", problems)
+			}
+			if tc.wantProblem != "" && !hasProblem(problems, tc.wantProblem) {
+				t.Fatalf("expected %q in %v", tc.wantProblem, problems)
+			}
+		})
+	}
+}

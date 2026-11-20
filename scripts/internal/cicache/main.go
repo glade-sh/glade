@@ -42,7 +42,30 @@ type job struct {
 }
 
 type strategy struct {
-	Matrix map[string]any `yaml:"matrix"`
+	Matrix        map[string]any `yaml:"matrix"`
+	DynamicMatrix string         `yaml:"-"`
+}
+
+func (s *strategy) UnmarshalYAML(value *yaml.Node) error {
+	var raw struct {
+		Matrix yaml.Node `yaml:"matrix"`
+	}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	switch raw.Matrix.Kind {
+	case 0:
+		return nil
+	case yaml.MappingNode:
+		return raw.Matrix.Decode(&s.Matrix)
+	case yaml.ScalarNode:
+		expr := strings.TrimSpace(raw.Matrix.Value)
+		if strings.HasPrefix(expr, "${{") && strings.HasSuffix(expr, "}}") {
+			s.DynamicMatrix = expr
+			return nil
+		}
+	}
+	return fmt.Errorf("matrix must be a mapping or an expression")
 }
 
 type step struct {
@@ -773,13 +796,14 @@ func expandLocalActions(steps []step, repoRoot, prefix string, depth int) ([]ste
 }
 
 type matrixRequirements struct {
+	dynamic         bool
 	dimensions      []string
 	dimensionValues map[string][]any
 	includeRows     []map[string]any
 }
 
 func matrixRequirementsFor(source job) matrixRequirements {
-	requirements := matrixRequirements{dimensionValues: make(map[string][]any)}
+	requirements := matrixRequirements{dynamic: source.Strategy.DynamicMatrix != "", dimensionValues: make(map[string][]any)}
 	for name, value := range source.Strategy.Matrix {
 		switch name {
 		case "exclude":
@@ -811,6 +835,9 @@ func matrixRequirementsFor(source job) matrixRequirements {
 }
 
 func matrixKeyProblems(prefix, key string, condition any, requirements matrixRequirements) []string {
+	if requirements.dynamic {
+		return []string{prefix + "cache save cannot prove a unique writer for a dynamic matrix"}
+	}
 	var problems []string
 	selectors, selectorIsProven := matrixSelectors(condition)
 	if !selectorIsProven {
@@ -868,6 +895,9 @@ func matrixKeyProblems(prefix, key string, condition any, requirements matrixReq
 }
 
 func implicitNPMMatrixWriterProblems(prefix string, candidate step, requirements matrixRequirements) []string {
+	if requirements.dynamic && setupNodeCachesNPM(candidate) {
+		return []string{prefix + "setup-node npm cache cannot prove a unique writer for a dynamic matrix"}
+	}
 	if !setupNodeCachesNPM(candidate) || (len(requirements.dimensions) == 0 && len(requirements.includeRows) < 2) {
 		return nil
 	}
@@ -1023,6 +1053,9 @@ func trimWrappingParentheses(value string) string {
 }
 
 func matrixProducerContext(source job) string {
+	if source.Strategy.DynamicMatrix != "" {
+		return source.Strategy.DynamicMatrix
+	}
 	if len(source.Strategy.Matrix) == 0 {
 		return ""
 	}

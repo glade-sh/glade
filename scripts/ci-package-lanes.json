@@ -209,7 +209,7 @@
     "./internal/server": 13,
     "./internal/soql": 5,
     "./internal/storage": 20,
-    "./internal/testdaemon": 35,
+    "./internal/testdaemon": 36,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 2,
     "./internal/visualforce": 7,

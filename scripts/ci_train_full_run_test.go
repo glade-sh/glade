@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -54,6 +55,13 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		return "F"
 	})
 	expr = ciIfInputs.ReplaceAllString(expr, "T")
+	// These scenarios exercise the normal full/fast paths: the receipt gate
+	// succeeds without reuse, and each ordinary prerequisite succeeds.
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.result != 'success'", "F")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.result == 'success'", "T")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.outputs.reuse != 'true'", "T")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.outputs.reuse == 'true'", "F")
+	expr = regexp.MustCompile(`needs\.[a-zA-Z0-9_-]+\.result == 'success'`).ReplaceAllString(expr, "T")
 	// A scenario is not a cancelled run.
 	expr = strings.ReplaceAll(expr, "!cancelled()", "T")
 	expr = ciIfStatusCall.ReplaceAllString(expr, "T")
@@ -117,16 +125,70 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 	return v
 }
 
-func ciJobWidth(t *testing.T, name string, matrix map[string]any) int {
+func ciJobWidth(t *testing.T, name string, node yaml.Node) int {
 	t.Helper()
+	if node.Kind == 0 {
+		return 1
+	}
+	if node.Kind == yaml.ScalarNode {
+		if name != "pr-tests" || node.Value != "${{ fromJSON(needs.pr-select.outputs.matrix) }}" {
+			t.Fatalf("job %s has an unrecognized matrix expression %q", name, node.Value)
+		}
+		data, err := os.ReadFile("ci-package-lanes.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var manifest struct {
+			Dedicated []string       `json:"prDedicatedPackages"`
+			Pool      map[string]any `json:"prWorkerSeconds"`
+		}
+		if err := json.Unmarshal(data, &manifest); err != nil {
+			t.Fatal(err)
+		}
+		selected := make(map[string]bool)
+		for _, pkg := range manifest.Dedicated {
+			selected[pkg] = true
+		}
+		for pkg := range manifest.Pool {
+			selected[pkg] = true
+		}
+		packages := make([]string, 0, len(selected))
+		for pkg := range selected {
+			packages = append(packages, pkg)
+		}
+		sort.Strings(packages)
+		input, err := json.Marshal(packages)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("python3", "ci-pr-plan.py")
+		cmd.Stdin = strings.NewReader(string(input))
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("plan maximal PR selection: %v: %s", err, out)
+		}
+		var plan struct {
+			Include []json.RawMessage `json:"include"`
+		}
+		if err := json.Unmarshal(out, &plan); err != nil || len(plan.Include) == 0 {
+			t.Fatalf("invalid maximal PR plan: %v: %s", err, out)
+		}
+		return len(plan.Include)
+	}
+	var matrix map[string]any
+	if err := node.Decode(&matrix); err != nil {
+		t.Fatalf("job %s matrix: %v", name, err)
+	}
 	if include, ok := matrix["include"].([]any); ok {
 		return len(include)
 	}
 	width := 1
 	for _, values := range matrix {
-		if list, ok := values.([]any); ok {
-			width *= len(list)
+		list, ok := values.([]any)
+		if !ok || len(list) == 0 {
+			t.Fatalf("job %s has an unreadable matrix", name)
 		}
+		width *= len(list)
 	}
 	return width
 }
@@ -135,6 +197,8 @@ func ciJobWidth(t *testing.T, name string, matrix map[string]any) int {
 // needs required-ci runs after every other job has finished, so it never
 // competes with them for runners and has width zero. Workflow lint and the
 // leak scan each use one runner and run in sequence, so count only the scan.
+// The receipt gate precedes the full jobs and can overlap only the scan in
+// these full-run scenarios, so it does not add to their concurrent peak.
 func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	t.Helper()
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
@@ -146,7 +210,7 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 			If       string    `yaml:"if"`
 			Needs    yaml.Node `yaml:"needs"`
 			Strategy struct {
-				Matrix map[string]any `yaml:"matrix"`
+				Matrix yaml.Node `yaml:"matrix"`
 			} `yaml:"strategy"`
 		} `yaml:"jobs"`
 	}
@@ -158,6 +222,9 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	for name, job := range workflow.Jobs {
 		ifs[name] = job.If
 		widths[name] = ciJobWidth(t, name, job.Strategy.Matrix)
+		if name == "tree-reuse-gate" {
+			widths[name] = 0
+		}
 		var needs []string
 		if job.Needs.Kind == yaml.ScalarNode {
 			needs = []string{job.Needs.Value}
@@ -167,7 +234,7 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 			}
 		}
 		for _, need := range needs {
-			if need == "required-ci" || (name == "workflow-lint" && need == "leak-scan" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "") {
+			if need == "required-ci" || (name == "workflow-lint" && need == "leak-scan" && job.Strategy.Matrix.Kind == 0 && workflow.Jobs["leak-scan"].If == "") {
 				widths[name] = 0
 			}
 		}
@@ -266,10 +333,13 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 			t.Fatalf("head %q results %s: err=%v want pass=%v\n%s", headRef, encoded, err, want, out)
 		}
 	}
-	// Ordinary pull request: only the fast lane is required.
+	// Ordinary pull requests require the site and fast-lane jobs.
 	results["site"]["result"] = "skipped"
 	results["pr-tests"]["result"] = "success"
+	run("feature/example", false)
+	results["site"]["result"] = "success"
 	run("feature/example", true)
+	results["site"]["result"] = "skipped"
 	// Train and release pull requests: the full suite is required.
 	results["pr-tests"]["result"] = "skipped"
 	run("train/example", false)
@@ -286,4 +356,14 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 	results["apextest"]["result"] = "success"
 	results["vet"]["result"] = "failure"
 	run("release/example", false)
+}
+
+func TestCIPlannedMatrixHasBoundedBudget(t *testing.T) {
+	_, widths := readCIJobIfs(t)
+	if widths["pr-tests"] <= 1 {
+		t.Fatalf("planned PR matrix width = %d; expected the full occupied plan", widths["pr-tests"])
+	}
+	if widths["pr-tests"] >= ciPushJobBudget {
+		t.Fatalf("planned PR matrix alone exhausts budget: %d", widths["pr-tests"])
+	}
 }

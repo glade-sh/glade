@@ -21,15 +21,17 @@ runs_json="$(gh api --method GET \
 
 while IFS=$'\t' read -r run_id event run_url; do
   [[ -n "$run_id" ]] || continue
-  jobs_json="$(gh api --method GET "/repos/$repository/actions/runs/$run_id/jobs" -f per_page=100)"
+  jobs_json="$(gh api --method GET --paginate --slurp "/repos/$repository/actions/runs/$run_id/jobs" -f per_page=100)"
+  # A successful reused-tree push is useful for main, but it is not an
+  # exact-SHA full push run and cannot authorize a release.
+  jq -e '[.[].jobs[]? | select(.name == "Reused tree CI" and .status == "completed" and .conclusion == "success")] | length == 0' <<<"$jobs_json" >/dev/null || continue
   authority="$(jq -c --arg sha "$sha" '
-    .jobs
-    | map(select(
+    [.[].jobs[]? | select(
         .name == "Required CI"
         and .head_sha == $sha
         and .status == "completed"
         and .conclusion == "success"
-      ))
+      )]
     | first // empty
   ' <<<"$jobs_json")"
   [[ -n "$authority" ]] || continue

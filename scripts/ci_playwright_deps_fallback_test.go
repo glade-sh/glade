@@ -326,7 +326,7 @@ func TestCIWorkflowPRBrowserStepsSkipApexShards(t *testing.T) {
 	if len(steps) == 0 {
 		t.Fatal("pr-tests job not found")
 	}
-	want := "${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}"
+	want := "${{ matrix.browser }}"
 	found := map[string]bool{}
 	for _, step := range steps {
 		switch step.Name {
@@ -340,8 +340,7 @@ func TestCIWorkflowPRBrowserStepsSkipApexShards(t *testing.T) {
 	if len(found) != 3 {
 		t.Fatalf("browser steps found = %v", found)
 	}
-	// The Apex route must keep occupying shards 0-11 so the guard above
-	// stays correct.
+	// The planner keeps the Apex route on shards 0-11.
 	last := steps[len(steps)-1].Run
 	m := regexp.MustCompile(`\bapex:apextest:(\d+):(\d+)\b`).FindStringSubmatch(last)
 	if m == nil {

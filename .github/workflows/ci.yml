@@ -24,8 +24,67 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  tree-reuse-gate:
+    name: Verify main tree receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reuse: ${{ steps.decision.outputs.reuse }}
+    steps:
+      - name: Check out the trusted main parent
+        id: parent
+        if: github.event_name == 'push'
+        continue-on-error: true
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.before }}
+          persist-credentials: false
+      - name: Prepare verified coverage and history
+        id: prepare
+        if: github.event_name == 'push' && steps.parent.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUSH_SHA: ${{ github.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: bash scripts/ci-prepare-tree-reuse.sh "$GITHUB_REPOSITORY" "$PUSH_SHA" "$PUSH_BEFORE" "$RUNNER_TEMP/reuse-history"
+      - name: Carry verified history to the push
+        id: carry
+        if: github.event_name == 'push' && steps.prepare.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: reuse-history
+          path: ${{ runner.temp }}/reuse-history/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Select push validation
+        id: decision
+        if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          CARRY_OUTCOME: ${{ steps.carry.outcome }}
+        run: |
+          reuse=false
+          if [[ "$EVENT_NAME" == push && "$PREPARE_OUTCOME" == success && "$CARRY_OUTCOME" == success ]]; then reuse=true; fi
+          echo "reuse=$reuse" >> "$GITHUB_OUTPUT"
+
+  reused-tree-ci:
+    name: Reused tree CI
+    needs: tree-reuse-gate
+    if: ${{ (needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo "Full pull request coverage and matching main tree verified"
+
   workflow-lint:
-    needs: leak-scan
+    needs: [leak-scan, tree-reuse-gate]
+    if: ${{ !cancelled() && needs.leak-scan.result == 'success' && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -61,31 +120,65 @@ jobs:
           if-no-files-found: error
 
   site:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Determine site test scope
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          UNCONDITIONAL: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/') }}
+        run: |
+          set -euo pipefail
+          run_expensive=$UNCONDITIONAL
+          if [[ "$run_expensive" != true ]]; then
+            if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+              echo "pull request base/head SHA is missing" >&2
+              exit 2
+            fi
+            changed_paths_file=$(mktemp "$RUNNER_TEMP/site-changed-paths.XXXXXX")
+            trap 'rm -f "$changed_paths_file"' EXIT
+            if ! git diff --name-only -z --no-renames --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" >"$changed_paths_file"; then
+              echo "git diff failed for $BASE_SHA..$HEAD_SHA" >&2
+              exit 2
+            fi
+            while IFS= read -r -d '' changed_path; do
+              case "$changed_path" in
+                site/*|scripts/ci-install-playwright.sh|.github/workflows/ci.yml)
+                  run_expensive=true
+                  break
+                  ;;
+              esac
+            done <"$changed_paths_file"
+          fi
+          echo "run_expensive=$run_expensive" >>"$GITHUB_OUTPUT"
       - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch')
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: site/package-lock.json
       - name: Set up Node for benchmark cache pair
-        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
       - name: Resolve benchmark npm cache path
         id: benchmark-npm-cache
-        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)
         run: echo "path=$(npm config get cache)" >>"$GITHUB_OUTPUT"
       - name: Restore and save benchmark npm cache
-        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         continue-on-error: true
         with:
@@ -94,17 +187,24 @@ jobs:
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-ci-site-
       - run: npm ci --prefix site
+        if: steps.scope.outputs.run_expensive == 'true'
       - run: npm test --prefix site
+        if: steps.scope.outputs.run_expensive == 'true'
       - run: npm run build --prefix site
+        if: steps.scope.outputs.run_expensive == 'true'
       - run: npm run check:built --prefix site
+        if: steps.scope.outputs.run_expensive == 'true'
       - name: Install Playwright Chromium
+        if: steps.scope.outputs.run_expensive == 'true'
         working-directory: site
         run: ../scripts/ci-install-playwright.sh npx playwright install chromium
       - name: Run rendered site checks
+        if: steps.scope.outputs.run_expensive == 'true'
         env:
           GLADE_SITE_PREBUILT: "1"
         run: npm run test:browser --prefix site
       - name: Smoke-test the built preview
+        if: steps.scope.outputs.run_expensive == 'true'
         run: |
           npm run preview --prefix site -- --host 127.0.0.1 --port 4173 >/tmp/glade-site-preview.log 2>&1 &
           preview_pid=$!
@@ -118,7 +218,8 @@ jobs:
           npm run smoke:preview --prefix site -- http://127.0.0.1:4173
 
   vet:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -171,7 +272,8 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   history-input:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -423,7 +525,7 @@ jobs:
           path: ci-artifacts/apextest-history-input/
           if-no-files-found: error
   gladecli:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && needs.history-input.result == 'success' && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     needs: history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -494,7 +596,7 @@ jobs:
           if-no-files-found: error
 
   vm:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && needs.history-input.result == 'success' && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     needs: history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -565,7 +667,8 @@ jobs:
           if-no-files-found: error
 
   node-integration:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -654,7 +757,8 @@ jobs:
           if-no-files-found: error
 
   nested-sources:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -682,7 +786,7 @@ jobs:
           test -z "$status"
 
   sema:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && needs.test-binaries.result == 'success' && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     needs: test-binaries
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -791,7 +895,7 @@ jobs:
     needs:
       - sema
       - sema-full
-    if: ${{ github.event_name == 'schedule' && success() }}
+    if: ${{ !cancelled() && github.event_name == 'schedule' && needs.sema.result == 'success' && needs.sema-full.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -811,7 +915,8 @@ jobs:
           if-no-files-found: error
 
   server-and-playground:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -884,7 +989,8 @@ jobs:
           if-no-files-found: error
 
   server-process-builder:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     # 45 minutes: the Process Builder host tests take ~20-27 min on a loaded
     # 8-core host and GitHub runners have only 2-4 cores.
@@ -947,7 +1053,8 @@ jobs:
           if-no-files-found: error
 
   test-binaries-apextest:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1028,7 +1135,8 @@ jobs:
           if-no-files-found: error
 
   test-binaries:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1149,8 +1257,9 @@ jobs:
           if-no-files-found: error
 
   test:
+    needs: tree-reuse-gate
     name: ${{ matrix.name }}
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
@@ -1227,16 +1336,24 @@ jobs:
         with:
           node-version: "22"
       - name: Restore shared npm and Playwright caches
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
+        if: (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
+        if: (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
+        if: (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Warm trusted main caches
+        if: (needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true')
+        run: |
+          go mod download
+          go build ./...
       - name: Run repository guards and remaining Go packages
-        if: matrix.lane == 'remaining-go'
+        if: matrix.lane == 'remaining-go' && (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         run: |
           # The repository guards scan the whole tree on one CPU for about
           # fifteen minutes. Run them beside the remaining-go packages instead
@@ -1270,7 +1387,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload raw Go test events
-        if: always() && matrix.lane == 'remaining-go'
+        if: always() && matrix.lane == 'remaining-go' && (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: go-test-remaining-go
@@ -1282,7 +1399,7 @@ jobs:
           if-no-files-found: error
   lwc-vf:
     name: ${{ matrix.name }}
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && needs.history-input.result == 'success' && needs.test-binaries.result == 'success' && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     needs: [history-input, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
@@ -1467,7 +1584,8 @@ jobs:
           if-no-files-found: error
 
   smoke-runtime:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1519,7 +1637,8 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   smoke-distribution:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    needs: tree-reuse-gate
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1597,7 +1716,7 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   apextest:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ !cancelled() && needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))) }}
     needs: [history-input, test-binaries-apextest]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
@@ -1682,89 +1801,106 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download verified history
+        id: reuse-history
+        if: ${{ github.event_name == 'push' && needs.gladecli.result == 'skipped' && needs.vm.result == 'skipped' && needs.sema.result == 'skipped' && needs.apextest.result == 'skipped' && needs.lwc-vf.result == 'skipped' }}
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: reuse-history
+          path: /tmp/reuse-history
+      - name: Restore verified history
+        if: ${{ steps.reuse-history.outcome == 'success' }}
+        run: |
+          for history in /tmp/reuse-history/*-duration-history; do
+            [[ -d "$history" ]] || exit 1
+            stem="${history##*/}"
+            mkdir -p "/tmp/glade-$stem"
+            cp "$history/$stem.json" "/tmp/glade-$stem/$stem.json"
+          done
       - name: Download successful gladecli shard evidence
-        if: ${{ !cancelled() && needs.gladecli.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.gladecli.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: gladecli-shard-*
           path: /tmp/gladecli-history-input
       - name: Refresh and guard gladecli duration history
         id: gladecli_refresh
-        if: ${{ !cancelled() && needs.gladecli.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.gladecli.result == 'success' }}
         run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1
       - name: Save gladecli duration history
-        if: ${{ !cancelled() && needs.gladecli.result == 'success' && steps.gladecli_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.gladecli.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.gladecli_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-gladecli-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload gladecli duration history evidence
-        if: ${{ !cancelled() && needs.gladecli.result == 'success' && steps.gladecli_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.gladecli.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.gladecli_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
           if-no-files-found: error
       - name: Download successful vm shard evidence
-        if: ${{ !cancelled() && needs.vm.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.vm.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: vm-shard-*
           path: /tmp/vm-history-input
       - name: Refresh and guard vm duration history
         id: vm_refresh
-        if: ${{ !cancelled() && needs.vm.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.vm.result == 'success' }}
         env:
           CI_VM_HISTORY_COMPLETE: "1"
         run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2
       - name: Save vm duration history
-        if: ${{ !cancelled() && needs.vm.result == 'success' && steps.vm_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.vm.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.vm_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-vm-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload vm duration history evidence
-        if: ${{ !cancelled() && needs.vm.result == 'success' && steps.vm_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.vm.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.vm_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-vm-duration-history/vm-duration-history.json
           if-no-files-found: error
       - name: Download successful sema shard evidence
-        if: ${{ !cancelled() && needs.sema.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.sema.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: sema-shard-*
           path: /tmp/sema-history-input
       - name: Refresh sema duration history
         id: sema_refresh
-        if: ${{ !cancelled() && needs.sema.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.sema.result == 'success' }}
         run: scripts/ci-go-test.sh sema-history-refresh /tmp/sema-history-input/sema-shard-0 /tmp/sema-history-input/sema-shard-1 /tmp/glade-sema-duration-history/sema-duration-history.json
       - name: Save sema duration history
-        if: ${{ !cancelled() && needs.sema.result == 'success' && steps.sema_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.sema.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.sema_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-sema-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload sema duration history evidence
-        if: ${{ !cancelled() && needs.sema.result == 'success' && steps.sema_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.sema.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.sema_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-sema-duration-history/sema-duration-history.json
           if-no-files-found: error
       - name: Download successful Apex shard evidence
-        if: ${{ !cancelled() && needs.apextest.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.apextest.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: apex-shard-*
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
         id: apextest_refresh
-        if: ${{ !cancelled() && needs.apextest.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.apextest.result == 'success' }}
         env:
           CI_APEXTEST_HISTORY_COMPLETE: "1"
           CI_APEXTEST_SCHEDULING_PROFILE: /tmp/apextest-scheduling-profile/profile.json
@@ -1784,69 +1920,69 @@ jobs:
           path: /tmp/apextest-scheduling-profile/profile.json
           if-no-files-found: ignore
       - name: Save Apex duration history
-        if: ${{ !cancelled() && needs.apextest.result == 'success' && steps.apextest_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.apextest.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.apextest_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-apextest-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Apex duration history evidence
-        if: ${{ !cancelled() && needs.apextest.result == 'success' && steps.apextest_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.apextest.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.apextest_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-apextest-duration-history/apextest-duration-history.json
           if-no-files-found: error
       - name: Download successful LWC compile shard evidence
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.lwc-vf.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: go-test-lwc-compile-shard-*
           path: /tmp/lwc-compile-history-input
       - name: Refresh and guard LWC compile duration history
         id: lwc_refresh
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.lwc-vf.result == 'success' }}
         run: scripts/ci-go-test.sh lwc-compile-history-refresh /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json /tmp/lwc-compile-history-input/go-test-lwc-compile-shard-{0..11}
       - name: Save LWC compile duration history
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.lwc_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.lwc-vf.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.lwc_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-lwc-compile-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload LWC compile duration history evidence
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.lwc_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.lwc-vf.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.lwc_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: lwc-compile-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
           if-no-files-found: error
       - name: Download successful Visualforce shard evidence
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.lwc-vf.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: go-test-visualforce-shard-*
           path: /tmp/visualforce-history-input
       - name: Refresh and guard Visualforce duration history
         id: vf_refresh
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
+        if: ${{ !cancelled() && steps.reuse-history.outcome != 'success' && needs.lwc-vf.result == 'success' }}
         run: scripts/ci-go-test.sh visualforce-history-refresh /tmp/glade-visualforce-duration-history/visualforce-duration-history.json /tmp/visualforce-history-input/go-test-visualforce-shard-{0..7}
       - name: Save Visualforce duration history
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.vf_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.lwc-vf.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.vf_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-visualforce-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Visualforce duration history evidence
-        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.vf_refresh.outcome == 'success' }}
+        if: ${{ !cancelled() && (needs.lwc-vf.result == 'success' || steps.reuse-history.outcome == 'success') && (steps.vf_refresh.outcome == 'success' || steps.reuse-history.outcome == 'success') }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: visualforce-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
           if-no-files-found: error
       - name: Require every history producer
-        if: ${{ !cancelled() && (needs.gladecli.result != 'success' || needs.vm.result != 'success' || needs.sema.result != 'success' || needs.apextest.result != 'success' || needs.lwc-vf.result != 'success') }}
+        if: ${{ !cancelled() && (needs.gladecli.result != 'success' || needs.vm.result != 'success' || needs.sema.result != 'success' || needs.apextest.result != 'success' || needs.lwc-vf.result != 'success') && steps.reuse-history.outcome != 'success' }}
         env:
           PRODUCER_RESULTS: ${{ toJSON(needs) }}
         run: |
@@ -1942,15 +2078,35 @@ jobs:
             (cd third_party/glade-apex-parser && go test -count=1 ./...)
           fi
 
-  pr-tests:
+  pr-select:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
-    needs: [history-input, test-binaries-apextest, test-binaries]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Select packages and plan workers
+        id: plan
+        run: |
+          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json"
+          echo "matrix=$(python3 scripts/ci-pr-plan.py < "$RUNNER_TEMP/selected.json")" >> "$GITHUB_OUTPUT"
+
+  pr-tests:
+    if: ${{ !cancelled() && needs.pr-select.result == 'success' && needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && needs.test-binaries.result == 'success' && (github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/')) }}
+    needs: [pr-select, history-input, test-binaries-apextest, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
+      matrix: ${{ fromJSON(needs.pr-select.outputs.matrix) }}
     env:
       CGO_ENABLED: "1"
       GOMAXPROCS: "2"
@@ -2028,28 +2184,23 @@ jobs:
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.27.4-ci-test-${{ hashFiles('go.sum') }}-
-      - name: Select packages and transitive importers
+      - name: Load planned packages
         id: select
         env:
           SHARD: ${{ matrix.shard }}
+          PLANNED_PACKAGES: ${{ toJSON(matrix.packages) }}
+          PLANNED_POOL: ${{ toJSON(matrix.pool) }}
         run: |
-          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json"
-          cat "$RUNNER_TEMP/selected.json"
-          if jq -e 'any(.[]; test("/internal/(server|playground|visualforce|lwc|lwcbrowser|lwcruntime)(/|$)"))' "$RUNNER_TEMP/selected.json" > /dev/null; then
-            echo "browser=true" >> "$GITHUB_OUTPUT"
-          fi
-          # A shard that runs one of the four packages with a shared test
-          # binary downloads that binary, when the pull request selects it.
-          # The shard routes match the loop in the test step below.
+          printf '%s\n' "$PLANNED_PACKAGES" > "$RUNNER_TEMP/selected.json"
+          printf '%s\n' "$PLANNED_POOL" > "$RUNNER_TEMP/pool.json"
           binary=""
-          if (( SHARD < 12 )); then binary=apextest; package=apextest
+          if (( SHARD >= 0 && SHARD < 12 )); then binary=apextest; package=apextest
           elif (( SHARD >= 20 && SHARD < 22 )); then binary=sema; package=sema
           elif (( SHARD >= 24 && SHARD < 36 )); then binary=lwc-compile; package=lwc/compile
           elif (( SHARD >= 36 && SHARD < 44 )); then binary=visualforce; package=visualforce
           fi
-          if [[ -n "$binary" ]] && jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
-            echo "binary=$binary" >> "$GITHUB_OUTPUT"
-          fi
+          if [[ -n "$binary" ]] && ! jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then binary=""; fi
+          echo "binary=$binary" >> "$GITHUB_OUTPUT"
       - name: Download shared apextest test binary
         if: ${{ steps.select.outputs.binary == 'apextest' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -2083,18 +2234,18 @@ jobs:
         with:
           node-version: "22"
       - name: Restore shared npm and Playwright caches
-        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 && github.event_name != 'workflow_dispatch' }}
+        if: ${{ matrix.browser && github.event_name != 'workflow_dispatch' }}
         uses: ./.github/actions/restore-node-browser-caches
       - name: Install selected LWC test dependencies
-        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
+        if: ${{ matrix.browser }}
         run: |
           npm ci --prefix third_party/lwc
           npm ci --prefix lwcruntime
       - name: Install selected browser
-        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
+        if: ${{ matrix.browser }}
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Enable selected browser tests
-        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
+        if: ${{ matrix.browser }}
         run: |
           echo "GLADE_LWC_BROWSER=1" >> "$GITHUB_ENV"
           echo "GLADE_LWC_PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/lwcruntime/node_modules/playwright" >> "$GITHUB_ENV"
@@ -2125,13 +2276,10 @@ jobs:
             fi
           fi
           # Workers 12-23 split the remaining packages by the measured
-          # durations in the CI package manifest. Every worker derives the
-          # same deterministic longest-first assignment from the same
-          # selection, so no shard may repartition or skip a package.
+          # durations in the CI package manifest. The select job provides each worker its deterministic assignment.
           packages=()
           if (( SHARD >= 12 && SHARD < 24 )); then
-            python3 scripts/ci-pr-assign.py --worker "$((SHARD - 12))" --workers 12 --manifest scripts/ci-package-lanes.json <"$RUNNER_TEMP/selected.json" >"$RUNNER_TEMP/assigned-packages.txt"
-            mapfile -t packages <"$RUNNER_TEMP/assigned-packages.txt"
+            mapfile -t packages < <(jq -r '.[]' "$RUNNER_TEMP/pool.json")
           fi
           if (( ${#packages[@]} )); then
             go test -count=1 -timeout=0 "${packages[@]}"
@@ -2139,7 +2287,11 @@ jobs:
 
   required-ci:
     name: Required CI
+    outputs:
+      coverage: ${{ steps.require.outputs.coverage }}
     needs:
+      - tree-reuse-gate
+      - reused-tree-ci
       - workflow-lint
       - pr-tests
       - pr-guards
@@ -2166,18 +2318,27 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Require all CI jobs
+        id: require
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
+          TREE_REUSE: ${{ needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true' }}
         run: |
           # Train and release pull requests run the full suite, not the fast lane.
           event="$EVENT_NAME"
           case "$HEAD_REF" in train/* | release/*) [[ "$event" != pull_request ]] || event=full ;; esac
-          failures="$(jq -r --arg event "$event" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests" and .key != "pr-guards") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
+            failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"
+          else
+            failures="$(jq -r --arg event "$event" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") else (.key != "pr-tests" and .key != "pr-guards") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          fi
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1
+          fi
+          if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            printf 'coverage=%s\n' "$(jq -c . <<<"$REQUIRED_RESULTS")" >> "$GITHUB_OUTPUT"
           fi
 
   tree-receipt:
@@ -2195,10 +2356,11 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          COVERAGE: ${{ needs.required-ci.outputs.coverage }}
         run: |
           mkdir -p "$RUNNER_TEMP/ci-tree"
-          jq -n --arg sha "$CHECKOUT_SHA" --argjson pr "$PR_NUMBER" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
-            '{checkout_sha: $sha, pr_number: $pr, run_id: $run, run_attempt: $attempt}' >"$RUNNER_TEMP/ci-tree/ci-tree.json"
+          jq -n --arg sha "$CHECKOUT_SHA" --argjson pr "$PR_NUMBER" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" --argjson coverage "$COVERAGE" \
+            '{checkout_sha: $sha, pr_number: $pr, run_id: $run, run_attempt: $attempt, coverage: $coverage}' >"$RUNNER_TEMP/ci-tree/ci-tree.json"
       - name: Upload tree receipt
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

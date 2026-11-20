@@ -79,6 +79,10 @@ func matcherMutatorResult(receiver Value) Value {
 }
 
 func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	return callMatcherMemberWithCache(receiver, method, args, nil)
+}
+
+func callMatcherMemberWithCache(receiver Value, method string, args []Value, cache *preparedMatcherCache) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"matches", "lookingAt", "find", "group", "groupCount", "start", "end",
 		"replaceAll", "replaceFirst", "reset", "region", "regionStart", "regionEnd",
@@ -142,7 +146,8 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
 		}
-		region, err := matcherRegion(receiver, input)
+		entry := cache.use(receiver.Ref, input)
+		region, err := preparedMatcherRegion(entry, receiver, input)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -156,7 +161,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			receiver.Fields["regionStart"] = Int(0)
 			receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input)))
 			receiver.Fields["index"] = Int(0)
-			region, err = matcherRegion(receiver, input)
+			region, err = preparedMatcherRegion(entry, receiver, input)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -178,7 +183,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			// requireEnd keep what the last search left.
 			return Bool(false), receiver, true, true, nil
 		}
-		indices, hitEnd, requiresEnd, probe, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
+		indices, hitEnd, requiresEnd, probe, err := preparedMatcherFind(cache, entry, receiver, input, region, startByte)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -234,7 +239,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		start, _, err := matcherGroupBounds(receiver, input, groupIndex)
+		start, _, err := preparedMatcherGroupBounds(cache, receiver, input, groupIndex)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -244,7 +249,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		_, end, err := matcherGroupBounds(receiver, input, groupIndex)
+		_, end, err := preparedMatcherGroupBounds(cache, receiver, input, groupIndex)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -263,12 +268,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		// K003: replacement leaves the matcher at the last search result.
-		err = matcherReplaceSearchState(receiver, method == "replaceAll")
+		err = matcherReplaceSearchStateWithCache(receiver, method == "replaceAll", cache)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
 		return String(replaced), receiver, true, true, nil
 	case "reset":
+		cache.forget(receiver.Ref)
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -285,6 +291,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input.Text)))
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "region":
+		cache.forget(receiver.Ref)
 		if len(args) == 2 && (args[0].Kind == ValueNull || args[1].Kind == ValueNull) {
 			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -320,6 +327,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Int(int64(region.endIndex)), receiver, false, true, nil
 	case "usePattern":
+		cache.forget(receiver.Ref)
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 		}
@@ -370,6 +378,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Bool(matcherBoolField(receiver, "transparentBounds", false)), receiver, false, true, nil
 	case "useAnchoringBounds":
+		cache.forget(receiver.Ref)
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -379,6 +388,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		receiver.Fields["anchoringBounds"] = args[0]
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "useTransparentBounds":
+		cache.forget(receiver.Ref)
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 		}
@@ -493,8 +503,12 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 }
 
 func matcherReplaceSearchState(matcher Value, all bool) error {
+	return matcherReplaceSearchStateWithCache(matcher, all, nil)
+}
+
+func matcherReplaceSearchStateWithCache(matcher Value, all bool, cache *preparedMatcherCache) error {
 	for {
-		found, _, _, _, err := callMatcherMember(matcher, "find", nil)
+		found, _, _, _, err := callMatcherMemberWithCache(matcher, "find", nil, cache)
 		if err != nil || !found.Bool || !all {
 			return err
 		}

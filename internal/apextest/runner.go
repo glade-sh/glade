@@ -46,6 +46,7 @@ import (
 )
 
 type Options struct {
+	preparedTestMachines map[string]*vm.VM
 	// RuntimeRESTAPIVersion selects the test org REST context, independently of
 	// project and component source API versions. Empty retains the default.
 	RuntimeRESTAPIVersion string
@@ -587,6 +588,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	planned := make([]testCasePlan, len(cases))
 	results := make([]testreport.Case, len(cases))
 	testRuntimeMethods := indexTestRuntimeMethods(testMethods)
+	opts.preparedTestMachines = prepareTestMethodMachines(baseMachine, cases, testRuntimeMethods)
 	for i, testCase := range cases {
 		if !classSeen[testCase.ClassName] {
 			classSeen[testCase.ClassName] = true
@@ -2455,6 +2457,27 @@ func indexTestRuntimeMethods(methods map[string]vm.Method) map[string][]vm.Metho
 	return out
 }
 
+// prepareTestMethodMachines builds run-local templates for selected multi-test
+// source groups. Each template starts from the same frozen base and is never
+// executed, so later method registrations detach in the individual clones.
+func prepareTestMethodMachines(base *vm.VM, cases []TestCase, groups map[string][]vm.Method) map[string]*vm.VM {
+	prepared := make(map[string]*vm.VM)
+	active := make(map[string]int)
+	for _, testCase := range cases {
+		active[testMethodSourceKey(testCase.ClassName, testCase.File)]++
+	}
+	for key, methods := range groups {
+		if active[key] < 2 || len(methods) < 2 {
+			continue
+		}
+		machine := base.CloneRuntimeFrozenShared(nil)
+		if err := registerTestRuntime(machine, methods); err == nil {
+			prepared[key] = machine
+		}
+	}
+	return prepared
+}
+
 func containsRegisteredTestMethod(methods []vm.Method, target vm.Method) bool {
 	for _, method := range methods {
 		if !strings.EqualFold(method.Name, target.Name) ||
@@ -3476,16 +3499,24 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 			return preInvocationErrorCase(testCase, err)
 		}
 	}
-	machine := cloneRuntimeMachineFor(baseMachine, testCase.ClassName, "test", counters)
-	runtimeMethods := append([]vm.Method(nil), testRuntimeMethods...)
-	if !containsRegisteredTestMethod(runtimeMethods, testMethod) {
-		runtimeMethods = append(runtimeMethods, testMethod)
+	prepared := opts.preparedTestMachines[testMethodSourceKey(testCase.ClassName, testCase.File)]
+	usePrepared := prepared != nil && containsRegisteredTestMethod(testRuntimeMethods, testMethod)
+	machineBase := baseMachine
+	if usePrepared {
+		machineBase = prepared
 	}
-	if err := registerTestRuntime(machine, runtimeMethods); err != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Reason = terminalReason(err)
-		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-		return out
+	machine := cloneRuntimeMachineFor(machineBase, testCase.ClassName, "test", counters)
+	if !usePrepared {
+		runtimeMethods := append([]vm.Method(nil), testRuntimeMethods...)
+		if !containsRegisteredTestMethod(runtimeMethods, testMethod) {
+			runtimeMethods = append(runtimeMethods, testMethod)
+		}
+		if err := registerTestRuntime(machine, runtimeMethods); err != nil {
+			out.Status = testreport.StatusUnsupported
+			out.Reason = terminalReason(err)
+			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
+			return out
+		}
 	}
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
