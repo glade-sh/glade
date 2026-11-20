@@ -1729,8 +1729,11 @@ func jsonNumberErrorBoundary(source string, end int) int {
 }
 
 func decodeJSONValueForDeserialize(text string, strict, reportColumnKeyDiagnostic bool) (any, error) {
-	decoded, err := decodeJSONValue(text)
+	decoder, source := newApexJSONDecoder(text)
+	decoded, err := decodeJSONToken(decoder, source)
 	if err != nil {
+		offset := int(decoder.InputOffset())
+		err = jsonSyntaxErrorAtInput(err, source, offset)
 		if keyErr, ok := err.(*jsonObjectKeyInputError); ok {
 			if reportColumnKeyDiagnostic {
 				return nil, fmt.Errorf("%s", keyErr.nativeMessage())
@@ -1743,6 +1746,15 @@ func decodeJSONValueForDeserialize(text string, strict, reportColumnKeyDiagnosti
 			// untyped decoding. Root closing markers (K001-K005/K009-K012)
 			// use a separate parser error path, outside this value formatter.
 			return nil, character
+		}
+		next := jsonEnumTokenInputStart(source, offset)
+		before := strings.TrimRight(source[:offset], " \t\r\n")
+		if next < len(source) && source[next] == '}' && len(before) > 0 &&
+			before[len(before)-1] == '"' && jsonInputContainer(before) == '{' {
+			return nil, fmt.Errorf("Malformed JSON: %s", err)
+		}
+		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+			err = jsonTokenEOFAtInput(err, source, offset)
 		}
 		if errors.Is(err, io.ErrUnexpectedEOF) && strings.HasPrefix(strings.TrimSpace(text), `"`) {
 			return nil, fmt.Errorf("malformed JSON: %s", err.Error())
