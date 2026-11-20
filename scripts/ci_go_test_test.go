@@ -1906,10 +1906,10 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		return ""
 	}
 	jobs := workflowJobBlocksText(workflow)
-	if strings.Count(workflow, "        if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0") != wantOpaqueNPM {
+	if strings.Count(workflow, "        if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0") != wantOpaqueNPM-1 || strings.Count(jobs["site"], "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)") != 1 {
 		return "CI normal setup-node conditions are not exact"
 	}
-	if strings.Count(workflow, "        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != wantBenchmarkNPM*3 {
+	if strings.Count(workflow, "        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != (wantBenchmarkNPM-1)*3 || strings.Count(jobs["site"], "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)") != 3 {
 		return "CI benchmark npm conditions are not exact"
 	}
 	prExpr := "(github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/'))"
@@ -1920,7 +1920,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		"test", "lwc-vf", "test-binaries", "test-binaries-apextest", "smoke-runtime", "smoke-distribution", "apextest",
 	} {
 		job := jobs[jobName]
-		runsOnPR := map[string]bool{"vet": true, "history-input": true, "test-binaries": true, "test-binaries-apextest": true}
+		runsOnPR := map[string]bool{"site": true, "vet": true, "history-input": true, "test-binaries": true, "test-binaries-apextest": true}
 		expr := boundExpr
 		if !runsOnPR[jobName] {
 			expr = "(" + prExpr + " && " + boundExpr + ")"
@@ -1940,6 +1940,9 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 			prereqs = "needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && "
 		}
 		guard := "    if: ${{ !cancelled() && " + prereqs + expr + " }}"
+		if jobName == "site" {
+			guard = "    if: ${{ !cancelled() && " + reuseExpr + " && " + boundExpr + " }}"
+		}
 		if strings.Count(job, guard) != 1 {
 			return fmt.Sprintf("%s PR, reuse, or cache-pair bounds guard is not exact", jobName)
 		}
