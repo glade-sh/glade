@@ -25,8 +25,25 @@ type Value struct {
 	// above; TestValueSizeGuard keeps Value from growing.
 	datetimeWeekTerm uint8
 
+	// Some platform Ids retain their original text for valueOf and concatenation.
+	idOriginalDisplay bool
+	// A report service dimension can expose an empty getter while retaining a
+	// null raw groupings field for JSON serialization.
+	reportEmptyDimension bool
+	// The key set of a field map lists in platform order but renders its text
+	// alphabetically (record_type_shape list_forms, default_order_rest d3).
+	describeKeySetText bool
+	// The field map's own key set is read-only; a Set built from it is not
+	// (review_round8 ks_add_*, ks_set_ops).
+	describeKeySetReadOnly bool
+
+	// Keep the observed String-constructor display separate from runtime faults,
+	// cause constructors and default exception construction.
+	exceptionMessageConstructor bool
+
 	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
 	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
+	jsonGeneratorBuffer     *jsonGeneratorBuffer
 
 	// Display ownership is retained when the constructor resolves its symbol;
 	// source classes may share a platform DTO's short name.
@@ -42,20 +59,6 @@ type Value struct {
 	dependencyClassLiteral bool
 	// Projection-only anonymous callers for captured exception text boundaries.
 	exceptionAnonymousCallerLine int
-	// Keep the observed String-constructor display separate from runtime faults,
-	// cause constructors and default exception construction.
-	exceptionMessageConstructor bool
-	// Some platform Ids retain their original text for valueOf and concatenation.
-	idOriginalDisplay bool
-	// A report service dimension can expose an empty getter while retaining a
-	// null raw groupings field for JSON serialization.
-	reportEmptyDimension bool
-	// The key set of a field map lists in platform order but renders its text
-	// alphabetically (record_type_shape list_forms, default_order_rest d3).
-	describeKeySetText bool
-	// The field map's own key set is read-only; a Set built from it is not
-	// (review_round8 ks_add_*, ks_set_ops).
-	describeKeySetReadOnly bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`

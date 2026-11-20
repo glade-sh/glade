@@ -8,6 +8,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -649,9 +650,33 @@ func jsonGeneratorQuote(text string) string {
 	return string(data)
 }
 
+type jsonGeneratorBuffer struct {
+	mu   sync.Mutex
+	text strings.Builder
+}
+
 func jsonGeneratorAppend(receiver *Value, text string) {
-	current := jsonGeneratorStringField(*receiver, "out").Text
-	receiver.Fields["out"] = String(current + text)
+	out := jsonGeneratorStringField(*receiver, "out")
+	// Builder.String exposes an immutable prefix without copying it. A cloned
+	// value has no builder, and an older prefix starts a separate builder.
+	buffer := out.jsonGeneratorBuffer
+	if buffer != nil {
+		buffer.mu.Lock()
+		if buffer.text.String() != out.Text {
+			buffer.mu.Unlock()
+			buffer = nil
+		}
+	}
+	if buffer == nil {
+		buffer = &jsonGeneratorBuffer{}
+		buffer.mu.Lock()
+		buffer.text.WriteString(out.Text)
+	}
+	buffer.text.WriteString(text)
+	updated := String(buffer.text.String())
+	updated.jsonGeneratorBuffer = buffer
+	buffer.mu.Unlock()
+	receiver.Fields["out"] = updated
 }
 
 func jsonGeneratorStack(receiver Value) Value {
