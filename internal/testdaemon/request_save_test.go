@@ -178,3 +178,45 @@ func TestRequestDoesNotRepeatCompletedTestsAfterSave(t *testing.T) {
 		t.Fatalf("mixed result: summary=%#v error=%v starts=%d problems=%s", run.Summary(), err, starts, runProblems(run))
 	}
 }
+
+func TestRequestCompileProgressAfterSave(t *testing.T) {
+	for _, save := range []bool{false, true} {
+		name := "unchanged"
+		if save {
+			name = "save during compile"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Cleanup(apextest.InvalidateRuntimeCaches)
+			root, classPath := editSnapshotProject(t)
+			d, err := New(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1}, "", 0, 0, false)
+			var events []string
+			changed := false
+			run, _, _, err := d.RunRequestV1(context.Background(), request, func(event apextest.TestProgress) {
+				if event.Event == "compile_start" || event.Event == "compile_done" {
+					events = append(events, event.Event+":"+event.Status)
+				}
+				if save && !changed && event.Event == "compile_start" {
+					changed = true
+					writeFile(t, classPath, `@IsTest private class EditTest { @IsTest static void passes() {} @IsTest static void added() {} }`)
+				}
+			}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantTotal := 1
+			if save {
+				wantTotal = 2
+			}
+			if summary := run.Summary(); summary.Total != wantTotal || summary.Passed != wantTotal {
+				t.Fatalf("summary=%#v problems=%s", summary, runProblems(run))
+			}
+			if got := strings.Join(events, ","); got != "compile_start:,compile_done:pass" {
+				t.Fatalf("compile events = %s", got)
+			}
+		})
+	}
+}
