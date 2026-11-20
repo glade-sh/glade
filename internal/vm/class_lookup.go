@@ -1553,27 +1553,41 @@ func (vm *VM) rebuildClassLookup() {
 	vm.sharedClassCopyPlan = nil
 	vm.classLookupGeneration = nextClassLookupGeneration.Add(1)
 	vm.resetClassAccessCaches()
-	vm.classLookup = make(map[string]Class, len(vm.Classes)*2)
-	ranks := make(map[string]int, len(vm.Classes)*2)
-	nss := make(map[string]string, len(vm.Classes)*2)
+	vm.classLookup = make(map[string]Class, len(vm.Classes))
+	// The winning class already stores namespace and dependency. Only the
+	// winners selected by a non-exact offer need a separate temporary bit.
+	var inexact map[string]struct{}
 	put := func(name string, class Class, exact bool) {
-		if strings.TrimSpace(name) == "" {
+		key := canonicalClassLookupKey(name)
+		if key == "" {
 			return
 		}
-		key := canonicalClassLookupKey(name)
-		rank := classLookupKeyRank(class, exact)
-		if cur, ok := ranks[key]; ok && !classLookupKeyWins(rank, class.Namespace, cur, nss[key]) {
-			return
+		if current, exists := vm.classLookup[key]; exists {
+			_, indirect := inexact[key]
+			if !classLookupKeyWins(classLookupKeyRank(class, exact), class.Namespace, classLookupKeyRank(current, !indirect), current.Namespace) {
+				return
+			}
 		}
 		vm.classLookup[key] = class
-		ranks[key] = rank
-		nss[key] = class.Namespace
+		if exact {
+			delete(inexact, key)
+		} else {
+			if inexact == nil {
+				inexact = make(map[string]struct{})
+			}
+			inexact[key] = struct{}{}
+		}
 	}
 	for alias, class := range vm.classEntriesRaw() {
 		put(alias, class, true)
-		put(class.Name, class, false)
+		if class.Name != alias {
+			put(class.Name, class, false)
+		}
 		if class.Namespace != "" {
-			put(class.Namespace+"."+class.Name, class, true)
+			qualified := class.Namespace + "." + class.Name
+			if qualified != alias {
+				put(qualified, class, true)
+			}
 		}
 	}
 }

@@ -44,6 +44,15 @@
 - **Semantic cache performance.** Warm test-daemon requests reuse the identity of an unchanged generation, and warm checks reuse the encoded semantic result for checksum verification and memory accounting. Cached results and diagnostics are unchanged.
 
 - **Warm test daemon validation.** Request-local digest lookups avoid a redundant file metadata check on their first lookup. In a 1,531-class source-and-companion benchmark, allocations fell from about 61,270 to 55,150 per request-shaped validation.
+- **Source positions in large Apex files.** Building the source-line index allocates its newline offsets once instead of growing the table repeatedly.
+
+- **Lexical type resolution.** Resolving a type from the current execution context avoids allocating a temporary owner list.
+
+- **Runtime value memory.** Values use less space in large field maps while retaining the existing serialized field order.
+
+- **Class lookup construction.** Building a class-name index uses less temporary memory for large test suites.
+
+- **Child relationship descriptions.** Large schemas avoid preparing unrelated child objects when describing a parent, reducing work across test runs.
 
 ### CI
 

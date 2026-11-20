@@ -1454,7 +1454,9 @@ func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string,
 	if typeName == "" || strings.Contains(typeName, ".") {
 		return "", false
 	}
-	for _, owner := range vm.currentTypeResolutionOwners() {
+	var owners [3]string
+	ownerCount := vm.fillCurrentTypeResolutionOwners(&owners)
+	for _, owner := range owners[:ownerCount] {
 		if class, ok := vm.lookupClass(owner); ok {
 			namespace := strings.TrimSpace(class.Namespace)
 			if namespace != "" {
@@ -1471,25 +1473,35 @@ func (vm *VM) resolveCurrentNamespaceTopLevelClassName(typeName string) (string,
 	return "", false
 }
 
-func (vm *VM) currentTypeResolutionOwners() []string {
-	seen := map[string]bool{}
-	var owners []string
-	add := func(owner string) {
-		owner = strings.TrimSpace(owner)
+func (vm *VM) fillCurrentTypeResolutionOwners(owners *[3]string) int {
+	count := 0
+add:
+	for _, candidate := range [...]string{vm.currentClass, vm.currentMethod.ClassName, classNameFromMethod(vm.currentMethod.Name)} {
+		owner := strings.TrimSpace(candidate)
 		if owner == "" {
-			return
+			continue
 		}
-		key := strings.ToLower(owner)
-		if seen[key] {
-			return
+		for _, prior := range owners[:count] {
+			if sameLowerTypeOwner(owner, prior) {
+				continue add
+			}
 		}
-		seen[key] = true
-		owners = append(owners, owner)
+		owners[count] = owner
+		count++
 	}
-	add(vm.currentClass)
-	add(vm.currentMethod.ClassName)
-	add(classNameFromMethod(vm.currentMethod.Name))
-	return owners
+	return count
+}
+
+// Class identifiers retain strings.ToLower equality, which differs from
+// Unicode simple folding for final sigma, long s and dotted capital I.
+func sameLowerTypeOwner(left, right string) bool {
+	if left == right {
+		return true
+	}
+	if isASCIIString(left) && isASCIIString(right) {
+		return strings.EqualFold(left, right)
+	}
+	return strings.ToLower(left) == strings.ToLower(right)
 }
 
 func constructAuthConfigurationValue(args []Value, namedArgs map[string]Value) (Value, error) {
