@@ -47,3 +47,32 @@ func TestSemiJoinIDMembershipMatchesScan(t *testing.T) {
 		t.Fatal("mixed list should retain scan path")
 	}
 }
+
+func TestSemiJoinMembershipFallsBackForOtherValueKinds(t *testing.T) {
+	org := storage.NewOrgState()
+	definition := storage.ObjectDefinition{APIName: "Item__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}}
+	values := make([]storage.Value, 20)
+	for i := range values {
+		values[i] = storage.IDValue("00100000000AbCd")
+	}
+	for _, mixed := range []bool{false, true} {
+		if mixed {
+			values[0] = storage.StringValue("00100000000AbCd")
+		}
+		for _, left := range []storage.Value{storage.IDValue("00100000000AbCdAAA"), storage.StringValue("00100000000abcd"), storage.IntegerValue(1), storage.NullValue()} {
+			for _, op := range []string{"IN", "NOT IN"} {
+				for _, not := range []bool{false, true} {
+					base := Condition{Field: "Name", Op: op, Values: values, Not: not}
+					indexed := base
+					indexed.semiJoinIDs = buildSemiJoinIDMembership(values)
+					record := storage.Record{Object: "Item__c", Fields: map[string]storage.Value{"Name": left}}
+					want := matchesWithContext(org, definition, record, &base, ExecutionContext{})
+					got := matchesWithContext(org, definition, record, &indexed, ExecutionContext{})
+					if got != want {
+						t.Fatalf("mixed=%t left=%v op=%s not=%t: got %t want %t", mixed, left, op, not, got, want)
+					}
+				}
+			}
+		}
+	}
+}
