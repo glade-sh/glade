@@ -39,6 +39,10 @@ func TestJSONMissingValueInputScan(t *testing.T) {
 		{`{"a":}`, 5, "Unexpected character ('}' (code 125)): expected a value at [line:1, column:7]"},
 		{`[1,]`, 2, "Unexpected character (']' (code 93)): expected a value at [line:1, column:5]"},
 		{`[1,]`, 3, "Unexpected character (']' (code 93)): expected a value at [line:1, column:5]"},
+		{`{"x":x}`, 4, "Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]"},
+		{`{"x":x}`, 5, "Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:7]"},
+		{`[x]`, 1, "Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at [line:1, column:3]"},
+		{`xx`, 0, "Unexpected character ('x' (code 120)): expected a valid value (number, String, array, object, 'true', 'false' or 'null') at input location [1,2]"},
 	} {
 		if got := jsonSyntaxErrorAtInput(original, tc.source, tc.offset); got.Error() != tc.want {
 			t.Errorf("%q at %d: got %v, want %s", tc.source, tc.offset, got, tc.want)
@@ -47,7 +51,7 @@ func TestJSONMissingValueInputScan(t *testing.T) {
 	for _, tc := range []struct {
 		source string
 		offset int
-	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}, {`{"a"::}`, 4}, {`{"a"::}`, 5}, {`[1,,]`, 2}, {`[1,,]`, 3}} {
+	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}, {`{"a"::}`, 4}, {`{"a"::}`, 5}, {`[1,,]`, 2}, {`[1,,]`, 3}, {`{x}`, 1}, {`{"a":1,x}`, 6}, {`nullx`, 0}} {
 		if got := jsonSyntaxErrorAtInput(original, tc.source, tc.offset); got != original {
 			t.Errorf("neighbor %q: got %v, want original error", tc.source, got)
 		}
