@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,8 +17,8 @@ var prLaneBinaries = []struct {
 }{
 	{"apextest", "test-binaries-apextest", "github.com/glade-sh/glade/internal/apextest", 0, 12},
 	{"sema", "test-binaries", "github.com/glade-sh/glade/internal/sema", 20, 2},
-	{"lwc-compile", "test-binaries", "github.com/glade-sh/glade/internal/lwc/compile", 24, 8},
-	{"visualforce", "test-binaries", "github.com/glade-sh/glade/internal/visualforce", 32, 4},
+	{"lwc-compile", "test-binaries", "github.com/glade-sh/glade/internal/lwc/compile", 24, 12},
+	{"visualforce", "test-binaries", "github.com/glade-sh/glade/internal/visualforce", 36, 8},
 }
 
 func runPRBinaries(t *testing.T, event, headRef, selected string) map[string]string {
@@ -162,6 +163,51 @@ func TestCIPRLaneUsesSharedTestBinaries(t *testing.T) {
 		}
 	}
 
+}
+
+// Exercise the workflow's actual selection step, including shard boundaries and
+// a worker that has unrelated pool work but must not download a binary.
+func TestCIPRLaneWorkerBinarySelection(t *testing.T) {
+	pr := readPRLaneJobs(t)["pr-tests"]
+	var script string
+	for _, step := range pr.Steps {
+		if step.Name == "Load planned packages" {
+			script = step.Run
+		}
+	}
+	if script == "" {
+		t.Fatal("worker selection step missing")
+	}
+	for _, binary := range prLaneBinaries {
+		for _, shard := range []int{binary.base - 1, binary.base, binary.base + binary.count - 1, binary.base + binary.count} {
+			for _, present := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/shard-%d/present-%t", binary.name, shard, present), func(t *testing.T) {
+					dir := t.TempDir()
+					output := filepath.Join(dir, "output")
+					packages := `["github.com/glade-sh/glade/internal/unrelated"]`
+					if present {
+						packages = fmt.Sprintf(`["%s"]`, binary.pkg)
+					}
+					cmd := exec.Command("bash", "-e", "-c", script)
+					cmd.Env = append(os.Environ(), fmt.Sprintf("SHARD=%d", shard), "PLANNED_PACKAGES="+packages, "PLANNED_POOL=[]", "RUNNER_TEMP="+dir, "GITHUB_OUTPUT="+output)
+					if out, err := cmd.CombinedOutput(); err != nil {
+						t.Fatalf("selection: %v\n%s", err, out)
+					}
+					got, err := os.ReadFile(output)
+					if err != nil {
+						t.Fatal(err)
+					}
+					want := ""
+					if present && shard >= binary.base && shard < binary.base+binary.count {
+						want = binary.name
+					}
+					if string(got) != "binary="+want+"\n" {
+						t.Errorf("output = %q, want binary=%s", got, want)
+					}
+				})
+			}
+		}
+	}
 }
 
 func TestCIPRLaneGoCachesAreReadOnly(t *testing.T) {

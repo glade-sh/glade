@@ -3621,7 +3621,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "history", "gladecli", "leak-scan", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full",
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
-	wantJobs = append(wantJobs, "pr-tests")
+	wantJobs = append(wantJobs, "pr-select", "pr-tests")
 	wantJobs = append(wantJobs, "pr-guards")
 	wantJobs = append(wantJobs, "history-input", "vm")
 	sort.Strings(wantJobs)
@@ -3638,7 +3638,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "leak-scan"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "leak-scan"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
