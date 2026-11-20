@@ -1289,7 +1289,7 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 		if number, ok := err.(*jsonNumberInputError); ok && strings.TrimSpace(text) == number.text {
 			number.root = true
 		}
-		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
+		return Null, jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset()))
 	}
 	return value, nil
 }
@@ -1297,7 +1297,7 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, error) {
 	token, err := decoder.Token()
 	if err != nil {
-		return Null, jsonStringEOFError(err, source)
+		return Null, jsonStringEOFError(jsonTokenEOFAtInput(err, source, int(decoder.InputOffset())), source)
 	}
 	switch value := token.(type) {
 	case json.Delim:
@@ -1311,7 +1311,7 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 			for decoder.More() {
 				keyToken, err := decoder.Token()
 				if err != nil {
-					return Null, jsonContainerEOFError(err, source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
+					return Null, jsonContainerEOFError(jsonTokenEOFAtInput(err, source, int(decoder.InputOffset())), source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
 				}
 				key, ok := keyToken.(string)
 				if !ok {
@@ -1331,7 +1331,7 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 				out.MapKeys[encoded] = String(key)
 			}
 			if end, err := decoder.Token(); err != nil {
-				return Null, jsonContainerEOFError(err, source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
+				return Null, jsonContainerEOFError(jsonTokenEOFAtInput(err, source, int(decoder.InputOffset())), source, "OBJECT", sawEntry && !completeValueAtEnd, scalarAtEnd)
 			} else if end != json.Delim('}') {
 				return Null, fmt.Errorf("expected object end")
 			}
@@ -1352,7 +1352,7 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 				out.List = append(out.List, item)
 			}
 			if end, err := decoder.Token(); err != nil {
-				return Null, jsonContainerEOFError(err, source, "ARRAY", sawEntry && !completeValueAtEnd, scalarAtEnd)
+				return Null, jsonContainerEOFError(jsonTokenEOFAtInput(err, source, int(decoder.InputOffset())), source, "ARRAY", sawEntry && !completeValueAtEnd, scalarAtEnd)
 			} else if end != json.Delim(']') {
 				return Null, fmt.Errorf("expected array end")
 			}
@@ -1453,13 +1453,7 @@ func jsonEOFPosition(source string, scalarAtEnd bool) (int, int) {
 }
 
 func jsonContainerEOFError(err error, source, container string, withinEntries, scalarAtEnd bool) error {
-	message := ""
-	if err != nil {
-		message = err.Error()
-	}
-	if err != io.EOF && err != io.ErrUnexpectedEOF &&
-		!strings.Contains(message, "unexpected end of JSON input") &&
-		!strings.Contains(message, "unexpected EOF") {
+	if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 		return jsonStringEOFError(err, source)
 	}
 	line, column := jsonEOFPosition(source, scalarAtEnd)
@@ -1509,6 +1503,11 @@ type jsonCharacterInputError struct {
 	nested       bool
 }
 
+type jsonBackslashInputError struct{ original error }
+
+func (err *jsonBackslashInputError) Error() string { return err.original.Error() }
+func (err *jsonBackslashInputError) Unwrap() error { return err.original }
+
 func (err *jsonCharacterInputError) Error() string {
 	message := fmt.Sprintf("Unexpected character ('%c' (code %d)): %s", err.char, err.char, jsonExpectedValueDescription(err.char))
 	// Non-delimiter failures at the document root use
@@ -1529,37 +1528,80 @@ func jsonExpectedValueDescription(character rune) string {
 }
 
 func jsonSyntaxErrorAtInput(err error, source string, offset int) error {
-	syntax, ok := err.(*json.SyntaxError)
-	if !ok || !strings.Contains(syntax.Error(), "looking for beginning of value") || offset < 0 || offset >= len(source) {
-		return err
-	}
-	if !strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset]))) {
-		return err
-	}
-	// J004/U001-U014: Token's scanner offset excludes structural tokens
-	// and previously read object keys. Its input cursor is document-relative.
-	// Keep the original error text for the separate root-closing parser path.
-	normalized := *syntax
-	normalized.Offset = int64(offset + 1)
-	return &normalized
-}
-
-func jsonUnexpectedCharacterError(err error, source string) error {
-	if syntax, ok := err.(*json.SyntaxError); ok && strings.Contains(syntax.Error(), "looking for beginning of value") {
-		offset := int(syntax.Offset)
-		// Decoder.Token reports an unconsumed delimiter at InputOffset,
-		// whereas scalar scanning reports the offset after the bad character.
-		consumed := offset > 0 && offset <= len(source) && strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset-1])))
-		if !consumed && offset >= 0 && offset < len(source) && strings.HasPrefix(syntax.Error(), "invalid character "+strconv.QuoteRune(rune(source[offset]))) {
-			offset++
-		}
-		if offset > 0 && offset <= len(source) {
-			line, column := jsonInputPosition(source, offset)
-			trimmed := strings.TrimSpace(source)
-			return &jsonCharacterInputError{char: rune(source[offset-1]), line: line, column: column, nested: strings.HasPrefix(trimmed, "[") || strings.HasPrefix(trimmed, "{")}
+	if err != nil && offset >= 0 && offset <= len(source) {
+		index := jsonFailureInputStart(source, offset)
+		if index < len(source) && !strings.ContainsRune("{[\"-0123456789tfn", rune(source[index])) {
+			before := strings.TrimRight(source[:index], " \t\r\n")
+			container := jsonInputContainer(source[:index])
+			valueExpected := len(before) == 0 || before[len(before)-1] == ':' ||
+				before[len(before)-1] == '[' || before[len(before)-1] == ',' && container == '['
+			if valueExpected {
+				line, column := jsonInputPosition(source, index+1)
+				trimmed := strings.TrimSpace(source)
+				return &jsonCharacterInputError{char: rune(source[index]), line: line, column: column, nested: strings.HasPrefix(trimmed, "[") || strings.HasPrefix(trimmed, "{")}
+			}
+			if source[index] == '\\' {
+				return &jsonBackslashInputError{original: err}
+			}
 		}
 	}
 	return err
+}
+
+func jsonFailureInputStart(source string, offset int) int {
+	index := offset
+	for index < len(source) && strings.ContainsRune(" \t\r\n", rune(source[index])) {
+		index++
+	}
+	before := strings.TrimRight(source[:index], " \t\r\n")
+	if index < len(source) && (source[index] == ':' || source[index] == ',') &&
+		(len(before) == 0 || before[len(before)-1] != ':' && before[len(before)-1] != ',') {
+		index++
+		for index < len(source) && strings.ContainsRune(" \t\r\n", rune(source[index])) {
+			index++
+		}
+	}
+	return index
+}
+
+func jsonTokenEOFAtInput(err error, source string, offset int) error {
+	if err != nil && offset >= 0 && offset <= len(source) &&
+		jsonInputContainer(source[:offset]) != 0 && jsonFailureInputStart(source, offset) == len(source) {
+		return io.ErrUnexpectedEOF
+	}
+	return err
+}
+
+func jsonInputContainer(prefix string) byte {
+	var stack []byte
+	quoted, escaped := false, false
+	for i := 0; i < len(prefix); i++ {
+		ch := prefix[i]
+		if quoted {
+			if escaped {
+				escaped = false
+			} else if ch == '\\' {
+				escaped = true
+			} else if ch == '"' {
+				quoted = false
+			}
+			continue
+		}
+		switch ch {
+		case '"':
+			quoted = true
+		case '{', '[':
+			stack = append(stack, ch)
+		case '}', ']':
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+		}
+	}
+	if len(stack) == 0 {
+		return 0
+	}
+	return stack[len(stack)-1]
 }
 
 func jsonTokenInputStart(source string, offset int) int {
@@ -1687,25 +1729,39 @@ func jsonNumberErrorBoundary(source string, end int) int {
 }
 
 func decodeJSONValueForDeserialize(text string, strict, reportColumnKeyDiagnostic bool) (any, error) {
-	decoded, err := decodeJSONValue(text)
+	decoder, source := newApexJSONDecoder(text)
+	decoded, err := decodeJSONToken(decoder, source)
 	if err != nil {
+		offset := int(decoder.InputOffset())
+		err = jsonSyntaxErrorAtInput(err, source, offset)
 		if keyErr, ok := err.(*jsonObjectKeyInputError); ok {
 			if reportColumnKeyDiagnostic {
 				return nil, fmt.Errorf("%s", keyErr.nativeMessage())
 			}
 			return nil, normalizeJSONDeserializeError(keyErr.original)
 		}
-		if character, ok := jsonUnexpectedCharacterError(err, text).(*jsonCharacterInputError); ok &&
+		if character, ok := err.(*jsonCharacterInputError); ok &&
 			(character.nested || (character.char != '}' && character.char != ']')) {
 			// Typed invalid values agree with
 			// untyped decoding. Root closing markers (K001-K005/K009-K012)
 			// use a separate parser error path, outside this value formatter.
 			return nil, character
 		}
-		if strings.Contains(err.Error(), "unexpected EOF") && strings.HasPrefix(strings.TrimSpace(text), `"`) {
+		next := jsonEnumTokenInputStart(source, offset)
+		before := strings.TrimRight(source[:offset], " \t\r\n")
+		if next < len(source) && source[next] == '}' && len(before) > 0 &&
+			before[len(before)-1] == '"' && jsonInputContainer(before) == '{' {
+			return nil, fmt.Errorf("Malformed JSON: %s", err)
+		}
+		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+			if errors.Is(jsonTokenEOFAtInput(err, source, offset), io.ErrUnexpectedEOF) {
+				err = io.EOF
+			}
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) && strings.HasPrefix(strings.TrimSpace(text), `"`) {
 			return nil, fmt.Errorf("malformed JSON: %s", err.Error())
 		}
-		if strings.Contains(err.Error(), "invalid character '\\\\'") && strings.Contains(text, `\"`) {
+		if _, ok := err.(*jsonBackslashInputError); ok && strings.Contains(text, `\"`) {
 			decoded, retryErr := decodeJSONValue(strings.ReplaceAll(text, `\"`, `"`))
 			if retryErr == nil {
 				return decoded, nil
@@ -1722,7 +1778,7 @@ func normalizeJSONDeserializeError(err error) error {
 		return nil
 	}
 	message := err.Error()
-	if strings.Contains(message, "unexpected EOF") || strings.Contains(message, "unexpected end of JSON input") || message == "EOF" {
+	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) {
 		return fmt.Errorf("Unexpected end-of-input: %s", message)
 	}
 	if strings.HasPrefix(message, "JSON.deserializeStrict") {
@@ -1730,12 +1786,6 @@ func normalizeJSONDeserializeError(err error) error {
 	}
 	if hasPrefixFold(message, "malformed json:") {
 		return err
-	}
-	// Salesforce capitalizes the malformed-object-key diagnostic surfaced by
-	// JSON.deserialize. Keep the existing lower-case spelling for the other
-	// parser errors, whose local and Salesforce contracts are already covered.
-	if strings.Contains(message, "after object key") {
-		return fmt.Errorf("Malformed JSON: %s", message)
 	}
 	return fmt.Errorf("malformed JSON: %s", message)
 }

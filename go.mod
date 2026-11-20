@@ -1,6 +1,6 @@
 module github.com/glade-sh/glade
 
-go 1.26.11
+go 1.27.4
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.10

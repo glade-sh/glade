@@ -9,7 +9,7 @@ import (
 )
 
 func TestGoToolchainPins(t *testing.T) {
-	const version = "1.26.11"
+	const version = "1.27.4"
 	for _, route := range []struct {
 		path string
 		want string
