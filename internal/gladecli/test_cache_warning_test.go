@@ -7,16 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/glade-sh/glade/internal/project"
-	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/startupcache"
-	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // A FIFO makes an otherwise invisible status read observable without relying
@@ -71,6 +69,62 @@ func TestVisibleStartupCacheWarningUnchanged(t *testing.T) {
 	t.Fatalf("missing exact warning %q in %s", want, stderr.String())
 }
 
+// The status optimization must not bypass execution cache validation.
+func TestRedirectedTestValidatesExecutionCache(t *testing.T) {
+	t.Setenv("GLADE_DISABLE_DISK_CACHE", "")
+	restore := apextest.EnableDiskCacheForTesting()
+	defer restore()
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Example.cls"), `public class Example { public static Boolean value() { return true; } }`)
+	class := filepath.Join(root, "force-app/main/default/classes/ExampleTest.cls")
+	writeTestFile(t, class, `@IsTest private class ExampleTest { @IsTest static void passes() { System.assert(true); } }`)
+	run := func() (int, string, string) {
+		var out, errs bytes.Buffer
+		code := Run(context.Background(), []string{"test", "--project", root, "--no-serve", "--parallelism", "1"}, &out, &errs)
+		return code, out.String(), errs.String()
+	}
+	code, out, errs := run()
+	if code != 0 || errs != "" || !strings.Contains(out, "1 passed, 0 failed") {
+		t.Fatalf("initial exit=%d stdout=%q stderr=%q", code, out, errs)
+	}
+	entry, err := startupcache.Read(root, startupcache.SubdirTest)
+	if err != nil || entry == nil || len(entry.Runtime.Methods) == 0 || len(entry.Runtime.Classes) == 0 {
+		t.Fatalf("missing populated runtime cache: entry present=%t err=%v", entry != nil, err)
+	}
+	cacheFiles := func() map[string][]byte {
+		files := make(map[string][]byte)
+		paths, err := filepath.Glob(filepath.Join(root, startupcache.SubdirTest, "startup.*"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, path := range paths {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			files[filepath.Base(path)] = data
+		}
+		return files
+	}
+	before := cacheFiles()
+	if len(before) < 2 {
+		t.Fatalf("missing cache files: %d", len(before))
+	}
+	code, out, errs = run()
+	if code != 0 || errs != "" || !strings.Contains(out, "1 passed, 0 failed") {
+		t.Fatalf("warm exit=%d stdout=%q stderr=%q", code, out, errs)
+	}
+	if after := cacheFiles(); !reflect.DeepEqual(before, after) {
+		t.Fatal("warm execution changed startup cache bytes")
+	}
+	writeTestFile(t, class, `@IsTest private class ExampleTest { @IsTest static void passes() { System.assert(false, 'changed'); } }`)
+	code, out, errs = run()
+	if code == 0 || !strings.Contains(out+errs, "changed") {
+		t.Fatalf("stale cache hid changed source: exit=%d stdout=%q stderr=%q", code, out, errs)
+	}
+}
+
 func BenchmarkRedirectedTestWithStartupCache(b *testing.B) {
 	root := b.TempDir()
 	classes := filepath.Join(root, "force-app/main/default/classes")
@@ -90,18 +144,16 @@ func BenchmarkRedirectedTestWithStartupCache(b *testing.B) {
 	if err := os.WriteFile(filepath.Join(classes, "ExampleTest.cls"), []byte(`@IsTest private class ExampleTest { @IsTest static void passes() { System.assert(true); } }`), 0600); err != nil {
 		b.Fatal(err)
 	}
-	p, err := project.Load(root)
-	if err != nil {
-		b.Fatal(err)
-	}
-	entry := startupcache.NewEntry(root, p, typesys.Build(p, gladeschema.Schema{}), storage.NewOrgState(), startupcache.CompiledRuntime{})
-	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
-		b.Fatal(err)
-	}
-	args := []string{"test", "--project", root, "--filter", "ExampleTest", "--no-serve", "--no-cache"}
+	restore := apextest.EnableDiskCacheForTesting()
+	defer restore()
+	args := []string{"test", "--project", root, "--no-serve", "--parallelism", "1"}
 	var warmOut, warmErr bytes.Buffer
 	if code := Run(context.Background(), args, &warmOut, &warmErr); code != 0 || warmErr.Len() != 0 || !strings.Contains(warmOut.String(), "1 passed, 0 failed") {
 		b.Fatalf("warmup exit=%d stderr=%q stdout=%q", code, warmErr.String(), warmOut.String())
+	}
+	entry, err := startupcache.Read(root, startupcache.SubdirTest)
+	if err != nil || entry == nil || len(entry.Runtime.Classes) < 1500 || len(entry.Runtime.Methods) < 1500 {
+		b.Fatalf("expected populated execution cache: entry present=%t err=%v", entry != nil, err)
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
