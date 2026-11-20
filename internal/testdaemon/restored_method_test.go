@@ -2,9 +2,11 @@ package testdaemon
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,6 +68,20 @@ func TestWatchedRestoredMethodMatchesFreshDaemon(t *testing.T) {
 				}
 				for _, selected := range []string{"first", "other"} {
 					request := RunRequestV1{Parallelism: 1, NoDiskCache: true, SelectedClasses: []string{"ExampleTest"}, SelectedMethod: selected}
+					planRequest := request
+					planRequest.ShardCount = 1
+					planRequest.ReturnClassShards = true
+					gotPlanRun, gotSelection, gotPlan, err := daemon.runRequestV1(ctx, planRequest)
+					if err != nil {
+						t.Fatal(err)
+					}
+					wantPlanRun, wantSelection, wantPlan, err := fresh.runRequestV1(ctx, planRequest)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if !reflect.DeepEqual(gotPlanRun, wantPlanRun) || !reflect.DeepEqual(gotSelection, wantSelection) || !reflect.DeepEqual(gotPlan, wantPlan) {
+						t.Fatalf("plan for %s differs from fresh: run=%#v selection=%#v plan=%#v; want %#v %#v %#v", selected, gotPlanRun, gotSelection, gotPlan, wantPlanRun, wantSelection, wantPlan)
+					}
 					gotRun, _, _, err := daemon.runRequestV1(ctx, request)
 					if err != nil {
 						t.Fatal(err)
@@ -73,6 +89,19 @@ func TestWatchedRestoredMethodMatchesFreshDaemon(t *testing.T) {
 					wantRun, _, _, err := fresh.runRequestV1(ctx, request)
 					if err != nil {
 						t.Fatal(err)
+					}
+					if selected == method {
+						if summary := gotRun.Summary(); summary.Total != 1 || summary.Passed != 1 {
+							t.Fatalf("current method %s did not pass: %#v", selected, gotRun)
+						}
+					} else {
+						data, err := json.Marshal(gotRun)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if !strings.Contains(string(data), "no test method matched") {
+							t.Fatalf("removed method %s: %s", selected, data)
+						}
 					}
 					if !reflect.DeepEqual(canonicalDaemonRun(gotRun), canonicalDaemonRun(wantRun)) {
 						t.Fatalf("selection %s: got %#v, fresh %#v", selected, gotRun, wantRun)

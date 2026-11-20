@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"crypto/sha256"
 	"errors"
 	"os"
 	"path/filepath"
@@ -14,11 +15,12 @@ type FileMetadata struct {
 }
 
 type FileState struct {
-	Path       string       `json:"path"`
-	Kind       FileKind     `json:"kind"`
-	Name       string       `json:"name,omitempty"`
-	ObjectName string       `json:"objectName,omitempty"`
-	Metadata   FileMetadata `json:"metadata"`
+	contentHash [sha256.Size]byte
+	Path        string       `json:"path"`
+	Kind        FileKind     `json:"kind"`
+	Name        string       `json:"name,omitempty"`
+	ObjectName  string       `json:"objectName,omitempty"`
+	Metadata    FileMetadata `json:"metadata"`
 }
 
 type Snapshot struct {
@@ -208,7 +210,7 @@ func DiffSnapshots(before, after Snapshot) []Change {
 			changes = append(changes, changeFromStates(ChangeDeleted, &beforeState, nil))
 			continue
 		}
-		if beforeState.Metadata != afterState.Metadata {
+		if beforeState.Metadata != afterState.Metadata || beforeState.contentHash != afterState.contentHash {
 			changes = append(changes, changeFromStates(ChangeModified, &beforeState, &afterState))
 		}
 	}
@@ -291,11 +293,24 @@ func capturePath(path string) (FileState, bool, error) {
 		return FileState{}, false, nil
 	}
 
+	var contentHash [sha256.Size]byte
+	if info.Mode().IsRegular() {
+		content, err := os.ReadFile(absPath)
+		if errors.Is(err, os.ErrNotExist) {
+			return FileState{}, false, nil
+		}
+		if err != nil {
+			return FileState{}, false, err
+		}
+		contentHash = sha256.Sum256(content)
+	}
+
 	return FileState{
-		Path:       absPath,
-		Kind:       classification.Kind,
-		Name:       classification.Name,
-		ObjectName: classification.ObjectName,
+		contentHash: contentHash,
+		Path:        absPath,
+		Kind:        classification.Kind,
+		Name:        classification.Name,
+		ObjectName:  classification.ObjectName,
 		Metadata: FileMetadata{
 			ModTimeUnixNano: info.ModTime().UnixNano(),
 			Size:            info.Size(),
