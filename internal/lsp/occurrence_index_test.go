@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -254,5 +255,134 @@ func TestReferencesSeeSameSizeExternalEditWithRestoredTime(t *testing.T) {
 	}
 	if got := h.referenceLocations("Needle"); len(got) != 1 {
 		t.Fatalf("references after external edit: %v", got)
+	}
+}
+
+func TestReferenceAndRenameUnicodeCaseAcrossBufferStates(t *testing.T) {
+	dir := t.TempDir()
+	declaration := filepath.Join(dir, "K.cls")
+	other := filepath.Join(dir, "Other.cls")
+	declText := "class K {}"
+	oldText := "class Other { String value = '€'; }"
+	newText := "class Other { String value = 'K'; }"
+	for path, text := range map[string]string{declaration: declText, other: oldText} {
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	info, err := os.Stat(other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{{Name: "K", File: declaration}, {Name: "Other", File: other}}}
+	primed := NewHandler(index)
+	primed.snapshot().referenceCandidates("K")
+	if err := os.WriteFile(other, []byte(newText), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(other, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	uri := uriFromPath(declaration)
+	otherURI := uriFromPath(other)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 6}, Context: ReferenceContext{IncludeDeclaration: true}}
+	rename := RenameParams{TextDocument: params.TextDocument, Position: params.Position, NewName: "Renamed"}
+	var want []Location
+	for _, path := range primed.snapshot().sourceFiles() {
+		text, ok := primed.snapshot().documentText(path)
+		if !ok {
+			t.Fatal(path)
+		}
+		for _, r := range wordRanges(text, "K") {
+			want = append(want, Location{URI: uriFromPath(path), Range: r})
+		}
+	}
+	if len(want) != 2 {
+		t.Fatalf("full scan: got %#v, want two locations", want)
+	}
+	wantEdit := &WorkspaceEdit{Changes: make(map[DocumentURI][]TextEdit)}
+	for _, loc := range want {
+		wantEdit.Changes[loc.URI] = append(wantEdit.Changes[loc.URI], TextEdit{Range: loc.Range, NewText: rename.NewName})
+	}
+	check := func(label string, h *Handler) {
+		t.Helper()
+		if got := h.References(params); !reflect.DeepEqual(got, want) {
+			t.Errorf("%s references = %#v; full scan = %#v", label, got, want)
+		}
+		gotJSON, err := json.Marshal(h.Rename(rename))
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantJSON, err := json.Marshal(wantEdit)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(gotJSON) != string(wantJSON) {
+			t.Errorf("%s rename = %s; full scan = %s", label, gotJSON, wantJSON)
+		}
+	}
+	check("primed", primed)
+	fresh := NewHandler(index)
+	check("fresh", fresh)
+	fresh.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: otherURI, Text: newText}})
+	check("open", fresh)
+	fresh.applyClose(otherURI)
+	check("closed", fresh)
+	check("restart", NewHandler(index))
+
+	// The existing scanner must also remain the oracle for neighboring shapes.
+	for _, name := range []string{"Other", "value", "missing", "Ksuffix"} {
+		var full []Location
+		for _, path := range fresh.snapshot().sourceFiles() {
+			text, ok := fresh.snapshot().documentText(path)
+			if !ok {
+				t.Fatal(path)
+			}
+			for _, r := range wordRanges(text, name) {
+				full = append(full, Location{URI: uriFromPath(path), Range: r})
+			}
+		}
+		if got := fresh.snapshot().referenceLocations(name); !reflect.DeepEqual(got, full) {
+			t.Errorf("neighbor %q = %#v; full scan = %#v", name, got, full)
+		}
+	}
+}
+
+func BenchmarkReferenceAndRenameUnicodeWorkspace(b *testing.B) {
+	dir := b.TempDir()
+	index := typesys.Index{}
+	for i := 0; i < 1500; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("%04d.cls", i))
+		text := "class Other { String value = 'ordinary'; }"
+		if i == 0 {
+			text = "class K {}"
+		} else if i == 1 {
+			text = "class Other { String value = '€'; }"
+		}
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			b.Fatal(err)
+		}
+		name := "Other"
+		if i == 0 {
+			name = "K"
+		}
+		index.Types = append(index.Types, typesys.TypeSymbol{Name: name, File: path})
+	}
+	h := NewHandler(index)
+	h.snapshot().referenceCandidates("K")
+	if err := os.WriteFile(index.Types[1].File, []byte("class Other { String value = 'K'; }"), 0600); err != nil {
+		b.Fatal(err)
+	}
+	uri := uriFromPath(index.Types[0].File)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 6}, Context: ReferenceContext{IncludeDeclaration: true}}
+	rename := RenameParams{TextDocument: params.TextDocument, Position: params.Position, NewName: "Renamed"}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		refs := h.References(params)
+		edit := h.Rename(rename)
+		if len(refs) != 2 || edit == nil || len(edit.Changes) != 2 {
+			b.Fatalf("references = %#v, edit = %#v", refs, edit)
+		}
 	}
 }
