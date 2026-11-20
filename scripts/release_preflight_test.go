@@ -24,7 +24,7 @@ case "$*" in
     if [[ "$MISSING" == ci ]]; then printf '{"workflow_runs":[]}'; else
       printf '{"workflow_runs":[{"id":101,"head_sha":"%s","conclusion":"success","event":"push","created_at":"2026-09-04","html_url":"https://github.com/glade-sh/glade/actions/runs/101"}]}' "$GLADE_SHA"
     fi ;;
-  *actions/runs/101/jobs*) printf '{"jobs":[{"id":501,"name":"Required CI","head_sha":"%s","status":"completed","conclusion":"success","html_url":"https://github.com/glade-sh/glade/actions/runs/101/job/501"}]}' "$GLADE_SHA" ;;
+  *actions/runs/101/jobs*) printf '[{"jobs":[{"id":501,"name":"Required CI","head_sha":"%s","status":"completed","conclusion":"success","html_url":"https://github.com/glade-sh/glade/actions/runs/101/job/501"}]}]' "$GLADE_SHA" ;;
   *check-runs*)
     if [[ "$MISSING" == salesforce ]]; then printf '{"total_count":0,"check_runs":[]}'; else printf '%s' "$SF_RESPONSE"; fi ;;
   *) exit 97 ;;

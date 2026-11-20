@@ -1912,23 +1912,36 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	if strings.Count(workflow, "        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != wantBenchmarkNPM*3 {
 		return "CI benchmark npm conditions are not exact"
 	}
-	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
+	prExpr := "(github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/'))"
+	boundExpr := "(github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))"
+	reuseExpr := "(needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')"
 	for _, jobName := range []string{
 		"site", "vet", "gladecli", "vm", "history-input", "node-integration", "sema", "server-and-playground",
 		"test", "lwc-vf", "test-binaries", "test-binaries-apextest", "smoke-runtime", "smoke-distribution", "apextest",
 	} {
 		job := jobs[jobName]
-		// vet and the PR-lane inputs run on pull requests too.
 		runsOnPR := map[string]bool{"vet": true, "history-input": true, "test-binaries": true, "test-binaries-apextest": true}
+		expr := boundExpr
 		if !runsOnPR[jobName] {
-			prGuard := "    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
-			if strings.Count(job, prGuard) != 1 {
-				return fmt.Sprintf("%s PR exclusion is not exact", jobName)
-			}
-			job = strings.Replace(job, prGuard, guard, 1)
+			expr = "(" + prExpr + " && " + boundExpr + ")"
 		}
+		if map[string]bool{"site": true, "vet": true, "history-input": true, "node-integration": true, "server-and-playground": true, "test-binaries": true, "test-binaries-apextest": true, "smoke-runtime": true, "smoke-distribution": true}[jobName] {
+			expr = "(" + reuseExpr + " && " + expr + ")"
+		}
+		prereqs := ""
+		switch jobName {
+		case "gladecli", "vm":
+			prereqs = "needs.history-input.result == 'success' && "
+		case "sema":
+			prereqs = "needs.test-binaries.result == 'success' && "
+		case "lwc-vf":
+			prereqs = "needs.history-input.result == 'success' && needs.test-binaries.result == 'success' && "
+		case "apextest":
+			prereqs = "needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && "
+		}
+		guard := "    if: ${{ !cancelled() && " + prereqs + expr + " }}"
 		if strings.Count(job, guard) != 1 {
-			return fmt.Sprintf("%s cache-pair bounds guard is not exact", jobName)
+			return fmt.Sprintf("%s PR, reuse, or cache-pair bounds guard is not exact", jobName)
 		}
 		validation := `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
 		if strings.Count(job, validation) != 1 {
@@ -2059,6 +2072,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		return "missing single required-ci job"
 	}
 	wantNeeds := `    needs:
+      - tree-reuse-gate
+      - reused-tree-ci
       - workflow-lint
       - pr-tests
       - pr-guards
@@ -2117,6 +2132,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "runner", want: "    runs-on: ubuntu-24.04"},
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
+		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
+		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
 		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan")`},
 		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards")`},
@@ -3464,8 +3481,8 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if strings.Count(remaining, "          - lane:") != 1 || !strings.Contains(remaining, "          - lane: remaining-go\n            name: test\n") {
 		t.Error("test job must hold the single remaining-go row")
 	}
-	if strings.Contains(remaining, "needs:") {
-		t.Error("remaining-go uses no shared binary or history input and must not wait on one")
+	if strings.Count(remaining, "    needs: tree-reuse-gate\n") != 1 {
+		t.Error("remaining-go must wait only on the tree reuse gate")
 	}
 	for index := range 12 {
 		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
@@ -3598,10 +3615,10 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
-		"rename display":          strings.Replace(workflow, "    name: Required CI\n    needs:\n", "    name: Required Checks\n    needs:\n", 1),
+		"rename display":          strings.Replace(workflow, "    name: Required CI\n    outputs:\n", "    name: Required Checks\n    outputs:\n", 1),
 		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
-		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        continue-on-error: true\n        env:\n", 1),
-		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        env:\n", 1),
+		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        continue-on-error: true\n        env:\n", 1),
+		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        if: false\n        env:\n", 1),
 	}
 	for name, mutated := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -3618,7 +3635,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "history", "gladecli", "leak-scan", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full",
+		"apextest", "history", "gladecli", "leak-scan", "tree-receipt", "tree-reuse-gate", "reused-tree-ci", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full",
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "pr-tests")
@@ -3638,7 +3655,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "leak-scan"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "tree-reuse-gate", "smoke-distribution": "tree-reuse-gate"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
