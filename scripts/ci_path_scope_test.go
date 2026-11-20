@@ -164,3 +164,17 @@ func TestCIBenchmarkSiteScopeComposition(t *testing.T) {
 		})
 	}
 }
+
+func TestCIRequiredAggregateRequiresSiteOnPullRequests(t *testing.T) {
+	workflow := readWorkflowFile(t, "ci.yml")
+	if problem := ciRequiredAggregateProblem(workflow); problem != "" {
+		t.Fatalf("combined required aggregate: %s", problem)
+	}
+	mutated := strings.Replace(workflow, ` or .key == "site"`, "", 1)
+	if mutated == workflow {
+		t.Fatal("site selection not found")
+	}
+	if problem := ciRequiredAggregateProblem(mutated); problem == "" {
+		t.Fatal("aggregate guard accepted a missing site result")
+	}
+}
