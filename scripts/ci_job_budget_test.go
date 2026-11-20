@@ -23,7 +23,7 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 			If       string    `yaml:"if"`
 			Needs    yaml.Node `yaml:"needs"`
 			Strategy struct {
-				Matrix map[string]any `yaml:"matrix"`
+				Matrix yaml.Node `yaml:"matrix"`
 			} `yaml:"strategy"`
 		} `yaml:"jobs"`
 	}
@@ -53,26 +53,10 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		if name == "workflow-lint" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "" && containsDependency(dependencies, "leak-scan") {
+		if name == "workflow-lint" && job.Strategy.Matrix.Kind == 0 && workflow.Jobs["leak-scan"].If == "" && containsDependency(dependencies, "leak-scan") {
 			continue
 		}
-		width := 1
-		if include, ok := job.Strategy.Matrix["include"].([]any); ok {
-			width = len(include)
-		} else if len(job.Strategy.Matrix) > 0 {
-			width = 0
-			for _, values := range job.Strategy.Matrix {
-				if list, ok := values.([]any); ok {
-					if width == 0 {
-						width = 1
-					}
-					width *= len(list)
-				}
-			}
-		}
-		if width == 0 {
-			t.Fatalf("job %s has an unreadable matrix", name)
-		}
+		width := ciJobWidth(t, name, job.Strategy.Matrix)
 		onlyPR := strings.Contains(job.If, "github.event_name == 'pull_request'") && !strings.Contains(job.If, "!=")
 		onlySchedule := strings.Contains(job.If, "github.event_name == 'schedule'")
 		notPR := strings.Contains(job.If, "github.event_name != 'pull_request'")
