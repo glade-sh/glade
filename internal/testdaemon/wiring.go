@@ -265,11 +265,15 @@ func (d *Daemon) runRequestV1Attempt(
 	// Hold failed compile events only when this generation has drifted. If the
 	// refresh succeeds, the retry is the attempt clients should see finish.
 	var pending []apextest.TestProgress
+	var progressMu sync.Mutex
+	compileStarted := false
 	if progress != nil && allowRetry {
 		buffering := false
-		var progressMu sync.Mutex
 		options.Progress = func(event apextest.TestProgress) {
 			progressMu.Lock()
+			if event.Event == "compile_start" {
+				compileStarted = true
+			}
 			if !buffering && event.Event == "compile_done" && event.Status == "fail" &&
 				typesys.ValidateSourceGeneration(generation.index, generation.artifacts.SourceDigests) != nil {
 				buffering = true
@@ -287,6 +291,37 @@ func (d *Daemon) runRequestV1Attempt(
 	summary := run.Summary()
 	if allowRetry && summary.CompileErrors > 0 && summary.CompileErrors == summary.Total && ctx.Err() == nil {
 		if _, ok := d.refreshStaleGeneration(generation); ok {
+			if compileStarted && len(pending) > 0 {
+				// Keep the first start live, and let the retry's completion close it.
+				// A retry can also return during selection, before compiling.
+				suppressedStart, completed := false, false
+				retryProgress := func(event apextest.TestProgress) {
+					progressMu.Lock()
+					if event.Event == "compile_start" && !suppressedStart {
+						suppressedStart = true
+						progressMu.Unlock()
+						return
+					}
+					if event.Event == "compile_done" {
+						completed = true
+					}
+					progressMu.Unlock()
+					progress(event)
+				}
+				retryRun, retrySelection, retryPlan, retryErr := d.runRequestV1Attempt(ctx, request, retryProgress, setProgressTotal, false)
+				progressMu.Lock()
+				retryCompleted := completed
+				progressMu.Unlock()
+				if !retryCompleted {
+					for _, event := range pending {
+						if event.Event == "compile_done" {
+							progress(event)
+							break
+						}
+					}
+				}
+				return retryRun, retrySelection, retryPlan, retryErr
+			}
 			return d.runRequestV1Attempt(ctx, request, progress, setProgressTotal, false)
 		}
 	}
