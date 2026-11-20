@@ -2475,8 +2475,8 @@ func browserWorkflowProblem(workflow string) string {
 		return fmt.Sprintf("continue-on-error count = %d, want 7 cache operations only", strings.Count(workflow, "continue-on-error: true"))
 	}
 	for marker, want := range map[string]int{
-		"          REAL_NPM=$(command -v npm)\n":                                              1,
-		"          export REAL_NPM\n":                                                         1,
+		"          REAL_NPM=$(command -v npm)\n": 1,
+		"          export REAL_NPM\n":            1,
 		`export BROWSER_NODE_TEST_LOG="$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log"`: 1,
 		`          : >"$BROWSER_NODE_TEST_LOG"` + "\n":                                        1,
 		`cat >"$RUNNER_TEMP/browser-bin/npm" <<'WRAPPER'`:                                     1,
