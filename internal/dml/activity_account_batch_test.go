@@ -63,14 +63,14 @@ func TestActivityAccountBatchRefreshScansOnce(t *testing.T) {
 	}
 	// The Opportunity keeps A1: its Task must not move even though its WhoId Contact does.
 	updates = append(updates, storage.Record{Object: "Opportunity", ID: opp, Fields: map[string]storage.Value{"Amount": storage.DecimalValue("1")}})
-	activityRefreshScans = 0
+	activityRefreshScans.Store(0)
 	for i, result := range engine.Update(updates) {
 		if !result.Success {
 			t.Fatalf("update %d: %#v", i, result)
 		}
 	}
-	if activityRefreshScans != 1 {
-		t.Fatalf("activity scans = %d, want 1 for one batch of %d parents", activityRefreshScans, len(updates))
+	if activityRefreshScans.Load() != 1 {
+		t.Fatalf("activity scans = %d, want 1 for one batch of %d parents", activityRefreshScans.Load(), len(updates))
 	}
 	for _, object := range []string{"Task", "Event"} {
 		for id, record := range org.Objects[object].Records {
@@ -85,12 +85,12 @@ func TestActivityAccountBatchRefreshScansOnce(t *testing.T) {
 	}
 
 	// A single-record update outside a batch still refreshes immediately.
-	activityRefreshScans = 0
+	activityRefreshScans.Store(0)
 	if err := engine.updateOne(storage.Record{Object: "Opportunity", ID: opp, Fields: map[string]storage.Value{"AccountId": storage.IDValue(a2)}}); err != nil {
 		t.Fatal(err)
 	}
-	if activityRefreshScans != 1 {
-		t.Fatalf("single update scans = %d, want 1", activityRefreshScans)
+	if activityRefreshScans.Load() != 1 {
+		t.Fatalf("single update scans = %d, want 1", activityRefreshScans.Load())
 	}
 	for id, record := range org.Objects["Task"].Records {
 		if got := idFromStorageValue(record.Fields["AccountId"]); got != a2 {

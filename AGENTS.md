@@ -86,8 +86,10 @@ bash scripts/pr-check.sh
 - A test that needs Node, Playwright or Chromium and did not run is "not run",
   never "passed".
 - A new Go package, goroutine, `sync` primitive or `t.Parallel` test needs its
-  entries in `scripts/ci-package-lanes.json` and `scripts/ci-race-push.json`.
-  `go test ./scripts` checks them.
+  entry in `scripts/ci-package-lanes.json`. Race coverage needs no manifest:
+  the nightly race workflow runs every package outside the six big ones whole
+  and derives its conformance sample at run time. `go test ./scripts` checks
+  the lanes.
 - Before asking for review, run the `pr-ready` skill. For other surfaces (site,
   playground, LWC, VS Code extension, release), use the `validate` skill.
 

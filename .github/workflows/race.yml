@@ -1,16 +1,28 @@
 name: Race
 
+# The race detector only reports races between goroutines that run at the
+# same time, so the nightly set covers exactly that, plus a weekly full
+# backstop. go test's exit status is the verdict: no plan job, no duration
+# history, no shard evidence.
 on:
   schedule:
-    # Race is not a release authority and is red by design on main pushes;
-    # it runs nightly only.
-    - cron: '43 10 * * *'
+    # Nightly lite Monday through Saturday; the Sunday slot below is the
+    # weekly full backstop, which subsumes the nightly set.
+    - cron: '43 10 * * 1-6'
+    - cron: '43 10 * * 0'
   workflow_dispatch:
+    inputs:
+      full:
+        description: 'Run the weekly full backstop instead of the nightly set'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 env:
+  CGO_ENABLED: "1"
+  GOMAXPROCS: "2"
   GOMEMLIMIT: "6GiB"
 
 concurrency:
@@ -18,333 +30,69 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  plan:
+  # Every package outside the six big ones and outside the browser set, whole,
+  # split into two halves so the race compile is shared. The packages whose
+  # tests drive Node, the vendored LWC toolchain and Playwright (lwc,
+  # lwcbrowser, lwcruntime) run in browser-packages below with those
+  # prerequisites; repoguard is excluded here (its full suite runs in normal
+  # CI and in the weekly backstop); its concurrency-bearing scan-cache unit
+  # tests run in concurrent-tests below.
+  small-packages:
+    name: Small packages whole (half ${{ matrix.half }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      actions: read
-    env:
-      GLADE_ROOT: ${{ github.workspace }}
-      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
-    outputs:
-      packages: ${{ steps.classify.outputs.packages }}
-      early-packages: ${{ steps.classify.outputs.early-packages }}
-      generic-packages: ${{ steps.classify.outputs.generic-packages }}
-      has-packages: ${{ steps.classify.outputs.has-packages }}
-      has-early-packages: ${{ steps.classify.outputs.has-early-packages }}
-      has-generic-packages: ${{ steps.classify.outputs.has-generic-packages }}
-      mode: ${{ steps.classify.outputs.mode }}
-      push-matrix: ${{ steps.classify.outputs.push-matrix }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Classify race packages
-        id: classify
-        run: |
-          case "${{ github.event_name }}" in
-            push)
-              mode=concurrency
-              packages="$(scripts/ci-race-packages.sh full)"
-              ;;
-            schedule|workflow_dispatch)
-              mode=full
-              packages="$(scripts/ci-race-packages.sh full)"
-              ;;
-            *)
-              echo "unsupported race event: ${{ github.event_name }}" >&2
-              exit 2
-              ;;
-          esac
-          if [[ "$packages" == "[]" ]]; then has_packages=false; else has_packages=true; fi
-          mapfile -t partition < <(scripts/ci-race-packages.sh partition "$packages")
-          if [[ "${#partition[@]}" -ne 2 ]]; then
-            echo "race package partition did not return early and generic lists" >&2
-            exit 2
-          fi
-          early_packages="${partition[0]}"
-          generic_packages="${partition[1]}"
-          if [[ "$early_packages" == "[]" ]]; then has_early_packages=false; else has_early_packages=true; fi
-          if [[ "$generic_packages" == "[]" ]]; then has_generic_packages=false; else has_generic_packages=true; fi
-          push_matrix="$(python3 scripts/ci-race-push.py plan)"
-          echo "push-matrix=$push_matrix" >>"$GITHUB_OUTPUT"
-          echo "mode=$mode" >>"$GITHUB_OUTPUT"
-          echo "packages=$packages" >>"$GITHUB_OUTPUT"
-          echo "early-packages=$early_packages" >>"$GITHUB_OUTPUT"
-          echo "generic-packages=$generic_packages" >>"$GITHUB_OUTPUT"
-          echo "has-packages=$has_packages" >>"$GITHUB_OUTPUT"
-          echo "has-early-packages=$has_early_packages" >>"$GITHUB_OUTPUT"
-          echo "has-generic-packages=$has_generic_packages" >>"$GITHUB_OUTPUT"
-          mkdir -p ci-artifacts/race-plan
-          printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
-        with:
-          node-version: "22"
-      - name: Resolve race npm cache path
-        id: race-npm-cache
-        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
-        run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
-      - name: Restore race npm cache
-        id: race-npm-cache-restore
-        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ${{ steps.race-npm-cache.outputs.dir }}
-          key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
-      - name: Install shared LWC toolchain
-        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
-        timeout-minutes: 5
-        run: npm ci --prefix third_party/lwc
-      - name: Save race npm cache
-        if: ${{ steps.classify.outputs.mode == 'full' && contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ${{ steps.race-npm-cache.outputs.dir }}
-          key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}
-      - name: Find validated LWC timing evidence
-        if: steps.classify.outputs.mode == 'full'
-        id: lwc-history
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BEFORE_SHA: ${{ github.event.before }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          refs=("$GITHUB_SHA" "$BEFORE_SHA")
-          if base="$(git merge-base HEAD "refs/remotes/origin/$DEFAULT_BRANCH")"; then
-            refs+=("$base")
-          fi
-          for ref in "${refs[@]}"; do
-            if [[ ! "$ref" =~ ^[0-9a-f]{40}$ || "$ref" == 0000000000000000000000000000000000000000 ]]; then continue; fi
-            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$ref" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
-              echo "::warning::LWC timing lookup unavailable for $ref"
-              continue
-            fi
-            if [[ -n "$run_id" ]]; then
-              echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
-          echo "::warning::Validated LWC timings unavailable; using deterministic scheduling fallback"
-      - name: Download LWC timing evidence
-        id: lwc-timing-download
-        if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != ''
-        continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.lwc-history.outputs.run_id }}
-          pattern: go-test-lwc-compile-shard-*
-          path: /tmp/race-lwc-predecessor
-      - name: Validate LWC duration history
-        if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
-        run: |
-          shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7})
-          if [[ -d /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-11 ]]; then shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..11}); fi
-          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" "${shards[@]}"; then
-            :
-          else
-            status=$?
-            rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
-            echo "::error::Downloaded LWC timing evidence is invalid" >&2
-            exit "$status"
-          fi
-      - name: Stage shared LWC duration history
-        if: steps.classify.outputs.mode == 'full'
-        run: |
-          mkdir -p ci-artifacts/race-lwc-history-input
-          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
-            cp "$CI_LWC_COMPILE_HISTORY_PATH" ci-artifacts/race-lwc-history-input/lwc-compile-duration-history.json
-          fi
-          : >ci-artifacts/race-lwc-history-input/ready
-      - name: Upload shared LWC duration history
-        if: steps.classify.outputs.mode == 'full'
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race-lwc-history-input/
-          if-no-files-found: error
-      - name: Upload race plan
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-plan-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race-plan/plan.json
-          if-no-files-found: error
-
-  test-binaries:
-    needs: plan
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
-    runs-on: ubuntu-24.04
-    outputs:
-      artifact-attempt: ${{ steps.bundle.outputs.attempt }}
-    timeout-minutes: 30
-    env:
-      GOMAXPROCS: "2"
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Restore Go module cache
-        id: restore-go-mod-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
-      - name: Restore Go build cache
-        id: restore-go-build-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
-      - name: Bind binary artifact attempt
-        id: bundle
-        run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
-      - name: Build shared test binaries
-        env:
-          CGO_ENABLED: "1"
-        run: |
-          for package in apextest gladecli lwc/compile visualforce; do
-            slug="${package//\//-}"
-            python3 scripts/ci-test-binary.py build "/tmp/glade-race-test-binaries/$slug" race "./internal/$package"
-          done
-      - name: Save Go module cache
-        if: success()
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
-      - name: Save Go build cache
-        if: success()
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/go-build
-          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
-      - name: Upload apextest test binary
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-race-test-binaries/apextest/
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
-      - name: Upload gladecli test binary
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-test-binaries-gladecli-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-race-test-binaries/gladecli/
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
-      - name: Upload lwc-compile test binary
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-test-binaries-lwc-compile-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-race-test-binaries/lwc-compile/
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
-      - name: Upload visualforce test binary
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-test-binaries-visualforce-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-race-test-binaries/visualforce/
-          compression-level: 1
-          retention-days: 1
-          if-no-files-found: error
-
-  race-browser:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 145
+    timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 8
       matrix:
-        include:
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 0
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 1
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 2
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shard: 3
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 0
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 1
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 2
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 3
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 4
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 5
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 6
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shard: 7
-    env:
-      GLADE_ROOT: ${{ github.workspace }}
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_SHARD_INDEX: ${{ matrix.shard }}
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
-      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
-      GLADE_LWC_COMPILE: "1"
-      NO_COLOR: "1"
-      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+        half: [0, 1]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: race-test-binaries-${{ matrix.slug == 'internal-lwc-compile' && 'lwc-compile' || 'visualforce' }}-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
-      - name: Download shared LWC duration history
-        if: matrix.package == './internal/lwc/compile'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      - name: Run race detector over the small packages
+        run: |
+          mapfile -t packages < <(go list ./... | grep -Ev \
+            '^github\.com/glade-sh/glade/internal/(apextest|gladecli|gladehome|lwc|lwcbrowser|lwcruntime(/embed)?|playground|repoguard|sema|server|storage|testdaemon|vm|visualforce)$|^github\.com/glade-sh/glade/internal/lwc/compile$' \
+            | awk -v half='${{ matrix.half }}' 'NR % 2 == half')
+          echo "half ${{ matrix.half }}: ${#packages[@]} packages"
+          go test -race -timeout=50m "${packages[@]}"
+      - name: Summary
+        if: always()
+        run: 'echo "small packages, half ${{ matrix.half }}: ${{ job.status }}"'
+
+  # The packages whose tests drive Node, the vendored LWC toolchain and
+  # Playwright, whole: the LWC compiler routes of internal/lwc fail without
+  # node and third_party/lwc/node_modules, the Playwright suites of
+  # internal/lwcbrowser skip or fail without them plus the lwcruntime
+  # dependencies and Chromium, and internal/lwcruntime runs the lwcruntime
+  # npm test suite under GLADE_LWC_BROWSER=1. The install steps are the same
+  # as weekly-browser's; the timeout covers those steps' 5+5+65 minute caps
+  # plus the 60m per-package test budget the old nightly gave each of these.
+  browser-packages:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 145
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      GLADE_LWC_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-lwc-compile-duration-history
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
       - name: Install LWC toolchain
-        if: matrix.package == './internal/lwc/compile'
         timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -354,375 +102,249 @@ jobs:
       - name: Install conformance Chromium
         timeout-minutes: 65
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - name: Run assigned browser race shard
-        env:
-          PACKAGE: ${{ matrix.package }}
-          SLUG: ${{ matrix.slug }}
-        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
-      - name: Upload browser race evidence
+      - name: Run race detector over the browser packages
+        run: go test -race -timeout=60m ./internal/lwc ./internal/lwcbrowser ./internal/lwcruntime
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-${{ matrix.slug }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/${{ matrix.slug }}
-          if-no-files-found: error
+        run: 'echo "browser packages whole: ${{ job.status }}"'
 
-  race-browser-aggregate:
-    needs: [plan, race-browser]
-    if: always() && needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
+  # The packages outside the big six that deliberately run concurrent code,
+  # whole: storage, sema, gladehome, playground and testdaemon.
+  concurrent-packages:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: ./internal/visualforce
-            slug: internal-visualforce
-            shards: 4
-          - package: ./internal/lwc/compile
-            slug: internal-lwc-compile
-            shards: 8
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download browser race evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: race-${{ matrix.slug }}-*-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/browser-runners
-      - name: Validate combined browser race evidence
-        env:
-          PACKAGE: ${{ matrix.package }}
-          SLUG: ${{ matrix.slug }}
-          SHARD_COUNT: ${{ matrix.shards }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          roots=()
-          for ((index=0; index<SHARD_COUNT; index++)); do
-            roots+=("ci-artifacts/race/browser-runners/race-${SLUG}-${index}-${RUN_ID}-${RUN_ATTEMPT}")
-          done
-          scripts/ci-race-shard-aggregate.sh "$PACKAGE" "ci-artifacts/race/${SLUG}-aggregate/union-validation.json" "$HEAD_SHA" "${roots[@]}"
-      - name: Upload combined browser race evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-${{ matrix.slug }}-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/${{ matrix.slug }}-aggregate/union-validation.json
-          if-no-files-found: error
-
-  race-early:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-early-packages == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 80
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.plan.outputs.early-packages) }}
+    timeout-minutes: 75
     env:
       GLADE_ROOT: ${{ github.workspace }}
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: ${{ matrix.package == './internal/gladecli' && '/tmp/glade-race-test-binaries' || '' }}
-      GOMAXPROCS: "2"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        if: matrix.package == './internal/gladecli'
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: race-test-binaries-gladecli-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ matrix.package == './internal/gladecli' }}
         with:
           node-version: "22"
-      - name: Resolve npm cache path
-        id: npm-cache
-        if: ${{ matrix.package == './internal/gladecli' }}
-        run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
-      - name: Restore LWC npm cache
-        if: ${{ matrix.package == './internal/gladecli' }}
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ${{ steps.npm-cache.outputs.dir }}
-          key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
-        if: ${{ matrix.package == './internal/gladecli' }}
         timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
-      - name: Resolve artifact name
-        id: artifact
-        env:
-          PACKAGE: ${{ matrix.package }}
-        run: |
-          slug="${PACKAGE#./}"
-          slug="${slug//\//-}"
-          if [[ ! "$slug" =~ ^[A-Za-z0-9._-]+$ ]]; then exit 2; fi
-          echo "slug=$slug" >>"$GITHUB_OUTPUT"
-      - name: Run early race detector
-        env:
-          GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}
-          PACKAGE: ${{ matrix.package }}
-          SLUG: ${{ steps.artifact.outputs.slug }}
-        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
-      - name: Upload early race evidence
+      - name: Run race detector over the concurrency-bearing packages
+        run: go test -race -timeout=70m ./internal/storage ./internal/sema ./internal/gladehome ./internal/playground ./internal/testdaemon
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-${{ steps.artifact.outputs.slug }}
-          path: ci-artifacts/race/
-          if-no-files-found: error
+        run: 'echo "concurrency packages whole: ${{ job.status }}"'
 
-  race:
-    needs: plan
-    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-generic-packages == 'true'
+  # Only the tests whose names mark Go-level concurrency, one -run regex per
+  # package. In apextest and vm the words Async, Queue, Stream, Signal and
+  # Lock name Apex features (Queueable, @future, EventBus streams, Approval
+  # and FOR UPDATE locks) — around a hundred heavy conformance tests under
+  # one shared regex — and in server Serve matched the ServerRoutes HTTP
+  # route tests, so those three packages keep only the words whose matches
+  # there are Go concurrency: vm drops Worker and Overlap, whose only matches
+  # are the BatchApexWorker job records and the trigger overlap error, and
+  # server narrows Lock to OrgLock to keep the Approval.lock route tests
+  # out. gladecli keeps the broad set because its Daemon, Watch,
+  # GracefulStop, Listener and Serve tests are Go-level and light. Each
+  # selection prints its matched-test count and fails on an empty match so
+  # drift is visible, and keeps its per-package timeout. The lwc/compile and
+  # visualforce entries are their nightly smoke; browser conformance is
+  # excluded under race (the weekly backstop runs it). The lwc/compile smoke
+  # compiles with the vendored LWC toolchain and the gladecli selection
+  # synthesizes its own toolchain layout, so Node and the toolchain are
+  # installed here. No regex-matched test drives Playwright — the only
+  # browser suite in these packages is server's L08 conformance, which the
+  # regexes do not match and GLADE_LWC_BROWSER=1 gates — so the lwcruntime
+  # dependencies and Chromium stay out of this job.
+  concurrent-tests:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 145
-    strategy:
-      fail-fast: false
-      max-parallel: 6
-      matrix:
-        package: ${{ fromJSON(needs.plan.outputs.generic-packages) }}
+    timeout-minutes: 75
     env:
       GLADE_ROOT: ${{ github.workspace }}
-      GOMAXPROCS: "2"
-      GLADE_LWC_BROWSER: "1"
-      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      # Go-concurrency words only, one regex per narrowed package (see the
+      # job comment above).
+      APEXTEST_CONCURRENCY_TEST_RE: 'Concurren|Parallel|Race|Goroutine|Worker|Pool|Singleflight|Overlap|Cancel'
+      VM_CONCURRENCY_TEST_RE: 'Concurren|Race|Pool|Cancel'
+      SERVER_CONCURRENCY_TEST_RE: 'Concurren|OrgLock|Listener|Shutdown|Graceful|Parallel|Race'
+      # The broad set: gladecli's selection and the lwc/compile and
+      # visualforce nightly smoke.
+      CONCURRENCY_TEST_RE: 'Concurren|Parallel|Race|Goroutine|Cancel|Daemon|Watch|Async|Queue|Listener|Lock|Shutdown|GracefulStop|Interrupt|Pool|Worker|Serve|Stream|Heartbeat|Debounce|Singleflight|Reentrant|ThreadSafe|Overlap|Signal'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
         with:
           node-version: "22"
-      - name: Resolve npm cache path
-        id: npm-cache
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
-        run: echo "dir=$(npm config get cache)" >>"$GITHUB_OUTPUT"
-      - name: Restore LWC npm cache
-        id: npm-cache-restore
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ${{ steps.npm-cache.outputs.dir }}
-          key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}
       - name: Install LWC toolchain
-        if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwc","./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
         timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
-      - name: Install browser conformance dependencies
-        if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
-        timeout-minutes: 5
-        run: npm ci --prefix lwcruntime
-      - name: Install conformance Chromium
-        if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/lwcruntime","./internal/server"]'), matrix.package) }}
-        timeout-minutes: 65
-        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - name: Resolve artifact name
-        id: artifact
-        env:
-          PACKAGE: ${{ matrix.package }}
+      - name: Run concurrency-named tests per package
         run: |
-          slug="${PACKAGE#./}"
-          slug="${slug//\//-}"
-          if [[ ! "$slug" =~ ^[A-Za-z0-9._-]+$ ]]; then exit 2; fi
-          echo "slug=$slug" >>"$GITHUB_OUTPUT"
-      - name: Run race detector
-        env:
-          PACKAGE: ${{ matrix.package }}
-          SLUG: ${{ steps.artifact.outputs.slug }}
-        run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
-      - name: Upload race evidence
+          run_selection() {
+            package="$1" regex="$2" timeout="$3"
+            listed="$(go test -race -list "$regex" "$package")"
+            matched="$(printf '%s\n' "$listed" | grep -c '^Test' || true)"
+            if [ "$matched" -eq 0 ]; then
+              echo "$package: no tests match '$regex'" >&2
+              exit 1
+            fi
+            echo "$package: $matched tests match '$regex'"
+            go test -race -timeout="$timeout" -run "$regex" "$package"
+          }
+          run_selection ./internal/apextest "$APEXTEST_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/vm "$VM_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/gladecli "$CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/server "$SERVER_CONCURRENCY_TEST_RE" 25m
+          run_selection ./internal/lwc/compile "$CONCURRENCY_TEST_RE" 10m
+          run_selection ./internal/visualforce "$CONCURRENCY_TEST_RE" 10m
+          run_selection ./internal/repoguard '^TestPublicScan' 10m
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-${{ steps.artifact.outputs.slug }}
-          path: ci-artifacts/race/
-          if-no-files-found: error
+        run: 'echo "concurrency-named tests of the big six plus the repoguard cache tests: ${{ job.status }}"'
 
-  race-apextest-a:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+  # A fixed sample of apextest and vm chosen by name hash, so shared package
+  # state between parallel conformance subtests stays under the detector (the
+  # shape the dml activity-refresh race had). scripts/ci-race-sample.py
+  # derives the selection at run time from go test -list, the packages'
+  # checked-in normal durations and their own t.Parallel() tests.
+  conformance-sample:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 1-6') || (github.event_name == 'workflow_dispatch' && !inputs.full) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 70
-    env:
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: a
-      CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
-      - name: Run assigned Apex race shards
-        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner A evidence
+      - name: Run the sampled apextest conformance tests
+        run: |
+          regex="$(go test -race -list '^Test' ./internal/apextest | python3 scripts/ci-race-sample.py internal/apextest/testdata/shard_durations.json internal/apextest --parallel)"
+          echo "apextest sample: $regex"
+          go test -race -timeout=40m -run "$regex" ./internal/apextest
+      - name: Run the sampled vm conformance tests
+        run: |
+          regex="$(go test -race -list '^Test' ./internal/vm | python3 scripts/ci-race-sample.py internal/vm/testdata/shard_durations.json internal/vm)"
+          echo "vm sample: $regex"
+          go test -race -timeout=40m -run "$regex" ./internal/vm
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-a-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/internal-apextest
-          if-no-files-found: error
+        run: 'echo "1-in-25 conformance sample of apextest and vm: ${{ job.status }}"'
 
-  race-apextest-b:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+  # Weekly full backstop: one job per big package, whole, no sharding. If a
+  # package outgrows the job timeout, split it by test-name initial
+  # (-run '^Test[A-L]' and -run '^Test[M-Z]') instead of adding scheduling.
+  weekly-big:
+    name: Weekly full race (${{ matrix.package }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.full) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 70
-    env:
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: b
-      CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Run assigned Apex race shard
-        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner B evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-b-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/internal-apextest
-          if-no-files-found: error
-
-  race-apextest-c:
-    needs: [plan, test-binaries]
-    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 70
-    env:
-      CGO_ENABLED: "1"
-      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
-      GOMAXPROCS: "2"
-      CI_RACE_APEXTEST_RUNNER: c
-      CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14
-      CI_RACE_HEAD_SHA: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download shared race test binaries
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
-          path: /tmp/glade-race-test-binaries
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.11"
-          cache: false
-      - name: Run assigned Apex race shards
-        run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
-      - name: Upload Apex runner C evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/internal-apextest
-          if-no-files-found: error
-
-  race-apextest-aggregate:
-    needs: [plan, race-apextest-a, race-apextest-b, race-apextest-c]
-    if: always() && needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download Apex runner A evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: race-internal-apextest-a-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-a
-      - name: Download Apex runner B evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: race-internal-apextest-b-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-b
-      - name: Download Apex runner C evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: race-internal-apextest-c-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-c
-      - name: Validate combined Apex race evidence
-        run: scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c ci-artifacts/race/apextest-aggregate/union-validation.json "${{ github.sha }}"
-      - name: Upload combined Apex race evidence
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-internal-apextest-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-artifacts/race/apextest-aggregate/union-validation.json
-          if-no-files-found: error
-
-  race-push:
-    needs: plan
-    if: needs.plan.outputs.mode == 'concurrency'
-    runs-on: ubuntu-24.04
-    timeout-minutes: ${{ matrix.timeoutMinutes }}
+    timeout-minutes: 330
     strategy:
       fail-fast: false
-      max-parallel: 6
       matrix:
-        include: ${{ fromJSON(needs.plan.outputs.push-matrix).include }}
-    env:
-      GLADE_ROOT: ${{ github.workspace }}
-      CGO_ENABLED: "1"
-      GOMAXPROCS: "2"
-      GLADE_LWC_BROWSER: "1"
-      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+        package: ['./internal/apextest', './internal/vm', './internal/gladecli', './internal/server']
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.11"
           cache: false
-      - if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+      - name: Run the full package under the race detector
+        run: go test -race -timeout=320m ${{ matrix.package }}
+      - name: Summary
+        if: always()
+        run: 'echo "weekly full race, ${{ matrix.package }}: ${{ job.status }}"'
+
+  weekly-browser:
+    name: Weekly full race (${{ matrix.package }})
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ['./internal/lwc/compile', './internal/visualforce']
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      GLADE_LWC_COMPILE: "1"
+      NO_COLOR: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
       - name: Install LWC toolchain
-        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
+        if: ${{ matrix.package == './internal/lwc/compile' }}
         timeout-minutes: 5
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
-        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
+        timeout-minutes: 5
+        run: npm ci --prefix lwcruntime
+      # Three times the observed 19m39s install plus backoff fits in 65m.
+      - name: Install conformance Chromium
+        timeout-minutes: 65
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run the full package under the race detector
+        run: go test -race -timeout=320m ${{ matrix.package }}
+      - name: Summary
+        if: always()
+        run: 'echo "weekly full race, ${{ matrix.package }}: ${{ job.status }}"'
+
+  # The weekly rest: every package outside the big six in one job, including
+  # repoguard, the concurrency packages and the small browser packages with
+  # their full prerequisites.
+  weekly-rest:
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 10 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.full) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    env:
+      GLADE_ROOT: ${{ github.workspace }}
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+      GLADE_LWC_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install LWC toolchain
+        timeout-minutes: 5
+        run: npm ci --prefix third_party/lwc
+      - name: Install browser conformance dependencies
         timeout-minutes: 5
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
-        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
         timeout-minutes: 65
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
-      - name: Run concurrent Go tests
-        run: python3 scripts/ci-race-push.py run "${{ matrix.index }}"
-      - name: Upload push race evidence
+      - name: Run the remaining packages under the race detector
+        run: |
+          mapfile -t packages < <(go list ./... | grep -Ev \
+            '^github\.com/glade-sh/glade/internal/(apextest|gladecli|server|vm|visualforce)$|^github\.com/glade-sh/glade/internal/lwc/compile$')
+          echo "${#packages[@]} packages"
+          go test -race -timeout=320m "${packages[@]}"
+      - name: Summary
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: race-push-${{ matrix.index }}-${{ github.run_attempt }}
-          path: ci-artifacts/race-push/
-          if-no-files-found: error
+        run: 'echo "weekly full race, all remaining packages: ${{ job.status }}"'

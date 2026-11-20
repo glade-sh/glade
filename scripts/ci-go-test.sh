@@ -297,9 +297,6 @@ run_package_lane() {
 		echo "[ci] package lane ${lane} is empty" >&2
 		return 1
 	fi
-	if [[ "${kind}" == "race" ]]; then
-		args+=(-race)
-	fi
 	args+=(-timeout="${timeout}")
 	if [[ -n "${skip_regex}" ]]; then
 		args+=(-skip "${skip_regex}")
@@ -607,12 +604,9 @@ validate_local_release_package_summary() {
 	local package_metadata_path="$5"
 	shift 5
 	python3 - "${lane}" "${label}" "${events_path}" "${summary_path}" "${package_metadata_path}" "${repo_root}" "${script_dir}/ci-apex-native-gaps.json" "$@" <<'PY'
-import csv
 import json
 import os
 import sys
-import tempfile
-from pathlib import Path
 
 lane, label, events_path, summary_path, package_metadata_path, repo_root, apex_gaps_path, *arguments = sys.argv[1:]
 module = "github.com/glade-sh/glade"
@@ -676,57 +670,6 @@ native_boundaries = {
         "native boundary is captured but outside this bind replay"
     for api in ("62.0", "67.0")
 }
-# Push race still reports captured known gaps, rather than treating them as
-# passing conformance. Reconstruct the exact expected identity and text from
-# the owned native matrix; no other skipped row is excused.
-race_known_gaps = {}
-if lane == "race" and module + "/internal/sema" in expected:
-    fixture = Path(repo_root) / "internal/apextest/testdata/conformance/qualified_receivers"
-    with (fixture / "cases.tsv").open(newline="", encoding="utf-8") as source:
-        cases = {row["case"]: row for row in csv.DictReader(source, delimiter="\t")}
-    with (fixture / "compile.tsv").open(newline="", encoding="utf-8") as source:
-        for row in csv.DictReader(source, delimiter="\t"):
-            case = cases[row["case"]]
-            eligible = (case["kind"] == "known_gap" and row["case"] != "standard_schema_fields_map"
-                        or row["route"] == "anonymous" and case["kind"] == "receiver" and row["compiled"] == "false")
-            if eligible and row["compiled"] == "false":
-                key = "/".join((row["source_api"], row["route"], row["case"]))
-                name = "TestAnalyzeQualifiedReceiverNativeControls/KNOWN_GAP/" + key
-                reason = f"KNOWN GAP: local analysis accepts {case['expression']}; native compile.tsv row {key} rejects it: {row['problem']}"
-                race_known_gaps[(module + "/internal/sema", name)] = reason
-if lane == "race":
-    with tempfile.TemporaryDirectory() as directory:
-        probe = Path(directory) / "caseprobe"
-        probe.touch()
-        case_sensitive = not (Path(directory) / "CASEPROBE").exists()
-else:
-    case_sensitive = False
-case_reason = "case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive"
-case_routes = {
-    module + "/internal/gladecli": {
-        "TestHomeProjectRoutesTwoProcessesPendingInstall": ("Compile", "CompileBatch", "ServerModules", "ServerVendor", "ServerShims", "ServerRuntime", "DevLWC", "DevVF"),
-        "TestHomeCLIStatusRoutesTwoProcessesPendingInstall": ("ToolchainStatusCLI", "DoctorCLI"),
-    },
-    module + "/internal/gladehome": {
-        "TestHomeReadersTwoProcessesPendingInstall": ("EnsureRoot", "Root", "LWCToolchainDir", "ShimsDir", "RuntimeAssetDir", "ToolchainStatus"),
-    },
-}
-race_case_skips = {(package, f"{parent}/install_then_{route}/{selector}")
-    for package, parents in case_routes.items() for parent, routes in parents.items()
-    for route in routes for selector in ("GLADE_HOME_case", "GLADE_ROOT_case")}
-readonly_case_routes = {
-    module + "/internal/gladehome": {
-        "TestHomeReadersCompletedReadOnlyHome": ("EnsureRoot", "Root", "LWCToolchainDir", "ShimsDir", "RuntimeAssetDir", "ToolchainStatus"),
-    },
-    module + "/internal/gladecli": {
-        "TestHomeProjectRoutesCompletedReadOnlyHome": ("Compile", "CompileBatch", "ServerModules", "ServerVendor", "ServerShims", "ServerRuntime", "DevLWC", "DevVF"),
-        "TestHomeCLIStatusRoutesCompletedReadOnlyHome": ("ToolchainStatusCLI", "DoctorCLI"),
-    },
-}
-readonly_case_skips = {(package, f"{parent}/{lock}/{route}/{selector}")
-    for package, parents in readonly_case_routes.items() for parent, routes in parents.items()
-    for lock in ("absent", "read-only", "inaccessible") for route in routes
-    for selector in ("GLADE_HOME_case", "GLADE_ROOT_case")}
 # Exact leaf identities only: an unexpected skip or different reason remains an error.
 with open(apex_gaps_path, encoding="utf-8") as f:
     apex_gaps = json.load(f)
@@ -791,17 +734,6 @@ try:
                 if action == "fail":
                     failed_tests.append(f"{package}/{test}")
                 if action == "skip":
-                    known_reason = race_known_gaps.get(identity)
-                    case_skip = lane == "race" and case_sensitive and identity in race_case_skips
-                    readonly_skip = lane == "race" and case_sensitive and identity in readonly_case_skips
-                    reason = known_reason or (case_reason if case_skip else "case alias requires a case-insensitive filesystem" if readonly_skip else "")
-                    source_file = "qualified_receiver_matrix_test.go" if known_reason else "readonly.go" if readonly_skip else "process.go"
-                    pattern = r"\s+" + re.escape(source_file) + r":\d+: " + re.escape(reason) + r"\s*$"
-                    if reason and any(re.fullmatch(pattern, line)
-                            for output in test_output.get(identity, ()) for line in output.splitlines()):
-                        summary["deferred"].append({"package": package, "test": test,
-                            "skipReason": reason, "reason": "captured known gap" if known_reason else "case-sensitive filesystem"})
-                        continue
                     boundary_cause = native_boundaries.get(identity)
                     boundary_pattern = (r"\s+\S+_test.go:\d+: " + re.escape(boundary_cause) + r"\s*$"
                                         if boundary_cause else "")
@@ -826,21 +758,6 @@ try:
                         elif re.fullmatch(pending, test):
                             reason = r"\s+process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive\s*$"
                     if reason and any(re.fullmatch(reason, line) for output in test_output.get(identity, ()) for line in output.splitlines()):
-                        continue
-                    # The early gladecli race route spends its single processor
-                    # on race instrumentation, and the runner caps simultaneous
-                    # test execution owners at GOMAXPROCS, so the parallel
-                    # route reports the processor shortfall instead of running
-                    # two tests at once. Only this exact identity and reason
-                    # defer, and only on the race lane: normal lanes run with
-                    # two processors and must still observe the overlap.
-                    procs_shortfall = "the parallel route needs two processors for two tests in flight; testExecutionParallelism caps execution owners to GOMAXPROCS"
-                    if (lane == "race" and identity == (module + "/internal/gladecli", "TestRunTestMemoryLimitsParallelMethodAndClassRoutes")
-                            and any(re.fullmatch(r"\s+\S+_test\.go:\d+: " + re.escape(procs_shortfall) + r"\s*$", line)
-                                    for output in test_output.get(identity, ()) for line in output.splitlines())):
-                        summary["deferred"].append({"package": package, "test": test,
-                            "skipReason": procs_shortfall,
-                            "reason": "parallel route overlap needs two execution owners; the race route spends one on instrumentation"})
                         continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
@@ -1026,15 +943,6 @@ run_selected_local_release_lane() {
 			return 2
 			;;
 	esac
-}
-
-run_race_tests() {
-	run_package_lane "apextest" race 60m
-	run_package_lane "gladecli" race 60m
-	run_package_lane "sema" race 60m
-	run_package_lane "server-and-playground" race 60m
-	run_package_lane "repoguard" race 60m
-	run_package_lane "remaining-go" race 30m
 }
 
 validate_package_discovery() {
@@ -2126,9 +2034,6 @@ main() {
 			fi
 			run_selected_local_release_lane "$2"
 			;;
-		race)
-			run_race_tests
-			;;
 		lane)
 			if [[ "$#" -ne 2 ]]; then
 				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|server-process-builder|repoguard|remaining-go}" >&2
@@ -2209,7 +2114,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-11|lwc-compile-history-refresh OUTPUT SHARD_DIR...|visualforce-shard 0-7|visualforce-history-refresh OUTPUT SHARD_DIR...|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-11|lwc-compile-history-refresh OUTPUT SHARD_DIR...|visualforce-shard 0-7|visualforce-history-refresh OUTPUT SHARD_DIR...|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac
