@@ -29,6 +29,7 @@ func TestCIPrepareTreeReuse(t *testing.T) {
 		{"complete", true}, {"wrong before", false}, {"unverified", false},
 		{"missing attempt", false}, {"missing artifact", false}, {"invalid artifact", false},
 		{"incomplete artifact", false},
+		{"missing history declaration", false},
 		{"missing inventory", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -41,10 +42,14 @@ func TestCIPrepareTreeReuse(t *testing.T) {
 			if err := os.WriteFile(filepath.Join(d, "scripts/ci-prepare-tree-reuse.sh"), script, 0o700); err != nil {
 				t.Fatal(err)
 			}
+			tcWorkflow := workflow
 			if tc.name == "missing inventory" {
-				workflow = []byte("jobs:\n  history:\n    steps: []\n")
+				tcWorkflow = []byte("jobs:\n  history:\n    steps: []\n")
 			}
-			if err := os.WriteFile(filepath.Join(d, ".github/workflows/ci.yml"), workflow, 0o600); err != nil {
+			if tc.name == "missing history declaration" {
+				tcWorkflow = []byte(strings.Replace(string(tcWorkflow), "name: gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}", "name: incomplete-evidence", 1))
+			}
+			if err := os.WriteFile(filepath.Join(d, ".github/workflows/ci.yml"), tcWorkflow, 0o600); err != nil {
 				t.Fatal(err)
 			}
 			verify := `#!/usr/bin/env bash
@@ -216,6 +221,63 @@ func TestCITreeReuseDecisionDefaultsToFullRun(t *testing.T) {
 		got, err := os.ReadFile(output)
 		if err != nil || string(got) != "reuse="+tc.want+"\n" {
 			t.Fatalf("%+v: output=%q err=%v", tc, got, err)
+		}
+	}
+}
+
+func TestCIReuseCoversFullValidationJobs(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Needs yaml.Node `yaml:"needs"`
+			If    string    `yaml:"if"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	dependencies := func(name string) []string {
+		t.Helper()
+		node := workflow.Jobs[name].Needs
+		if node.Kind == 0 {
+			return nil
+		}
+		if node.Kind == yaml.ScalarNode {
+			return []string{node.Value}
+		}
+		var names []string
+		if err := node.Decode(&names); err != nil {
+			t.Fatal(err)
+		}
+		return names
+	}
+	var guarded func(string, map[string]bool) bool
+	guarded = func(name string, seen map[string]bool) bool {
+		if seen[name] {
+			return false
+		}
+		seen[name] = true
+		job := workflow.Jobs[name]
+		for _, dependency := range dependencies(name) {
+			if dependency == "tree-reuse-gate" && strings.Contains(job.If, "needs.tree-reuse-gate.outputs.reuse != 'true'") && strings.Contains(job.If, "needs.tree-reuse-gate.result != 'success'") {
+				return true
+			}
+			if strings.Contains(job.If, "!cancelled()") && strings.Contains(job.If, "needs."+dependency+".result == 'success'") && guarded(dependency, seen) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, name := range dependencies("required-ci") {
+		switch name {
+		case "tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test", "pr-tests", "pr-guards":
+			continue
+		}
+		if !guarded(name, map[string]bool{}) {
+			t.Errorf("required validation job %s is not gated directly or through a successful prerequisite", name)
 		}
 	}
 }
