@@ -285,7 +285,7 @@ func TestCILocalReleaseApexLaneKeepsExplicitDataWeaveDeferrals(t *testing.T) {
 // Full server validation must execute L08; the ordinary CI lane routes it to
 // Browser instead. Exercise the commands with no inherited browser opt-in.
 func TestCIL08FullServerRoutesRequireBrowser(t *testing.T) {
-	for _, route := range []string{"core", "test", "race", "local-release", "local-release-lane"} {
+	for _, route := range []string{"core", "test", "local-release", "local-release-lane"} {
 		t.Run(route, func(t *testing.T) {
 			args := []string{route}
 			if route == "local-release-lane" {

@@ -294,13 +294,18 @@ func TestGracefulStopDiscoveryControlCommandsDoNotRun(t *testing.T) {
 }
 
 func TestGracefulStopDiscoveryPreservesProjectErrors(t *testing.T) {
+	var invalid any
+	parseErr := json.Unmarshal([]byte("{"), &invalid)
+	if parseErr == nil {
+		t.Fatal("invalid project JSON unexpectedly decoded")
+	}
 	for _, route := range []string{"no-serve", "read-only", "perf", "watch", "daemon", "dev-test", "dev-watch"} {
 		t.Run(route, func(t *testing.T) {
 			root := t.TempDir()
 			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), "{")
 			var stdout, stderr bytes.Buffer
 			code := Run(context.Background(), discoveryStopArgs(t, root, route, "console"), &stdout, &stderr)
-			if code != 1 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "unexpected end of JSON input") {
+			if code != 1 || stdout.Len() != 0 || !strings.Contains(stderr.String(), parseErr.Error()) {
 				t.Fatalf("project error changed into stop: exit=%d stdout=%s stderr=%s", code, &stdout, &stderr)
 			}
 		})

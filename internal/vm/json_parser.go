@@ -458,8 +458,7 @@ func jsonParserInputErrorMessage(err error, source string) string {
 	if thrown, ok := err.(*apexThrowError); ok {
 		return thrown.value.Fields["message"].Text
 	}
-	converted := jsonUnexpectedCharacterError(err, source)
-	if character, ok := converted.(*jsonCharacterInputError); ok {
+	if character, ok := err.(*jsonCharacterInputError); ok {
 		return fmt.Sprintf("Unexpected character ('%c' (code %d)): %s at input location [%d,%d]", character.char, character.char, jsonExpectedValueDescription(character.char), character.line, character.column)
 	}
 	if quoted, ok := jsonStringEOFError(err, source).(*jsonStringInputError); ok {

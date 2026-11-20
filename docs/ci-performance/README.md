@@ -57,7 +57,7 @@ installation. It is a planning range, not a confidence interval.
 
 ## Local comparison
 
-Current builds pin Go 1.26.11. The measurements below retain their recorded toolchain.
+Current builds pin Go 1.27.4. The measurements below retain their recorded toolchain.
 
 [measurements.tsv](measurements.tsv) records bounded local comparisons of the
 integration tip before schema/lazy-index changes and the current integration
@@ -134,25 +134,17 @@ artifacts. Manifests bind binaries to revision, CGO/native toolchain settings,
 race mode and checksum, including producer-attempt handling on reruns. Corrupt or
 incompatible artifacts fail closed. Local runs still use ordinary go test.
 
-The push race scope is in `scripts/ci-race-push.json`. It retains full Test*
-execution for 18 packages with concurrency or shared mutable state, including VM,
-storage, sema, typesys, caches, server, debugger, test daemon and watcher paths.
-Apex and CLI retain all tests that start goroutines, run parallel subtests or
-reach local concurrent fixture helpers. VF retains its concurrent render-environment
-test. LWC retains the generic browser-pass scheduling and ordering tests; JavaScript execution is
-not instrumented by Go's race detector. Full native browser observations still
-run in normal CI and in scheduled/manual Race.
+The race redesign replaced the push race scope with a nightly concurrent-coverage
+set (small packages in two halves, the concurrency-bearing packages whole,
+concurrency-named tests of the big six, and a 1-in-25 conformance sample chosen
+at run time by `scripts/ci-race-sample.py`) plus a weekly full backstop. Native
+browser observations still run in normal CI and in the weekly race backstop.
 
-The scope guard scans Go ASTs for new production goroutines/sync imports and
-checks the focused concurrent-test sets. This is a maintenance guard, not a
-proof that all possible races are exercised. The runner discovers tests before
-execution, rejects stale selectors, and requires the exact selected top-level
-terminal union, successful package completion. The existing package validator rejects skips
-except its exact, prerequisite-bound deferred DataWeave cases. Every
-batch runs one package at a time, sharing its local Go build cache. CLI retains
-its existing GOMAXPROCS=1 budget; the other packages use 2. A failed
-package preserves raw events and never writes a successful summary. Push artifacts
-include the run attempt so a failed-job rerun retains the earlier evidence.
+Normal CI's package validator keeps rejecting unexpected skips outside the
+exact, prerequisite-bound deferred DataWeave and captured native-boundary
+cases. Every batch runs one package at a time, sharing its local Go build
+cache. A failed package preserves raw events and never writes a successful
+summary.
 
 ## Regression evidence and validation
 

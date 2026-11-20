@@ -49,9 +49,10 @@ Needed when the diff adds a Go package, a goroutine, a `sync` primitive, a
 worker pool or a `t.Parallel` test:
 
 - `scripts/ci-package-lanes.json`: package lane and concurrent test count.
-- `scripts/ci-race-push.json`: the package, when production code gains
-  concurrency.
-- Then: `go test -count=1 ./scripts -run 'Inventory|Concurrency|RacePush|Lane'`.
+  Race coverage needs no manifest: the nightly race workflow runs every
+  package outside the six big ones whole and derives its conformance sample
+  at run time.
+- Then: `go test -count=1 ./scripts -run 'Inventory|Concurrency|RaceSample|Lane'`.
 
 A changed path outside every Go package (for example `lwcruntime/`,
 `third_party/lwc/`, root `testdata/`) selects the full suite in CI. Say so in

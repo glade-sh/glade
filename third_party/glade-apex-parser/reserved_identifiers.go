@@ -32,18 +32,19 @@ func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Nod
 		if node == nil {
 			return
 		}
-		if node.Kind() == "class_declaration" {
+		kind := node.Kind()
+		if kind == "class_declaration" {
 			local = false
 		}
-		if node.Kind() == "local_variable_declaration" {
+		if kind == "local_variable_declaration" {
 			local = true
 		}
-		if _, ok := identifierDeclarationKinds[node.Kind()]; ok {
+		if _, ok := identifierDeclarationKinds[kind]; ok {
 			name := childByField(node, "name")
 			if name != nil {
 				word := nodeText(name, source)
 				key := [2]uint{name.StartByte(), name.EndByte()}
-				if IsReservedSourceIdentifier(word, node.Kind() == "method_declaration") {
+				if IsReservedSourceIdentifier(word, kind == "method_declaration") {
 					if _, duplicate := seenReserved[key]; !duplicate {
 						seenReserved[key] = struct{}{}
 						r := treeSitterRange(name, lineMap)
@@ -72,7 +73,7 @@ func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Nod
 				}
 			}
 		}
-		for i := uint(0); i < node.NamedChildCount(); i++ {
+		for i, count := uint(0), node.NamedChildCount(); i < count; i++ {
 			visit(node.NamedChild(i), local)
 		}
 	}
