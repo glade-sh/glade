@@ -172,8 +172,9 @@ func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 		return out
 	}
 	lineMap := NewLineMap(source)
-	for _, child := range namedChildren(root) {
-		out.Nodes = append(out.Nodes, treeSitterASTNode(&child, source, lineMap))
+	kinds := make(map[uint16]string)
+	for i, count := uint(0), root.NamedChildCount(); i < count; i++ {
+		out.Nodes = append(out.Nodes, treeSitterASTNode(root.NamedChild(i), source, lineMap, kinds))
 	}
 	if root.HasError() {
 		if diag, ok := treeSitterDiagnostic(path, source, root, lineMap); ok {
@@ -979,16 +980,26 @@ func nodeText(node *tree_sitter.Node, source string) string {
 	return source[start:end]
 }
 
-func treeSitterASTNode(node *tree_sitter.Node, source string, lineMap LineMap) ASTNode {
+func treeSitterASTNode(node *tree_sitter.Node, source string, lineMap LineMap, kinds map[uint16]string) ASTNode {
+	id := node.KindId()
+	kind, ok := kinds[id]
+	if !ok {
+		kind = node.Kind()
+		kinds[id] = kind
+	}
 	out := ASTNode{
-		Kind:  node.Kind(),
+		Kind:  kind,
 		Range: treeSitterRange(node, lineMap),
 	}
 	if out.Kind == "date_time" {
 		out.Range = originalCompactQueryOffsetRange(out.Range, source, lineMap)
 	}
-	for _, child := range namedChildren(node) {
-		converted := treeSitterASTNode(&child, source, lineMap)
+	count := node.NamedChildCount()
+	if count > 0 {
+		out.Children = make([]ASTNode, 0, count)
+	}
+	for i := uint(0); i < count; i++ {
+		converted := treeSitterASTNode(node.NamedChild(i), source, lineMap, kinds)
 		out.Children = append(out.Children, converted)
 		if converted.Range.End.Offset > out.Range.End.Offset {
 			out.Range.End = converted.Range.End
