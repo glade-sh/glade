@@ -21,6 +21,7 @@ type FileMetadata struct {
 
 type FileState struct {
 	contentHash [sha256.Size]byte
+	hashValid   bool
 	stamp       filestamp.Stamp
 	stampValid  bool
 	Path        string       `json:"path"`
@@ -227,7 +228,7 @@ func DiffSnapshots(before, after Snapshot) []Change {
 			changes = append(changes, changeFromStates(ChangeDeleted, &beforeState, nil))
 			continue
 		}
-		if beforeState.Metadata != afterState.Metadata || beforeState.contentHash != afterState.contentHash {
+		if beforeState.Metadata != afterState.Metadata || (beforeState.hashValid && afterState.hashValid && beforeState.contentHash != afterState.contentHash) {
 			changes = append(changes, changeFromStates(ChangeModified, &beforeState, &afterState))
 		}
 	}
@@ -327,18 +328,11 @@ func (c *fileCapturer) capturePath(path string) (FileState, bool, error) {
 	}
 
 	var contentHash [sha256.Size]byte
-	var stableStamp bool
+	var hashValid, stableStamp bool
 	if info.Mode().IsRegular() {
 		if old, ok := c.previous[absPath]; ok && stamped && old.stampValid && old.stamp == stamp {
-			contentHash, stableStamp = old.contentHash, true
-		} else {
-			file, err := os.Open(absPath)
-			if errors.Is(err, os.ErrNotExist) {
-				return FileState{}, false, nil
-			}
-			if err != nil {
-				return FileState{}, false, err
-			}
+			contentHash, hashValid, stableStamp = old.contentHash, old.hashValid, true
+		} else if file, openErr := os.Open(absPath); openErr == nil {
 			var before filestamp.Stamp
 			var beforeOK bool
 			if stamped && stamp.OlderThan(c.now, 2*time.Second) {
@@ -355,17 +349,16 @@ func (c *fileCapturer) capturePath(path string) (FileState, bool, error) {
 					_, _ = c.digest.Write(c.buffer[:n])
 				}
 				if readErr != nil {
-					if readErr != io.EOF {
-						_ = file.Close()
-						return FileState{}, false, readErr
-					}
+					hashValid = readErr == io.EOF
 					break
 				}
 			}
-			c.digest.Sum(contentHash[:0])
-			if beforeOK && before == stamp {
-				after, ok := filestamp.Fstat(file)
-				stableStamp = ok && after == stamp
+			if hashValid {
+				c.digest.Sum(contentHash[:0])
+				if beforeOK && before == stamp {
+					after, ok := filestamp.Fstat(file)
+					stableStamp = ok && after == stamp
+				}
 			}
 			_ = file.Close()
 		}
@@ -373,6 +366,7 @@ func (c *fileCapturer) capturePath(path string) (FileState, bool, error) {
 
 	return FileState{
 		contentHash: contentHash,
+		hashValid:   hashValid,
 		stamp:       stamp,
 		stampValid:  stableStamp,
 		Path:        absPath,

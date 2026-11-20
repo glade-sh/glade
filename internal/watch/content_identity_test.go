@@ -162,8 +162,8 @@ func TestSnapshotReportsUnreadableFile(t *testing.T) {
 	if _, err := os.ReadFile(path); err == nil {
 		t.Skip("file permissions do not deny reads for this user")
 	}
-	if _, err := CapturePaths([]string{path}); err == nil {
-		t.Fatal("snapshot accepted a file whose content could not be read")
+	if snapshot, err := CapturePaths([]string{path}); err != nil || snapshot.Files[path].Path != path {
+		t.Fatalf("snapshot = %#v, error = %v", snapshot, err)
 	}
 }
 
@@ -309,8 +309,9 @@ func TestPollingContentStampInvalidation(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.ReadFile(path); err != nil {
-		if _, err := captureScopeWithPrevious(scope, before); err == nil {
-			t.Fatal("permission change reused an unreadable file")
+		snapshot, err := captureScopeWithPrevious(scope, before)
+		if err != nil || snapshot.Files[path].hashValid || snapshot.Files[path].stampValid {
+			t.Fatalf("unreadable file retained a trusted digest: %#v, %v", snapshot.Files[path], err)
 		}
 	}
 	if err := os.Chmod(path, 0600); err != nil {
@@ -383,8 +384,8 @@ func TestCaptureScopeReportsIncludedUnreadableResources(t *testing.T) {
 			if strings.HasSuffix(name, "sfdx-project.json") {
 				scope.Files = []string{path}
 			}
-			if _, err := CaptureScope(scope); err == nil {
-				t.Fatal("included unreadable file did not return an error")
+			if snapshot, err := CaptureScope(scope); err != nil || snapshot.Files[path].Path != path {
+				t.Fatalf("snapshot = %#v, error = %v", snapshot, err)
 			}
 		})
 	}

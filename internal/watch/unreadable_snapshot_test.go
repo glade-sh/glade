@@ -41,4 +41,19 @@ func TestUnreadableSnapshotPreservesMetadataContract(t *testing.T) {
 			}
 		})
 	}
+	unreadable, err := captureScopeWithPrevious(scope, before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0600); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := captureScopeWithPrevious(scope, unreadable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes := DiffSnapshots(unreadable, restored); len(changes) != 0 {
+		t.Fatalf("readability-only changes: %#v", changes)
+	}
+
 }
