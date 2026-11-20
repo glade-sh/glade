@@ -1,6 +1,8 @@
 package soql
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -71,6 +73,11 @@ func TestIDPointQueryResults(t *testing.T) {
 			for _, rec := range r.Records {
 				actual = append(actual, rec.Fields["Name"].String)
 			}
+			encoded, err := json.Marshal(r)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("ORACLE point %s %x", tc.name, sha256.Sum256(encoded))
 			if !reflect.DeepEqual(actual, names(tc.want)) || r.Rows != len(actual) {
 				t.Fatalf("%s: got %v rows=%d, want %q", tc.name, actual, r.Rows, tc.want)
 			}

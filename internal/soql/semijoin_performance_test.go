@@ -1,6 +1,8 @@
 package soql
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"testing"
@@ -91,6 +93,11 @@ func TestSemiJoinPerformanceResults(t *testing.T) {
 						t.Fatal(err)
 					}
 					checkScaleJoin(t, result, n, matched, anti)
+					encoded, err := json.Marshal(result)
+					if err != nil {
+						t.Fatal(err)
+					}
+					t.Logf("ORACLE join %d %s %t %d %x", n, mode, anti, phase, sha256.Sum256(encoded))
 					if phase == 0 {
 						obj := org.Objects["Contact"]
 						parent := scaleJoinAccountID(1)
@@ -167,6 +174,11 @@ func TestSemiJoinIDEqualityResults(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			encoded, err := json.Marshal(result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("ORACLE join-ids %s %t %x", kind, anti, sha256.Sum256(encoded))
 			var want []storage.ID
 			for _, id := range ids {
 				found := false
