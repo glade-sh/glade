@@ -13,6 +13,7 @@ type occurrenceFile struct {
 	modified time.Time
 	digest   [sha256.Size]byte
 	valid    bool
+	nonASCII bool
 }
 type occurrenceIndex struct {
 	files map[string]occurrenceFile
@@ -43,10 +44,13 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 				idx.files[path] = occurrenceFile{}
 				return
 			}
-			idx.files[path] = occurrenceFile{size: info.Size(), modified: info.ModTime(), digest: sha256.Sum256(data), valid: true}
 			words := map[string]bool{}
+			nonASCII := false
 			for i := 0; i < len(data); {
 				if !isIdentifierByte(data[i]) {
+					if data[i] >= 0x80 {
+						nonASCII = true
+					}
 					i++
 					continue
 				}
@@ -56,6 +60,7 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 				}
 				words[strings.ToLower(string(data[start:i]))] = true
 			}
+			idx.files[path] = occurrenceFile{size: info.Size(), modified: info.ModTime(), digest: sha256.Sum256(data), valid: true, nonASCII: nonASCII}
 			for word := range words {
 				idx.names[word] = append(idx.names[word], path)
 			}
@@ -78,7 +83,9 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 		if candidates[p] {
 			continue
 		}
-		if err != nil || !old.valid || info.Size() != old.size || !info.ModTime().Equal(old.modified) {
+		// The full text scanner lowercases Unicode before matching. Byte-wise
+		// postings cannot safely exclude files containing non-ASCII bytes.
+		if err != nil || !old.valid || old.nonASCII || info.Size() != old.size || !info.ModTime().Equal(old.modified) {
 			candidates[p] = true
 			continue
 		}
