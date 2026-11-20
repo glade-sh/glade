@@ -3,11 +3,13 @@ package gladecli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"syscall"
 	"testing"
@@ -165,3 +167,151 @@ func BenchmarkRedirectedTestWithStartupCache(b *testing.B) {
 		}
 	}
 }
+
+// TestRedirectedCacheParentOracle compares the complete result and persisted
+// startup files with a test binary built from the parent implementation. Set
+// GLADE_PARENT_TEST_BINARY to that binary to run the differential check.
+func TestRedirectedCacheParentOracle(t *testing.T) {
+	if resultPath := os.Getenv("GLADE_ORACLE_RESULT"); resultPath != "" {
+		restore := apextest.EnableDiskCacheForTesting()
+		defer restore()
+		var out, errs bytes.Buffer
+		args := []string{"test", "--project", os.Getenv("GLADE_ORACLE_ROOT"), "--no-serve"}
+		if os.Getenv("GLADE_ORACLE_SINGLE") == "1" {
+			args = append(args, "--parallelism", "1")
+		}
+		result := oracleResult{Code: Run(context.Background(), args, &out, &errs), Stdout: out.String(), Stderr: errs.String()}
+		data, err := json.Marshal(result)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(resultPath, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	parent := os.Getenv("GLADE_PARENT_TEST_BINARY")
+	if parent == "" {
+		t.Skip("set GLADE_PARENT_TEST_BINARY to run the parent differential")
+	}
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Example.cls"), `public class Example { public static Boolean value() { return true; } }`)
+	class := filepath.Join(root, "force-app/main/default/classes/ExampleTest.cls")
+	writeTestFile(t, class, `@IsTest private class ExampleTest { @IsTest static void passes() { System.assert(Example.value()); } }`)
+	cacheDir := filepath.Join(root, ".glade", "test")
+	readCache := func() map[string][]byte {
+		files := make(map[string][]byte)
+		paths, err := filepath.Glob(filepath.Join(cacheDir, "startup.*"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, p := range paths {
+			data, err := os.ReadFile(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			files[filepath.Base(p)] = data
+		}
+		return files
+	}
+	restoreCache := func(files map[string][]byte) {
+		if err := os.RemoveAll(cacheDir); err != nil {
+			t.Fatal(err)
+		}
+		if len(files) == 0 {
+			return
+		}
+		if err := os.MkdirAll(cacheDir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		for name, data := range files {
+			if err := os.WriteFile(filepath.Join(cacheDir, name), data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	run := func(binary string, single bool) (oracleResult, map[string][]byte) {
+		resultPath := filepath.Join(t.TempDir(), "result.json")
+		cmd := exec.Command(binary, "-test.run=^TestRedirectedCacheParentOracle$")
+		cmd.Env = append(os.Environ(), "GLADE_ORACLE_RESULT="+resultPath, "GLADE_ORACLE_ROOT="+root, fmt.Sprintf("GLADE_ORACLE_SINGLE=%d", map[bool]int{false: 0, true: 1}[single]), "GLADE_DISABLE_DISK_CACHE=")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("oracle child: %v: %s", err, output)
+		}
+		data, err := os.ReadFile(resultPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var result oracleResult
+		if err := json.Unmarshal(data, &result); err != nil {
+			t.Fatal(err)
+		}
+		result.Stdout = normalizeOracleTimes(result.Stdout)
+		result.Stderr = normalizeOracleTimes(result.Stderr)
+		return result, readCache()
+	}
+	// Populate a real execution cache with the parent and compare both routes
+	// from precisely the same persisted bytes and project path.
+	_, initial := run(parent, true)
+	if len(initial) < 2 {
+		t.Fatalf("parent did not populate startup cache: %d files", len(initial))
+	}
+	entry, err := startupcache.Read(root, startupcache.SubdirTest)
+	if err != nil || entry == nil || len(entry.Runtime.Methods) == 0 || len(entry.Runtime.Classes) == 0 {
+		t.Fatalf("parent execution cache is not populated: entry present=%t err=%v", entry != nil, err)
+	}
+	for _, tc := range []struct {
+		name     string
+		single   bool
+		source   string
+		wantCode int
+	}{
+		{"default warm", false, "", 0}, {"single warm", true, "", 0},
+		{"stale failing test", true, `@IsTest private class ExampleTest { @IsTest static void passes() { System.assert(false, 'changed'); } }`, 1},
+		{"invalid source", false, `@IsTest private class ExampleTest { invalid syntax }`, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.source != "" {
+				writeTestFile(t, class, tc.source)
+			}
+			restoreCache(initial)
+			want, wantFiles := run(parent, tc.single)
+			if want.Code != tc.wantCode {
+				t.Fatalf("parent exit=%d, want %d; stdout=%q stderr=%q", want.Code, tc.wantCode, want.Stdout, want.Stderr)
+			}
+			wantEntry, wantErr := startupcache.Read(root, startupcache.SubdirTest)
+			restoreCache(initial)
+			got, gotFiles := run(os.Args[0], tc.single)
+			gotEntry, gotErr := startupcache.Read(root, startupcache.SubdirTest)
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("result differs from parent\nparent: %+v\nbranch: %+v", want, got)
+			}
+			if tc.source == "" && !reflect.DeepEqual(gotFiles, wantFiles) {
+				t.Errorf("warm persisted startup cache bytes differ from parent")
+			}
+			if fmt.Sprint(gotErr) != fmt.Sprint(wantErr) {
+				t.Fatalf("cache read errors: parent=%v branch=%v", wantErr, gotErr)
+			}
+			if wantEntry != nil {
+				wantEntry.BuiltAt = ""
+			}
+			if gotEntry != nil {
+				gotEntry.BuiltAt = ""
+			}
+			if !reflect.DeepEqual(gotEntry, wantEntry) {
+				t.Error("decoded cache differs from parent (except build timestamp)")
+			}
+		})
+	}
+}
+
+type oracleResult struct {
+	Code           int
+	Stdout, Stderr string
+}
+
+func normalizeOracleTimes(s string) string {
+	return oracleElapsed.ReplaceAllString(s, "<elapsed>")
+}
+
+var oracleElapsed = regexp.MustCompile(`\b[0-9]+(?:\.[0-9]+)?(?:ms|s)\b`)
