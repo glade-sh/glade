@@ -2934,6 +2934,9 @@ func approxValueSize(value Value) int {
 }
 
 func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
+	if value.Type == "JSONParser" && value.Fields["tokens"].Type == jsonParserPackedType {
+		return jsonParserHeapSize(value, seen)
+	}
 	if value.Kind == ValueMap && value.mapKeySetSource != nil {
 		value = value.currentFieldMapHolder()
 	}
