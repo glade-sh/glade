@@ -3,6 +3,7 @@ package vm
 import (
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/soql"
@@ -313,8 +314,14 @@ func (vm *VM) currentSharingMode() string {
 func (vm *VM) classSharingMode(className string) (string, bool) {
 	seen := map[string]bool{}
 	secureDefault := false
-	for strings.TrimSpace(className) != "" && !seen[strings.ToLower(className)] {
-		seen[strings.ToLower(className)] = true
+	for strings.TrimSpace(className) != "" {
+		if len(seen) > 0 {
+			key := apexlang.LowerName(className)
+			if seen[key] {
+				break
+			}
+			seen[key] = true
+		}
 		class, ok := vm.lookupClass(className)
 		if !ok {
 			break
@@ -328,7 +335,11 @@ func (vm *VM) classSharingMode(className string) (string, bool) {
 		case methodHasModifier(class.Modifiers, "inherited sharing"):
 			return "inherited sharing", true
 		}
-		className = vm.resolvedSuperClassName(class)
+		parent := vm.resolvedSuperClassName(class)
+		if parent != "" && len(seen) == 0 {
+			seen[apexlang.LowerName(className)] = true
+		}
+		className = parent
 	}
 	if secureDefault {
 		return "with sharing", true
