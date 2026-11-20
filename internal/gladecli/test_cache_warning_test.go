@@ -171,6 +171,21 @@ func BenchmarkRedirectedTestWithStartupCache(b *testing.B) {
 // TestRedirectedCacheParentOracle compares the complete result and persisted
 // startup files with a test binary built from the parent implementation. Set
 // GLADE_PARENT_TEST_BINARY to that binary to run the differential check.
+func redirectedCacheOracleBinary() string {
+	return os.Getenv("GLADE_PARENT_TEST_BINARY")
+}
+
+func TestRedirectedCacheOracleBinaryDefaultsToCurrent(t *testing.T) {
+	t.Setenv("GLADE_PARENT_TEST_BINARY", "")
+	if got := redirectedCacheOracleBinary(); got != os.Args[0] {
+		t.Fatalf("oracle binary = %q, want current test binary %q", got, os.Args[0])
+	}
+	t.Setenv("GLADE_PARENT_TEST_BINARY", "parent-binary")
+	if got := redirectedCacheOracleBinary(); got != "parent-binary" {
+		t.Fatalf("oracle binary = %q, want supplied parent", got)
+	}
+}
+
 func TestRedirectedCacheParentOracle(t *testing.T) {
 	if resultPath := os.Getenv("GLADE_ORACLE_RESULT"); resultPath != "" {
 		restore := apextest.EnableDiskCacheForTesting()
@@ -190,7 +205,7 @@ func TestRedirectedCacheParentOracle(t *testing.T) {
 		}
 		return
 	}
-	parent := os.Getenv("GLADE_PARENT_TEST_BINARY")
+	parent := redirectedCacheOracleBinary()
 	if parent == "" {
 		t.Skip("set GLADE_PARENT_TEST_BINARY to run the parent differential")
 	}
