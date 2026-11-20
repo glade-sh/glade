@@ -33,6 +33,8 @@
 
 - **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 279 ms to 3.4 ms while returning identical ordered results.
 
+- **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 setup records fell from about 778 ms to 617 ms with identical results and governor counts.
+
 ### CI
 
 - **Declared resource contracts for the race routes.** The gladecli parallel-route test (`TestRunTestMemoryLimitsParallelMethodAndClassRoutes`) now states its requirement up front: two tests in flight needs two processors, because the runner caps simultaneous test execution owners at `GOMAXPROCS`, so the early race route (one processor) reports the shortfall as a declared, summary-accepted skip instead of failing its overlap assertion — normal lanes, which run with two processors, still run and enforce the overlap. The storage stub-reference allocation budget (`TestStandardStubReferenceFieldsAllocationBudget`) keeps its no-full-decode assertion under the race detector but enforces its one-third byte budget in normal builds only, since race instrumentation inflates the lookup's many small allocations far more than the full decode's buffers (the race lane measured 18,082,104 of 52,252,216 bytes, about 34.61%).

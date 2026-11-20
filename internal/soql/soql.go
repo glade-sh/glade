@@ -1334,6 +1334,9 @@ func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bo
 		}
 		return out
 	}
+	if ids, ok := simpleIDCandidates(object, where); ok {
+		return ids
+	}
 	out := make([]string, 0, len(object.Records))
 	for id := range object.Records {
 		out = append(out, string(id))
