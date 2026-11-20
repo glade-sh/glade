@@ -47,7 +47,7 @@ func TestJSONMissingValueInputScan(t *testing.T) {
 	for _, tc := range []struct {
 		source string
 		offset int
-	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}} {
+	}{{`{"a":1,}`, 6}, {`{"a":":}"}`, 4}, {`{"a"::}`, 4}, {`{"a"::}`, 5}, {`[1,,]`, 2}, {`[1,,]`, 3}} {
 		if got := jsonSyntaxErrorAtInput(original, tc.source, tc.offset); got != original {
 			t.Errorf("neighbor %q: got %v, want original error", tc.source, got)
 		}
