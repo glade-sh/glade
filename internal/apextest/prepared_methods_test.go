@@ -3,6 +3,7 @@ package apextest
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -29,6 +30,19 @@ func BenchmarkWideTestClass(b *testing.B) {
 		if s := run.Summary(); s.Total != 256 || s.Passed != 256 {
 			b.Fatalf("summary = %+v", s)
 		}
+	}
+}
+
+// These normalized receipts were captured with the origin/main runner at
+// c5c3bcedbae124392bf213ab3f3f11b0674b13cf using the same test inputs.
+func assertParentReceipt(t *testing.T, name, got string) {
+	t.Helper()
+	want, err := os.ReadFile(filepath.Join("testdata", "prepared_methods", name+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != strings.TrimSuffix(string(want), "\n") {
+		t.Fatalf("%s differs from parent\ngot: %s\nwant: %s", name, got, want)
 	}
 }
 
@@ -71,7 +85,7 @@ func TestWideClassMethodIsolation(t *testing.T) {
 		} else if receipt != serial {
 			t.Fatalf("serial and parallel outcomes differ: %s | %s", serial, receipt)
 		}
-		t.Logf("outcomes: %s", receipt)
+		assertParentReceipt(t, "wide", receipt)
 		statuses := runCaseStatuses(run)
 		if len(statuses) != 13 || statuses["fails"] != testreport.StatusFail {
 			t.Fatalf("statuses = %v", statuses)
@@ -107,7 +121,7 @@ func TestSingleSelectedMethodNeighbor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("neighbor: %s", strings.ReplaceAll(string(data), root, "<root>"))
+	assertParentReceipt(t, "single", strings.ReplaceAll(string(data), root, "<root>"))
 }
 
 func TestPreparedMethodsSourceAndCloneIsolation(t *testing.T) {
