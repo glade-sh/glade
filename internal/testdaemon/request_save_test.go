@@ -220,3 +220,30 @@ func TestRequestCompileProgressAfterSave(t *testing.T) {
 		})
 	}
 }
+
+func TestRequestCompileProgressWhenRetrySelectorDisappears(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
+	root, classPath := editSnapshotProject(t)
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1, SelectedClasses: []string{"EditTest"}, SelectedMethod: "passes"}, "", 0, 0, false)
+	var events []string
+	changed := false
+	run, _, _, err := d.RunRequestV1(context.Background(), request, func(event apextest.TestProgress) {
+		if event.Event == "compile_start" || event.Event == "compile_done" {
+			events = append(events, event.Event+":"+event.Status)
+		}
+		if !changed && event.Event == "compile_start" {
+			changed = true
+			writeFile(t, classPath, `@IsTest private class EditTest { @IsTest static void other() {} }`)
+		}
+	}, nil)
+	if err != nil || run.Summary().Errors != 1 || !strings.Contains(runProblems(run), "no test method matched") {
+		t.Fatalf("selector result: summary=%#v error=%v problems=%s", run.Summary(), err, runProblems(run))
+	}
+	if got := strings.Join(events, ","); got != "compile_start:,compile_done:fail" {
+		t.Fatalf("compile events = %s", got)
+	}
+}
