@@ -105,6 +105,15 @@ func TestVerifyRequiredCIRejectsMissingOrFailedAuthority(t *testing.T) {
 	}
 }
 
+func TestVerifyRequiredCIRejectsReusedPush(t *testing.T) {
+	runs := `{"workflow_runs":[{"id":101,"head_sha":"` + requiredCISHA + `","conclusion":"success","event":"push","created_at":"2026-01-03T00:00:00Z"}]}`
+	jobs := `{"jobs":[{"id":501,"name":"Required CI","head_sha":"` + requiredCISHA + `","status":"completed","conclusion":"success"},{"name":"Reused tree CI","status":"completed","conclusion":"success"}]}`
+	out, err := runRequiredCIFixture(t, runs, jobs)
+	if err == nil || !strings.Contains(out, "no successful Required CI authority") {
+		t.Fatalf("reused push accepted as exact full CI: err=%v\n%s", err, out)
+	}
+}
+
 func TestReleaseTagAttestationWorkflowContract(t *testing.T) {
 	ciData, err := os.ReadFile(filepath.Join("..", ".github", "workflows", "ci.yml"))
 	if err != nil {
