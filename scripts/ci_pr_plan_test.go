@@ -117,3 +117,36 @@ func TestCIPRPlanPreservesPoolAssignments(t *testing.T) {
 		}
 	}
 }
+
+func TestCIPlannedBrowserGuard(t *testing.T) {
+	TestCIWorkflowPRBrowserStepsSkipApexShards(t)
+	cmd := exec.Command("python3", "ci-pr-plan.py")
+	cmd.Stdin = strings.NewReader(`["github.com/glade-sh/glade/internal/apextest","github.com/glade-sh/glade/internal/server"]`)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("plan: %v: %s", err, out)
+	}
+	var plan struct {
+		Include []struct {
+			Shard   int  `json:"shard"`
+			Browser bool `json:"browser"`
+		} `json:"include"`
+	}
+	if err := json.Unmarshal(out, &plan); err != nil {
+		t.Fatal(err)
+	}
+	foundApex, foundBrowser := false, false
+	for _, worker := range plan.Include {
+		if worker.Shard < 12 {
+			foundApex = true
+			if worker.Browser {
+				t.Errorf("Apex worker enables browser: %+v", worker)
+			}
+		} else if worker.Browser {
+			foundBrowser = true
+		}
+	}
+	if !foundApex || !foundBrowser {
+		t.Fatalf("missing Apex or browser worker: %s", out)
+	}
+}
