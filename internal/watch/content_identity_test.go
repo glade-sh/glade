@@ -270,6 +270,29 @@ func TestPollingContentStampInvalidation(t *testing.T) {
 	if reused.Files[path].contentHash != sentinel.contentHash {
 		t.Fatal("unchanged trusted stamp did not reuse the digest")
 	}
+	for _, mutate := range []struct {
+		name   string
+		change func(*FileState)
+	}{
+		{"device", func(s *FileState) { s.stamp.Dev++ }},
+		{"inode", func(s *FileState) { s.stamp.Ino++ }},
+		{"size", func(s *FileState) { s.stamp.Size++ }},
+		{"mtime", func(s *FileState) { s.stamp.Mtime++ }},
+		{"ctime", func(s *FileState) { s.stamp.Ctime++ }},
+	} {
+		t.Run(mutate.name, func(t *testing.T) {
+			stale := sentinel
+			mutate.change(&stale)
+			previous := Snapshot{Files: map[string]FileState{path: stale}}
+			fresh, err := captureScopeWithPrevious(scope, previous)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if fresh.Files[path].contentHash != state.contentHash {
+				t.Fatal("changed stamp reused stale digest")
+			}
+		})
+	}
 	// Without trust, the previous digest may not stand in for a read.
 	untrusted := sentinel
 	untrusted.stampValid = false
@@ -311,5 +334,29 @@ func TestPollingContentStampInvalidation(t *testing.T) {
 	}
 	if changes := DiffSnapshots(after, replaced); len(changes) != 1 || changes[0].Op != ChangeModified {
 		t.Fatalf("replacement: %#v", changes)
+	}
+}
+
+func TestCaptureScopeReportsIncludedUnreadableResources(t *testing.T) {
+	for _, name := range []string{"staticresources/asset.resource", "nested/sfdx-project.json"} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, filepath.FromSlash(name))
+			writeWatchFile(t, path, "content")
+			if err := os.Chmod(path, 0); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = os.Chmod(path, 0600) })
+			if _, err := os.ReadFile(path); err == nil {
+				t.Skip("file permissions do not deny reads for this user")
+			}
+			scope := Scope{Roots: []string{root}}
+			if strings.HasSuffix(name, "sfdx-project.json") {
+				scope.Files = []string{path}
+			}
+			if _, err := CaptureScope(scope); err == nil {
+				t.Fatal("included unreadable file did not return an error")
+			}
+		})
 	}
 }

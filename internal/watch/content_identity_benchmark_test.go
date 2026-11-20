@@ -2,7 +2,9 @@ package watch
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -45,6 +47,11 @@ func BenchmarkWatchPollingProjectResources(b *testing.B) {
 	for i := 0; i < 4; i++ {
 		writeBenchmarkWatchFile(b, filepath.Join(root, "staticresources", fmt.Sprintf("asset%d.resource", i)), strings.Repeat("r", 2<<20))
 	}
+	changed := filepath.Join(root, "classes", "Class1000.cls")
+	first := time.Unix(1600000000, 0)
+	if err := os.Chtimes(changed, first, first); err != nil {
+		b.Fatal(err)
+	}
 	scope := NormalizeScope(Scope{Roots: []string{root}})
 	// Measure steady-state polling after the stamp safety window.
 	time.Sleep(2100 * time.Millisecond)
@@ -52,8 +59,14 @@ func BenchmarkWatchPollingProjectResources(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	changed := filepath.Join(root, "classes", "Class1000.cls")
-	writeBenchmarkWatchFile(b, changed, "public class Class1000 { void updated() {} }")
+	updated := "public class Class1000 { void updated() {} }"
+	writeBenchmarkWatchFile(b, changed, updated)
+	second := first.Add(time.Second)
+	if err := os.Chtimes(changed, second, second); err != nil {
+		b.Fatal(err)
+	}
+	original := fmt.Sprintf("public class Class%04d { /* %s */ }", 1000, strings.Repeat("x", 1024))
+	want := []Change{{Path: changed, Op: ChangeModified, Kind: FileKindApexClass, Name: "Class1000", Before: &FileMetadata{ModTimeUnixNano: first.UnixNano(), Size: int64(len(original))}, After: &FileMetadata{ModTimeUnixNano: second.UnixNano(), Size: int64(len(updated))}}}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -62,8 +75,8 @@ func BenchmarkWatchPollingProjectResources(b *testing.B) {
 			b.Fatal(err)
 		}
 		changes := DiffSnapshots(before, after)
-		if len(changes) != 1 || changes[0].Path != changed || changes[0].Op != ChangeModified || changes[0].Kind != FileKindApexClass || changes[0].Name != "Class1000" {
-			b.Fatalf("changes=%#v", changes)
+		if !reflect.DeepEqual(changes, want) {
+			b.Fatalf("changes=%#v, want %#v", changes, want)
 		}
 	}
 }
