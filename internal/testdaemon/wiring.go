@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/storage"
@@ -154,6 +155,16 @@ func (d *Daemon) runRequestV1WithProgress(
 	progress func(apextest.TestProgress),
 	setProgressTotal func(int),
 ) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
+	return d.runRequestV1Attempt(ctx, request, progress, setProgressTotal, true)
+}
+
+func (d *Daemon) runRequestV1Attempt(
+	ctx context.Context,
+	request RunRequestV1,
+	progress func(apextest.TestProgress),
+	setProgressTotal func(int),
+	allowRetry bool,
+) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
 	if err := validateRunRequestV1(request); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
@@ -251,7 +262,37 @@ func (d *Daemon) runRequestV1WithProgress(
 	if setProgressTotal != nil {
 		setProgressTotal(len(cases))
 	}
+	// Hold failed compile events only when this generation has drifted. If the
+	// refresh succeeds, the retry is the attempt clients should see finish.
+	var pending []apextest.TestProgress
+	if progress != nil && allowRetry {
+		buffering := false
+		var progressMu sync.Mutex
+		options.Progress = func(event apextest.TestProgress) {
+			progressMu.Lock()
+			if !buffering && event.Event == "compile_done" && event.Status == "fail" &&
+				typesys.ValidateSourceGeneration(generation.index, generation.artifacts.SourceDigests) != nil {
+				buffering = true
+			}
+			if buffering {
+				pending = append(pending, event)
+				progressMu.Unlock()
+				return
+			}
+			progressMu.Unlock()
+			progress(event)
+		}
+	}
 	run := apextest.RunCasesContext(ctx, generation.index, optionsForGeneration(options, generation), cases)
+	summary := run.Summary()
+	if allowRetry && summary.CompileErrors > 0 && summary.CompileErrors == summary.Total && ctx.Err() == nil {
+		if _, ok := d.refreshStaleGeneration(generation); ok {
+			return d.runRequestV1Attempt(ctx, request, progress, setProgressTotal, false)
+		}
+	}
+	for _, event := range pending {
+		progress(event)
+	}
 	run.Dependencies = append(run.Dependencies, generation.index.Dependencies...)
 	return run, selection, nil, nil
 }

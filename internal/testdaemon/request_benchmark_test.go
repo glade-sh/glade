@@ -82,3 +82,66 @@ func BenchmarkDaemonWarmRequestAfterSave(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkDaemonRequestAfterChangedSave(b *testing.B) {
+	benchmarkDaemonRequestAfterSave(b, true)
+}
+
+func BenchmarkDaemonRequestAfterSameContentSave(b *testing.B) {
+	benchmarkDaemonRequestAfterSave(b, false)
+}
+
+func benchmarkDaemonRequestAfterSave(b *testing.B, changed bool) {
+	root, _ := writeDaemonBenchmarkProject(b, 100)
+	classes := filepath.Join(root, "force-app/main/default/classes")
+	for i := range 100 {
+		path := filepath.Join(classes, fmt.Sprintf("BenchService%03d.cls", i))
+		content, err := os.ReadFile(path)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(strings.ReplaceAll(string(content), `"`, `'`)), 0o644); err != nil {
+			b.Fatal(err)
+		}
+	}
+	path := filepath.Join(classes, "BenchService099.cls")
+	original, err := os.ReadFile(path)
+	if err != nil {
+		b.Fatal(err)
+	}
+	d, err := New(root)
+	if err != nil {
+		b.Fatal(err)
+	}
+	request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1}, "", 0, 0, false)
+	prime, _, _, err := d.RunRequestV1(context.Background(), request, nil, nil)
+	if err != nil || prime.Summary().Passed != 1 {
+		b.Fatalf("prime: summary=%#v error=%v problems=%s", prime.Summary(), err, runProblems(prime))
+	}
+	var passed, compileErrors int
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := range b.N {
+		b.StopTimer()
+		content := original
+		if changed {
+			content = append(append([]byte(nil), original...), []byte(fmt.Sprintf("\n// save %d\n", i))...)
+		}
+		if err := os.WriteFile(path, content, 0o644); err != nil {
+			b.Fatal(err)
+		}
+		b.StartTimer()
+		run, _, _, err := d.RunRequestV1(context.Background(), request, nil, nil)
+		if err != nil {
+			b.Fatal(err)
+		}
+		summary := run.Summary()
+		if summary.Total != 1 || summary.Passed+summary.CompileErrors != 1 {
+			b.Fatalf("unexpected run summary: %#v", summary)
+		}
+		passed += summary.Passed
+		compileErrors += summary.CompileErrors
+	}
+	b.ReportMetric(float64(passed)/float64(b.N), "passes/op")
+	b.ReportMetric(float64(compileErrors)/float64(b.N), "compile_errors/op")
+}
