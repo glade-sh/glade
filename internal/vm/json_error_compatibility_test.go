@@ -2,8 +2,30 @@ package vm
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
+
+func TestJSONTypedMalformedInputDiagnostics(t *testing.T) {
+	for _, tc := range []struct {
+		source string
+		prefix string
+	}{
+		{`{"bad: JSON"}`, "Malformed JSON:"},
+		{`[{"Name":"Acme"`, "Unexpected end-of-input:"},
+		{`{"Name":`, "Unexpected end-of-input:"},
+		{`"}]`, "malformed JSON:"},
+		{`{"a":1,}`, "malformed JSON:"},
+		{`{"a":}`, "Unexpected character"},
+	} {
+		for _, strict := range []bool{false, true} {
+			_, err := decodeJSONValueForDeserialize(tc.source, strict, false)
+			if err == nil || !strings.HasPrefix(err.Error(), tc.prefix) {
+				t.Errorf("%q strict=%v: got %v, want prefix %q", tc.source, strict, err, tc.prefix)
+			}
+		}
+	}
+}
 
 func TestJSONMissingValueDiagnostics(t *testing.T) {
 	object := `{"a":}`
