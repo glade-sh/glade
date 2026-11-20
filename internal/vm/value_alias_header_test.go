@@ -35,6 +35,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 		"text":                       func(value *Value) { value.Text = "changed" },
 		"hidden flag":                func(value *Value) { value.schemaIDConstructor = true },
 		"dependency literal origin":  func(value *Value) { value.dependencyClassLiteral = true },
+		"generator buffer":           func(value *Value) { value.jsonGeneratorBuffer = &jsonGeneratorBuffer{} },
 		"loaded reference":           func(value *Value) { value.loadedReferenceSnapshot = &sobjectLoadedReferenceSnapshot{} },
 		"list map null key flag":     func(value *Value) { value.sobjectListNullMapKey = true },
 		"set ownership token":        func(value *Value) { value.primitiveSetState = &primitiveSetState{} },
