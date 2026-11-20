@@ -30,7 +30,7 @@ func runRequiredCIFixture(t *testing.T, runs, jobs string) (string, error) {
 printf '%s\n' "$*" >>"$VERIFY_CI_CALLS"
 case "$*" in
   *"/actions/workflows/ci.yml/runs"*) cat "$VERIFY_CI_RUNS" ;;
-  *"/actions/runs/101/jobs"*) cat "$VERIFY_CI_JOBS" ;;
+  *"/actions/runs/101/jobs"*) jq -s . "$VERIFY_CI_JOBS" ;;
   *) echo "unexpected gh call: $*" >&2; exit 97 ;;
 esac
 `
