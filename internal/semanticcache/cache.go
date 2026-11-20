@@ -103,6 +103,14 @@ func Store(projectRoot, relativePath string, identity Identity, result sema.Resu
 }
 
 func storeSnapshot(projectRoot, relativePath string, identity Identity, snapshot sema.ResultSnapshot) error {
+	encoded, err := json.Marshal(snapshot)
+	if err != nil {
+		return fmt.Errorf("encode semantic cache snapshot: %w", err)
+	}
+	return storeEncodedSnapshot(projectRoot, relativePath, identity, encoded)
+}
+
+func storeEncodedSnapshot(projectRoot, relativePath string, identity Identity, encoded []byte) error {
 	if err := identity.validate(); err != nil {
 		return err
 	}
@@ -110,21 +118,12 @@ func storeSnapshot(projectRoot, relativePath string, identity Identity, snapshot
 	if err != nil {
 		return err
 	}
-	payload := checksumPayload{
-		Version:  EnvelopeVersion,
-		Identity: identity,
-		Result:   snapshot,
-	}
-	checksum, err := payloadChecksum(payload)
+	payload := encodedChecksumPayload{Version: EnvelopeVersion, Identity: identity, Result: encoded}
+	checksum, err := encodedPayloadChecksum(payload)
 	if err != nil {
 		return fmt.Errorf("encode semantic cache checksum: %w", err)
 	}
-	data, err := json.Marshal(diskEnvelope{
-		Version:        payload.Version,
-		Identity:       payload.Identity,
-		Result:         payload.Result,
-		ChecksumSHA256: checksum,
-	})
+	data, err := json.Marshal(encodedDiskEnvelope{Version: payload.Version, Identity: payload.Identity, Result: payload.Result, ChecksumSHA256: checksum})
 	if err != nil {
 		return fmt.Errorf("encode semantic cache envelope: %w", err)
 	}
@@ -142,61 +141,69 @@ func storeSnapshot(projectRoot, relativePath string, identity Identity, snapshot
 // Load returns the complete cached result only when its version, checksum, and
 // exact identity match. Every untrusted file is a typed fail-closed miss.
 func Load(projectRoot, relativePath string, expected Identity) (sema.Result, error) {
+	snapshot, _, err := loadSnapshot(projectRoot, relativePath, expected)
+	if err != nil {
+		return sema.Result{}, err
+	}
+	return snapshot.Result(), nil
+}
+
+func loadSnapshot(projectRoot, relativePath string, expected Identity) (sema.ResultSnapshot, int, error) {
 	if err := expected.validate(); err != nil {
 		reason := MissIdentityMismatch
 		if strings.TrimSpace(expected.OptionsFingerprint) == "" {
 			reason = MissOptionsMismatch
 		}
-		return sema.Result{}, miss(reason, err)
+		return sema.ResultSnapshot{}, 0, miss(reason, err)
 	}
 	dir, name, err := splitCachePath(relativePath)
 	if err != nil {
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 	cacheRoot, err := openPrivateCacheDir(projectRoot, dir, false)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return sema.Result{}, miss(MissAbsent, err)
+			return sema.ResultSnapshot{}, 0, miss(MissAbsent, err)
 		}
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 	defer cacheRoot.Close()
 	data, err := readEnvelope(cacheRoot, name)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return sema.Result{}, miss(MissAbsent, err)
+			return sema.ResultSnapshot{}, 0, miss(MissAbsent, err)
 		}
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 
 	var stored diskEnvelope
 	if err := json.Unmarshal(data, &stored); err != nil {
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 	if stored.Version != EnvelopeVersion {
-		return sema.Result{}, miss(MissUnsupportedVersion, nil)
+		return sema.ResultSnapshot{}, 0, miss(MissUnsupportedVersion, nil)
 	}
-	checksum, err := payloadChecksum(checksumPayload{
-		Version:  stored.Version,
-		Identity: stored.Identity,
-		Result:   stored.Result,
-	})
+	encoded, err := json.Marshal(stored.Result)
 	if err != nil {
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
+	}
+	checksum, err := encodedPayloadChecksum(encodedChecksumPayload{Version: stored.Version, Identity: stored.Identity, Result: encoded})
+	if err != nil {
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 	if checksum != stored.ChecksumSHA256 {
-		return sema.Result{}, miss(MissCorrupt, errors.New("checksum mismatch"))
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, errors.New("checksum mismatch"))
 	}
 	if err := stored.Identity.validate(); err != nil {
-		return sema.Result{}, miss(MissCorrupt, err)
+		return sema.ResultSnapshot{}, 0, miss(MissCorrupt, err)
 	}
 	if !stored.Identity.equalInputs(expected) {
-		return sema.Result{}, miss(MissIdentityMismatch, nil)
+		return sema.ResultSnapshot{}, 0, miss(MissIdentityMismatch, nil)
 	}
 	if stored.Identity.OptionsFingerprint != expected.OptionsFingerprint {
-		return sema.Result{}, miss(MissOptionsMismatch, nil)
+		return sema.ResultSnapshot{}, 0, miss(MissOptionsMismatch, nil)
 	}
-	return stored.Result.Result(), nil
+	return stored.Result, len(encoded), nil
 }
 
 // Clear removes entries from the verified project-local semantic cache
@@ -258,6 +265,26 @@ func (identity Identity) validate() error {
 		}
 	}
 	return nil
+}
+
+type encodedChecksumPayload struct {
+	Version  int             `json:"version"`
+	Identity Identity        `json:"identity"`
+	Result   json.RawMessage `json:"result"`
+}
+type encodedDiskEnvelope struct {
+	Version        int             `json:"version"`
+	Identity       Identity        `json:"identity"`
+	Result         json.RawMessage `json:"result"`
+	ChecksumSHA256 string          `json:"checksumSHA256"`
+}
+
+func encodedPayloadChecksum(payload encodedChecksumPayload) (string, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
 }
 
 func payloadChecksum(payload checksumPayload) (string, error) {

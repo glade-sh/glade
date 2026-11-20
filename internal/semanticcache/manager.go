@@ -197,10 +197,10 @@ func (manager *Manager) resolveLeader(request Request, key string, epoch uint64,
 	}
 	access := Access{}
 	if !request.NoDisk && request.ProjectRoot != "" && request.RelativePath != "" {
-		result, err := Load(request.ProjectRoot, request.RelativePath, request.Identity)
+		snapshot, encodedSize, err := loadSnapshot(request.ProjectRoot, request.RelativePath, request.Identity)
 		if err == nil {
-			snapshot := sema.SnapshotResult(result)
-			manager.publish(epoch, key, snapshot, sema.EstimateResultRetainedBytes(result), nil)
+			result := snapshot.Result()
+			manager.publish(epoch, key, snapshot, int64(encodedSize)+sema.EstimateResultRetainedBytes(result), nil)
 			access = manager.access(SourceDisk)
 			return snapshot, access, nil
 		}
@@ -216,15 +216,16 @@ func (manager *Manager) resolveLeader(request Request, key string, epoch uint64,
 	}
 	missReason := access.DiskMissReason
 	snapshot := sema.SnapshotResult(result)
+	encoded, _ := json.Marshal(snapshot)
 	var persist func()
 	if !request.NoDisk && request.ProjectRoot != "" && request.RelativePath != "" {
 		persist = func() {
 			// Persistence is an optimization. A valid semantic result remains
 			// authoritative if the private cache cannot be written.
-			_ = storeSnapshot(request.ProjectRoot, request.RelativePath, request.Identity, snapshot)
+			_ = storeEncodedSnapshot(request.ProjectRoot, request.RelativePath, request.Identity, encoded)
 		}
 	}
-	manager.publish(epoch, key, snapshot, sema.EstimateResultRetainedBytes(result), persist)
+	manager.publish(epoch, key, snapshot, int64(len(encoded))+sema.EstimateResultRetainedBytes(result), persist)
 	access = manager.access(SourceBuild)
 	access.DiskMissReason = missReason
 	return snapshot, access, nil
@@ -267,9 +268,7 @@ func (manager *Manager) memoryResult(key string) (sema.Result, Access, bool) {
 	return result, access, true
 }
 
-func (manager *Manager) insert(key string, snapshot sema.ResultSnapshot, retainedBytes int64) {
-	encoded, _ := json.Marshal(snapshot)
-	size := int64(len(encoded)) + retainedBytes
+func (manager *Manager) insert(key string, snapshot sema.ResultSnapshot, size int64) {
 
 	manager.mu.Lock()
 	if existing := manager.entries[key]; existing != nil {

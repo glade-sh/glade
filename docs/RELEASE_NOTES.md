@@ -41,6 +41,7 @@
 - **Visualforce page validation.** Large pages use a forward position cursor while checking presentation tags.
 
 - **Language server schema analysis.** Scanning sources without schema field references and computing incremental digests now allocate less memory.
+- **Semantic cache performance.** Warm test-daemon requests reuse the identity of an unchanged generation, and warm checks reuse the encoded semantic result for checksum verification and memory accounting. Cached results and diagnostics are unchanged.
 
 ### CI
 
