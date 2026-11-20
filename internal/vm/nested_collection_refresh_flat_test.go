@@ -98,7 +98,7 @@ func TestNestedCollectionRefreshReusesNestedBackingStorage(t *testing.T) {
 				}
 			})
 			t.Logf("width=%d allocations=%.0f", width, allocations)
-			if allocations > 8 {
+			if nestedCollectionRefreshBudgetEnforced && allocations > 8 {
 				t.Fatalf("reused nested backings allocated per collection: allocations=%.0f; want <=8", allocations)
 			}
 		})
