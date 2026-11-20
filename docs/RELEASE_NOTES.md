@@ -38,6 +38,7 @@
 
 - **Locale sorting startup.** The first root-locale SOQL text sort loads a prebuilt collation table, reducing first-use work while preserving the existing ordering.
 - **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
+- **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
 
 ### CI
 
