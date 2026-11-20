@@ -2,6 +2,7 @@ package scripts
 
 import (
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
@@ -79,6 +80,40 @@ func TestCIPRPlanEmptyAndPoolAssignment(t *testing.T) {
 		}
 		if seen["github.com/glade-sh/glade/internal/vm"] != 4 || seen["github.com/glade-sh/glade/internal/storage"] != 1 || seen["github.com/glade-sh/glade/internal/lwcbrowser"] != 1 {
 			t.Fatalf("coverage: %v", seen)
+		}
+	}
+}
+
+func TestCIPRPlanPreservesPoolAssignments(t *testing.T) {
+	selected := `["github.com/glade-sh/glade/internal/vm","github.com/glade-sh/glade/internal/gladecli","github.com/glade-sh/glade/internal/sema","github.com/glade-sh/glade/internal/storage","github.com/glade-sh/glade/internal/lwcbrowser","github.com/glade-sh/glade/internal/server"]`
+	cmd := exec.Command("python3", "ci-pr-plan.py")
+	cmd.Stdin = strings.NewReader(selected)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("plan: %v: %s", err, out)
+	}
+	var p struct {
+		Include []struct {
+			Shard int      `json:"shard"`
+			Pool  []string `json:"pool"`
+		} `json:"include"`
+	}
+	if err := json.Unmarshal(out, &p); err != nil {
+		t.Fatal(err)
+	}
+	got := map[int][]string{}
+	for _, w := range p.Include {
+		got[w.Shard] = w.Pool
+	}
+	for i := 0; i < 12; i++ {
+		assign := exec.Command("python3", "ci-pr-assign.py", "--worker", fmt.Sprint(i), "--workers", "12")
+		assign.Stdin = strings.NewReader(selected)
+		out, err := assign.CombinedOutput()
+		if err != nil {
+			t.Fatalf("assignment %d: %v: %s", i, err, out)
+		}
+		if strings.Join(got[i+12], "\n") != strings.TrimSpace(string(out)) {
+			t.Errorf("worker %d: got %v, want %s", i+12, got[i+12], out)
 		}
 	}
 }
