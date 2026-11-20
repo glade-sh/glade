@@ -107,14 +107,14 @@ func TestRegisteredProjectInputChangesMatchFreshWorkspaceSymbols(t *testing.T) {
 			}
 			for i, content := range []string{tc.edited, tc.original} {
 				write(tc.path, content)
-				seq := h.baseGen.Load().seq
+				seq := h.gen.Load().seq
 				if matches(tc.path) {
 					c.send(watchedMessage(FileEvent{URI: uriFromPath(filepath.Join(root, tc.path)), Type: fileChanged}))
 					deadline := time.Now().Add(10 * time.Second)
-					for h.baseGen.Load().seq == seq && time.Now().Before(deadline) {
+					for h.gen.Load().seq == seq && time.Now().Before(deadline) {
 						time.Sleep(10 * time.Millisecond)
 					}
-					if h.baseGen.Load().seq == seq {
+					if h.gen.Load().seq == seq {
 						t.Fatal("watched event did not refresh")
 					}
 				}
