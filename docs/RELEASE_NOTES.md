@@ -39,6 +39,7 @@
 - **Locale sorting startup.** The first root-locale SOQL text sort loads a prebuilt collation table, reducing first-use work while preserving the existing ordering.
 - **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
 - **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
+- **Wide test classes.** The test runner prepares sibling methods once per class and source file, then shares them with isolated test VMs. In a synthetic 256-method class, measured allocations fell from about 174 MB to 43 MB per run.
 
 ### CI
 
