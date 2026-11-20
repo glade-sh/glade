@@ -48,7 +48,7 @@
 
 - **Lexical type resolution.** Resolving a type from the current execution context avoids allocating a temporary owner list.
 
-- **Runtime value memory.** Values use less space in large field maps while retaining the existing serialized field order.
+- **Runtime value layout.** Values have a smaller in-memory layout while retaining the existing serialized field order.
 
 - **Class lookup construction.** Building a class-name index uses less temporary memory for large test suites.
 
