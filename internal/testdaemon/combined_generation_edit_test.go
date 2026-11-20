@@ -14,6 +14,8 @@ import (
 )
 
 func TestDaemonSameSizeMidRequestEditsReloadAndConcurrentRequests(t *testing.T) {
+	restore := apextest.EnableDiskCacheForTesting()
+	t.Cleanup(restore)
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root, _, rewrite := writeDaemonRequestFixture(t, 4)
 	source := filepath.Join(root, "force-app/main/default/classes/DaemonServiceA.cls")
@@ -22,10 +24,11 @@ func TestDaemonSameSizeMidRequestEditsReloadAndConcurrentRequests(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts := apextest.Options{NoDiskCache: true, Parallelism: 1}
+	opts := apextest.Options{Parallelism: 1}
 	if summary := d.RunOptions(opts).Summary(); summary.Passed != 1 {
 		t.Fatalf("prime: %+v", summary)
 	}
+	apextest.WaitForRuntimeCacheWork()
 	rewrite()
 	ready, release := make(chan struct{}), make(chan struct{})
 	var once sync.Once
@@ -83,9 +86,12 @@ func TestDaemonSameSizeMidRequestEditsReloadAndConcurrentRequests(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := comparableDaemonRun(fresh.RunOptions(opts))
+	want := comparableDaemonRun(fresh.RunOptions(apextest.Options{NoDiskCache: true, Parallelism: 1}))
 	if summary := want.Summary(); summary.Failed != 1 {
 		t.Fatalf("fresh result: %+v", summary)
+	}
+	if got := comparableDaemonRun(inflight); !reflect.DeepEqual(got, want) {
+		t.Fatalf("in-flight request differs from fresh: got %#v want %#v", got, want)
 	}
 	var wg sync.WaitGroup
 	results := make([]testreport.Run, 4)
