@@ -19,20 +19,25 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 # History artifact names come from the trusted parent workflow, not a second
 # hand-maintained inventory. An unfamiliar or empty inventory refuses reuse.
-awk '
-  /^  history:$/ {job=1; next}
-  job && /^  [a-zA-Z0-9_-]+:$/ {exit}
-  job && /^          name: / {
-    suffix="-${{ github.run_id }}-${{ github.run_attempt }}"
-    name=$0
-    sub(/^          name: /, "", name)
-    if (index(name, suffix) && index(name, "-duration-history-")) {
-      stem=substr(name, 1, index(name, suffix)-1)
-      if (stem !~ /^[a-z0-9-]+-duration-history$/) exit 1
-      print stem
-    }
-  }
-' "$here/../.github/workflows/ci.yml" | sort -u > "$work/names"
+ruby -ryaml - "$here/../.github/workflows/ci.yml" > "$work/names" <<'RUBY'
+workflow = YAML.load_file(ARGV.fetch(0))
+steps = workflow.fetch("jobs").fetch("history").fetch("steps")
+saves = steps.select { |step| step.fetch("uses", "").start_with?("actions/cache/save@") && !step.fetch("if", "").include?("failure()") }
+uploads = steps.select { |step| step.fetch("uses", "").start_with?("actions/upload-artifact@") }
+abort "missing history caches" if saves.empty?
+stems = saves.map do |step|
+  path = step.fetch("with").fetch("path")
+  match = /\A\/tmp\/glade-([a-z0-9-]+-duration-history)\z/.match(path)
+  abort "unrecognized history cache path" unless match
+  stem = match[1]
+  name = "#{stem}-${{ github.run_id }}-${{ github.run_attempt }}"
+  matching = uploads.select { |upload| upload.fetch("with").fetch("name", "") == name && upload.fetch("with").fetch("path", "") == "#{path}/#{stem}.json" }
+  abort "missing or ambiguous history evidence" unless matching.length == 1
+  stem
+end
+abort "duplicate history caches" unless stems.uniq.length == stems.length
+puts stems.sort
+RUBY
 [[ -s "$work/names" ]]
 mkdir -p "$out"
 while IFS= read -r stem; do

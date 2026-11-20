@@ -79,6 +79,18 @@ esac
 			if (err == nil) != tc.ok {
 				t.Fatalf("err=%v want success=%v: %s", err, tc.ok, out)
 			}
+			if tc.ok {
+				files, err := filepath.Glob(filepath.Join(outDir, "*-duration-history", "*-duration-history.json"))
+				if err != nil || len(files) == 0 {
+					t.Fatalf("no transferred history: files=%v err=%v", files, err)
+				}
+				for _, path := range files {
+					got, err := os.ReadFile(path)
+					if err != nil || string(got) != `{"complete":true,"tests":[{"name":"TestExample","durationMillis":1}]}` {
+						t.Fatalf("history bytes changed: %s: %q, %v", path, got, err)
+					}
+				}
+			}
 		})
 	}
 }

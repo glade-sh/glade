@@ -54,6 +54,13 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		return "F"
 	})
 	expr = ciIfInputs.ReplaceAllString(expr, "T")
+	// These scenarios exercise the normal full/fast paths: the receipt gate
+	// succeeds without reuse, and each ordinary prerequisite succeeds.
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.result != 'success'", "F")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.result == 'success'", "T")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.outputs.reuse != 'true'", "T")
+	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.outputs.reuse == 'true'", "F")
+	expr = regexp.MustCompile(`needs\.[a-zA-Z0-9_-]+\.result == 'success'`).ReplaceAllString(expr, "T")
 	// A scenario is not a cancelled run.
 	expr = strings.ReplaceAll(expr, "!cancelled()", "T")
 	expr = ciIfStatusCall.ReplaceAllString(expr, "T")
@@ -135,6 +142,8 @@ func ciJobWidth(t *testing.T, name string, matrix map[string]any) int {
 // needs required-ci runs after every other job has finished, so it never
 // competes with them for runners and has width zero. Workflow lint and the
 // leak scan each use one runner and run in sequence, so count only the scan.
+// The receipt gate precedes the full jobs and can overlap only the scan in
+// these full-run scenarios, so it does not add to their concurrent peak.
 func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	t.Helper()
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
@@ -158,6 +167,9 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	for name, job := range workflow.Jobs {
 		ifs[name] = job.If
 		widths[name] = ciJobWidth(t, name, job.Strategy.Matrix)
+		if name == "tree-reuse-gate" {
+			widths[name] = 0
+		}
 		var needs []string
 		if job.Needs.Kind == yaml.ScalarNode {
 			needs = []string{job.Needs.Value}

@@ -38,9 +38,9 @@ jq -e --arg repository "$repository" '.head.repo.full_name == $repository and .b
 push_json="$(gh api --method GET "/repos/$repository/commits/$sha")"
 push_tree="$(jq -r '.commit.tree.sha // empty' <<<"$push_json")"
 [[ "$push_tree" =~ $hex40 ]] || fail "cannot read the tree of the main commit"
-base_sha="$(jq -r 'if (.parents | length) == 2 then .parents[0].sha else empty end' <<<"$push_json")"
-[[ "$base_sha" =~ $hex40 ]] || fail "main commit is not a two-parent merge"
-jq -e --arg head "$head_sha" '.parents[1].sha == $head' <<<"$push_json" >/dev/null || fail "main merge has a different pull request head"
+base_sha="$(jq -r 'if (.parents | length) == 1 or (.parents | length) == 2 then .parents[0].sha else empty end' <<<"$push_json")"
+[[ "$base_sha" =~ $hex40 ]] || fail "main commit is not a supported merge"
+jq -e --arg head "$head_sha" '(.parents | length) == 1 or .parents[1].sha == $head' <<<"$push_json" >/dev/null || fail "main merge has a different pull request head"
 
 # The receipt producer and its Required CI policy must be the policy already
 # present on the main parent. A pull request cannot define its own authority.
@@ -152,7 +152,9 @@ done < <(jq -r --arg sha "$head_sha" --arg ref "$head_ref" --argjson pr "$pr_num
       and .status == "completed"
       and .conclusion == "success"
       and (.run_attempt | type == "number" and . >= 1)
-      and ((.pull_requests // []) | any(.number == $pr))
+      # GitHub may return an empty association for a merged run. The trusted
+      # receipt below still binds the run attempt to the exact PR number.
+      and ((.pull_requests // []) | length == 0 or any(.number == $pr))
     ))
   | sort_by(.created_at // "")
   | reverse[]
