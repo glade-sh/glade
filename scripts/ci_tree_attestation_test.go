@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -70,6 +71,14 @@ esac`
 			}
 			if tc.ok && !strings.Contains(string(out), tree) {
 				t.Fatalf("missing tree evidence: %s", out)
+			}
+			if tc.ok {
+				var receipt struct {
+					RunAttempt int `json:"run_attempt"`
+				}
+				if err := json.Unmarshal(out, &receipt); err != nil || receipt.RunAttempt != 1 {
+					t.Fatalf("missing verified run attempt: %v: %s", err, out)
+				}
 			}
 		})
 	}
