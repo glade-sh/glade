@@ -145,19 +145,23 @@ func TestCIPRLaneUsesSharedTestBinaries(t *testing.T) {
 	if exports != 1 {
 		t.Errorf("CI_TEST_BIN_DIR is exported %d times, want once", exports)
 	}
-	// Selection has a single source shared with the producers.
-	for _, step := range pr.Steps {
-		if step.Name == "Select packages and transitive importers" {
-			if !strings.Contains(step.Run, "scripts/ci-pr-select.sh") || strings.Contains(step.Run, "go list -json") {
-				t.Errorf("pr-tests selection must call scripts/ci-pr-select.sh:\n%s", step.Run)
-			}
-			for _, b := range prLaneBinaries {
-				if !strings.Contains(step.Run, b.name) {
-					t.Errorf("selection step does not compute the %s binary output", b.name)
-				}
-			}
+	// The select job computes the plan once; workers consume it.
+	selectJob := jobs["pr-select"]
+	found := false
+	for _, step := range selectJob.Steps {
+		if strings.Contains(step.Run, "scripts/ci-pr-select.sh") && strings.Contains(step.Run, "scripts/ci-pr-plan.py") {
+			found = true
 		}
 	}
+	if !found {
+		t.Error("pr-select must select packages and emit the worker plan")
+	}
+	for _, step := range pr.Steps {
+		if strings.Contains(step.Run, "scripts/ci-pr-select.sh") || strings.Contains(step.Run, "scripts/ci-pr-assign.py") {
+			t.Error("worker recomputes selection or assignment")
+		}
+	}
+
 }
 
 func TestCIPRLaneGoCachesAreReadOnly(t *testing.T) {
