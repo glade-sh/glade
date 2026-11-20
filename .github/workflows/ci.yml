@@ -2139,6 +2139,8 @@ jobs:
 
   required-ci:
     name: Required CI
+    outputs:
+      coverage: ${{ steps.require.outputs.coverage }}
     needs:
       - workflow-lint
       - pr-tests
@@ -2166,6 +2168,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Require all CI jobs
+        id: require
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
@@ -2178,6 +2181,9 @@ jobs:
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1
+          fi
+          if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+            printf 'coverage=%s\n' "$(jq -c . <<<"$REQUIRED_RESULTS")" >> "$GITHUB_OUTPUT"
           fi
 
   tree-receipt:
@@ -2195,10 +2201,11 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          COVERAGE: ${{ needs.required-ci.outputs.coverage }}
         run: |
           mkdir -p "$RUNNER_TEMP/ci-tree"
-          jq -n --arg sha "$CHECKOUT_SHA" --argjson pr "$PR_NUMBER" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
-            '{checkout_sha: $sha, pr_number: $pr, run_id: $run, run_attempt: $attempt}' >"$RUNNER_TEMP/ci-tree/ci-tree.json"
+          jq -n --arg sha "$CHECKOUT_SHA" --argjson pr "$PR_NUMBER" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" --argjson coverage "$COVERAGE" \
+            '{checkout_sha: $sha, pr_number: $pr, run_id: $run, run_attempt: $attempt, coverage: $coverage}' >"$RUNNER_TEMP/ci-tree/ci-tree.json"
       - name: Upload tree receipt
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

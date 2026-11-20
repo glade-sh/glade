@@ -31,14 +31,35 @@ pr="$(jq -c --arg sha "$sha" '
 pr_number="$(jq -r '.number' <<<"$pr")"
 head_sha="$(jq -r '.head.sha' <<<"$pr")"
 [[ "$head_sha" =~ $hex40 ]] || fail "pull request head is not a full SHA"
+head_ref="$(jq -r '.head.ref // empty' <<<"$pr")"
+[[ "$head_ref" == train/* ]] || fail "pull request is not a train"
+jq -e --arg repository "$repository" '.head.repo.full_name == $repository and .base.repo.full_name == $repository' <<<"$pr" >/dev/null || fail "pull request is not from this repository"
 
-commit_tree() {
-  local json
-  json="$(gh api --method GET "/repos/$repository/commits/$1")" || return 1
-  jq -r '.commit.tree.sha // empty' <<<"$json"
-}
-push_tree="$(commit_tree "$sha")"
+push_json="$(gh api --method GET "/repos/$repository/commits/$sha")"
+push_tree="$(jq -r '.commit.tree.sha // empty' <<<"$push_json")"
 [[ "$push_tree" =~ $hex40 ]] || fail "cannot read the tree of the main commit"
+base_sha="$(jq -r 'if (.parents | length) == 2 then .parents[0].sha else empty end' <<<"$push_json")"
+[[ "$base_sha" =~ $hex40 ]] || fail "main commit is not a two-parent merge"
+jq -e --arg head "$head_sha" '.parents[1].sha == $head' <<<"$push_json" >/dev/null || fail "main merge has a different pull request head"
+
+# The receipt producer and its Required CI policy must be the policy already
+# present on the main parent. A pull request cannot define its own authority.
+workflow_path=".github/workflows/ci.yml"
+base_blob="$(gh api --method GET "/repos/$repository/contents/$workflow_path" -f "ref=$base_sha" --jq .sha)" || fail "cannot read base workflow"
+push_blob="$(gh api --method GET "/repos/$repository/contents/$workflow_path" -f "ref=$sha" --jq .sha)" || fail "cannot read merge workflow"
+[[ "$base_blob" =~ $hex40 && "$base_blob" == "$push_blob" ]] || fail "workflow differs from the trusted main parent"
+gh api --method GET "/repos/$repository/contents/$workflow_path" -f "ref=$base_sha" --jq .content | base64 --decode > "$work/ci.yml" || fail "cannot read coverage policy"
+# The required job list is read from the trusted workflow, not maintained as a
+# second inventory. Refuse an unfamiliar layout rather than guessing.
+awk '
+  /^  required-ci:$/ {job=1; next}
+  job && /^  [a-zA-Z0-9_-]+:$/ {exit}
+  job && /^    needs:$/ {needs=1; next}
+  needs && /^      - [a-zA-Z0-9_-]+$/ {print $2; next}
+  needs {exit}
+' "$work/ci.yml" > "$work/needs"
+[[ -s "$work/needs" ]] || fail "cannot read Required CI job inventory"
+required_jobs="$(jq -Rsc 'split("\n") | map(select(length > 0)) | sort' < "$work/needs")"
 
 runs_json="$(gh api --method GET \
   "/repos/$repository/actions/workflows/ci.yml/runs" \
@@ -53,9 +74,10 @@ while IFS=$'\t' read -r run_id attempt run_url; do
     "/repos/$repository/actions/runs/$run_id/attempts/$attempt/jobs" -f per_page=100)"
   authority="$(jq -c '
     [.[].jobs[]? | select(.name == "Required CI" and .status == "completed" and .conclusion == "success")]
-    | first // empty
+    | if length == 1 then .[0] else empty end
   ' <<<"$jobs_json")"
   [[ -n "$authority" ]] || continue
+  jq -e '[.[].jobs[]? | select(.name == "Tree receipt" and .status == "completed" and .conclusion == "success")] | length == 1' <<<"$jobs_json" >/dev/null || continue
 
   rm -rf "$work/receipt"
   mkdir "$work/receipt"
@@ -68,11 +90,18 @@ while IFS=$'\t' read -r run_id attempt run_url; do
   ' <<<"$receipt" >/dev/null || continue
   checkout_sha="$(jq -r '.checkout_sha // empty' <<<"$receipt")"
   [[ "$checkout_sha" =~ $hex40 ]] || continue
+  jq -e --argjson jobs "$required_jobs" '
+    (.coverage | type) == "object" and
+    (.coverage | keys | sort) == $jobs and
+    all(.coverage | to_entries[];
+      if (.key == "pr-tests" or .key == "pr-guards")
+      then .value.result == "skipped" else .value.result == "success" end)
+  ' <<<"$receipt" >/dev/null || continue
 
   # Independent check of the claimed checkout: a GitHub merge commit whose
   # second parent is the pull request head and whose tree equals the main tree.
   merge_json="$(gh api --method GET "/repos/$repository/commits/$checkout_sha")" || continue
-  jq -e --arg head "$head_sha" '(.parents | length) == 2 and .parents[1].sha == $head' <<<"$merge_json" >/dev/null || continue
+  jq -e --arg head "$head_sha" --arg base "$base_sha" '(.parents | length) == 2 and .parents[0].sha == $base and .parents[1].sha == $head' <<<"$merge_json" >/dev/null || continue
   merge_tree="$(jq -r '.commit.tree.sha // empty' <<<"$merge_json")"
   [[ "$merge_tree" == "$push_tree" ]] || continue
 
@@ -102,17 +131,20 @@ while IFS=$'\t' read -r run_id attempt run_url; do
       required_ci_job_url: $authority.html_url
     }'
   exit 0
-done < <(jq -r --arg sha "$head_sha" --argjson pr "$pr_number" '
+done < <(jq -r --arg sha "$head_sha" --arg ref "$head_ref" --argjson pr "$pr_number" '
   .workflow_runs
   | map(select(
       .head_sha == $sha
+      and .head_branch == $ref
       and .event == "pull_request"
+      and .status == "completed"
       and .conclusion == "success"
+      and (.run_attempt | type == "number" and . >= 1)
       and ((.pull_requests // []) | any(.number == $pr))
     ))
   | sort_by(.created_at // "")
   | reverse[]
-  | [.id, (.run_attempt // 1), .html_url]
+  | [.id, .run_attempt, .html_url]
   | @tsv
 ' <<<"$runs_json")
 
