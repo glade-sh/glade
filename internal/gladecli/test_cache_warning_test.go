@@ -168,11 +168,11 @@ func BenchmarkRedirectedTestWithStartupCache(b *testing.B) {
 	}
 }
 
-// TestRedirectedCacheParentOracle compares the complete result and persisted
-// startup files with a test binary built from the parent implementation. Set
-// GLADE_PARENT_TEST_BINARY to that binary to run the differential check.
 func redirectedCacheOracleBinary() string {
-	return os.Getenv("GLADE_PARENT_TEST_BINARY")
+	if parent := os.Getenv("GLADE_PARENT_TEST_BINARY"); parent != "" {
+		return parent
+	}
+	return os.Args[0]
 }
 
 func TestRedirectedCacheOracleBinaryDefaultsToCurrent(t *testing.T) {
@@ -186,6 +186,8 @@ func TestRedirectedCacheOracleBinaryDefaultsToCurrent(t *testing.T) {
 	}
 }
 
+// TestRedirectedCacheParentOracle compares results and startup files between
+// runs. Set GLADE_PARENT_TEST_BINARY to compare with a parent implementation.
 func TestRedirectedCacheParentOracle(t *testing.T) {
 	if resultPath := os.Getenv("GLADE_ORACLE_RESULT"); resultPath != "" {
 		restore := apextest.EnableDiskCacheForTesting()
@@ -206,9 +208,6 @@ func TestRedirectedCacheParentOracle(t *testing.T) {
 		return
 	}
 	parent := redirectedCacheOracleBinary()
-	if parent == "" {
-		t.Skip("set GLADE_PARENT_TEST_BINARY to run the parent differential")
-	}
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Example.cls"), `public class Example { public static Boolean value() { return true; } }`)
