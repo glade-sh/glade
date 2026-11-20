@@ -2,6 +2,7 @@ package semanticcache
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -58,6 +59,17 @@ func TestPerformanceEnvelopeIdentity(t *testing.T) {
 		if !reflect.DeepEqual(got, result) {
 			t.Fatal("result or diagnostic order changed")
 		}
+		wantOutput, err := json.Marshal(result)
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotOutput, err := json.Marshal(got)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(wantOutput, gotOutput) {
+			t.Fatal("result output changed")
+		}
 	}
 }
 
@@ -72,7 +84,7 @@ func BenchmarkSemanticDiskHit(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		m := NewManager(Limits{})
-		got, _, err := m.GetOrCompute(b.Context(), Request{Identity: id, ProjectRoot: root, RelativePath: "cache/result.json"}, func() (sema.Result, error) { b.Fatal("unexpected miss"); return sema.Result{}, nil })
+		got, _, err := m.GetOrCompute(b.Context(), Request{Identity: id, ProjectRoot: root, RelativePath: "cache/result.json"}, func() (sema.Result, error) { return sema.Result{}, fmt.Errorf("unexpected miss") })
 		if err != nil || len(got.Types) != len(result.Types) {
 			b.Fatal(err)
 		}
@@ -95,6 +107,35 @@ func BenchmarkSemanticIdentity(b *testing.B) {
 		got, err := IdentityForBuild(index, &artifacts, options)
 		if err != nil || got != want {
 			b.Fatal("identity changed", err)
+		}
+	}
+}
+
+func TestPerformanceManagerExactEncodedSize(t *testing.T) {
+	result := performanceResult(100)
+	encoded, err := json.Marshal(sema.SnapshotResult(result))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := int64(len(encoded)) + sema.EstimateResultRetainedBytes(result)
+	id := testIdentity()
+	root := t.TempDir()
+	const path = "cache/result.json"
+	if err := Store(root, path, id, result); err != nil {
+		t.Fatal(err)
+	}
+	for _, disk := range []bool{false, true} {
+		manager := NewManager(Limits{})
+		request := Request{Identity: id, ProjectRoot: root, RelativePath: path, NoDisk: !disk}
+		got, access, err := manager.GetOrCompute(context.Background(), request, func() (sema.Result, error) { return result, nil })
+		if err != nil || !reflect.DeepEqual(got, result) {
+			t.Fatalf("disk=%t: result changed: %v", disk, err)
+		}
+		if disk && access.Source != SourceDisk || !disk && access.Source != SourceBuild {
+			t.Fatalf("disk=%t: source=%s", disk, access.Source)
+		}
+		if stats := manager.Stats(); stats.RetainedBytes != want {
+			t.Fatalf("disk=%t: retained=%d want=%d", disk, stats.RetainedBytes, want)
 		}
 	}
 }

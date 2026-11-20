@@ -27,6 +27,7 @@
 
 - **Test daemon requests read each source once.** A warm `glade test serve` request re-read and re-hashed every captured Apex source and companion metadata file at each validation boundary when the file was saved inside the racily-clean window: on this release's request shape, 10 reads per source and 8 per companion per request. Each request now reads and hashes each file once and reuses that digest at its later boundaries, while a save between boundaries still changes the file's stat stamp and fails the request as before. On a medium 100-class project measured right after a same-content save, one warm request fell from 28.3 ms to 22.1 ms. The executable digest is already remembered per process and on disk under the executable's stat stamp, so requests after the first add no binary hashing.
 - **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
+- **Semantic cache performance.** Warm test-daemon requests reuse the identity of an unchanged generation, and warm checks reuse the encoded semantic result for checksum verification and memory accounting. Cached results and diagnostics are unchanged.
 
 ### CI
 
