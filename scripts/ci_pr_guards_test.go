@@ -16,8 +16,9 @@ func TestCIPRGuardWorkerRunsRepositoryGuards(t *testing.T) {
 		t.Fatal("pr-guards job missing")
 	}
 	pr := jobs["pr-tests"]
-	if guards.If != pr.If {
-		t.Fatalf("pr-guards if = %q, want the pr-tests condition so the guards stay mandatory on every ordinary PR: %q", guards.If, pr.If)
+	wantGuard := "${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}"
+	if guards.If != wantGuard {
+		t.Fatalf("pr-guards if = %q, want the independent ordinary PR condition %q", guards.If, wantGuard)
 	}
 	if needs := prLaneNeeds(t, guards); len(needs) != 0 {
 		t.Errorf("pr-guards needs = %v, want none so the guards start immediately", needs)

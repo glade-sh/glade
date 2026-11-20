@@ -23,7 +23,7 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 			If       string    `yaml:"if"`
 			Needs    yaml.Node `yaml:"needs"`
 			Strategy struct {
-				Matrix map[string]any `yaml:"matrix"`
+				Matrix yaml.Node `yaml:"matrix"`
 			} `yaml:"strategy"`
 		} `yaml:"jobs"`
 	}
@@ -32,27 +32,31 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 	}
 	counts := map[string]int{"push": 0, "pull_request": 0}
 	for name, job := range workflow.Jobs {
-		// These two jobs run serially and each uses one runner.
-		if name == "workflow-lint" && job.Needs.Kind == yaml.ScalarNode && job.Needs.Value == "leak-scan" && len(job.Strategy.Matrix) == 0 && workflow.Jobs["leak-scan"].If == "" {
+		// The gate precedes the full jobs, and the reused marker is mutually
+		// exclusive with those jobs. Neither adds to the full-run peak.
+		if name == "tree-reuse-gate" {
 			continue
 		}
-		width := 1
-		if include, ok := job.Strategy.Matrix["include"].([]any); ok {
-			width = len(include)
-		} else if len(job.Strategy.Matrix) > 0 {
-			width = 0
-			for _, values := range job.Strategy.Matrix {
-				if list, ok := values.([]any); ok {
-					if width == 0 {
-						width = 1
-					}
-					width *= len(list)
-				}
+		if name == "reused-tree-ci" {
+			if !strings.Contains(job.If, "needs.tree-reuse-gate.outputs.reuse == 'true'") {
+				t.Fatal("reuse marker is not conditional on the gate")
+			}
+			continue
+		}
+		// Workflow lint and the leak scan still run serially, with the gate
+		// as an additional prerequisite for workflow lint.
+		var dependencies []string
+		if job.Needs.Kind == yaml.ScalarNode {
+			dependencies = []string{job.Needs.Value}
+		} else if job.Needs.Kind != 0 {
+			if err := job.Needs.Decode(&dependencies); err != nil {
+				t.Fatal(err)
 			}
 		}
-		if width == 0 {
-			t.Fatalf("job %s has an unreadable matrix", name)
+		if name == "workflow-lint" && job.Strategy.Matrix.Kind == 0 && workflow.Jobs["leak-scan"].If == "" && containsDependency(dependencies, "leak-scan") {
+			continue
 		}
+		width := ciJobWidth(t, name, job.Strategy.Matrix)
 		onlyPR := strings.Contains(job.If, "github.event_name == 'pull_request'") && !strings.Contains(job.If, "!=")
 		onlySchedule := strings.Contains(job.If, "github.event_name == 'schedule'")
 		notPR := strings.Contains(job.If, "github.event_name != 'pull_request'")
@@ -72,4 +76,13 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 		t.Errorf("pull_request run schedules %d jobs, budget %d (org limit 60)", counts["pull_request"], ciPushJobBudget)
 	}
 	t.Logf("push=%d pull_request=%d", counts["push"], counts["pull_request"])
+}
+
+func containsDependency(dependencies []string, name string) bool {
+	for _, dependency := range dependencies {
+		if dependency == name {
+			return true
+		}
+	}
+	return false
 }

@@ -26,6 +26,7 @@ const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf
 const pagesWorkflow = await readFile(new URL("../../.github/workflows/pages.yml", import.meta.url), "utf8").catch(() => "");
 const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
+const goMod = await readFile(new URL("../../go.mod", import.meta.url), "utf8");
 const codeqlWorkflow = await readFile(new URL("../../.github/workflows/codeql.yml", import.meta.url), "utf8").catch(() => "");
 const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
 const repoGitignore = await readFile(new URL("../../.gitignore", import.meta.url), "utf8");
@@ -757,8 +758,10 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.11"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.11"/);
+  const goVersion = goMod.match(/^go (\d+\.\d+\.\d+)$/m)?.[1];
+  assert.ok(goVersion, "go.mod must specify a complete Go version");
+  assert.ok(ciWorkflow.includes(`go-version: "${goVersion}"`));
+  assert.ok(releaseWorkflow.includes(`go-version: "${goVersion}"`));
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);

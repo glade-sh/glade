@@ -24,21 +24,25 @@ type graphemeBoundaryTable struct {
 }
 
 type regexp2Plan struct {
-	originalSource     string
-	source             string
-	matchSource        string
-	re                 *regexp2.Regexp
-	grapheme           *graphemeBoundaryTable
-	internalGroupNames map[string]bool
-	publicGroupNumbers []int
-	endAssertionGroups []regexp2EndAssertion
-	loopGroups         []string
-	linear             *regexp.Regexp // set for patterns that nest unbounded repeats
-	linearProg         *syntax.Prog   // the same pattern as a program, for the hitEnd simulation
-	linearMu           sync.Mutex
-	linearHit          string
-	requireEndOnce     sync.Once
-	requireEndObs      *requireEndObserver
+	preparedObserverOnce sync.Once
+	preparedObserverRE   *regexp2.Regexp
+	preparedObserverSlot int
+	preparedObserverErr  error
+	originalSource       string
+	source               string
+	matchSource          string
+	re                   *regexp2.Regexp
+	grapheme             *graphemeBoundaryTable
+	internalGroupNames   map[string]bool
+	publicGroupNumbers   []int
+	endAssertionGroups   []regexp2EndAssertion
+	loopGroups           []string
+	linear               *regexp.Regexp // set for patterns that nest unbounded repeats
+	linearProg           *syntax.Prog   // the same pattern as a program, for the hitEnd simulation
+	linearMu             sync.Mutex
+	linearHit            string
+	requireEndOnce       sync.Once
+	requireEndObs        *requireEndObserver
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {

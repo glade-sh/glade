@@ -52,6 +52,7 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	matcherInputCache preparedMatcherCache
 	// adminStandardFLSRoute marks the routes where the default administrator's
 	// standard-field grant rule applies (anonymous_field_policy.go).
 	adminStandardFLSRoute bool
@@ -3694,6 +3695,8 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.matcherInputCache.reset()
+	defer vm.matcherInputCache.release()
 	vm.invalidateHeapCheckCache()
 	defer vm.BeginReportTransaction()()
 	// String == reads the running user's locale once, at transaction start:
