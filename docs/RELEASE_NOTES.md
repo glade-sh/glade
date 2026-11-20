@@ -31,9 +31,9 @@
 - **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
 - **Apex parsing and CLI startup.** The parser uses an updated native allocator and makes fewer calls while checking declarations. The SQLite driver and runtime are updated to reduce startup overhead on macOS.
 
-- **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 279 ms to 3.4 ms while returning identical ordered results.
+- **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 278 ms to 3.6 ms while returning identical ordered results.
 
-- **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 setup records fell from about 778 ms to 617 ms with identical results and governor counts.
+- **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 additional setup records fell from about 778 ms to 617 ms with identical results and governor counts.
 
 ### CI
 
