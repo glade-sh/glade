@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -163,5 +164,44 @@ func TestSnapshotReportsUnreadableFile(t *testing.T) {
 	}
 	if _, err := CapturePaths([]string{path}); err == nil {
 		t.Fatal("snapshot accepted a file whose content could not be read")
+	}
+}
+
+func TestCaptureScopeSkipsUnreadableNestedConfigs(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"sfdx-project.json", "glade.yml"} {
+		path := filepath.Join(root, "nested", name)
+		writeWatchFile(t, path, "excluded")
+		if err := os.Chmod(path, 0); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(path, 0600) })
+		if _, err := os.ReadFile(path); err == nil {
+			t.Skip("file permissions do not deny reads for this user")
+		}
+	}
+	class := filepath.Join(root, "Example.cls")
+	writeWatchFile(t, class, "class Example {}")
+	snapshot, err := CaptureScope(Scope{Roots: []string{root}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snapshot.Files) != 1 || snapshot.Files[class].Path != class {
+		t.Fatalf("unexpected files: %#v", snapshot.Files)
+	}
+}
+
+func TestSnapshotLargeResourceUsesBoundedMemory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "staticresources", "asset.resource")
+	writeWatchFile(t, path, strings.Repeat("a", 8<<20))
+	result := testing.Benchmark(func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			if _, err := CapturePaths([]string{path}); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	if got := result.AllocedBytesPerOp(); got > 1<<20 {
+		t.Fatalf("capture allocated %d bytes for an 8 MiB resource; want at most 1 MiB", got)
 	}
 }
