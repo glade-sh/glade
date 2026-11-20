@@ -50,3 +50,5 @@ require (
 )
 
 replace github.com/glade-sh/apex-parser => ./third_party/glade-apex-parser
+
+replace github.com/tree-sitter/go-tree-sitter => github.com/tree-sitter/go-tree-sitter v0.24.1-0.20251112173626-72007cfc03d1
