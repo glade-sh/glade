@@ -124,6 +124,7 @@ while IFS=$'\t' read -r run_id attempt run_url; do
     --arg run_url "$run_url" \
     --argjson pr_number "$pr_number" \
     --argjson run_id "$run_id" \
+    --argjson run_attempt "$attempt" \
     --argjson authority "$authority" \
     '{
       schema_version: 1,
@@ -136,6 +137,7 @@ while IFS=$'\t' read -r run_id attempt run_url; do
       pr_head_sha: $head_sha,
       checkout_sha: $checkout_sha,
       run_id: $run_id,
+      run_attempt: $run_attempt,
       run_url: $run_url,
       required_ci_job_id: $authority.id,
       required_ci_job_url: $authority.html_url
