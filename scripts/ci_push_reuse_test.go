@@ -293,3 +293,101 @@ func TestCIReuseCoversFullValidationJobs(t *testing.T) {
 		}
 	}
 }
+
+// The carried history must be addressed exactly like freshly generated history.
+// A changed key dimension must never restore a neighbor's history.
+func TestCIReuseHistoryCacheKeyDimensions(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Steps []struct {
+				Uses string            `yaml:"uses"`
+				With map[string]string `yaml:"with"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	saves := map[string]string{}
+	for _, step := range workflow.Jobs["history"].Steps {
+		if strings.HasPrefix(step.Uses, "actions/cache/save@") && strings.Contains(step.With["path"], "duration-history") {
+			saves[step.With["path"]] = step.With["key"]
+		}
+	}
+	if len(saves) == 0 {
+		t.Fatal("no history cache saves")
+	}
+	mod, err := os.ReadFile("../go.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var goVersion string
+	for _, line := range strings.Split(string(mod), "\n") {
+		if strings.HasPrefix(line, "go ") {
+			goVersion = strings.TrimSpace(strings.TrimPrefix(line, "go "))
+		}
+	}
+	if goVersion == "" {
+		t.Fatal("missing go.mod version")
+	}
+	const prefix = "${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}"
+	const osExpr = "${{ runner.os }}"
+	const archExpr = "${{ runner.arch }}"
+	const sumExpr = "${{ hashFiles('go.sum') }}"
+	const saveRef = "${{ github.sha }}"
+	const restoreRef = "${{ env.CI_DURATION_HISTORY_CACHE_REF }}"
+	counts := map[string]int{}
+	for _, job := range workflow.Jobs {
+		for _, step := range job.Steps {
+			if !strings.HasPrefix(step.Uses, "actions/cache/restore@") {
+				continue
+			}
+			save, ok := saves[step.With["path"]]
+			if !ok {
+				continue
+			}
+			counts[step.With["path"]]++
+			if step.With["restore-keys"] != "" {
+				t.Errorf("%s has a fallback restore key", step.With["path"])
+			}
+			restore := step.With["key"]
+			if strings.ReplaceAll(restore, restoreRef, saveRef) != save {
+				t.Errorf("%s: save and restore expressions differ", step.With["path"])
+			}
+			for _, expression := range []string{prefix, osExpr, archExpr, sumExpr, saveRef} {
+				if strings.Count(save, expression) != 1 {
+					t.Errorf("%s: expected exactly one %s", step.With["path"], expression)
+				}
+			}
+			// The Go version is an explicit component, not a mutable toolchain alias.
+			if !strings.Contains(save, "-"+goVersion+"-") {
+				t.Errorf("%s: missing Go version", step.With["path"])
+			}
+			render := func(key string, values []string) string {
+				pairs := []string{prefix, "", osExpr, values[0], archExpr, values[1], goVersion, values[2], sumExpr, values[3], saveRef, values[4], restoreRef, values[4]}
+				return strings.NewReplacer(pairs...).Replace(key)
+			}
+			baseline := []string{"Linux", "X64", goVersion, "sum-a", "sha-a"}
+			saved := render(save, baseline)
+			if got := render(restore, baseline); got != saved {
+				t.Errorf("%s: matching inputs do not restore", step.With["path"])
+			}
+			for i, name := range []string{"OS", "architecture", "Go version", "go.sum", "destination SHA"} {
+				changed := append([]string(nil), baseline...)
+				changed[i] += "-different"
+				if got := render(restore, changed); got == saved {
+					t.Errorf("%s: %s did not invalidate", step.With["path"], name)
+				}
+			}
+		}
+	}
+	for path := range saves {
+		if counts[path] == 0 {
+			t.Errorf("%s: no restore", path)
+		}
+	}
+}
