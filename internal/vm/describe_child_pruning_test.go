@@ -19,6 +19,9 @@ func goldenChildDescribe(t *testing.T, _ *VM, name string) []byte {
 	t.Helper()
 	base := t.Name() + "|" + name
 	ordinal := childDescribeGoldenCalls[base]
+	if ordinal == 0 {
+		t.Cleanup(func() { delete(childDescribeGoldenCalls, base) })
+	}
 	childDescribeGoldenCalls[base] = ordinal + 1
 	key := fmt.Sprintf("%s|%d", base, ordinal)
 	file, err := os.Open("testdata/child_describe_parent.json.gz")
