@@ -1,11 +1,14 @@
 package scripts
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestCIPrepareTreeReuse(t *testing.T) {
@@ -75,6 +78,67 @@ esac
 	}
 }
 
+func TestCIRequiredCIPushReuseRequiresMaintenance(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Needs yaml.Node `yaml:"needs"`
+			Steps []struct {
+				Run string `yaml:"run"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	job := workflow.Jobs["required-ci"]
+	var needs []string
+	if err := job.Needs.Decode(&needs); err != nil {
+		t.Fatal(err)
+	}
+	check := func(results map[string]map[string]string, reuse string, want bool) {
+		t.Helper()
+		encoded, err := json.Marshal(results)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("bash", "-c", job.Steps[0].Run)
+		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME=push", "HEAD_REF=", "TREE_REUSE="+reuse)
+		out, err := cmd.CombinedOutput()
+		if (err == nil) != want {
+			t.Fatalf("reuse=%s results=%s err=%v want=%v: %s", reuse, encoded, err, want, out)
+		}
+	}
+	results := map[string]map[string]string{}
+	for _, name := range needs {
+		results[name] = map[string]string{"result": "skipped"}
+	}
+	for _, name := range []string{"tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"} {
+		results[name]["result"] = "success"
+	}
+	check(results, "true", true)
+	for _, name := range []string{"tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"} {
+		results[name]["result"] = "failure"
+		check(results, "true", false)
+		results[name]["result"] = "success"
+	}
+	delete(results, "history")
+	check(results, "true", false)
+	results["history"] = map[string]string{"result": "success"}
+	check(results, "false", false)
+	for _, name := range needs {
+		results[name]["result"] = "success"
+	}
+	results["pr-tests"]["result"], results["pr-guards"]["result"], results["reused-tree-ci"]["result"] = "skipped", "skipped", "skipped"
+	results["tree-reuse-gate"]["result"] = "failure"
+	check(results, "false", true)
+	results["site"]["result"] = "skipped"
+	check(results, "false", false)
+}
+
 func TestCIWorkflowMainPushReceiptGate(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	gate := jobs["tree-reuse-gate"]
@@ -83,9 +147,17 @@ func TestCIWorkflowMainPushReceiptGate(t *testing.T) {
 			t.Errorf("tree reuse gate missing %q", marker)
 		}
 	}
-	for _, job := range []string{"apextest", "vm", "gladecli", "sema", "lwc-vf", "site", "test", "workflow-lint"} {
+	for _, job := range []string{"history-input", "test-binaries", "test-binaries-apextest", "site", "test", "workflow-lint"} {
 		if !strings.Contains(jobs[job], "needs.tree-reuse-gate.outputs.reuse") {
 			t.Errorf("%s does not depend on the reuse decision", job)
+		}
+	}
+	for job, dependency := range map[string]string{"apextest": "history-input", "vm": "history-input", "gladecli": "history-input", "sema": "test-binaries", "lwc-vf": "test-binaries"} {
+		if !strings.Contains(jobs[job], "needs: "+dependency) && !strings.Contains(jobs[job], dependency+",") && !strings.Contains(jobs[job], dependency+"]") {
+			t.Errorf("%s does not depend on gated prerequisite %s", job, dependency)
+		}
+		if !strings.Contains(jobs[job], "!cancelled()") || !strings.Contains(jobs[job], "needs."+dependency+".result == 'success'") {
+			t.Errorf("%s cannot recover from a failed gate after its prerequisite succeeds", job)
 		}
 	}
 	if strings.Contains(jobs["leak-scan"], "needs.tree-reuse-gate.outputs.reuse") {
@@ -96,9 +168,54 @@ func TestCIWorkflowMainPushReceiptGate(t *testing.T) {
 			t.Errorf("reuse marker missing %q", marker)
 		}
 	}
-	for _, marker := range []string{"needs.tree-reuse-gate.outputs.reuse", "reuse-history", "actions/cache/save@"} {
+	for _, marker := range []string{"steps.reuse-history.outcome", "reuse-history", "actions/cache/save@"} {
 		if !strings.Contains(jobs["history"], marker) {
 			t.Errorf("history maintenance missing %q", marker)
+		}
+	}
+}
+
+func TestCITreeReuseDecisionDefaultsToFullRun(t *testing.T) {
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Steps []struct {
+				ID  string `yaml:"id"`
+				Run string `yaml:"run"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	var script string
+	for _, step := range workflow.Jobs["tree-reuse-gate"].Steps {
+		if step.ID == "decision" {
+			script = step.Run
+		}
+	}
+	if script == "" {
+		t.Fatal("missing decision step")
+	}
+	for _, tc := range []struct{ event, prepare, carry, want string }{
+		{"push", "success", "success", "true"},
+		{"push", "failure", "skipped", "false"},
+		{"push", "success", "failure", "false"},
+		{"push", "", "", "false"},
+		{"pull_request", "success", "success", "false"},
+	} {
+		output := filepath.Join(t.TempDir(), "output")
+		cmd := exec.Command("bash", "-c", script)
+		cmd.Env = append(os.Environ(), "EVENT_NAME="+tc.event, "PREPARE_OUTCOME="+tc.prepare, "CARRY_OUTCOME="+tc.carry, "GITHUB_OUTPUT="+output)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("decision failed: %v: %s", err, out)
+		}
+		got, err := os.ReadFile(output)
+		if err != nil || string(got) != "reuse="+tc.want+"\n" {
+			t.Fatalf("%+v: output=%q err=%v", tc, got, err)
 		}
 	}
 }
