@@ -2481,7 +2481,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Pattern":
 		return callPatternMember(receiver, method, args)
 	case "Matcher":
-		return callMatcherMember(receiver, method, args)
+		return callMatcherMemberWithCache(receiver, method, args, &vm.matcherInputCache)
 	case "Date":
 		if out, ok := vm.dateHybridMember(receiver, method, args); ok {
 			return out, receiver, false, true, nil
