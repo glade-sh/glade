@@ -89,6 +89,7 @@ func TestKnownStandardObjectNamesIncludeV2DescribeIndex(t *testing.T) {
 
 func resetKnownStandardObjectCacheForTest() {
 	resetKnownStandardObjectMemo()
+	knownStandardObjectExactNames.Store(nil)
 	knownStandardObjectCache = struct {
 		once          sync.Once
 		names         []string
