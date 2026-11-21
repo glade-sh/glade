@@ -8,7 +8,8 @@ def packaging(path):
     return (path.startswith((b'site/', b'contrib/vscode-glade/', b'third_party/lwc/',
                              b'scripts/release', b'scripts/smoke-', b'scripts/sync-update-installer',
                              b'.github/workflows/release', b'scripts/verify-release'))
-            or path in (b'Dockerfile', b'docs/INSTALL.md', b'scripts/prepare-lwc-shared.mjs',
+            or path in (b'internal/gladehome/install.go', b'internal/gladecli/update_installer.sh',
+                        b'Dockerfile', b'docs/INSTALL.md', b'scripts/prepare-lwc-shared.mjs',
                         b'.github/workflows/ci.yml', b'.github/release-authorities.json',
                         b'scripts/ci-pr-smoke-select.py'))
 
