@@ -219,6 +219,7 @@ func TestTriggersOrgConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 			namedRunner := newConformanceRunner(t, namedIndex, conformanceRunnerOptions{RequestRuntime: &namedRuntime, Org: &org})
+			namedSeed := newTriggerInitializedSeed(*namedRunner.org)
 			methods, methodErrors := compileTestMethods(namedCases)
 			programs, programErrors := compileTestInvokePrograms(namedCases)
 			runtimeMethods := indexTestRuntimeMethods(methods)
@@ -278,8 +279,7 @@ func TestTriggersOrgConformance(t *testing.T) {
 						}
 						row := namedByID[tc.ID]
 						key := testCaseKey(row)
-						seed := namedRunner.org.CloneRuntimeOrg()
-						initializeTestOrg(&seed)
+						seed := namedSeed.CloneRuntimeOrg()
 						result := runCase(context.Background(), row, methods[key], runtimeMethods[testMethodSourceKey(row.ClassName, row.File)], methodErrors[key], programs[key], programErrors[key], namedRunner.base, nil, nil, nil, seed, 0, Options{NoDiskCache: true, Parallelism: 1}, false, nil, counters)
 						if result.Status != testreport.StatusPass {
 							t.Fatalf("named row: status %s problem %v", result.Status, result.Problem)
@@ -289,6 +289,14 @@ func TestTriggersOrgConformance(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTriggerInitializedSeed(template storage.RuntimeTemplate) storage.RuntimeTemplate {
+	org := template.CloneRuntimeOrg()
+	initializeTestOrg(&org)
+	seed := storage.NewRuntimeTemplate(org)
+	seed.RuntimeSchemaStamp = org.RuntimeSchemaStamp
+	return seed
 }
 
 func TestTriggerInitializedSeedIsolation(t *testing.T) {
@@ -304,9 +312,12 @@ func TestTriggerInitializedSeedIsolation(t *testing.T) {
 	seed := newTriggerInitializedSeed(template)
 	first := seed.CloneRuntimeOrg()
 	gotJSON, err := json.Marshal(first)
-	if err != nil || !bytes.Equal(gotJSON, wantJSON) {
+	if err != nil || !bytes.Equal(gotJSON, wantJSON) || first.RuntimeSchemaStamp != want.RuntimeSchemaStamp {
 		t.Fatalf("initialized seed differs from fresh setup: %v", err)
 	}
+	account := first.Objects["Account"]
+	account.PutRecord(storage.ID("001000000000001AAA"), storage.Record{})
+	first.Objects["Account"] = account
 	delete(first.Objects, "Account")
 	second := seed.CloneRuntimeOrg()
 	gotJSON, err = json.Marshal(second)
