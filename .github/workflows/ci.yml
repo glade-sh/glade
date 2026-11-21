@@ -2021,6 +2021,27 @@ jobs:
           esac
           scripts/leak-scan.sh --range "$range"
 
+  early-guards:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Run early guard checks
+        run: |
+          go test -count=1 -timeout=5m ./scripts -run '^(TestCIApexSkipSitesMatchResultPolicy|TestCIRaceNightlySelectionRegexesSelectGoConcurrencyOnly|TestCIRaceSampleSelectionRule)$'
+          go test -count=1 -timeout=5m ./scripts/internal/cishard -run '^TestCIPackageManifestConcurrencyCounts$'
+          go test -count=1 -timeout=5m ./internal/repoguard -run '^TestObjectStateRecordsWritesUseFunnel$'
+
   pr-guards:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
     runs-on: ubuntu-24.04
@@ -2301,6 +2322,7 @@ jobs:
       - workflow-lint
       - pr-tests
       - pr-guards
+      - early-guards
       - pr-select
       - site
       - test-binaries
@@ -2343,7 +2365,7 @@ jobs:
           if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
             failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"
           else
-            failures="$(jq -r --arg event "$event" --arg smoke "${SMOKE_REQUIRED:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+            failures="$(jq -r --arg event "$event" --arg original "$EVENT_NAME" --arg smoke "${SMOKE_REQUIRED:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(.key != "early-guards" or $original == "pull_request") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           fi
           if [[ -n "$planner_failure" ]]; then failures="${failures:+$failures$'\n'}$planner_failure"; fi
           if [[ -n "$failures" ]]; then

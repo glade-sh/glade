@@ -282,6 +282,10 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	}
 	results["pr-guards"]["result"] = "success"
 	results["pr-tests"]["result"] = "success"
+	results["early-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	run("push", true)
+	results["early-guards"]["result"] = "success"
 	run("pull_request", true)
 	results["pr-select"]["result"] = "failure"
 	run("pull_request", false)
@@ -297,6 +301,12 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	t.Setenv("SMOKE_REQUIRED", "invalid")
 	run("pull_request", false)
 	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("HEAD_REF", "train/example")
+	results["early-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	results["early-guards"]["result"] = "success"
+	run("pull_request", true)
+	t.Setenv("HEAD_REF", "")
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)
 	run("merge_group", false)

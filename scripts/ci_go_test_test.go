@@ -2084,6 +2084,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - workflow-lint
       - pr-tests
       - pr-guards
+      - early-guards
       - pr-select
       - site
       - test-binaries
@@ -2143,7 +2144,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
 		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
@@ -3647,7 +3648,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "pr-select", "pr-tests")
-	wantJobs = append(wantJobs, "pr-guards")
+	wantJobs = append(wantJobs, "pr-guards", "early-guards")
 	wantJobs = append(wantJobs, "history-input", "vm")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
