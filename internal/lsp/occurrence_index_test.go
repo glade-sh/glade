@@ -566,6 +566,24 @@ func TestReferenceGenerationMatchesFullScan(t *testing.T) {
 	check("overlay")
 	h.applyClose(uriFromPath(paths[1]))
 	check("closed")
+	if err := os.Remove(paths[2]); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(paths[0], paths[2]); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("retargeted alias")
+	if err := os.Remove(paths[1]); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("missing")
+	if err := os.WriteFile(paths[1], []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("recreated")
 	idx.Types = idx.Types[:2]
 	install(idx)
 	check("removed alias")
@@ -605,6 +623,74 @@ func BenchmarkReferenceAfterUnrelatedSave(b *testing.B) {
 		b.StartTimer()
 		if len(h.References(params)) != 1 {
 			b.Fatal("changed references")
+		}
+	}
+}
+
+func TestReferencePostingsConcurrentGenerations(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "Needle.cls")
+	if err := os.WriteFile(path, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	idx := typesys.Index{Types: []typesys.TypeSymbol{{Name: "Needle", File: path}}}
+	h := NewHandler(idx)
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 30; j++ {
+				if got := h.snapshot().referenceLocations("Needle"); len(got) != 1 {
+					t.Errorf("references = %#v", got)
+					return
+				}
+			}
+		}()
+	}
+	for i := 0; i < 30; i++ {
+		h.refreshMu.Lock()
+		h.installBaseLocked(Base{Index: idx}, func(g *generation) { h.gen.Store(g) })
+		h.refreshMu.Unlock()
+	}
+	wg.Wait()
+}
+
+func BenchmarkReferenceWarmAfterUnrelatedSave(b *testing.B) {
+	dir := b.TempDir()
+	idx := typesys.Index{}
+	for i := 0; i < 1500; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("%04d.cls", i))
+		text := fmt.Sprintf("class File%d {\n", i) + strings.Repeat(" Integer value; String text;\n", 40) + "}\n"
+		if i == 0 {
+			text = "class Needle {}"
+		}
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			b.Fatal(err)
+		}
+		idx.Types = append(idx.Types, typesys.TypeSymbol{Name: fmt.Sprintf("File%d", i), File: path})
+	}
+	idx.Types[0].Name = "Needle"
+	h := NewHandler(idx)
+	uri := uriFromPath(idx.Types[0].File)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 8}, Context: ReferenceContext{IncludeDeclaration: true}}
+	if len(h.References(params)) != 1 {
+		b.Fatal("initial references")
+	}
+	if err := os.WriteFile(idx.Types[1].File, []byte("class File1 { Integer changed; }"), 0600); err != nil {
+		b.Fatal(err)
+	}
+	h.refreshMu.Lock()
+	h.installBaseLocked(Base{Index: idx}, func(g *generation) { h.gen.Store(g) })
+	h.refreshMu.Unlock()
+	if len(h.References(params)) != 1 {
+		b.Fatal("references after save")
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if len(h.References(params)) != 1 {
+			b.Fatal("warm references")
 		}
 	}
 }

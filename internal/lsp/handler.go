@@ -22,10 +22,11 @@ import (
 )
 
 type Handler struct {
-	gen       atomic.Pointer[generation]
-	ready     chan struct{}
-	readyOnce sync.Once
-	loadErr   error
+	gen             atomic.Pointer[generation]
+	occurrenceCache atomic.Pointer[occurrenceSnapshot]
+	ready           chan struct{}
+	readyOnce       sync.Once
+	loadErr         error
 
 	parserMu     sync.Mutex
 	parser       *apexast.Parser
