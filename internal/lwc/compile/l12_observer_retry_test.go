@@ -35,7 +35,7 @@ func TestL12ObserverRetriesFaultsSerially(t *testing.T) {
 			if fault != "none" {
 				wantCalls = append(wantCalls, false)
 			}
-			if !reflect.DeepEqual(calls, wantCalls) || !reflect.DeepEqual(values, want) || len(rowErrors) != 0 || productErr != nil || browserErr != nil {
+			if !reflect.DeepEqual(calls, wantCalls) || (fault == "none" && !reflect.DeepEqual(values, want)) || (fault == "row" && rowErrors["first"] != "row failure") || (fault == "product" && (productErr == nil || productErr.Error() != "product failure")) || (fault == "browser" && (browserErr == nil || browserErr.Error() != "browser failure")) {
 				t.Fatalf("calls=%v values=%v rowErrors=%v productErr=%v browserErr=%v", calls, values, rowErrors, productErr, browserErr)
 			}
 		})
@@ -49,7 +49,7 @@ func TestL12ObserverKeepsSerialFault(t *testing.T) {
 		}
 		return nil, map[string]string{"first": "serial failure"}, nil, nil
 	})
-	if got["first"] != "serial failure" || productErr != nil || browserErr != nil {
+	if got["first"] != "parallel failure; serial retry: serial failure" || productErr != nil || browserErr != nil {
 		t.Fatalf("rowErrors=%v productErr=%v browserErr=%v", got, productErr, browserErr)
 	}
 }
@@ -136,5 +136,18 @@ func TestL12ObserverPreservesFirstFault(t *testing.T) {
 				t.Fatalf("first failure lost: rows=%v product=%v browser=%v", rows, product, browser)
 			}
 		})
+	}
+}
+
+func TestL12ObserverReportsBothAttempts(t *testing.T) {
+	want := map[string]json.RawMessage{"ok": json.RawMessage(`{"stage":"done"}`)}
+	values, rows, product, browser := l12ObserveWithFallback(func(parallel bool) (map[string]json.RawMessage, map[string]string, error, error) {
+		if parallel {
+			return want, map[string]string{"first": "initial"}, errors.New("initial product"), errors.New("initial browser")
+		}
+		return nil, map[string]string{"second": "retry"}, errors.New("retry product"), errors.New("retry browser")
+	})
+	if !reflect.DeepEqual(values, want) || rows["first"] != "initial" || rows["second"] != "serial retry: retry" || product == nil || !strings.Contains(product.Error(), "initial product") || !strings.Contains(product.Error(), "retry product") || browser == nil || !strings.Contains(browser.Error(), "initial browser") || !strings.Contains(browser.Error(), "retry browser") {
+		t.Fatalf("values=%v rows=%v product=%v browser=%v", values, rows, product, browser)
 	}
 }

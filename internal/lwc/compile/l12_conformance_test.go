@@ -444,7 +444,23 @@ func l12ObserveDOM(t *testing.T, api string, cases []l12Case, dependencyRoot str
 func l12ObserveWithFallback(observe func(bool) (map[string]json.RawMessage, map[string]string, error, error)) (map[string]json.RawMessage, map[string]string, error, error) {
 	values, rowErrors, productErr, browserErr := observe(true)
 	if len(rowErrors) != 0 || productErr != nil || browserErr != nil {
-		return observe(false)
+		_, serialRows, serialProduct, serialBrowser := observe(false)
+		for id, failure := range serialRows {
+			if rowErrors == nil {
+				rowErrors = make(map[string]string)
+			}
+			if first := rowErrors[id]; first != "" {
+				rowErrors[id] = first + "; serial retry: " + failure
+			} else {
+				rowErrors[id] = "serial retry: " + failure
+			}
+		}
+		if serialProduct != nil {
+			productErr = errors.Join(productErr, fmt.Errorf("serial retry: %w", serialProduct))
+		}
+		if serialBrowser != nil {
+			browserErr = errors.Join(browserErr, fmt.Errorf("serial retry: %w", serialBrowser))
+		}
 	}
 	return values, rowErrors, productErr, browserErr
 }
