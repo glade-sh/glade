@@ -436,6 +436,21 @@ func l12CompileCases(t *testing.T, api string, cases []l12Case) map[string]compi
 
 func l12ObserveDOM(t *testing.T, api string, cases []l12Case, dependencyRoot string) (map[string]json.RawMessage, map[string]string, error, error) {
 	t.Helper()
+	return l12ObserveWithFallback(func(parallel bool) (map[string]json.RawMessage, map[string]string, error, error) {
+		return l12ObserveDOMMode(t, api, cases, dependencyRoot, parallel)
+	})
+}
+
+func l12ObserveWithFallback(observe func(bool) (map[string]json.RawMessage, map[string]string, error, error)) (map[string]json.RawMessage, map[string]string, error, error) {
+	values, rowErrors, productErr, browserErr := observe(true)
+	if len(rowErrors) != 0 || productErr != nil || browserErr != nil {
+		return observe(false)
+	}
+	return values, rowErrors, productErr, browserErr
+}
+
+func l12ObserveDOMMode(t *testing.T, api string, cases []l12Case, dependencyRoot string, parallel bool) (map[string]json.RawMessage, map[string]string, error, error) {
+	t.Helper()
 	root := t.TempDir()
 	l07Copy(t, filepath.Join("testdata", "l12_runtime", "api"+api[:2]), root)
 	p, err := project.Load(root)
@@ -531,7 +546,7 @@ func l12ObserveDOM(t *testing.T, api string, cases []l12Case, dependencyRoot str
 	for index, c := range cases {
 		ids[index], allowed[c.ID] = c.ID, true
 	}
-	config, err := json.Marshal(map[string]any{"url": local.URL, "ids": ids, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
+	config, err := json.Marshal(map[string]any{"url": local.URL, "ids": ids, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE"), "parallel": parallel})
 	if err != nil {
 		return nil, nil, nil, err
 	}
