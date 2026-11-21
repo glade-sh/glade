@@ -341,7 +341,12 @@ func TestCIWorkflowPRBrowserStepsSkipApexShards(t *testing.T) {
 		t.Fatalf("browser steps found = %v", found)
 	}
 	// The planner keeps the Apex route on shards 0-11.
-	last := steps[len(steps)-1].Run
+	var last string
+	for _, step := range steps {
+		if step.Name == "Build and run selected packages" {
+			last = step.Run
+		}
+	}
 	m := regexp.MustCompile(`\bapex:apextest:(\d+):(\d+)\b`).FindStringSubmatch(last)
 	if m == nil {
 		t.Fatalf("apex route spec missing from the last step: %s", last)
