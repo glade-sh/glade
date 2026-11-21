@@ -76,6 +76,7 @@
 - **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
 - **Duplicate matching.** Scans can reuse match decisions for repeated values of required matching terms, reducing work on large sets while retaining the existing match results.
 - **Debugger startup cache.** Stale snapshots are rejected using a small manifest before reading the cached runtime.
+- **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
 
 ### CI
 
