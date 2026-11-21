@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -286,5 +288,29 @@ func TestTriggersOrgConformance(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestTriggerInitializedSeedIsolation(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	template := storage.NewRuntimeTemplate(org)
+	want := template.CloneRuntimeOrg()
+	initializeTestOrg(&want)
+	wantJSON, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := newTriggerInitializedSeed(template)
+	first := seed.CloneRuntimeOrg()
+	gotJSON, err := json.Marshal(first)
+	if err != nil || !bytes.Equal(gotJSON, wantJSON) {
+		t.Fatalf("initialized seed differs from fresh setup: %v", err)
+	}
+	delete(first.Objects, "Account")
+	second := seed.CloneRuntimeOrg()
+	gotJSON, err = json.Marshal(second)
+	if err != nil || !bytes.Equal(gotJSON, wantJSON) {
+		t.Fatalf("mutation leaked to next clone: %v", err)
 	}
 }
