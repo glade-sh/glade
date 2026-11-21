@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -23,8 +25,30 @@ type strictShapeOutcome struct {
 
 func runStrictShape(t *testing.T, source string, caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int, int) {
 	t.Helper()
-	defer vm.SetHeapStatementPlansOffForTest(plansOff)()
 	org, index := strictHeapShapesOrg(t)
+	return runStrictShapeOnOrg(t, source, caps, plansOff, org, index)
+}
+
+type strictShapeFixture struct {
+	org   *storage.OrgState
+	index typesys.Index
+}
+
+func newStrictShapeFixture(t *testing.T) strictShapeFixture {
+	t.Helper()
+	org, index := strictHeapShapesOrg(t)
+	return strictShapeFixture{org: org, index: index}
+}
+
+func (fixture strictShapeFixture) run(t *testing.T, source string, caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int, int) {
+	t.Helper()
+	org := fixture.org.CloneRuntime()
+	return runStrictShapeOnOrg(t, source, caps, plansOff, &org, fixture.index)
+}
+
+func runStrictShapeOnOrg(t *testing.T, source string, caps vm.LimitCaps, plansOff bool, org *storage.OrgState, index typesys.Index) (strictShapeOutcome, int, int) {
+	t.Helper()
+	defer vm.SetHeapStatementPlansOffForTest(plansOff)()
 	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: "67.0"})
 	if err != nil {
 		t.Fatalf("compile: %v\n%s", err, source)
@@ -145,6 +169,7 @@ String tag = 'tg';
 // outcome of the run that walks the heap on every statement, with and without
 // a heap cap that stops it at many different statements.
 func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
+	fixture := newStrictShapeFixture(t)
 	seeds := 16
 	if testing.Short() {
 		seeds = 3
@@ -153,7 +178,7 @@ func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
 	totalPriced, totalStopped := 0, 0
 	for seed := 0; seed < seeds; seed++ {
 		source := strictShapeProgram(rand.New(rand.NewSource(int64(seed))), 60)
-		base, _, _ := runStrictShape(t, source, sync, true)
+		base, _, _ := fixture.run(t, source, sync, true)
 		if base.err != "" {
 			t.Fatalf("seed %d: uncapped run err = %q\n%s", seed, base.err, source)
 		}
@@ -164,8 +189,8 @@ func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
 			if cap != 0 {
 				c.HeapSize = cap
 			}
-			want, _, _ := runStrictShape(t, source, c, true)
-			got, priced, walked := runStrictShape(t, source, c, false)
+			want, _, _ := fixture.run(t, source, c, true)
+			got, priced, walked := fixture.run(t, source, c, false)
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("seed %d cap %d: priced outcome differs from full walk:\n got  %+v\n want %+v\n%s", seed, cap, got, want, source)
 			}

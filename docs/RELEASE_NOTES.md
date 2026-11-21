@@ -70,7 +70,7 @@
 
 - **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
-- **Test suite time.** The semantic reference-scanner tests reuse each offset's query result while retaining their existing checks.
+- **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, and the strict heap matrix reuses its project setup while isolating each execution.
 
 ### CI
 
