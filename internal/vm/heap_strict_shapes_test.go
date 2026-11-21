@@ -182,3 +182,16 @@ func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
 		t.Fatalf("priced %d, stopped %d of %d seeds", totalPriced, totalStopped, seeds)
 	}
 }
+
+func TestStrictHeapShapesFixtureIsolation(t *testing.T) {
+	fixture := newStrictShapeFixture(t)
+	caps, _ := vm.LimitCapsForProfile("default")
+	source := strictShapeProgram(rand.New(rand.NewSource(0)), 5)
+	for _, plansOff := range []bool{false, true, false} {
+		want, wantPriced, wantWalked := runStrictShape(t, source, caps, plansOff)
+		got, gotPriced, gotWalked := fixture.run(t, source, caps, plansOff)
+		if !reflect.DeepEqual(got, want) || gotPriced != wantPriced || gotWalked != wantWalked {
+			t.Fatalf("plansOff=%v: reused fixture outcome or counters differ\n got %+v (%d, %d)\nwant %+v (%d, %d)", plansOff, got, gotPriced, gotWalked, want, wantPriced, wantWalked)
+		}
+	}
+}
