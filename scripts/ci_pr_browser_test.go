@@ -164,3 +164,10 @@ func TestCIPRBrowserUsesBothMergeParents(t *testing.T) {
 		t.Fatal("browser scope must compare base and head, including deleted paths")
 	}
 }
+
+func TestCIPRBrowserEvidenceDoesNotRunOnPush(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	if !strings.Contains(jobs["pr-browser-evidence"], "github.event_name == 'pull_request'") {
+		t.Fatal("PR browser evidence must be explicitly limited to pull requests")
+	}
+}
