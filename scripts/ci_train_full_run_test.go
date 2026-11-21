@@ -416,3 +416,20 @@ func TestCIIfScenariosEvaluatePRDecisions(t *testing.T) {
 		}
 	}
 }
+
+func TestCITrainScopeOnlyPermitsSelectedSmokeJobs(t *testing.T) {
+	ordinaryPR := ciScenarios[1]
+	expr := "github.event_name != 'pull_request' || needs.pr-select.outputs.smoke == 'true'"
+	for _, tc := range []struct {
+		name string
+		want bool
+	}{
+		{"smoke-runtime", true},
+		{"smoke-distribution", true},
+		{"apextest", false},
+	} {
+		if got := ciTrainJobAllowedOnPR(tc.name, expr, ordinaryPR); got != tc.want {
+			t.Errorf("%s: allowed=%v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
