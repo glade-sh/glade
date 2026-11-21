@@ -30,8 +30,30 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 	if err := yaml.Unmarshal(data, &workflow); err != nil {
 		t.Fatal(err)
 	}
+	dependenciesByJob := make(map[string][]string)
+	for name, job := range workflow.Jobs {
+		if strings.Contains(job.If, "github.event_name == 'schedule'") {
+			continue
+		}
+		var needs []string
+		if job.Needs.Kind == yaml.ScalarNode {
+			needs = []string{job.Needs.Value}
+		} else if job.Needs.Kind != 0 {
+			if err := job.Needs.Decode(&needs); err != nil {
+				t.Fatal(err)
+			}
+		}
+		dependenciesByJob[name] = needs
+	}
+	if !ciReceiptWaitsForJobs(dependenciesByJob, "tree-receipt") {
+		t.Fatal("tree receipt does not wait for every non-scheduled job; cannot exclude it from the peak")
+	}
 	counts := map[string]int{"push": 0, "pull_request": 0}
 	for name, job := range workflow.Jobs {
+		// The receipt can only start after every non-scheduled job completes.
+		if name == "tree-receipt" {
+			continue
+		}
 		// The gate precedes the full jobs, and the reused marker is mutually
 		// exclusive with those jobs. Neither adds to the full-run peak.
 		if name == "tree-reuse-gate" {
@@ -85,4 +107,31 @@ func containsDependency(dependencies []string, name string) bool {
 		}
 	}
 	return false
+}
+
+// ciReceiptWaitsForJobs proves the receipt cannot overlap any counted job.
+func ciReceiptWaitsForJobs(jobs map[string][]string, receipt string) bool {
+	if _, ok := jobs[receipt]; !ok {
+		return false
+	}
+	seen := map[string]bool{}
+	var visit func(string)
+	visit = func(name string) {
+		for _, dependency := range jobs[name] {
+			if !seen[dependency] {
+				seen[dependency] = true
+				visit(dependency)
+			}
+		}
+	}
+	visit(receipt)
+	if seen[receipt] {
+		return false
+	}
+	for name := range jobs {
+		if name != receipt && !seen[name] {
+			return false
+		}
+	}
+	return true
 }
