@@ -33,6 +33,9 @@ for worker in workers:
     shard = worker['shard']
     packages = worker['packages']
     pool = worker['pool']
+    browser = shard >= 12 and any(plan_module.BROWSER.search(package) for package in packages)
+    if worker['browser'] is not browser:
+        raise ValueError('browser worker evidence does not match its packages')
     if len(packages) != len(set(packages)) or len(pool) != len(set(pool)):
         raise ValueError('duplicate package')
     for package in packages:
