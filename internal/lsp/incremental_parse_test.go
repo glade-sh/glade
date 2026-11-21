@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -56,6 +58,40 @@ func TestIncrementalDocumentIdentity(t *testing.T) {
 	}
 }
 
+func TestIncrementalDocumentConcurrent(t *testing.T) {
+	h := NewHandler(typesys.Index{})
+	defer h.parser.Close()
+	uri := DocumentURI("file:///Example.cls")
+	var workers sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		workers.Add(1)
+		go func(i int) {
+			defer workers.Done()
+			for j := 0; j < 15; j++ {
+				source := fmt.Sprintf("public class Example { Integer f%d = %d; }", i, j)
+				doc := h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Version: j, Text: source}})
+				got, ok := h.parseDocument(doc)
+				want := apexast.ParseSource(doc.Path, source).Diagnostics
+				if !ok || !reflect.DeepEqual(got, want) {
+					t.Errorf("concurrent document differs from fresh parse")
+				}
+				doc, err := h.applyChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: j + 1}, ContentChanges: []TextDocumentContentChangeEvent{{Text: source + "\n"}}})
+				if err != nil {
+					t.Errorf("concurrent edit: %v", err)
+					return
+				}
+				got, ok = h.parseDocument(doc)
+				want = apexast.ParseSource(doc.Path, doc.Text).Diagnostics
+				if !ok || !reflect.DeepEqual(got, want) {
+					t.Errorf("concurrent edited document differs from fresh parse")
+				}
+				h.applyClose(uri)
+			}
+		}(i)
+	}
+	workers.Wait()
+}
+
 func BenchmarkIncrementalDocument(b *testing.B) {
 	var builder strings.Builder
 	builder.WriteString("public class Example {\n")
@@ -84,4 +120,55 @@ func BenchmarkIncrementalDocument(b *testing.B) {
 			b.Fatal("missing diagnostics")
 		}
 	}
+}
+
+func TestIncrementalDocumentLifecycle(t *testing.T) {
+	h := NewHandler(typesys.Index{})
+	defer h.parser.Close()
+	uri := DocumentURI("file:///Example.cls")
+	otherURI := DocumentURI("file:///Other.cls")
+	doc := h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Version: 1, Text: "public class Example { String s = '😀'; }"}})
+	other := h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: otherURI, Version: 1, Text: "public class Other {}"}})
+	check := func(doc openDocument) {
+		t.Helper()
+		got, ok := h.parseDocument(doc)
+		if !ok {
+			t.Fatal("parser closed")
+		}
+		want := h.parser.ParseSource(doc.Path, doc.Text).Diagnostics
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("parse differs from fresh: %#v / %#v", got, want)
+		}
+	}
+	check(doc)
+	check(other)
+	var err error
+	doc, err = h.applyChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 2}, ContentChanges: []TextDocumentContentChangeEvent{
+		{Range: &Range{Start: Position{Character: 35}, End: Position{Character: 37}}, Text: "😃"},
+		{Range: &Range{Start: Position{Character: 0}, End: Position{Character: 0}}, Text: "\n"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check(doc)
+	check(other)
+	if _, err := h.applyChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 3}, ContentChanges: []TextDocumentContentChangeEvent{{Range: &Range{Start: Position{Line: 99}, End: Position{Line: 99}}, Text: "x"}}}); err == nil {
+		t.Fatal("invalid edit accepted")
+	}
+	check(doc)
+	big, err := h.applyChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 4}, ContentChanges: []TextDocumentContentChangeEvent{{Text: doc.Text + "\n//" + strings.Repeat("x", maxOverlayDocumentBytes)}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check(big)
+	restored, err := h.applyChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 5}, ContentChanges: []TextDocumentContentChangeEvent{{Text: doc.Text}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check(restored)
+	h.applyClose(uri)
+	check(doc) // stale snapshots take the fresh path
+	check(other)
+	reopened := h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Version: 1, Text: "public class Reopened {}"}})
+	check(reopened)
 }
