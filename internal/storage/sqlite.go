@@ -261,22 +261,9 @@ func (s *SQLiteStore) Save(org OrgState) error {
 	if err != nil {
 		return err
 	}
-	metadata, err := json.Marshal(org.Metadata)
-	if err != nil {
+	if err := applySQLiteOrgMetadata(meta, org, domainURL); err != nil {
 		return err
 	}
-	setMetaValue(meta, metaOrgID, org.OrgID)
-	setMetaValue(meta, metaAPIVersion, org.APIVersion)
-	setMetaValue(meta, metaNamespace, org.Namespace)
-	setMetaValue(meta, metaOrgDomainURL, domainURL)
-	setMetaValue(meta, metaOrgMetadata, string(metadata))
-	features, err := json.Marshal(org.Features)
-	if err != nil {
-		return err
-	}
-	setMetaValue(meta, metaOrgFeatures, string(features))
-	setMetaValue(meta, metaStandardDuplicateRules, strconv.FormatBool(org.StandardDuplicateRules))
-	setMetaValue(meta, metaDuplicateRuleOrigins, "1")
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -356,6 +343,26 @@ func (s *SQLiteStore) Save(org OrgState) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func applySQLiteOrgMetadata(meta map[string]string, org OrgState, domainURL string) error {
+	metadata, err := json.Marshal(org.Metadata)
+	if err != nil {
+		return err
+	}
+	setMetaValue(meta, metaOrgID, org.OrgID)
+	setMetaValue(meta, metaAPIVersion, org.APIVersion)
+	setMetaValue(meta, metaNamespace, org.Namespace)
+	setMetaValue(meta, metaOrgDomainURL, domainURL)
+	setMetaValue(meta, metaOrgMetadata, string(metadata))
+	features, err := json.Marshal(org.Features)
+	if err != nil {
+		return err
+	}
+	setMetaValue(meta, metaOrgFeatures, string(features))
+	setMetaValue(meta, metaStandardDuplicateRules, strconv.FormatBool(org.StandardDuplicateRules))
+	setMetaValue(meta, metaDuplicateRuleOrigins, "1")
+	return nil
 }
 
 func (s *SQLiteStore) Metadata() (map[string]string, error) {
