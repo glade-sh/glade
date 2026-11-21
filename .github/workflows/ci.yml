@@ -2105,6 +2105,8 @@ jobs:
     timeout-minutes: 15
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      selected: ${{ steps.plan.outputs.selected }}
+      validated: ${{ steps.plan.outputs.validated }}
       smoke: ${{ steps.smoke.outputs.run }}
       browser: ${{ steps.plan.outputs.browser }}
     steps:
@@ -2126,7 +2128,12 @@ jobs:
         run: |
           scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json" "$RUNNER_TEMP/browser-required"
           echo "browser=$(cat "$RUNNER_TEMP/browser-required")" >> "$GITHUB_OUTPUT"
-          echo "matrix=$(python3 scripts/ci-pr-plan.py < "$RUNNER_TEMP/selected.json")" >> "$GITHUB_OUTPUT"
+          selected="$(jq -c . "$RUNNER_TEMP/selected.json")"
+          matrix="$(python3 scripts/ci-pr-plan.py < "$RUNNER_TEMP/selected.json")"
+          python3 scripts/ci-pr-validate-plan.py "$selected" "$matrix"
+          echo "selected=$selected" >> "$GITHUB_OUTPUT"
+          echo "validated=$matrix" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   pr-tests:
     if: ${{ !cancelled() && needs.pr-select.result == 'success' && needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && needs.test-binaries.result == 'success' && (github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/')) }}
@@ -2423,6 +2430,8 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           SMOKE_REQUIRED: ${{ needs.pr-select.outputs.smoke }}
           PR_PLAN: ${{ needs.pr-select.outputs.matrix }}
+          PR_SELECTION: ${{ needs.pr-select.outputs.selected }}
+          PR_VALIDATED_PLAN: ${{ needs.pr-select.outputs.validated }}
           PR_BROWSER: ${{ needs.pr-select.outputs.browser }}
           TREE_REUSE: ${{ needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true' }}
         run: |
@@ -2441,6 +2450,9 @@ jobs:
           fi
           if [[ "$event" == full && "$EVENT_NAME" == pull_request ]] && [[ "$(jq -r '."pr-browser-full".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
             planner_failure="Full PR browser authority did not pass"
+          fi
+          if [[ "$event" == pull_request ]] && { ! jq -e 'type == "array" and all(.[]; type == "string" and length > 0) and length == (unique | length)' <<<"${PR_SELECTION:-}" >/dev/null 2>&1 || [[ -z "${PR_VALIDATED_PLAN:-}" || "$PR_VALIDATED_PLAN" != "${PR_PLAN:-}" ]]; }; then
+            planner_failure="PR worker plan was not validated against the selected packages"
           fi
           if [[ "$event" == pull_request ]] && ! jq -e '
             type == "object" and (keys == ["include"]) and (.include | type == "array" and length > 0 and length <= 45) and

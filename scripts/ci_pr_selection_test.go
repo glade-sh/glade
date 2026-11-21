@@ -213,6 +213,8 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	t.Setenv("SMOKE_REQUIRED", "false")
 	t.Setenv("PR_BROWSER", "false")
 	t.Setenv("PR_PLAN", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`)
+	t.Setenv("PR_SELECTION", `[]`)
+	t.Setenv("PR_VALIDATED_PLAN", os.Getenv("PR_PLAN"))
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
