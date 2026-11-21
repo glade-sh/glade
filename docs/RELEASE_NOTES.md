@@ -77,6 +77,7 @@
 - **Duplicate matching.** Scans can reuse match decisions for repeated values of required matching terms, reducing work on large sets while retaining the existing match results.
 - **Debugger startup cache.** Stale snapshots are rejected using a small manifest before reading the cached runtime.
 - **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
+- **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
 
 ### CI
 

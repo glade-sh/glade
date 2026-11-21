@@ -14,7 +14,13 @@ type occurrenceFile struct {
 	digest   [sha256.Size]byte
 	valid    bool
 	nonASCII bool
+	words    map[string]bool
 }
+type occurrenceSnapshot struct {
+	seq   uint64
+	files map[string]occurrenceFile
+}
+
 type occurrenceIndex struct {
 	files map[string]occurrenceFile
 	names map[string][]string
@@ -28,6 +34,7 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 	}
 	h.generation.occurrenceOnce.Do(func() {
 		idx := occurrenceIndex{files: make(map[string]occurrenceFile), names: make(map[string][]string)}
+		previous := h.occurrenceCache.Load()
 		seen := map[string]bool{}
 		add := func(path string) {
 			if path == "" || seen[path] {
@@ -39,29 +46,39 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 				idx.files[path] = occurrenceFile{}
 				return
 			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				idx.files[path] = occurrenceFile{}
-				return
+			var old occurrenceFile
+			if previous != nil {
+				old = previous.files[path]
 			}
-			words := map[string]bool{}
-			nonASCII := false
-			for i := 0; i < len(data); {
-				if !isIdentifierByte(data[i]) {
-					if data[i] >= 0x80 {
-						nonASCII = true
+			file := old
+			// Reuse is provisional: the candidate check below still hashes
+			// noncandidate files, including metadata-preserving replacements.
+			if !old.valid || old.size != info.Size() || !old.modified.Equal(info.ModTime()) {
+				data, err := os.ReadFile(path)
+				if err != nil {
+					idx.files[path] = occurrenceFile{}
+					return
+				}
+				words := map[string]bool{}
+				nonASCII := false
+				for i := 0; i < len(data); {
+					if !isIdentifierByte(data[i]) {
+						if data[i] >= 0x80 {
+							nonASCII = true
+						}
+						i++
+						continue
 					}
-					i++
-					continue
+					start := i
+					for i < len(data) && isIdentifierByte(data[i]) {
+						i++
+					}
+					words[strings.ToLower(string(data[start:i]))] = true
 				}
-				start := i
-				for i < len(data) && isIdentifierByte(data[i]) {
-					i++
-				}
-				words[strings.ToLower(string(data[start:i]))] = true
+				file = occurrenceFile{size: info.Size(), modified: info.ModTime(), digest: sha256.Sum256(data), valid: true, nonASCII: nonASCII, words: words}
 			}
-			idx.files[path] = occurrenceFile{size: info.Size(), modified: info.ModTime(), digest: sha256.Sum256(data), valid: true, nonASCII: nonASCII}
-			for word := range words {
+			idx.files[path] = file
+			for word := range file.words {
 				idx.names[word] = append(idx.names[word], path)
 			}
 		}
@@ -70,6 +87,16 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 		}
 		for _, tr := range h.index.Triggers {
 			add(tr.File)
+		}
+		snapshot := &occurrenceSnapshot{seq: h.generation.seq, files: idx.files}
+		for {
+			current := h.occurrenceCache.Load()
+			if current != nil && current.seq >= snapshot.seq {
+				break
+			}
+			if h.occurrenceCache.CompareAndSwap(current, snapshot) {
+				break
+			}
 		}
 		h.generation.occurrences = idx
 	})
