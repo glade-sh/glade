@@ -2106,6 +2106,7 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       smoke: ${{ steps.smoke.outputs.run }}
+      browser: ${{ steps.plan.outputs.browser }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -2123,7 +2124,8 @@ jobs:
       - name: Select packages and plan workers
         id: plan
         run: |
-          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json"
+          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json" "$RUNNER_TEMP/browser-required"
+          echo "browser=$(cat "$RUNNER_TEMP/browser-required")" >> "$GITHUB_OUTPUT"
           echo "matrix=$(python3 scripts/ci-pr-plan.py < "$RUNNER_TEMP/selected.json")" >> "$GITHUB_OUTPUT"
 
   pr-tests:
@@ -2277,9 +2279,39 @@ jobs:
           echo "GLADE_LWC_BROWSER=1" >> "$GITHUB_ENV"
           echo "GLADE_LWC_PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/lwcruntime/node_modules/playwright" >> "$GITHUB_ENV"
           echo "GLADE_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Select PR browser evidence
+        id: browser
+        env:
+          PR_BROWSER: ${{ needs.pr-select.outputs.browser }}
+        run: |
+          evidence=false
+          if [[ "$PR_BROWSER" == true ]] && python3 scripts/ci_pr_browser_authorities.py --has-target "$RUNNER_TEMP/selected.json"; then evidence=true; fi
+          echo "selected=$evidence" >> "$GITHUB_OUTPUT"
+      - name: Prepare PR browser evidence
+        if: ${{ steps.browser.outputs.selected == 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr-browser" "$RUNNER_TEMP/pr-browser-bin"
+          if python3 scripts/ci_pr_browser_authorities.py --has-node "$RUNNER_TEMP/selected.json"; then
+            echo "REAL_NPM=$(command -v npm)" >> "$GITHUB_ENV"
+            echo "BROWSER_NODE_TEST_LOG=$RUNNER_TEMP/pr-browser/node-test.log" >> "$GITHUB_ENV"
+            cat > "$RUNNER_TEMP/pr-browser-bin/npm" <<'WRAPPER'
+          #!/usr/bin/env bash
+          set -o pipefail
+          if [[ "$PWD" == "$GITHUB_WORKSPACE/lwcruntime" && "${1:-}" == test ]]; then
+            "$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"
+            result=("${PIPESTATUS[@]}")
+            (( result[0] == 0 && result[1] == 0 ))
+          else
+            exec "$REAL_NPM" "$@"
+          fi
+          WRAPPER
+            chmod +x "$RUNNER_TEMP/pr-browser-bin/npm"
+            echo "$RUNNER_TEMP/pr-browser-bin" >> "$GITHUB_PATH"
+          fi
       - name: Build and run selected packages
         env:
           SHARD: ${{ matrix.shard }}
+          BROWSER_EVIDENCE: ${{ steps.browser.outputs.selected }}
         run: |
           # The full CLI shard route delegates these four tests to the Node lane.
           if [[ "$SHARD" == 22 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
@@ -2299,7 +2331,11 @@ jobs:
           if (( SHARD == 44 )); then
             mapfile -t packages < <(jq -r '.[] | select(. == "github.com/glade-sh/glade/internal/server" or . == "github.com/glade-sh/glade/internal/playground")' "$RUNNER_TEMP/selected.json")
             if (( ${#packages[@]} )); then
-              go test -count=1 -timeout=0 "${packages[@]}"
+              if [[ "$BROWSER_EVIDENCE" == true ]]; then
+                bash scripts/ci-pr-browser-go-test.sh "$RUNNER_TEMP/pr-browser/events.jsonl" "${packages[@]}"
+              else
+                go test -count=1 -timeout=0 "${packages[@]}"
+              fi
             fi
           fi
           # Workers 12-23 split the remaining packages by the measured
@@ -2309,8 +2345,39 @@ jobs:
             mapfile -t packages < <(jq -r '.[]' "$RUNNER_TEMP/pool.json")
           fi
           if (( ${#packages[@]} )); then
-            go test -count=1 -timeout=0 "${packages[@]}"
+            if [[ "$BROWSER_EVIDENCE" == true ]]; then
+              bash scripts/ci-pr-browser-go-test.sh "$RUNNER_TEMP/pr-browser/events.jsonl" "${packages[@]}"
+            else
+              go test -count=1 -timeout=0 "${packages[@]}"
+            fi
           fi
+      - name: Upload PR browser evidence
+        if: ${{ steps.browser.outputs.selected == 'true' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: pr-browser-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/pr-browser/
+          if-no-files-found: error
+          retention-days: 1
+
+  pr-browser-evidence:
+    needs: [pr-select, pr-tests]
+    if: ${{ !cancelled() && needs.pr-select.result == 'success' && needs.pr-select.outputs.browser == 'true' && needs.pr-tests.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: pr-browser-${{ github.run_id }}-*
+          path: ${{ runner.temp }}/pr-browser-input
+      - run: python3 scripts/ci-pr-browser-evidence.py "$RUNNER_TEMP/pr-browser-input" "$RUNNER_TEMP/pr-browser-output"
+
+  pr-browser-full:
+    if: ${{ github.event_name == 'pull_request' && (startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) }}
+    uses: ./.github/workflows/browser.yml
 
   required-ci:
     name: Required CI
@@ -2324,6 +2391,8 @@ jobs:
       - pr-guards
       - early-guards
       - pr-select
+      - pr-browser-evidence
+      - pr-browser-full
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2354,17 +2423,24 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           SMOKE_REQUIRED: ${{ needs.pr-select.outputs.smoke }}
           PR_PLAN: ${{ needs.pr-select.outputs.matrix }}
+          PR_BROWSER: ${{ needs.pr-select.outputs.browser }}
           TREE_REUSE: ${{ needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true' }}
         run: |
           # Train and release pull requests run the full suite, not the fast lane.
           event="$EVENT_NAME"
           case "$HEAD_REF" in train/* | release/*) [[ "$event" != pull_request ]] || event=full ;; esac
           planner_failure=""
-          if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-select".result // "missing"' <<<"$REQUIRED_RESULTS")" != success || ! "${SMOKE_REQUIRED:-}" =~ ^(true|false)$ ]]; then
+          if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-select".result // "missing"' <<<"$REQUIRED_RESULTS")" != success || ! "${SMOKE_REQUIRED:-}" =~ ^(true|false)$ || ! "${PR_BROWSER:-}" =~ ^(true|false)$ ]]; then
             planner_failure="PR smoke planner failed or returned an invalid decision"
           fi
           if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-tests".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
             planner_failure="PR planned workers did not all succeed"
+          fi
+          if [[ "$event" == pull_request && "${PR_BROWSER:-}" == true ]] && [[ "$(jq -r '."pr-browser-evidence".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
+            planner_failure="PR browser evidence did not pass"
+          fi
+          if [[ "$event" == full && "$EVENT_NAME" == pull_request ]] && [[ "$(jq -r '."pr-browser-full".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
+            planner_failure="Full PR browser authority did not pass"
           fi
           if [[ "$event" == pull_request ]] && ! jq -e '
             type == "object" and (keys == ["include"]) and (.include | type == "array" and length > 0 and length <= 45) and
@@ -2385,7 +2461,7 @@ jobs:
           if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
             failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"
           else
-            failures="$(jq -r --arg event "$event" --arg original "$EVENT_NAME" --arg smoke "${SMOKE_REQUIRED:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(.key != "early-guards" or $original == "pull_request") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+            failures="$(jq -r --arg event "$event" --arg original "$EVENT_NAME" --arg smoke "${SMOKE_REQUIRED:-false}" --arg browser "${PR_BROWSER:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(.key != "early-guards" or $original == "pull_request") | select(.key != "pr-browser-full" or ($original == "pull_request" and $event == "full")) | select(.key != "pr-browser-evidence" or ($event == "pull_request" and $browser == "true")) | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) or ($browser == "true" and .key == "pr-browser-evidence") else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           fi
           if [[ -n "$planner_failure" ]]; then failures="${failures:+$failures$'\n'}$planner_failure"; fi
           if [[ -n "$failures" ]]; then

@@ -211,6 +211,7 @@ func TestCIPRSelectionRejectsMalformedInputs(t *testing.T) {
 
 func TestCIPRWorkflowSelection(t *testing.T) {
 	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("PR_BROWSER", "false")
 	t.Setenv("PR_PLAN", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`)
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
@@ -302,10 +303,23 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	t.Setenv("SMOKE_REQUIRED", "invalid")
 	run("pull_request", false)
 	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("PR_BROWSER", "true")
+	results["pr-browser-evidence"]["result"] = "skipped"
+	run("pull_request", false)
+	delete(results, "pr-browser-evidence")
+	run("pull_request", false)
+	results["pr-browser-evidence"] = map[string]string{"result": "success"}
+	run("pull_request", true)
+	t.Setenv("PR_BROWSER", "false")
 	t.Setenv("HEAD_REF", "train/example")
 	results["early-guards"]["result"] = "skipped"
 	run("pull_request", false)
 	results["early-guards"]["result"] = "success"
+	results["pr-browser-full"]["result"] = "skipped"
+	run("pull_request", false)
+	delete(results, "pr-browser-full")
+	run("pull_request", false)
+	results["pr-browser-full"] = map[string]string{"result": "success"}
 	run("pull_request", true)
 	t.Setenv("HEAD_REF", "")
 	results["vet"]["result"] = "failure"

@@ -40,7 +40,7 @@ func TestCIRequiredPRPlan(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cmd := exec.Command("bash", "-c", script)
-			cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+tc.results, "EVENT_NAME=pull_request", "HEAD_REF=", "SMOKE_REQUIRED=false", "PR_PLAN="+tc.plan)
+			cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+tc.results, "EVENT_NAME=pull_request", "HEAD_REF=", "SMOKE_REQUIRED=false", "PR_BROWSER=false", "PR_PLAN="+tc.plan)
 			out, err := cmd.CombinedOutput()
 			if (err == nil) != tc.success {
 				t.Fatalf("result %v output %s", err, out)

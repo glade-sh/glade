@@ -99,3 +99,68 @@ func TestCIPRBrowserWorkflow(t *testing.T) {
 		t.Error("PR browser evidence is not required")
 	}
 }
+
+func TestCIPRBrowserEvidenceUsesLatestWorkerAttempt(t *testing.T) {
+	root := t.TempDir()
+	older := filepath.Join(root, "input", "pr-browser-1-1-12")
+	newer := filepath.Join(root, "input", "pr-browser-1-2-12")
+	for _, dir := range []string{older, newer} {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	good := []string{
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestL08SalesforceConformance"}`,
+	}
+	if err := os.WriteFile(filepath.Join(older, "events.jsonl"), []byte("invalid old attempt\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(newer, "events.jsonl"), []byte(strings.Join(good, "\n")+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(newer, "node-test.log"), []byte("# tests 2\n# pass 2\n# fail 0\n# skipped 0\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("python3", "ci-pr-browser-evidence.py", filepath.Join(root, "input"), filepath.Join(root, "output"))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("latest attempt: %v: %s", err, out)
+	}
+}
+
+func TestCIPRBrowserGoTestRetainsStatus(t *testing.T) {
+	for _, tc := range []struct {
+		name, code string
+		success    bool
+	}{{"pass", "0", true}, {"failure", "7", false}} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.WriteFile(filepath.Join(root, "go"), []byte("#!/bin/sh\nprintf '%s\\n' '{\"Action\":\"pass\"}'\nexit "+tc.code+"\n"), 0700); err != nil {
+				t.Fatal(err)
+			}
+			events := filepath.Join(root, "events.jsonl")
+			cmd := exec.Command("bash", "ci-pr-browser-go-test.sh", events, "example/package")
+			cmd.Env = append(os.Environ(), "PATH="+root+":"+os.Getenv("PATH"))
+			out, err := cmd.CombinedOutput()
+			if (err == nil) != tc.success {
+				t.Fatalf("status %v: %s", err, out)
+			}
+			data, err := os.ReadFile(events)
+			if err != nil || !strings.Contains(string(data), `"Action":"pass"`) {
+				t.Fatalf("evidence %q: %v", data, err)
+			}
+		})
+	}
+}
+
+func TestCIPRBrowserUsesBothMergeParents(t *testing.T) {
+	data, err := os.ReadFile("ci-pr-select.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "--name-only -z --diff-filter=ACDMRTUXB HEAD^1 HEAD^2") {
+		t.Fatal("browser scope must compare base and head, including deleted paths")
+	}
+}
