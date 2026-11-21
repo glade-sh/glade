@@ -2369,7 +2369,7 @@ jobs:
 
   pr-browser-evidence:
     needs: [pr-select, pr-tests]
-    if: ${{ !cancelled() && needs.pr-select.result == 'success' && needs.pr-select.outputs.browser == 'true' && needs.pr-tests.result == 'success' }}
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.pr-select.result == 'success' && needs.pr-select.outputs.browser == 'true' && needs.pr-tests.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
