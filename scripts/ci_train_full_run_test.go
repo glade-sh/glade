@@ -255,11 +255,7 @@ func TestCITrainPullRequestRunsFullSuiteInPlaceOfFastLane(t *testing.T) {
 			if !strings.Contains(expr, "github.event_name != 'pull_request'") {
 				continue
 			}
-			want := sc.headRef != "feature/example"
-			// Packaging smoke also runs for ordinary PRs when selected.
-			if !want && strings.Contains(expr, "needs.pr-select.outputs.smoke == 'true'") {
-				want = true
-			}
+			want := ciTrainJobAllowedOnPR(name, expr, sc)
 			if got := ciIfApplies(t, expr, sc); got != want {
 				t.Errorf("%s: job %s runs=%v, want %v", sc.name, name, got, want)
 			}
@@ -432,4 +428,12 @@ func TestCITrainScopeOnlyPermitsSelectedSmokeJobs(t *testing.T) {
 			t.Errorf("%s: allowed=%v, want %v", tc.name, got, tc.want)
 		}
 	}
+}
+
+// Only packaging smoke may join the fast PR route when selected.
+func ciTrainJobAllowedOnPR(name, expr string, sc ciScenario) bool {
+	if sc.headRef != "feature/example" {
+		return true
+	}
+	return (name == "smoke-runtime" || name == "smoke-distribution") && strings.Contains(expr, "needs.pr-select.outputs.smoke == 'true'")
 }
