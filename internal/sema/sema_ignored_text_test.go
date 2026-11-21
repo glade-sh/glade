@@ -16,8 +16,8 @@ import (
 // semaIgnoredText replaced. Query starts include comments, as captured in
 // testdata/query_keyword_comments/org.tsv.
 
-func referenceSemaOffsetInIgnoredText(body string, pos int) bool {
-	if referenceSemaOffsetInSOQLLiteral(body, pos) {
+func referenceSemaOffsetInIgnoredText(body string, pos int, inSOQL bool) bool {
+	if inSOQL {
 		return true
 	}
 	inBlock := false
@@ -173,10 +173,11 @@ func assertSemaIgnoredTextMatchesReference(t testing.TB, body string) {
 	t.Helper()
 	ignored := newSemaIgnoredText(body)
 	for pos := -2; pos <= len(body)+2; pos++ {
-		if got, want := ignored.contains(pos), referenceSemaOffsetInIgnoredText(body, pos); got != want {
+		inSOQL := referenceSemaOffsetInSOQLLiteral(body, pos)
+		if got, want := ignored.contains(pos), referenceSemaOffsetInIgnoredText(body, pos, inSOQL); got != want {
 			t.Fatalf("contains(%d) = %v, want %v for body %q", pos, got, want, body)
 		}
-		if got, want := ignored.inSOQLLiteral(pos), referenceSemaOffsetInSOQLLiteral(body, pos); got != want {
+		if got, want := ignored.inSOQLLiteral(pos), inSOQL; got != want {
 			t.Fatalf("inSOQLLiteral(%d) = %v, want %v for body %q", pos, got, want, body)
 		}
 		if got, want := ignored.inParenGroup(pos), referenceSemaOffsetInParenGroup(body, pos); got != want {
