@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -96,5 +97,37 @@ func TestCIValidatePRPlanRequiresBrowserEvidence(t *testing.T) {
 	cmd := exec.Command("python3", "ci-pr-validate-plan.py", selected, bad)
 	if err := cmd.Run(); err == nil {
 		t.Fatal("validator accepted a browser worker without browser evidence")
+	}
+}
+
+func TestCIValidatePRPlanTracksWorkflowWorkerRoutes(t *testing.T) {
+	workflow, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ name, selected, old, replacement string }{
+		{"service", `["github.com/glade-sh/glade/internal/server"]`, `SHARD == 44`, `SHARD == 43`},
+		{"cli", `["github.com/glade-sh/glade/internal/gladecli"]`, `"$SHARD" == 22`, `"$SHARD" == 21`},
+		{"pool", `["github.com/glade-sh/glade/internal/storage"]`, `SHARD >= 12 && SHARD < 24`, `SHARD >= 24 && SHARD < 25`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mutated := strings.Replace(string(workflow), tc.old, tc.replacement, 1)
+			if mutated == string(workflow) {
+				t.Fatal("workflow route fixture did not change")
+			}
+			path := filepath.Join(t.TempDir(), "ci.yml")
+			if err := os.WriteFile(path, []byte(mutated), 0600); err != nil {
+				t.Fatal(err)
+			}
+			planner := exec.Command("python3", "ci-pr-plan.py")
+			planner.Stdin = strings.NewReader(tc.selected)
+			plan, err := planner.Output()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := exec.Command("python3", "ci-pr-validate-plan.py", tc.selected, string(plan), path).Run(); err == nil {
+				t.Fatal("validator accepted a plan for a different workflow route")
+			}
+		})
 	}
 }
