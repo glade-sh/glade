@@ -191,7 +191,7 @@
     ]
   },
   "concurrentTestCounts": {
-    "./internal/lsp": 20,
+    "./internal/lsp": 21,
     "./internal/apextest": 552,
     "./internal/dap": 13,
     "./internal/frontendcache": 1,
