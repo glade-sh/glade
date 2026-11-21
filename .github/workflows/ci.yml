@@ -2342,7 +2342,7 @@ jobs:
       - smoke-runtime
       - smoke-distribution
       - leak-scan
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -2353,6 +2353,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           SMOKE_REQUIRED: ${{ needs.pr-select.outputs.smoke }}
+          PR_PLAN: ${{ needs.pr-select.outputs.matrix }}
           TREE_REUSE: ${{ needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true' }}
         run: |
           # Train and release pull requests run the full suite, not the fast lane.
@@ -2361,6 +2362,25 @@ jobs:
           planner_failure=""
           if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-select".result // "missing"' <<<"$REQUIRED_RESULTS")" != success || ! "${SMOKE_REQUIRED:-}" =~ ^(true|false)$ ]]; then
             planner_failure="PR smoke planner failed or returned an invalid decision"
+          fi
+          if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-tests".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
+            planner_failure="PR planned workers did not all succeed"
+          fi
+          if [[ "$event" == pull_request ]] && ! jq -e '
+            type == "object" and (keys == ["include"]) and (.include | type == "array" and length > 0 and length <= 45) and
+            ([.include[].shard] | length == (unique | length)) and
+            all(.include[]; . as $w |
+              (keys == ["browser", "packages", "pool", "shard"]) and
+              (.shard | type == "number" and floor == . and . >= -1 and . <= 44) and
+              (.packages | type == "array" and length == (unique | length) and all(.[]; type == "string" and length > 0)) and
+              (.pool | type == "array" and length == (unique | length) and all(.[]; type == "string" and length > 0)) and
+              (.browser | type == "boolean") and
+              all(.pool[]; . as $pkg | $w.packages | index($pkg) != null) and
+              (if .shard == -1 then (.packages | length == 0) and (.pool | length == 0) and (.browser == false)
+               else (.packages | length > 0) end)) and
+            (if any(.include[]; .shard == -1) then (.include | length == 1) else true end)
+          ' <<<"${PR_PLAN:-}" >/dev/null 2>&1; then
+            planner_failure="PR worker plan is missing or invalid"
           fi
           if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
             failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"

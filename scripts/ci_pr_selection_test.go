@@ -211,6 +211,7 @@ func TestCIPRSelectionRejectsMalformedInputs(t *testing.T) {
 
 func TestCIPRWorkflowSelection(t *testing.T) {
 	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("PR_PLAN", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`)
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)

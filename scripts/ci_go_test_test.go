@@ -2137,7 +2137,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 	}{
 		{name: "name", want: "    name: Required CI"},
 		{name: "needs", want: wantNeeds},
-		{name: "always condition", want: "    if: always()"},
+		{name: "cancellation condition", want: "    if: ${{ !cancelled() }}"},
 		{name: "runner", want: "    runs-on: ubuntu-24.04"},
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
@@ -3620,12 +3620,12 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
 		"remove pr guards":        strings.Replace(workflow, "      - pr-guards\n", "", 1),
-		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
+		"success-only condition":  strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
 		"rename display":          strings.Replace(workflow, "    name: Required CI\n    outputs:\n", "    name: Required Checks\n    outputs:\n", 1),
-		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
+		"job continue on error":   strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
 		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        continue-on-error: true\n        env:\n", 1),
 		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        if: false\n        env:\n", 1),
 	}
