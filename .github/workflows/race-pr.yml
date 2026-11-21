@@ -51,7 +51,7 @@ jobs:
           jq -r '.[].ImportPath' "$RUNNER_TEMP/graph.json" > "$RUNNER_TEMP/packages.txt"
           go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$RUNNER_TEMP/packages.txt" >/dev/null
           python3 scripts/ci-pr-select.py --root "$PWD" --graph "$RUNNER_TEMP/graph.json" --parser-graph "$RUNNER_TEMP/parser.json" --manifest scripts/ci-package-lanes.json < "$RUNNER_TEMP/changed-paths" > "$RUNNER_TEMP/selected.json"
-          packages=$(python3 scripts/ci-pr-race-select.py --graph "$RUNNER_TEMP/graph.json" < "$RUNNER_TEMP/selected.json")
+          packages=$(python3 scripts/ci-pr-race-select.py --graph "$RUNNER_TEMP/graph.json" < "$RUNNER_TEMP/selected.json" | python3 scripts/ci-pr-race-budgets.py scripts/ci-pr-race-budgets.json)
           echo "Selected race candidates: $packages"
           echo "packages=$packages" >> "$GITHUB_OUTPUT"
 
@@ -60,11 +60,10 @@ jobs:
     if: needs.select.outputs.packages != '[]'
     name: Race pilot (${{ matrix.package }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 11
+    timeout-minutes: ${{ matrix.job_minutes }}
     strategy:
       fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.select.outputs.packages) }}
+      matrix: ${{ fromJSON(needs.select.outputs.packages) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -81,6 +80,7 @@ jobs:
       - name: Run concurrency-named tests under the race detector
         env:
           PACKAGE: ${{ matrix.package }}
+          TEST_MINUTES: ${{ matrix.test_minutes }}
           GLADE_ROOT: ${{ github.workspace }}
         run: |
           regex='Concurren|Parallel|Race|Goroutine|Cancel|Daemon|Watch|Listener|Shutdown|Graceful|Interrupt|Pool|Worker|Heartbeat|Debounce|Singleflight|Reentrant|ThreadSafe|Overlap'
@@ -91,4 +91,4 @@ jobs:
             echo 'No matching tests; this package has no PR race coverage.'
             exit 0
           fi
-          go test -race -timeout=9m -run "$regex" "$PACKAGE"
+          go test -race "-timeout=${TEST_MINUTES}m" -run "$regex" "$PACKAGE"
