@@ -18,4 +18,7 @@ go list -json ./... | jq -s . >"$tmp/graph.json"
 (cd third_party/glade-apex-parser && go list -json ./...) | jq -s . >"$tmp/parser-graph.json"
 jq -r '.[].ImportPath' "$tmp/graph.json" >"$tmp/packages.txt"
 go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$tmp/packages.txt" >/dev/null
-git diff --no-renames --name-only HEAD^1 HEAD | python3 scripts/ci-pr-select.py --root "$PWD" --graph "$tmp/graph.json" --parser-graph "$tmp/parser-graph.json" --manifest scripts/ci-package-lanes.json >"$out"
+git diff --no-renames --name-only HEAD^1 HEAD | python3 scripts/ci-pr-select.py --root "$PWD" --graph "$tmp/graph.json" --parser-graph "$tmp/parser-graph.json" --manifest scripts/ci-package-lanes.json >"$tmp/selected.json"
+git diff --no-renames --name-only -z --diff-filter=ACDMRTUXB HEAD^1 HEAD^2 | python3 scripts/ci-pr-browser-select.py "$tmp/selected.json" >"$tmp/browser.json"
+jq -c '.selected' "$tmp/browser.json" >"$out"
+if [[ $# -ge 2 ]]; then jq -r '.browser' "$tmp/browser.json" >"$2"; fi

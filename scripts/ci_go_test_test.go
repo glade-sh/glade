@@ -1925,6 +1925,10 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		if !runsOnPR[jobName] {
 			expr = "(" + prExpr + " && " + boundExpr + ")"
 		}
+		if jobName == "smoke-runtime" || jobName == "smoke-distribution" {
+			smokePR := strings.TrimSuffix(prExpr, ")") + " || (needs.pr-select.result == 'success' && needs.pr-select.outputs.smoke == 'true'))"
+			expr = "(" + smokePR + " && " + boundExpr + ")"
+		}
 		if map[string]bool{"site": true, "vet": true, "history-input": true, "node-integration": true, "server-and-playground": true, "test-binaries": true, "test-binaries-apextest": true, "smoke-runtime": true, "smoke-distribution": true}[jobName] {
 			expr = "(" + reuseExpr + " && " + expr + ")"
 		}
@@ -2080,6 +2084,10 @@ func ciRequiredAggregateProblem(workflow string) string {
       - workflow-lint
       - pr-tests
       - pr-guards
+      - early-guards
+      - pr-select
+      - pr-browser-evidence
+      - pr-browser-full
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2131,15 +2139,15 @@ func ciRequiredAggregateProblem(workflow string) string {
 	}{
 		{name: "name", want: "    name: Required CI"},
 		{name: "needs", want: wantNeeds},
-		{name: "always condition", want: "    if: always()"},
+		{name: "cancellation condition", want: "    if: ${{ !cancelled() }}"},
 		{name: "runner", want: "    runs-on: ubuntu-24.04"},
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
 		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
-		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
+		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -2302,7 +2310,7 @@ func browserWorkflowProblem(workflow string) string {
 	required := []string{
 		"name: Browser",
 		"permissions:\n  contents: read",
-		"  pull_request:",
+		"  workflow_call:",
 		"  push:\n    branches: [main]\n    tags: ['v*']",
 		"  schedule:\n    - cron: '17 11 * * *'",
 		"  workflow_dispatch:",
@@ -2600,9 +2608,11 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 
 	mutations := map[string]func(string) string{
 		"workflow-level paths": func(s string) string {
-			return strings.Replace(s, "  pull_request:\n", "  pull_request:\n    paths: ['**.go']\n", 1)
+			return strings.Replace(s, "  workflow_call:\n", "  workflow_call:\n    paths: ['**.go']\n", 1)
 		},
-		"pull request target": func(s string) string { return strings.Replace(s, "  pull_request:\n", "  pull_request_target:\n", 1) },
+		"pull request target": func(s string) string {
+			return strings.Replace(s, "  workflow_call:\n", "  workflow_call:\n  pull_request_target:\n", 1)
+		},
 		"checkout overwrites early evidence": func(s string) string {
 			return strings.Replace(s, "          path: source\n", "", 1)
 		},
@@ -3614,12 +3624,12 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
 		"remove pr guards":        strings.Replace(workflow, "      - pr-guards\n", "", 1),
-		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
+		"success-only condition":  strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
 		"rename display":          strings.Replace(workflow, "    name: Required CI\n    outputs:\n", "    name: Required Checks\n    outputs:\n", 1),
-		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
+		"job continue on error":   strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
 		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        continue-on-error: true\n        env:\n", 1),
 		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        if: false\n        env:\n", 1),
 	}
@@ -3642,7 +3652,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "pr-select", "pr-tests")
-	wantJobs = append(wantJobs, "pr-guards")
+	wantJobs = append(wantJobs, "pr-guards", "early-guards", "pr-browser-evidence", "pr-browser-full")
 	wantJobs = append(wantJobs, "history-input", "vm")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))
@@ -3655,10 +3665,10 @@ func TestCIParallelDAGTopology(t *testing.T) {
 	}
 	for _, name := range wantJobs {
 		job := jobs[name]
-		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
+		if name != "codeql" && name != "pr-browser-full" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "tree-reuse-gate", "smoke-distribution": "tree-reuse-gate"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "pr-browser-evidence": "[pr-select, pr-tests]", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "[tree-reuse-gate, pr-select]", "smoke-distribution": "[tree-reuse-gate, pr-select]"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
