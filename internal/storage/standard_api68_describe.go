@@ -54,6 +54,8 @@ type standardAPI68Bundle struct {
 
 var standardAPI68Once sync.Once
 var standardAPI68Profiles map[string]standardAPI68Profile
+var standardAPI68RawProfiles map[string]json.RawMessage
+var standardAPI68Mu sync.Mutex
 
 var standardAPI68ProfileSignatures map[string]string
 
@@ -94,31 +96,60 @@ func StandardAPI68DescribeProfile(features []string) (string, bool) {
 	return profile, ok
 }
 
-func loadStandardAPI68Profiles() map[string]standardAPI68Profile {
+func loadStandardAPI68Profile(name string) (standardAPI68Profile, bool) {
 	standardAPI68Once.Do(func() {
 		stream, err := gzip.NewReader(bytes.NewReader(standardAPI68DescribeData))
 		if err != nil {
 			panic(err)
 		}
 		defer stream.Close()
-		var bundle standardAPI68Bundle
+		var bundle struct {
+			Version  int                        `json:"version"`
+			Profiles map[string]json.RawMessage `json:"profiles"`
+		}
 		if err := json.NewDecoder(stream).Decode(&bundle); err != nil {
 			panic(err)
 		}
 		if bundle.Version != 1 {
 			panic("unsupported API68 describe sidecar version")
 		}
-		standardAPI68Profiles = bundle.Profiles
-		standardAPI68ProfileSignatures = make(map[string]string, len(bundle.Profiles))
-		for name, profile := range bundle.Profiles {
-			signature := canonicalFeatureSignature(profile.Features)
-			if _, exists := standardAPI68ProfileSignatures[signature]; exists {
-				panic("duplicate API68 profile signature")
-			}
-			standardAPI68ProfileSignatures[signature] = name
-		}
+		standardAPI68RawProfiles = bundle.Profiles
+		standardAPI68Profiles = make(map[string]standardAPI68Profile)
+		standardAPI68GeneratedSignatures()
 	})
-	return standardAPI68Profiles
+	standardAPI68Mu.Lock()
+	defer standardAPI68Mu.Unlock()
+	if profile, ok := standardAPI68Profiles[name]; ok {
+		return profile, true
+	}
+	raw, ok := standardAPI68RawProfiles[name]
+	if !ok {
+		return standardAPI68Profile{}, false
+	}
+	var profile standardAPI68Profile
+	if err := json.Unmarshal(raw, &profile); err != nil {
+		panic(err)
+	}
+	standardAPI68Profiles[name] = profile
+	return profile, true
+}
+
+// loadStandardAPI68Profiles supports validation of the complete generated catalog.
+func loadStandardAPI68Profiles() map[string]standardAPI68Profile {
+	loadStandardAPI68Profile("")
+	profiles := make(map[string]standardAPI68Profile, len(standardAPI68RawProfiles))
+	signatures := make(map[string]string, len(standardAPI68RawProfiles))
+	for name := range standardAPI68RawProfiles {
+		profile, _ := loadStandardAPI68Profile(name)
+		signature := canonicalFeatureSignature(profile.Features)
+		if _, exists := signatures[signature]; exists {
+			panic("duplicate API68 profile signature")
+		}
+		signatures[signature] = name
+		profiles[name] = profile
+	}
+	standardAPI68ProfileSignatures = signatures
+	return profiles
 }
 
 // standardAPI68CapturedNewObject identifies objects for which a profile has a
@@ -173,7 +204,7 @@ func StandardAPI68DescribeObject(profile, object string) (ObjectDefinition, bool
 // StandardAPI68DescribeObjectForRoute projects only fields observed in the
 // captured source route; named-only members remain separate from REST.
 func StandardAPI68DescribeObjectForRoute(profile, object string, named bool) (ObjectDefinition, bool) {
-	captured, ok := loadStandardAPI68Profiles()[profile]
+	captured, ok := loadStandardAPI68Profile(profile)
 	if !ok {
 		return ObjectDefinition{}, false
 	}
@@ -204,7 +235,7 @@ func StandardAPI68DescribeObjectForRoute(profile, object string, named bool) (Ob
 // StandardAPI68DescribeObjectNames returns only objects observed on the
 // selected route of the exact captured profile.
 func StandardAPI68DescribeObjectNames(profile string, named bool) []string {
-	captured, ok := loadStandardAPI68Profiles()[profile]
+	captured, ok := loadStandardAPI68Profile(profile)
 	if !ok {
 		return nil
 	}
@@ -221,7 +252,7 @@ func StandardAPI68DescribeObjectNames(profile string, named bool) []string {
 // StandardAPI68DescribeFields returns owned field definitions observed for the
 // exact profile and source route. It does not infer visibility in other shapes.
 func StandardAPI68DescribeFields(profile, object string, named bool) map[string]Field {
-	captured, ok := loadStandardAPI68Profiles()[profile]
+	captured, ok := loadStandardAPI68Profile(profile)
 	if !ok {
 		return nil
 	}
@@ -243,7 +274,7 @@ func StandardAPI68DescribeFields(profile, object string, named bool) map[string]
 // StandardAPI68DescribeAccessRule reports an explicitly captured access
 // boundary for a field. Empty means this sidecar installs no special rule.
 func StandardAPI68DescribeAccessRule(profile, object, field string) string {
-	captured, ok := loadStandardAPI68Profiles()[profile]
+	captured, ok := loadStandardAPI68Profile(profile)
 	if !ok {
 		return ""
 	}

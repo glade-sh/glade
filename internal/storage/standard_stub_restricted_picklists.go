@@ -24,23 +24,33 @@ type standardStubRestrictedPicklist struct {
 	} `json:"values"`
 }
 
-var standardStubRestrictedPicklists = sync.OnceValue(func() map[string]map[string]standardStubRestrictedPicklist {
-	var doc struct {
-		Objects map[string]map[string]standardStubRestrictedPicklist `json:"objects"`
-	}
-	if err := json.Unmarshal(standardStubRestrictedPicklistsData, &doc); err != nil {
-		panic("decode standard stub restricted picklists: " + err.Error())
-	}
-	out := make(map[string]map[string]standardStubRestrictedPicklist, len(doc.Objects))
-	for object, fields := range doc.Objects {
-		lowered := make(map[string]standardStubRestrictedPicklist, len(fields))
-		for name, field := range fields {
-			lowered[strings.ToLower(name)] = field
+func newStandardStubRestrictedPicklists() func() map[string]func() map[string]standardStubRestrictedPicklist {
+	return sync.OnceValue(func() map[string]func() map[string]standardStubRestrictedPicklist {
+		var doc struct {
+			Objects map[string]json.RawMessage `json:"objects"`
 		}
-		out[strings.ToLower(object)] = lowered
-	}
-	return out
-})
+		if err := json.Unmarshal(standardStubRestrictedPicklistsData, &doc); err != nil {
+			panic("decode standard stub restricted picklists: " + err.Error())
+		}
+		out := make(map[string]func() map[string]standardStubRestrictedPicklist, len(doc.Objects))
+		for object, raw := range doc.Objects {
+			out[strings.ToLower(object)] = sync.OnceValue(func() map[string]standardStubRestrictedPicklist {
+				var fields map[string]standardStubRestrictedPicklist
+				if err := json.Unmarshal(raw, &fields); err != nil {
+					panic("decode standard stub restricted picklists: " + err.Error())
+				}
+				lowered := make(map[string]standardStubRestrictedPicklist, len(fields))
+				for name, field := range fields {
+					lowered[strings.ToLower(name)] = field
+				}
+				return lowered
+			})
+		}
+		return out
+	})
+}
+
+var standardStubRestrictedPicklists = newStandardStubRestrictedPicklists()
 
 // standardStubRestrictedPicklistFields lists the native restricted picklists
 // of an object whose generated stub overlay types them as String.
@@ -49,7 +59,11 @@ func standardStubRestrictedPicklistFields(objectName string) map[string]standard
 	if !ok {
 		return nil
 	}
-	native := standardStubRestrictedPicklists()[strings.ToLower(objectName)]
+	load := standardStubRestrictedPicklists()[strings.ToLower(objectName)]
+	if load == nil {
+		return nil
+	}
+	native := load()
 	if len(native) == 0 {
 		return nil
 	}

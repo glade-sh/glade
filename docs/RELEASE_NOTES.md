@@ -73,6 +73,7 @@
 - **Incremental semantic checks.** After a body edit, identifier boundaries avoid rechecking unrelated classes whose names or source contain the edited type name as part of a longer identifier. Semantic results remain unchanged.
 - **Read-only persistent execution.** `glade exec --db` avoids rewriting the database when the reconciled state is unchanged.
 - **Language server edits.** The language server reuses an edited syntax tree for open documents and falls back to a fresh parse when the document snapshot cannot be reused. On a synthetic 2,048-method file, the measured diagnostics parse path fell from 41–44 ms to 34–35 ms per edit, with identical results.
+- **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
 
 ### CI
 
