@@ -433,6 +433,7 @@ type VM struct {
 	fieldResolveCache            *fieldResolveLookupCache
 	loadedChildRelCache          *loadedChildRelationshipLookupCache
 	lazyChildRelCache            *lazyChildRelationshipLookupCache
+	childDescribePlan            *childDescribePlan
 	childRelCandidates           *childRelationshipCandidateIndex
 	objectNameCache              map[objectNameLookupKey]objectNameLookup
 	recentlyViewed               map[string]map[storage.ID]recentlyViewedEntry

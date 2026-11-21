@@ -738,7 +738,16 @@ func (vm *VM) sObjectFieldMapAliases(objectName, fieldName string) []string {
 }
 
 func (vm *VM) describeChildRelationships(name string) []Value {
-	vm.materializeLazyStandardSpread()
+	var beforeSource bool
+	var beforeStamp string
+	var beforeGeneration uint64
+	if vm != nil && vm.Org != nil && vm.Org.StandardSpreadSourceBacked() {
+		beforeSource = true
+		beforeStamp = vm.Org.RuntimeSchemaStamp
+		beforeGeneration = vm.Org.RuntimeGenerationID()
+	}
+	completed := vm.materializeLazyStandardSpread()
+	completeSource := beforeSource && completed && beforeStamp != "" && beforeStamp == vm.Org.RuntimeSchemaStamp && beforeGeneration != 0 && beforeGeneration == vm.Org.RuntimeGenerationID()
 	vm.ensureMetadataCacheGeneration()
 	if vm == nil || vm.Org == nil {
 		return nil
@@ -765,11 +774,7 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 	}
 	seenPlatformFields := make(map[string]bool, len(platformChildren))
 	childRelationships := make([]Value, 0)
-	childObjects := make([]string, 0, len(vm.Org.Objects))
-	for childName := range vm.Org.Objects {
-		childObjects = append(childObjects, childName)
-	}
-	sort.Strings(childObjects)
+	childObjects := vm.describeChildCandidateNames(name, completeSource)
 	for _, childName := range childObjects {
 		if eventDefinition := vm.Org.Objects[childName].Definition; storage.IsChangeEventObject(eventDefinition) {
 			childRelationships = append(childRelationships, vm.standardChangeEventChildRelationships(name, childName, eventDefinition)...)
@@ -2929,6 +2934,9 @@ func approxValueSize(value Value) int {
 }
 
 func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
+	if value.Type == "JSONParser" && value.Fields["tokens"].Type == jsonParserPackedType {
+		return jsonParserHeapSize(value, seen)
+	}
 	if value.Kind == ValueMap && value.mapKeySetSource != nil {
 		value = value.currentFieldMapHolder()
 	}

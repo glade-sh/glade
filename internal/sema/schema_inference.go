@@ -551,11 +551,11 @@ type semaProjectReferencedLookupFieldReference struct {
 }
 
 func semaProjectReferencedSchemaFieldReferences(ctx *semaProjectReferencedSchemaContext, scanSource string, varTypes map[string]string) ([]semaProjectReferencedSchemaFieldReference, []semaProjectReferencedSchemaFieldReference) {
-	literalFields := make([]semaProjectReferencedSchemaFieldReference, 0, 16)
-	memberFields := make([]semaProjectReferencedSchemaFieldReference, 0, 16)
-	literalFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{}, 16)
-	memberFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{}, 16)
-	lookupFieldSeen := make(map[semaProjectReferencedLookupFieldReference]struct{}, 16)
+	literalFields := make([]semaProjectReferencedSchemaFieldReference, 0)
+	memberFields := make([]semaProjectReferencedSchemaFieldReference, 0)
+	literalFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{})
+	memberFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{})
+	lookupFieldSeen := make(map[semaProjectReferencedLookupFieldReference]struct{})
 	for i := 0; i < len(scanSource); {
 		start, end, ok := semaProjectReferencedScanIdentifier(scanSource, i)
 		if !ok {

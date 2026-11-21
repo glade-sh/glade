@@ -14,6 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// Value groups its byte-sized flags around aligned fields. Its exported fields retain their wire order.
 type Value struct {
 	// C10: a recovered Number(18,0) Double token read rejects boxed Long casts.
 	// Keep this authority local to that captured read, not arbitrary Doubles.
@@ -24,10 +25,6 @@ type Value struct {
 	// never zero, so zero means unset. It sits in the padding after the bool
 	// above; TestValueSizeGuard keeps Value from growing.
 	datetimeWeekTerm uint8
-
-	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
-	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
-
 	// Display ownership is retained when the constructor resolves its symbol;
 	// source classes may share a platform DTO's short name.
 	platformHTTPDTO bool
@@ -40,11 +37,21 @@ type Value struct {
 	lexicalClassLiteral bool
 	// Preserve class-literal origin for the legacy dependency construction path.
 	dependencyClassLiteral bool
-	// Projection-only anonymous callers for captured exception text boundaries.
-	exceptionAnonymousCallerLine int
 	// Keep the observed String-constructor display separate from runtime faults,
 	// cause constructors and default exception construction.
 	exceptionMessageConstructor bool
+
+	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
+	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
+	jsonGeneratorBuffer     *jsonGeneratorBuffer
+	// Projection-only anonymous callers for captured exception text boundaries.
+	exceptionAnonymousCallerLine int
+
+	Kind    ValueKind `json:"kind"`
+	Int     int64     `json:"int,omitempty"`
+	Decimal float64   `json:"decimal,omitempty"`
+
+	Bool bool `json:"bool,omitempty"`
 	// Some platform Ids retain their original text for valueOf and concatenation.
 	idOriginalDisplay bool
 	// A report service dimension can expose an empty getter while retaining a
@@ -56,17 +63,26 @@ type Value struct {
 	// The field map's own key set is read-only; a Set built from it is not
 	// (review_round8 ks_add_*, ks_set_ops).
 	describeKeySetReadOnly bool
+	// List-based map insertion retains an unsaved record under a null Id key
+	// that can be retrieved through keySet, but not through a literal null.
+	sobjectListNullMapKey bool
+	// mapBackingShared marks a map whose Map, MapKeys and MapOrder storage is
+	// shared with another holder (a typed view of the global describe map).
+	// Mutations copy the storage first, so holders never see each other's
+	// writes while reads share one copy.
+	mapBackingShared bool
+	// mapEntriesShared marks a Map whose entries other VMs of the same schema
+	// generation read too (the generation's global describe maps). It is
+	// read-only: a write clones Map first and clears the mark (detachSharedEntries).
+	mapEntriesShared bool
 
-	Kind          ValueKind `json:"kind"`
-	Int           int64     `json:"int,omitempty"`
-	Decimal       float64   `json:"decimal,omitempty"`
-	Bool          bool      `json:"bool,omitempty"`
-	Text          string    `json:"text,omitempty"`
-	Type          string    `json:"type,omitempty"`
-	Static        string    `json:"-"`
-	Runtime       string    `json:"-"`
-	Ref           uint64    `json:"-"`
-	ExplicitScale bool      `json:"-"`
+	Text    string `json:"text,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Static  string `json:"-"`
+	Runtime string `json:"-"`
+	Ref     uint64 `json:"-"`
+
+	ExplicitScale bool `json:"-"`
 	// Native list membership retains backing values until materialized in an ordinary list.
 	nativeListMembership bool
 	// Explicit List<SObject> allocations are distinct from framework lists
@@ -78,38 +94,25 @@ type Value struct {
 	// JSON-deserialized PluginBatchable subclasses skip the platform
 	// constructor (platform_batch_runtime org.tsv:4-8,13-17).
 	pluginBatchableDetached bool
+	// fieldsShared marks an object whose Fields map is shared with other VMs of
+	// the same schema generation (child relationship describes). It is
+	// read-only: a write clones Fields first and clears the mark.
+	fieldsShared                   bool
+	globalDescribeEntriesCanonical bool
+	nativeListElement              bool
+
 	// Set history belongs to this collection, not to its mutable elements.
 	setInsertionHashes []setInsertionHash
 	primitiveSetState  *primitiveSetState
 	mapKeySetSource    *mapKeySetBacking
 	mapKeySetHashes    *mapKeySetHashCache
 
-	// List-based map insertion retains an unsaved record under a null Id key
-	// that can be retrieved through keySet, but not through a literal null.
-	sobjectListNullMapKey bool
-
-	// mapBackingShared marks a map whose Map, MapKeys and MapOrder storage is
-	// shared with another holder (a typed view of the global describe map).
-	// Mutations copy the storage first, so holders never see each other's
-	// writes while reads share one copy.
-	mapBackingShared bool
-	// mapEntriesShared marks a Map whose entries other VMs of the same schema
-	// generation read too (the generation's global describe maps). It is
-	// read-only: a write clones Map first and clears the mark (detachSharedEntries).
-	mapEntriesShared bool
-	// fieldsShared marks an object whose Fields map is shared with other VMs of
-	// the same schema generation (child relationship describes). It is
-	// read-only: a write clones Fields first and clears the mark.
-	fieldsShared                   bool
-	globalDescribeEntriesCanonical bool
-
-	nativeListElement bool
-	Fields            map[string]Value `json:"fields,omitempty"`
-	List              []Value          `json:"list,omitempty"`
-	Set               []Value          `json:"set,omitempty"`
-	Map               map[string]Value `json:"map,omitempty"`
-	MapKeys           map[string]Value `json:"-"`
-	MapOrder          []string         `json:"-"`
+	Fields   map[string]Value `json:"fields,omitempty"`
+	List     []Value          `json:"list,omitempty"`
+	Set      []Value          `json:"set,omitempty"`
+	Map      map[string]Value `json:"map,omitempty"`
+	MapKeys  map[string]Value `json:"-"`
+	MapOrder []string         `json:"-"`
 }
 
 // detachSharedEntries gives the value a private copy of Map before an in-place
@@ -149,11 +152,12 @@ var Null = Value{Kind: ValueNull}
 // JSONBudgetSnapshot exposes the same current collection view used by JSON
 // serialization, so a host can budget it before invoking the encoder.
 func (v Value) JSONBudgetSnapshot() Value {
-	return v.currentMapKeySet()
+	return jsonParserMaterializedView(v.currentMapKeySet())
 }
 
 func (v Value) MarshalJSON() ([]byte, error) {
 	v = v.currentMapKeySet()
+	v = jsonParserMaterializedView(v)
 	type jsonValue Value
 	if !strings.EqualFold(v.Type, "AccessLevel") {
 		return json.Marshal(jsonValue(v))
@@ -309,6 +313,7 @@ func (v Value) writeText(w *textWriter) {
 	if w.full {
 		return
 	}
+	v = jsonParserMaterializedView(v)
 	switch v.Kind {
 	case ValueDecimal:
 		if w.bounded {
@@ -828,6 +833,7 @@ func writeValueTextWithSeen(w *textWriter, v Value, seen map[uint64]bool) {
 	if w.full {
 		return
 	}
+	v = jsonParserMaterializedView(v)
 	v = v.currentMapKeySet()
 	switch v.Kind {
 	case ValueList, ValueSet:

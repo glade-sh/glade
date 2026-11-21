@@ -1334,6 +1334,9 @@ func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bo
 		}
 		return out
 	}
+	if ids, ok := simpleIDCandidates(object, where); ok {
+		return ids
+	}
 	out := make([]string, 0, len(object.Records))
 	for id := range object.Records {
 		out = append(out, string(id))
@@ -2043,7 +2046,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			Field: condition.Field, Formula: condition.Formula, Op: condition.Op,
 			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
 			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
-			Values:                condition.Values, Subquery: condition.Subquery,
+			Values:                condition.Values, Subquery: condition.Subquery, semiJoinIDs: condition.semiJoinIDs,
 		}, context, scratch)
 	}
 	if len(condition.And) > 0 {
@@ -2151,6 +2154,10 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if condition.Subquery != nil {
 			return false
 		}
+		if left.Kind == storage.ValueID && condition.semiJoinIDs != nil {
+			found := condition.semiJoinIDs.contains(left.ID)
+			return found
+		}
 		for _, v := range condition.Values {
 			if equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, v, context.Locale, scratch) {
 				return true
@@ -2160,6 +2167,10 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 	case "NOT IN":
 		if condition.Subquery != nil {
 			return false
+		}
+		if left.Kind == storage.ValueID && condition.semiJoinIDs != nil {
+			found := condition.semiJoinIDs.contains(left.ID)
+			return !found
 		}
 		for _, v := range condition.Values {
 			if equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, v, context.Locale, scratch) {
@@ -2366,6 +2377,7 @@ func resolveSubqueries(org storage.OrgState, condition Condition, context Execut
 			condition.Op = "IN"
 			condition.Values = nil
 		}
+		condition.semiJoinIDs = buildSemiJoinIDMembership(condition.Values)
 	}
 	for i := range condition.And {
 		resolved, err := resolveSubqueries(org, condition.And[i], context)

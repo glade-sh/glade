@@ -41,6 +41,34 @@
 - **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
 - **Wide test classes.** The test runner prepares sibling methods once per class and source file, then shares them with isolated test VMs. In a synthetic 256-method class, measured allocations fell from about 174 MB to 43 MB per run.
 - **Repeated Apex matcher searches.** A matcher can reuse decoded input across repeated searches in the same transaction. In a 4,096-match benchmark, one transaction used about 6.3 MB instead of 174 MB and took 49–63 ms instead of 278–314 ms.
+- **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 278 ms to 3.6 ms while returning identical ordered results.
+
+- **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 additional setup records fell from about 778 ms to 617 ms with identical results and governor counts.
+- **API version parsing.** Parsing common version strings avoids a temporary allocation.
+
+- **Setup advice after test failures.** Source and metadata scans reuse intermediate work when producing setup suggestions.
+
+- **Visualforce page validation.** Large pages use a forward position cursor while checking presentation tags.
+
+- **Language server schema analysis.** Scanning sources without schema field references and computing incremental digests now allocate less memory.
+- **Semantic cache performance.** Warm test-daemon requests reuse the identity of an unchanged generation, and warm checks reuse the encoded semantic result for checksum verification and memory accounting. Cached results and diagnostics are unchanged.
+
+- **Warm test daemon validation.** Request-local digest lookups avoid a redundant file metadata check on their first lookup. In a 1,531-class source-and-companion benchmark, allocations fell from about 61,270 to 55,150 per request-shaped validation.
+- **Source positions in large Apex files.** Building the source-line index allocates its newline offsets once instead of growing the table repeatedly.
+
+- **Lexical type resolution.** Resolving a type from the current execution context avoids allocating a temporary owner list.
+
+- **Runtime value layout.** Values have a smaller in-memory layout while retaining the existing serialized field order.
+
+- **Class lookup construction.** Building a class-name index uses less temporary memory for large test suites.
+
+- **Child relationship descriptions.** Large schemas avoid preparing unrelated child objects when describing a parent, reducing work across test runs.
+
+- **JSON parser memory.** Parsing and skipping a 65,537-byte numeric array allocated 23.42 MiB instead of 126.11 MiB in a local benchmark. Token storage is released at EOF while parser results remain unchanged.
+
+- **JSON generator writes.** Building large JSON output avoids repeatedly copying the accumulated text.
+
+- **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
 ### CI
 

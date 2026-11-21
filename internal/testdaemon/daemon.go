@@ -51,6 +51,7 @@ type daemonGeneration struct {
 	index     typesys.Index
 	artifacts typesys.BuildArtifacts
 	graph     *watch.RefGraph
+	identity  *apextest.SemanticIdentityGeneration
 }
 
 // WatchStateDriftError reports an ordinary input change while a watcher and
@@ -73,7 +74,7 @@ func New(root string) (*Daemon, error) {
 	}
 	return &Daemon{
 		root:             root,
-		daemonGeneration: daemonGeneration{serial: 1, project: p, index: index, artifacts: artifacts, graph: watch.BuildReferenceGraph(index)},
+		daemonGeneration: daemonGeneration{serial: 1, project: p, index: index, artifacts: artifacts, graph: watch.BuildReferenceGraph(index), identity: apextest.NewSemanticIdentityGeneration(index, artifacts)},
 		tryUpdateIndexFn: typesys.TryUpdateApexFilesCheckedWithLoadedProject,
 		loadProjectFn:    loadProject,
 		buildIndexFn:     buildProjectIndex,
@@ -116,7 +117,8 @@ func (d *Daemon) Warm() error {
 	generation := d.daemonGeneration
 	defer d.mu.RUnlock()
 	artifacts := generation.artifacts
-	return d.warmRuntimeFn(apextest.WithIncrementalSemantic(context.Background(), d.semaState), generation.index, &artifacts)
+	ctx := apextest.WithSemanticIdentityGeneration(context.Background(), generation.identity)
+	return d.warmRuntimeFn(apextest.WithIncrementalSemantic(ctx, d.semaState), generation.index, &artifacts)
 }
 
 func (d *Daemon) RunFilter(filter string) testreport.Run {
@@ -185,6 +187,7 @@ func optionsForGeneration(opts apextest.Options, generation daemonGeneration) ap
 }
 
 func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
+	ctx = apextest.WithSemanticIdentityGeneration(ctx, generation.identity)
 	ctx = apextest.WithIncrementalSemantic(ctx, d.semaState)
 	if d.runGenerationFn != nil {
 		return d.runGenerationFn(ctx, generation, optionsForGeneration(opts, generation))
@@ -201,6 +204,7 @@ func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration,
 	if !ok {
 		return run
 	}
+	ctx = apextest.WithSemanticIdentityGeneration(ctx, refreshed.identity)
 	return apextest.RunContext(ctx, refreshed.index, optionsForGeneration(opts, refreshed))
 }
 
@@ -518,6 +522,7 @@ func (d *Daemon) snapshotGeneration() daemonGeneration {
 }
 
 func (d *Daemon) publishGeneration(generation daemonGeneration) {
+	generation.identity = apextest.NewSemanticIdentityGeneration(generation.index, generation.artifacts)
 	d.mu.Lock()
 	d.daemonGeneration = generation
 	d.mu.Unlock()

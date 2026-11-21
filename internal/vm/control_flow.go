@@ -891,6 +891,9 @@ type sourceLineTable struct {
 
 func newSourceLineTable(source string) *sourceLineTable {
 	table := &sourceLineTable{source: source}
+	if count := strings.Count(source, "\n"); count != 0 {
+		table.newlines = make([]int, 0, count)
+	}
 	for i := 0; i < len(source); i++ {
 		if source[i] == '\n' {
 			table.newlines = append(table.newlines, i)

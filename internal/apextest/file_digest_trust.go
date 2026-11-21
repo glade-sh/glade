@@ -186,11 +186,11 @@ func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
 	if r == nil {
 		return currentFileDigest(path)
 	}
-	if stamp, ok := filestamp.Stat(path); ok {
-		r.mu.Lock()
-		entry, hit := r.entries[path]
-		r.mu.Unlock()
-		if hit && entry.stamp == stamp {
+	r.mu.Lock()
+	entry, hit := r.entries[path]
+	r.mu.Unlock()
+	if hit {
+		if stamp, ok := filestamp.Stat(path); ok && entry.stamp == stamp {
 			return entry.digest, nil
 		}
 	}

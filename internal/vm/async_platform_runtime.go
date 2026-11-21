@@ -805,6 +805,7 @@ func (vm *VM) discardMetadataCaches() {
 	vm.globalDescribeProjectionKeys = nil
 	vm.globalDescribeKeysVerified = globalDescribeKeysVerifiedMemo{}
 	vm.describeTabsCache = nil
+	vm.childDescribePlan = nil
 	vm.childRelCandidates = nil
 	vm.childRelCache = newChildRelationshipCache()
 	vm.childRelationshipLookupCache = newChildRelationshipLookupCache()

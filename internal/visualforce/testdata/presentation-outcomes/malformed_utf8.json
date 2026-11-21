@@ -1,0 +1,74 @@
+{
+  "Page": {
+    "name": "Example",
+    "file": "Example.page",
+    "apiVersion": "67.0"
+  },
+  "PageError": "",
+  "Tree": {
+    "Type": 0,
+    "Namespace": "",
+    "Name": "_vfroot",
+    "RawName": "",
+    "Attributes": {},
+    "RawAttributes": null,
+    "Text": "",
+    "Children": [
+      {
+        "Type": 0,
+        "Namespace": "apex",
+        "Name": "page",
+        "RawName": "apex:page",
+        "Attributes": {},
+        "RawAttributes": {},
+        "Text": "",
+        "Children": [
+          {
+            "Type": 1,
+            "Namespace": "",
+            "Name": "",
+            "RawName": "",
+            "Attributes": null,
+            "RawAttributes": null,
+            "Text": "�\n",
+            "Children": null,
+            "Line": 0,
+            "Column": 0,
+            "NameEndLine": 0,
+            "NameEndColumn": 0
+          },
+          {
+            "Type": 0,
+            "Namespace": "apex",
+            "Name": "outputtext",
+            "RawName": "apex:outputText",
+            "Attributes": {
+              "value": "x"
+            },
+            "RawAttributes": {
+              "value": "x"
+            },
+            "Text": "",
+            "Children": null,
+            "Line": 2,
+            "Column": 1,
+            "NameEndLine": 2,
+            "NameEndColumn": 17
+          }
+        ],
+        "Line": 1,
+        "Column": 1,
+        "NameEndLine": 1,
+        "NameEndColumn": 11
+      }
+    ],
+    "Line": 0,
+    "Column": 0,
+    "NameEndLine": 0,
+    "NameEndColumn": 0
+  },
+  "TreeError": "",
+  "HTML": "165ce6674e837ef7e36fab885d007e3e8c1e12b50aaf09c906fcd00d5c9f7403",
+  "RenderError": "",
+  "Diagnostic": ""
+}

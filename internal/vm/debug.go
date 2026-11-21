@@ -1,6 +1,7 @@
 package vm
 
 import (
+	encodingbinary "encoding/binary"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -183,6 +184,7 @@ func cloneValues(in map[string]Value) map[string]Value {
 }
 
 func cloneValue(value Value) Value {
+	value.jsonGeneratorBuffer = nil
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
 		return cloneValueWithSeen(value, make(map[uint64]bool))
@@ -203,6 +205,7 @@ func cloneValue(value Value) Value {
 func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	value = value.currentMapKeySet()
 	out := value
+	out.jsonGeneratorBuffer = nil
 	out.primitiveSetState = clonePrimitiveSetState(value.primitiveSetState)
 	out.mapKeySetSource = nil
 	out.mapKeySetHashes = nil
@@ -260,6 +263,22 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 			out.Set[i] = cloneValueWithSeen(child, seen)
 		}
 	}
+	if out.Type == "JSONParser" && out.Fields["tokens"].Type == jsonParserPackedType {
+		tokens := out.Fields["tokens"]
+		data := []byte(tokens.Text)
+		for i := 0; i < int(tokens.Int); i++ {
+			ref := newValueRef()
+			if len(data) > 0 {
+				encodingbinary.LittleEndian.PutUint64(data[i*jsonParserPackedHeader+80:], ref)
+			}
+		}
+		tokens.Text = string(data)
+		out.Fields["tokens"] = tokens
+		cleared := out.Fields["lastClearedToken"]
+		cleared.Runtime = ""
+		out.Fields["lastClearedToken"] = cleared
+	}
+
 	bindPrimitiveSetCloneState(value, &out)
 	return out
 }

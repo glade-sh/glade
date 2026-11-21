@@ -872,6 +872,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 	return before.scaleZeroNumberTokenDouble == after.scaleZeroNumberTokenDouble &&
 		before.datetimeWeekTerm == after.datetimeWeekTerm &&
 		before.loadedReferenceSnapshot == after.loadedReferenceSnapshot &&
+		before.jsonGeneratorBuffer == after.jsonGeneratorBuffer &&
 		before.platformHTTPDTO == after.platformHTTPDTO &&
 		before.projectClass == after.projectClass &&
 		before.classInstance == after.classInstance &&

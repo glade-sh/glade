@@ -455,7 +455,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), runState.counters)
+	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
@@ -844,7 +844,7 @@ func invokeSnapshotValidationHook(stage string) {
 // otherwise repeated on every call with unchanged sources.
 
 func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, counters ...*runPerfCounters) error {
-	diagnostics, err := semanticGateDiagnostics(ctx, index, artifacts, sources, generation, hooks, cacheAllowed, "", counters...)
+	diagnostics, err := semanticGateDiagnostics(ctx, index, artifacts, sources, generation, hooks, cacheAllowed, "", nil, counters...)
 	if err != nil {
 		return err
 	}
@@ -855,7 +855,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 // error is a snapshot or cache failure, not an Apex compile error. cacheSlot
 // names a separate on-disk semantic result for a compile-gate project subset,
 // so a scoped rerun does not replace the complete project's cached result.
-func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, cacheSlot string, counters ...*runPerfCounters) ([]diagnostic.Diagnostic, error) {
+func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, cacheSlot string, gate *compileGate, counters ...*runPerfCounters) ([]diagnostic.Diagnostic, error) {
 	validateGeneration := func() error {
 		if artifacts != nil {
 			return validateCapturedBuildGeneration(index, artifacts, sources.requestDigests)
@@ -930,7 +930,18 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 			}
 		}
 	} else {
-		identity, identityErr := semanticcache.IdentityForBuild(analysisIndex, artifacts, analyzeOptions)
+		var identity semanticcache.Identity
+		var identityErr error
+		identityGeneration, _ := ctx.Value(semanticIdentityGenerationKey{}).(*SemanticIdentityGeneration)
+		if cacheAllowed && identityGeneration != nil && (!index.Subset || gate != nil) {
+			var excluded map[string]bool
+			if gate != nil {
+				excluded = gate.excludedFiles
+			}
+			identity, identityErr = identityGeneration.identity(analyzeOptions, index.Subset, excluded)
+		} else {
+			identity, identityErr = semanticcache.IdentityForBuild(analysisIndex, artifacts, analyzeOptions)
+		}
 		if identityErr != nil {
 			return nil, identityErr
 		}
