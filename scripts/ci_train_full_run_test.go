@@ -367,3 +367,17 @@ func TestCIPlannedMatrixHasBoundedBudget(t *testing.T) {
 		t.Fatalf("planned PR matrix alone exhausts budget: %d", widths["pr-tests"])
 	}
 }
+
+func TestCIIfScenariosEvaluatePRDecisions(t *testing.T) {
+	for _, expr := range []string{
+		"github.event_name == 'pull_request' && needs.pr-select.outputs.smoke == 'true'",
+		"github.event_name == 'pull_request' && needs.pr-select.outputs.browser == 'true'",
+	} {
+		if ciIfApplies(t, expr, ciScenarios[0]) {
+			t.Errorf("push unexpectedly matches %s", expr)
+		}
+		if !ciIfApplies(t, expr, ciScenarios[1]) {
+			t.Errorf("PR with selection unexpectedly excludes %s", expr)
+		}
+	}
+}
