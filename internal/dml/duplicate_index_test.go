@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -158,5 +159,43 @@ func TestDuplicateScanOutcomes(t *testing.T) {
 				t.Fatal("hidden matches were not detected")
 			}
 		})
+	}
+}
+
+func TestDuplicateScanRefreshesValues(t *testing.T) {
+	org, _ := duplicateIndexFixture(300)
+	object := org.Objects["Lead"]
+	ids := make([]storage.ID, 0, len(object.Records))
+	for id, original := range object.Records {
+		record := original.Clone()
+		record.Fields["FirstName"] = storage.StringValue("other")
+		object.PutRecord(id, record)
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	record := object.Records[ids[0]]
+	record.Fields["FirstName"] = storage.StringValue("match")
+	org.Objects["Lead"] = object
+	rule := object.Definition.DuplicateRules[0]
+	rule.MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "FirstName", Method: "Exact", BlankBehavior: "NullNotAllowed"}}
+	candidate := storage.Record{Object: "Lead", Fields: map[string]storage.Value{"FirstName": storage.StringValue("match")}}
+	check := func(want storage.ID) {
+		t.Helper()
+		result, ok := dml.FindDuplicateMatches(&org, rule, candidate, nil)
+		if !ok || len(result.Matches) != 1 || len(result.Matches[0].Records) != 1 || result.Matches[0].Records[0].ID != want {
+			t.Fatalf("want %s, got %+v", want, result)
+		}
+	}
+	check(ids[0])
+	// Mutate the shared field maps without a record-map write: each scan must
+	// observe fresh values even when the storage token does not change.
+	record.Fields["FirstName"] = storage.StringValue("other")
+	other := object.Records[ids[1]]
+	other.Fields["FirstName"] = storage.StringValue("match")
+	check(ids[1])
+	candidate.Fields["FirstName"] = storage.StringValue("other")
+	result, ok := dml.FindDuplicateMatches(&org, rule, candidate, nil)
+	if !ok || len(result.Matches) != 1 || len(result.Matches[0].Records) != 100 {
+		t.Fatalf("changed candidate: %+v", result)
 	}
 }
