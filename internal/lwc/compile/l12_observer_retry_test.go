@@ -36,3 +36,15 @@ func TestL12ObserverRetriesFaultsSerially(t *testing.T) {
 		})
 	}
 }
+
+func TestL12ObserverKeepsSerialFault(t *testing.T) {
+	_, got, productErr, browserErr := l12ObserveWithFallback(func(parallel bool) (map[string]json.RawMessage, map[string]string, error, error) {
+		if parallel {
+			return nil, map[string]string{"first": "parallel failure"}, nil, nil
+		}
+		return nil, map[string]string{"first": "serial failure"}, nil, nil
+	})
+	if got["first"] != "serial failure" || productErr != nil || browserErr != nil {
+		t.Fatalf("rowErrors=%v productErr=%v browserErr=%v", got, productErr, browserErr)
+	}
+}
