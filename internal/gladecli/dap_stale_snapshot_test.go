@@ -149,7 +149,11 @@ func TestDAPStaleSnapshotOutcome(t *testing.T) {
 		t.Fatal(err)
 	}
 	body = bytes.ReplaceAll(body, []byte(root), []byte("<ROOT>"))
-	fmt.Printf("stale-outcome %x\n", sha256.Sum256(body))
+	// Captured from origin/main using this fixture and normalized project root.
+	const baseline = "77099426e01feb2e5bd5b2c6ba0e1629efc4565ad1e5dfe2d21ce3c8121815c0"
+	if got := fmt.Sprintf("%x", sha256.Sum256(body)); got != baseline {
+		t.Fatalf("stale outcome SHA-256 = %s, origin/main = %s", got, baseline)
+	}
 }
 
 func BenchmarkDAPStaleSnapshot(b *testing.B) {
@@ -315,5 +319,9 @@ func TestDAPWarmSnapshotOutcome(t *testing.T) {
 		t.Fatal(err)
 	}
 	body = bytes.ReplaceAll(body, []byte(root), []byte("<ROOT>"))
-	fmt.Printf("warm-outcome %x\n", sha256.Sum256(body))
+	// Captured from origin/main using this fixture and normalized project root.
+	const baseline = "77099426e01feb2e5bd5b2c6ba0e1629efc4565ad1e5dfe2d21ce3c8121815c0"
+	if got := fmt.Sprintf("%x", sha256.Sum256(body)); got != baseline {
+		t.Fatalf("warm outcome SHA-256 = %s, origin/main = %s", got, baseline)
+	}
 }
