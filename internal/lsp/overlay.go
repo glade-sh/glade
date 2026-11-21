@@ -117,9 +117,8 @@ func (h *Handler) overlayTarget(current *generation) (*typesys.SourceOverlay, ma
 			continue
 		}
 		text := doc.Text
-		h.parserMu.Lock()
-		clean := !h.parserClosed && len(h.parser.ParseSource(doc.Path, text).Diagnostics) == 0
-		h.parserMu.Unlock()
+		diagnostics, parsed := h.parseDocument(doc)
+		clean := parsed && len(diagnostics) == 0
 		if !clean {
 			if current == nil || current.overlay == nil || !current.overlay.Has(doc.Path) {
 				continue

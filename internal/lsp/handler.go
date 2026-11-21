@@ -62,12 +62,15 @@ type Handler struct {
 const DefaultDiagnosticsDebounce = 250 * time.Millisecond
 
 type openDocument struct {
-	URI     DocumentURI
-	Path    string
-	Version int
-	Text    string
-	Digest  [sha256.Size]byte
+	URI      DocumentURI
+	Path     string
+	Version  int
+	Text     string
+	Digest   [sha256.Size]byte
+	identity *documentIdentity
 }
+
+type documentIdentity struct{ marker byte }
 
 func NewHandler(index typesys.Index) *Handler {
 	h := NewPendingHandler()
@@ -184,16 +187,19 @@ func (h *Handler) DidOpen(params DidOpenTextDocumentParams) []Notification {
 func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
 	uri := params.TextDocument.URI
 	doc := openDocument{
-		URI:     uri,
-		Path:    pathFromURI(uri),
-		Version: params.TextDocument.Version,
-		Text:    params.TextDocument.Text,
-		Digest:  sha256.Sum256([]byte(params.TextDocument.Text)),
+		URI:      uri,
+		Path:     pathFromURI(uri),
+		Version:  params.TextDocument.Version,
+		Text:     params.TextDocument.Text,
+		Digest:   sha256.Sum256([]byte(params.TextDocument.Text)),
+		identity: &documentIdentity{},
 	}
 	h.docMu.Lock()
+	old := h.documents[uri]
 	h.documents[uri] = doc
 	h.documentPaths[canonicalDocumentPath(doc.Path)] = uri
 	h.docMu.Unlock()
+	h.forgetDocumentTree(old)
 	return doc
 }
 
@@ -210,7 +216,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 	defer h.docMu.Unlock()
 	doc, ok := h.documents[params.TextDocument.URI]
 	if !ok {
-		doc = openDocument{URI: params.TextDocument.URI, Path: pathFromURI(params.TextDocument.URI)}
+		doc = openDocument{URI: params.TextDocument.URI, Path: pathFromURI(params.TextDocument.URI), identity: &documentIdentity{}}
 	}
 	doc.Version = params.TextDocument.Version
 	for _, change := range params.ContentChanges {
@@ -234,11 +240,41 @@ func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 
 func (h *Handler) applyClose(uri DocumentURI) {
 	h.docMu.Lock()
-	if doc, ok := h.documents[uri]; ok {
+	doc, ok := h.documents[uri]
+	if ok {
 		delete(h.documentPaths, canonicalDocumentPath(doc.Path))
 	}
 	delete(h.documents, uri)
 	h.docMu.Unlock()
+	h.forgetDocumentTree(doc)
+}
+
+func (h *Handler) forgetDocumentTree(doc openDocument) {
+	if doc.identity == nil {
+		return
+	}
+	h.parserMu.Lock()
+	h.parser.ForgetDocument(doc.identity)
+	h.parserMu.Unlock()
+}
+
+func (h *Handler) parseDocument(doc openDocument) ([]diagnostic.Diagnostic, bool) {
+	h.parserMu.Lock()
+	defer h.parserMu.Unlock()
+	if h.parserClosed {
+		return nil, false
+	}
+	h.docMu.RLock()
+	current, ok := h.documents[doc.URI]
+	currentSnapshot := ok && doc.identity != nil && current.identity == doc.identity && current.Version == doc.Version && current.Text == doc.Text
+	h.docMu.RUnlock()
+	if currentSnapshot && len(doc.Text) <= maxOverlayDocumentBytes {
+		return h.parser.ParseDocument(doc.identity, doc.Path, doc.Text).Diagnostics, true
+	}
+	if currentSnapshot && len(doc.Text) > maxOverlayDocumentBytes {
+		h.parser.ForgetDocument(doc.identity)
+	}
+	return h.parser.ParseSource(doc.Path, doc.Text).Diagnostics, true
 }
 
 func (h *Handler) closeNotifications(uri DocumentURI) []Notification {
@@ -269,12 +305,7 @@ func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
 // a generation that reflects the buffer. With sync, a clean buffer first
 // brings the overlay up to date, as the synchronous document API does.
 func (h *Handler) documentDiagnosticsSync(doc openDocument, sync bool) []Notification {
-	var diagnostics []diagnostic.Diagnostic
-	h.parserMu.Lock()
-	if !h.parserClosed {
-		diagnostics = h.parser.ParseSource(doc.Path, doc.Text).Diagnostics
-	}
-	h.parserMu.Unlock()
+	diagnostics, _ := h.parseDocument(doc)
 	if len(diagnostics) == 0 {
 		var publish bool
 		diagnostics, publish = h.semanticDiagnostics(doc, sync)

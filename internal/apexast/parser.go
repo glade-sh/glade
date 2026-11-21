@@ -18,6 +18,9 @@ type Range = external.Range
 type Parser struct {
 	parser    *external.Parser
 	closeOnce sync.Once
+	docMu     sync.Mutex
+	docTrees  map[any]*external.IncrementalTree
+	closed    bool
 }
 
 var openParsers atomic.Int64
@@ -62,6 +65,13 @@ func (p *Parser) Close() {
 		return
 	}
 	p.closeOnce.Do(func() {
+		p.docMu.Lock()
+		defer p.docMu.Unlock()
+		p.closed = true
+		for _, tree := range p.docTrees {
+			tree.Close()
+		}
+		p.docTrees = nil
 		runtime.SetFinalizer(p, nil)
 		if p.parser != nil {
 			p.parser.Close()
@@ -112,8 +122,47 @@ func (p *Parser) ParseSource(path, source string) File {
 	defer runtime.KeepAlive(p)
 	observeSource(source)
 	file := p.parser.ParseSource(path, source)
+	return p.finishSource(path, source, file)
+}
+
+// ParseDocument retains one immutable tree for key. The caller must forget
+// the key when its document closes and use only comparable keys.
+func (p *Parser) ParseDocument(key any, path, source string) File {
+	defer runtime.KeepAlive(p)
+	p.docMu.Lock()
+	defer p.docMu.Unlock()
+	if p.closed {
+		return p.ParseSource(path, source)
+	}
+	observeSource(source)
+	old := p.docTrees[key]
+	file, next := p.parser.ParseSourceIncremental(path, source, old)
+	if old != nil {
+		old.Close()
+	}
+	if p.docTrees == nil {
+		p.docTrees = make(map[any]*external.IncrementalTree)
+	}
+	if next == nil {
+		delete(p.docTrees, key)
+	} else {
+		p.docTrees[key] = next
+	}
+	return p.finishSource(path, source, file)
+}
+
+func (p *Parser) finishSource(path, source string, file external.File) File {
 	file.Diagnostics = p.refineInlineSOSLDiagnostics(path, source, file.Diagnostics)
 	return nativeReservedStaticPriority(withSharingDeclarationDiagnostics(nativePropertySyntax(nativeAnnotationSyntax(convertFile(file), source), source), source))
+}
+
+func (p *Parser) ForgetDocument(key any) {
+	p.docMu.Lock()
+	defer p.docMu.Unlock()
+	if old := p.docTrees[key]; old != nil {
+		old.Close()
+		delete(p.docTrees, key)
+	}
 }
 
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {

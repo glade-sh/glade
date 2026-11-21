@@ -4,6 +4,7 @@ package apexast
 
 import (
 	"errors"
+	"math"
 	"os"
 	"runtime"
 	"strings"
@@ -84,6 +85,31 @@ func (p *Parser) ParseFileAST(path string) (ASTFile, error) {
 }
 
 func (p *Parser) ParseSource(path, source string) File {
+	out, _ := p.parseSource(path, source, nil, false)
+	return out
+}
+
+// IncrementalTree owns an immutable native tree and its normalized source.
+// Call Close when the document version is no longer needed.
+type IncrementalTree struct {
+	tree   *tree_sitter.Tree
+	source string
+}
+
+func (t *IncrementalTree) Close() {
+	if t != nil && t.tree != nil {
+		t.tree.Close()
+		t.tree = nil
+	}
+}
+
+// ParseSourceIncremental parses source using a copy of previous when possible.
+// The caller retains ownership of previous and must close the returned tree.
+func (p *Parser) ParseSourceIncremental(path, source string, previous *IncrementalTree) (File, *IncrementalTree) {
+	return p.parseSource(path, source, previous, true)
+}
+
+func (p *Parser) parseSource(path, source string, previous *IncrementalTree, retain bool) (File, *IncrementalTree) {
 	out := File{Path: path, Kind: FileKindUnknown}
 	parseSource := normalizeApexSource(source)
 	p.mu.Lock()
@@ -96,10 +122,19 @@ func (p *Parser) ParseSource(path, source string) File {
 			Message:  err.Error(),
 			File:     path,
 		})
-		return out
+		return out, nil
 	}
 
-	tree := p.parser.Parse([]byte(parseSource), nil)
+	var edited *tree_sitter.Tree
+	if previous != nil && previous.tree != nil && len(previous.source) <= math.MaxUint32 && len(parseSource) <= math.MaxUint32 {
+		edit := normalizedEdit(previous.source, parseSource)
+		edited = previous.tree.Clone()
+		edited.Edit(&edit)
+	}
+	tree := p.parser.Parse([]byte(parseSource), edited)
+	if edited != nil {
+		edited.Close()
+	}
 	p.mu.Unlock()
 	runtime.KeepAlive(p)
 	if tree == nil {
@@ -109,13 +144,18 @@ func (p *Parser) ParseSource(path, source string) File {
 			Message:  "parse failed",
 			File:     path,
 		})
-		return out
+		return out, nil
 	}
-	defer tree.Close()
+	var result *IncrementalTree
+	if retain {
+		result = &IncrementalTree{tree: tree, source: parseSource}
+	} else {
+		defer tree.Close()
+	}
 
 	root := tree.RootNode()
 	if root == nil {
-		return out
+		return out, result
 	}
 	if root.HasError() {
 		if diag, ok := treeSitterDiagnostic(path, source, root, NewLineMap(source)); ok {
@@ -134,7 +174,32 @@ func (p *Parser) ParseSource(path, source string) File {
 			out.Kind = FileKind(decl.Kind)
 		}
 	}
-	return out
+	return out, result
+}
+
+// normalizedEdit covers every difference, including changes caused by a
+// normalization pass outside the editor's original range.
+func normalizedEdit(old, next string) tree_sitter.InputEdit {
+	start := 0
+	for start < len(old) && start < len(next) && old[start] == next[start] {
+		start++
+	}
+	oldEnd, newEnd := len(old), len(next)
+	for oldEnd > start && newEnd > start && old[oldEnd-1] == next[newEnd-1] {
+		oldEnd--
+		newEnd--
+	}
+	return tree_sitter.InputEdit{
+		StartByte: uint(start), OldEndByte: uint(oldEnd), NewEndByte: uint(newEnd),
+		StartPosition: treePoint(old, start), OldEndPosition: treePoint(old, oldEnd), NewEndPosition: treePoint(next, newEnd),
+	}
+}
+
+func treePoint(source string, offset int) tree_sitter.Point {
+	before := source[:offset]
+	row := strings.Count(before, "\n")
+	column := offset - (strings.LastIndexByte(before, '\n') + 1)
+	return tree_sitter.Point{Row: uint(row), Column: uint(column)}
 }
 
 func (p *Parser) ParseSourceAST(path, source string) ASTFile {
