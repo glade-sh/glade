@@ -80,3 +80,21 @@ func TestCIValidatePRPlanSelectedRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestCIValidatePRPlanRequiresBrowserEvidence(t *testing.T) {
+	const selected = `["github.com/glade-sh/glade/internal/server"]`
+	planner := exec.Command("python3", "ci-pr-plan.py")
+	planner.Stdin = strings.NewReader(selected)
+	plan, err := planner.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bad := strings.Replace(string(plan), `"browser":true`, `"browser":false`, 1)
+	if bad == string(plan) {
+		t.Fatal("server plan lacks browser worker")
+	}
+	cmd := exec.Command("python3", "ci-pr-validate-plan.py", selected, bad)
+	if err := cmd.Run(); err == nil {
+		t.Fatal("validator accepted a browser worker without browser evidence")
+	}
+}
