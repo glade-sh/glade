@@ -1925,6 +1925,10 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		if !runsOnPR[jobName] {
 			expr = "(" + prExpr + " && " + boundExpr + ")"
 		}
+		if jobName == "smoke-runtime" || jobName == "smoke-distribution" {
+			smokePR := strings.TrimSuffix(prExpr, ")") + " || (needs.pr-select.result == 'success' && needs.pr-select.outputs.smoke == 'true'))"
+			expr = "(" + smokePR + " && " + boundExpr + ")"
+		}
 		if map[string]bool{"site": true, "vet": true, "history-input": true, "node-integration": true, "server-and-playground": true, "test-binaries": true, "test-binaries-apextest": true, "smoke-runtime": true, "smoke-distribution": true}[jobName] {
 			expr = "(" + reuseExpr + " && " + expr + ")"
 		}
@@ -2080,6 +2084,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - workflow-lint
       - pr-tests
       - pr-guards
+      - pr-select
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2139,7 +2144,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
 		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
-		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards")`},
+		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -3658,7 +3663,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "tree-reuse-gate", "smoke-distribution": "tree-reuse-gate"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "[tree-reuse-gate, pr-select]", "smoke-distribution": "[tree-reuse-gate, pr-select]"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}

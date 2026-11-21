@@ -15,6 +15,8 @@ func TestCIPRSmokeSelection(t *testing.T) {
 		{".github/workflows/release.yml", "true"},
 		{"site/index.md", "true"},
 		{"Dockerfile", "true"},
+		{".github/workflows/ci.yml", "true"},
+		{"scripts/ci-pr-smoke-select.py", "true"},
 		{"internal/vm/vm.go", "false"},
 		{"docs/guide.md", "false"},
 		{"scripts/ci-go-test.sh", "false"},

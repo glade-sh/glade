@@ -23,6 +23,7 @@ MAPPING = {
     'reused-tree-ci': 'scripts tests and full-suite',
     # PR selection is covered by the full suite and scripts tests locally.
     'pr-tests': 'full-suite',
+    'pr-select': 'scripts tests and full-suite',
     # The PR guard worker's batch: repoguard, scripts tests, the CLI build and
     # the vendored-parser check.
     'pr-guards': 'test-guard, test-remaining-go scripts tests, nested-sources and smoke-runtime',

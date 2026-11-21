@@ -210,6 +210,7 @@ func TestCIPRSelectionRejectsMalformedInputs(t *testing.T) {
 }
 
 func TestCIPRWorkflowSelection(t *testing.T) {
+	t.Setenv("SMOKE_REQUIRED", "false")
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -282,6 +283,20 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	results["pr-guards"]["result"] = "success"
 	results["pr-tests"]["result"] = "success"
 	run("pull_request", true)
+	results["pr-select"]["result"] = "failure"
+	run("pull_request", false)
+	results["pr-select"]["result"] = "success"
+	t.Setenv("SMOKE_REQUIRED", "true")
+	results["smoke-runtime"]["result"] = "skipped"
+	run("pull_request", false)
+	results["smoke-runtime"]["result"] = "success"
+	results["smoke-distribution"]["result"] = "skipped"
+	run("pull_request", false)
+	results["smoke-distribution"]["result"] = "success"
+	run("pull_request", true)
+	t.Setenv("SMOKE_REQUIRED", "invalid")
+	run("pull_request", false)
+	t.Setenv("SMOKE_REQUIRED", "false")
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)
 	run("merge_group", false)

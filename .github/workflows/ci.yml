@@ -1584,8 +1584,8 @@ jobs:
           if-no-files-found: error
 
   smoke-runtime:
-    needs: tree-reuse-gate
-    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
+    needs: [tree-reuse-gate, pr-select]
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/') || (needs.pr-select.result == 'success' && needs.pr-select.outputs.smoke == 'true')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1637,8 +1637,8 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   smoke-distribution:
-    needs: tree-reuse-gate
-    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
+    needs: [tree-reuse-gate, pr-select]
+    if: ${{ !cancelled() && ((needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && ((github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/') || (needs.pr-select.result == 'success' && needs.pr-select.outputs.smoke == 'true')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2084,6 +2084,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      smoke: ${{ steps.smoke.outputs.run }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -2093,6 +2094,11 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
+      - name: Select packaging smoke
+        id: smoke
+        run: |
+          git diff --no-renames --name-only -z HEAD^1 HEAD | python3 scripts/ci-pr-smoke-select.py > "$RUNNER_TEMP/smoke-selection"
+          echo "run=$(cat "$RUNNER_TEMP/smoke-selection")" >> "$GITHUB_OUTPUT"
       - name: Select packages and plan workers
         id: plan
         run: |
@@ -2295,6 +2301,7 @@ jobs:
       - workflow-lint
       - pr-tests
       - pr-guards
+      - pr-select
       - site
       - test-binaries
       - test-binaries-apextest
@@ -2323,16 +2330,22 @@ jobs:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
+          SMOKE_REQUIRED: ${{ needs.pr-select.outputs.smoke }}
           TREE_REUSE: ${{ needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true' }}
         run: |
           # Train and release pull requests run the full suite, not the fast lane.
           event="$EVENT_NAME"
           case "$HEAD_REF" in train/* | release/*) [[ "$event" != pull_request ]] || event=full ;; esac
+          planner_failure=""
+          if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-select".result // "missing"' <<<"$REQUIRED_RESULTS")" != success || ! "${SMOKE_REQUIRED:-}" =~ ^(true|false)$ ]]; then
+            planner_failure="PR smoke planner failed or returned an invalid decision"
+          fi
           if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
             failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"
           else
-            failures="$(jq -r --arg event "$event" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") else (.key != "pr-tests" and .key != "pr-guards") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+            failures="$(jq -r --arg event "$event" --arg smoke "${SMOKE_REQUIRED:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           fi
+          if [[ -n "$planner_failure" ]]; then failures="${failures:+$failures$'\n'}$planner_failure"; fi
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1
