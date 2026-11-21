@@ -71,6 +71,7 @@
 - **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
 - **Incremental semantic checks.** After a body edit, identifier boundaries avoid rechecking unrelated classes whose names or source contain the edited type name as part of a longer identifier. Semantic results remain unchanged.
+- **Read-only persistent execution.** `glade exec --db` avoids rewriting the database when the reconciled state is unchanged.
 
 ### CI
 

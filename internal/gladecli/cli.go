@@ -3064,7 +3064,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 		}
 	}
 	if store != nil && !dryRun && machine.Org != nil {
-		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
+		if err := store.SaveIfChanged(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
 			return err
 		}
 	}
