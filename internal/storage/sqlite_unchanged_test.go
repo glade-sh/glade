@@ -1,11 +1,16 @@
 package storage
 
 import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"sync"
 	"testing"
+
+	"modernc.org/sqlite"
 )
 
 func TestSQLiteSaveIfChanged(t *testing.T) {
@@ -272,5 +277,101 @@ func TestSQLiteSaveIfChangedReadOnlyDatabase(t *testing.T) {
 	org.IDSequences["Account"]++
 	if err := readonly.SaveIfChanged(org); err == nil {
 		t.Fatal("changed read-only save succeeded")
+	}
+}
+
+// commitHookConnector lets the writer commit after SaveIfChanged has compared
+// its snapshot and before the read transaction commits.
+type commitHookConnector struct {
+	driver driver.Driver
+	name   string
+	hook   func() error
+}
+
+func (c *commitHookConnector) Connect(context.Context) (driver.Conn, error) {
+	conn, err := c.driver.Open(c.name)
+	if err != nil {
+		return nil, err
+	}
+	return &commitHookConn{Conn: conn, hook: c.hook}, nil
+}
+func (c *commitHookConnector) Driver() driver.Driver { return c.driver }
+
+type commitHookConn struct {
+	driver.Conn
+	hook func() error
+}
+
+func (c *commitHookConn) Begin() (driver.Tx, error) {
+	tx, err := c.Conn.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return &commitHookTx{Tx: tx, hook: c.hook}, nil
+}
+
+type commitHookTx struct {
+	driver.Tx
+	hook func() error
+}
+
+func (tx *commitHookTx) Commit() error {
+	if err := tx.hook(); err != nil {
+		_ = tx.Tx.Rollback()
+		return err
+	}
+	return tx.Tx.Commit()
+}
+
+func TestSQLiteSaveIfChangedConcurrentCommit(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "org.db")
+	writer, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer writer.Close()
+	if _, err := writer.db.Exec(`pragma journal_mode=WAL`); err != nil {
+		t.Fatal(err)
+	}
+	org := benchmarkFixtureOrg()
+	if err := ApplyFixture(&org, benchmarkFixture(3)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	newer := org.Clone()
+	newer.IDSequences["Account"]++
+	called := false
+	var expected OrgState
+	reader := &SQLiteStore{db: sql.OpenDB(&commitHookConnector{
+		driver: &sqlite.Driver{}, name: path,
+		hook: func() error {
+			called = true
+			done := make(chan error, 1)
+			go func() {
+				if err := writer.Save(newer); err != nil {
+					done <- err
+					return
+				}
+				expected, err = writer.Load()
+				done <- err
+			}()
+			return <-done
+		},
+	})}
+	defer reader.Close()
+	if err := reader.SaveIfChanged(org); err != nil {
+		t.Fatalf("unchanged save during writer commit: %v", err)
+	}
+	if !called {
+		t.Fatal("read transaction did not reach commit")
+	}
+	loaded, err := writer.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !loaded.PersistedFieldsIdentical(expected) || loaded.IDSequences["Account"] != newer.IDSequences["Account"] {
+		t.Fatal("unchanged save replaced the concurrent writer's state")
 	}
 }
