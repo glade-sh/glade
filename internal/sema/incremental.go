@@ -238,7 +238,7 @@ func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
 			}
 			lowered := strings.ToLower(source)
 			for _, needle := range needles {
-				if strings.Contains(lowered, needle) {
+				if containsIdentifierMention(source, lowered, needle) {
 					recheck[i] = true
 					break
 				}
@@ -246,6 +246,52 @@ func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
 		}
 	}
 	r.recheck = recheck
+}
+
+// containsIdentifierMention keeps uncertain non-ASCII and escaped source
+// conservative while excluding occurrences inside longer ASCII identifiers.
+func containsIdentifierMention(source, lowered, name string) bool {
+	first := strings.Index(lowered, name)
+	if first < 0 {
+		return false
+	}
+	if name == "" || !isASCIIIdentifier(name) {
+		return true
+	}
+	for i := 0; i < len(source); i++ {
+		if source[i] >= 0x80 || source[i] == '\\' {
+			return true
+		}
+	}
+	for i := first; i >= 0; {
+		end := i + len(name)
+		// A digit before a name could start a separate numeric token in
+		// malformed source, so only letters and underscore rule it out.
+		left := i > 0 && isASCIIIdentifierByte(lowered[i-1]) && (lowered[i-1] < '0' || lowered[i-1] > '9')
+		right := end < len(lowered) && isASCIIIdentifierByte(lowered[end])
+		if !left && !right {
+			return true
+		}
+		next := strings.Index(lowered[i+1:], name)
+		if next < 0 {
+			return false
+		}
+		i += next + 1
+	}
+	return false
+}
+
+func isASCIIIdentifier(name string) bool {
+	for i := 0; i < len(name); i++ {
+		if !isASCIIIdentifierByte(name[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isASCIIIdentifierByte(c byte) bool {
+	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_'
 }
 
 func topLevelTypeName(name string) string {
