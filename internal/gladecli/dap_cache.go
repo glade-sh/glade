@@ -108,12 +108,18 @@ func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot strin
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	root = filepath.Clean(root)
-	cache, err := startupcache.Read(root, startupcache.SubdirDAP)
+	header, digest, err := startupcache.ReadDAPManifest(root)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) && dapObservationsHold(root, cache) {
-		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
+	if header != nil && startupcache.Fresh(header, root, dapCacheVersion) && dapObservationsHold(root, header) {
+		cache, err := startupcache.ReadDAPVerified(root, digest)
+		if err != nil {
+			return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+		}
+		if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) && dapObservationsHold(root, cache) {
+			return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
+		}
 	}
 	var last error
 	for attempt := 1; attempt <= dapLoadAttempts; attempt++ {
