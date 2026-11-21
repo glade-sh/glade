@@ -32,7 +32,7 @@ func TestStandardStartupProfileLazyIdentity(t *testing.T) {
 		t.Fatalf("decoded %d profiles on first access, want 1", len(standardAPI68Profiles))
 	}
 	for name, profile := range want {
-		got, ok := loadStandardAPI68Profiles()[name]
+		got, ok := loadStandardAPI68Profile(name)
 		if !ok || !reflect.DeepEqual(got, profile) {
 			t.Fatalf("profile %q differs from full decode", name)
 		}
@@ -46,7 +46,21 @@ func TestStandardStartupPicklistIdentity(t *testing.T) {
 	if err := json.Unmarshal(standardStubRestrictedPicklistsData, &doc); err != nil {
 		t.Fatal(err)
 	}
-	for object, fields := range doc.Objects {
+	objects := make(map[string]struct{}, len(doc.Objects))
+	for object := range doc.Objects {
+		objects[object] = struct{}{}
+	}
+	for _, object := range standardSObjectStubNames() {
+		objects[object] = struct{}{}
+	}
+	for object := range objects {
+		var fields map[string]standardStubRestrictedPicklist
+		for name, entries := range doc.Objects {
+			if strings.EqualFold(name, object) {
+				fields = entries
+				break
+			}
+		}
 		stubs, _ := standardSObjectStubFieldsFor(object)
 		var want map[string]standardStubRestrictedPicklist
 		for name, stub := range stubs {
@@ -59,9 +73,26 @@ func TestStandardStartupPicklistIdentity(t *testing.T) {
 				}
 			}
 		}
-		if got := standardStubRestrictedPicklistFields(object); !reflect.DeepEqual(got, want) {
-			t.Fatalf("object %q differs", object)
+		for _, name := range []string{object, strings.ToLower(object)} {
+			if got := standardStubRestrictedPicklistFields(name); !reflect.DeepEqual(got, want) {
+				t.Fatalf("object %q differs", name)
+			}
 		}
+	}
+	makeDefinition := func() ObjectDefinition {
+		def := ObjectDefinition{APIName: "EmailMessage", Fields: map[string]Field{"Status": {APIName: "Status", Type: FieldString}}}
+		applyStandardStubRestrictedPicklists(&def)
+		return def
+	}
+	first := makeDefinition()
+	values := first.Fields["Status"].PicklistValues
+	if len(values) == 0 {
+		t.Fatal("expected captured picklist values")
+	}
+	original := values[0].Value
+	values[0].Value = "changed"
+	if got := makeDefinition().Fields["Status"].PicklistValues[0].Value; got != original {
+		t.Fatal("returned values changed the cached catalog")
 	}
 	if got := standardStubRestrictedPicklistFields("not-an-object"); got != nil {
 		t.Fatal("unknown object returned fields")
@@ -78,23 +109,28 @@ func BenchmarkStandardStartupProfile(b *testing.B) {
 
 func BenchmarkStandardStartupPicklist(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		standardStubRestrictedPicklists = sync.OnceValue(func() map[string]map[string]standardStubRestrictedPicklist {
-			var doc struct {
-				Objects map[string]map[string]standardStubRestrictedPicklist `json:"objects"`
-			}
-			if err := json.Unmarshal(standardStubRestrictedPicklistsData, &doc); err != nil {
-				panic(err)
-			}
-			out := make(map[string]map[string]standardStubRestrictedPicklist, len(doc.Objects))
-			for object, fields := range doc.Objects {
-				lowered := make(map[string]standardStubRestrictedPicklist, len(fields))
-				for name, field := range fields {
-					lowered[strings.ToLower(name)] = field
-				}
-				out[strings.ToLower(object)] = lowered
-			}
-			return out
-		})
+		standardStubRestrictedPicklists = newStandardStubRestrictedPicklists()
 		standardStubRestrictedPicklistFields("Account")
 	}
+}
+
+func TestStandardStartupConcurrentLookups(t *testing.T) {
+	profiles := startupFullProfiles()
+	var wg sync.WaitGroup
+	for name, want := range profiles {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 10; i++ {
+				got, ok := loadStandardAPI68Profile(name)
+				if !ok || !reflect.DeepEqual(got, want) {
+					t.Errorf("profile %q differs", name)
+					return
+				}
+				standardStubRestrictedPicklistFields("Account")
+				standardStubRestrictedPicklistFields("not-an-object")
+			}
+		}()
+	}
+	wg.Wait()
 }

@@ -70,6 +70,8 @@
 
 - **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
+- **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
+
 ### CI
 
 - **Declared resource contracts for the race routes.** The gladecli parallel-route test (`TestRunTestMemoryLimitsParallelMethodAndClassRoutes`) now states its requirement up front: two tests in flight needs two processors, because the runner caps simultaneous test execution owners at `GOMAXPROCS`, so the early race route (one processor) reports the shortfall as a declared, summary-accepted skip instead of failing its overlap assertion — normal lanes, which run with two processors, still run and enforce the overlap. The storage stub-reference allocation budget (`TestStandardStubReferenceFieldsAllocationBudget`) keeps its no-full-decode assertion under the race detector but enforces its one-third byte budget in normal builds only, since race instrumentation inflates the lookup's many small allocations far more than the full decode's buffers (the race lane measured 18,082,104 of 52,252,216 bytes, about 34.61%).
