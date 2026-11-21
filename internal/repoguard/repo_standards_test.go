@@ -167,6 +167,12 @@ func TestCaseInsensitiveEqualityAvoidsToLower(t *testing.T) {
 			if rel == "internal/visualforce/form_binding.go" && match == "strings."+"ToLower(formFieldBindingName(key)) !=" {
 				continue
 			}
+			// Type-owner deduplication keeps the strings.ToLower identity the
+			// previous map key used; Unicode simple folding differs for final
+			// sigma, long s and dotted capital I. ASCII pairs use EqualFold.
+			if rel == "internal/vm/construct_runtime.go" && match == "strings."+"ToLower(left) ==" {
+				continue
+			}
 			t.Errorf("%s uses ToLower for equality; use strings.EqualFold: %s", rel, match)
 		}
 	}
