@@ -115,3 +115,26 @@ func TestL12ObserverSchedulesAndReportsFaults(t *testing.T) {
 		}
 	}
 }
+
+func TestL12ObserverPreservesFirstFault(t *testing.T) {
+	for _, fault := range []string{"row", "product", "browser"} {
+		t.Run(fault, func(t *testing.T) {
+			_, rows, product, browser := l12ObserveWithFallback(func(parallel bool) (map[string]json.RawMessage, map[string]string, error, error) {
+				if !parallel {
+					return nil, nil, nil, nil
+				}
+				switch fault {
+				case "row":
+					return nil, map[string]string{"first": "first row failure"}, nil, nil
+				case "product":
+					return nil, nil, errors.New("first product failure"), nil
+				default:
+					return nil, nil, nil, errors.New("first browser failure")
+				}
+			})
+			if fault == "row" && rows["first"] != "first row failure" || fault == "product" && (product == nil || product.Error() != "first product failure") || fault == "browser" && (browser == nil || browser.Error() != "first browser failure") {
+				t.Fatalf("first failure lost: rows=%v product=%v browser=%v", rows, product, browser)
+			}
+		})
+	}
+}
