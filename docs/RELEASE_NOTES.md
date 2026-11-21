@@ -74,6 +74,7 @@
 - **Read-only persistent execution.** `glade exec --db` avoids rewriting the database when the reconciled state is unchanged.
 - **Language server edits.** The language server reuses an edited syntax tree for open documents and falls back to a fresh parse when the document snapshot cannot be reused. On a synthetic 2,048-method file, the measured diagnostics parse path fell from 41–44 ms to 34–35 ms per edit, with identical results.
 - **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
+- **Duplicate matching.** Scans can reuse match decisions for repeated values of required matching terms, reducing work on large sets while retaining the existing match results.
 
 ### CI
 
