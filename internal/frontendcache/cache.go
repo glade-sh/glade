@@ -81,7 +81,7 @@ func LoadOrBuild(p project.Project, s schema.Schema, build func() (typesys.Index
 					if saved.Input == inputs.Identity() {
 						restored, captured, err = typesys.RestoreFrontendSnapshotRecordsWithInputs(p, s, data[split+1:], inputs)
 					} else {
-						restored, captured, err = typesys.UpdateFrontendSnapshotRecords(p, s, data[split+1:], saved.Input)
+						restored, captured, err = typesys.UpdateFrontendSnapshotRecordsWithInputs(p, s, data[split+1:], saved.Input, inputs)
 					}
 					if err == nil {
 						fingerprint, identityErr := frontendBuildFingerprint(restored, &captured)

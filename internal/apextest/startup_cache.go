@@ -405,16 +405,18 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	newLiterals := apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	literals := apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	for _, match := range newLiterals {
 		recordSObjectLiteralLookupFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match, varTypes)
 	}
-	for _, match := range apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range literals {
 		recordSObjectLiteralLookupFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match, varTypes)
 	}
-	for _, match := range apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range newLiterals {
 		recordSObjectLiteralFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match)
 	}
-	for _, match := range apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range literals {
 		recordSObjectLiteralFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match)
 	}
 	for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
