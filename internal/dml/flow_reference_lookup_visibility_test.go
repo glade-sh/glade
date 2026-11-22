@@ -55,3 +55,16 @@ func TestFlowRelationshipFilterFaultRuntimeScope(t *testing.T) {
 		})
 	}
 }
+
+func TestFlowRelationshipLookupFailureResultScope(t *testing.T) {
+	rule := storage.FlowRule{Name: "Probe", TriggerType: "RecordAfterSave"}
+	captured := flowCoreRecordTriggerError(rule, &flowRelationshipLookupFilterError{})
+	result, ok := FlowRelationshipLookupFailureResult(captured)
+	if !ok || result.Success || result.StatusCode != "CANNOT_EXECUTE_FLOW_TRIGGER" {
+		t.Fatalf("captured result=%+v ok=%v", result, ok)
+	}
+	other := flowCoreRecordTriggerError(rule, &flowCoreUnknownSubflowOutputError{})
+	if _, ok := FlowRelationshipLookupFailureResult(other); ok {
+		t.Fatal("unrelated flow error matched")
+	}
+}
