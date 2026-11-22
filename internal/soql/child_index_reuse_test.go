@@ -252,3 +252,43 @@ func TestChildRelationshipIndexCacheScope(t *testing.T) {
 		t.Fatal("non-plain field must build a fresh index")
 	}
 }
+
+func TestChildRelationshipIndexNeighborDigests(t *testing.T) {
+	for _, shape := range []string{"unversioned", "case-folded", "non-plain"} {
+		t.Run(shape, func(t *testing.T) {
+			org := childIndexBenchOrg(2, 1)
+			child := org.Objects["Contact"]
+			field := "AccountId"
+			if shape != "unversioned" {
+				var versioned storage.ObjectState
+				versioned.Definition = child.Definition
+				versioned.SetRecords(child.Records)
+				child = versioned
+			}
+			if shape == "case-folded" {
+				id := storage.ID("003000000000000")
+				row := child.Records[id].Clone()
+				row.Fields["accountid"] = row.Fields["AccountId"]
+				delete(row.Fields, "AccountId")
+				child.PutRecord(id, row)
+			}
+			if shape == "non-plain" {
+				field = "Id"
+			}
+			cache := NewExecutionCache()
+			var result map[storage.ID][]string
+			for range 2 {
+				result = childRelationshipIndex(org, "Contact", child, field, newChildRelationshipQueryCache(cache))
+			}
+			fresh := childRelationshipIndex(org, "Contact", child, field, nil)
+			if !reflect.DeepEqual(result, fresh) {
+				t.Fatalf("cached index differs: %v != %v", result, fresh)
+			}
+			encoded, err := json.Marshal(result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("neighbor %s %x", shape, sha256.Sum256(encoded))
+		})
+	}
+}
