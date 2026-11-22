@@ -16,6 +16,7 @@ func BenchmarkComparableObjectSort(b *testing.B) {
 	input := make([]Value, size)
 	for i := range input {
 		input[i] = Object("Rank")
+		input[i].classInstance = true
 		input[i].Fields["n"] = Int(int64(size - i - 1))
 	}
 	values := make([]Value, size)
@@ -52,6 +53,7 @@ func BenchmarkComparableIndirectNullSort(b *testing.B) {
 	input := make([]Value, size)
 	for i := 0; i < size-1; i++ {
 		input[i] = Object("Rank")
+		input[i].classInstance = true
 	}
 	input[size-1] = Null
 	values := make([]Value, size)

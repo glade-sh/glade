@@ -67,18 +67,43 @@ func TestComparableSortIndirectDecisionIsPerCall(t *testing.T) {
 	if err := machine.RegisterClass(Class{Name: "Rank", Interfaces: []string{"ChildComparable"}, Methods: map[string]Method{"compareTo": method}}); err != nil {
 		t.Fatal(err)
 	}
-	mixed := []Value{Object("Rank"), Null}
+	rank := func() Value {
+		value := Object("Rank")
+		value.classInstance = true
+		return value
+	}
+	mixed := []Value{rank(), Null}
 	if err := machine.sortComparableValues(mixed, &Result{}); err != nil {
 		t.Fatalf("mixed sort: %v", err)
 	}
-	homogeneous := []Value{Object("Rank"), Object("Rank")}
+	homogeneous := []Value{rank(), rank()}
 	err = machine.sortComparableValues(homogeneous, &Result{})
 	thrown, ok := err.(*apexThrowError)
 	if !ok || thrown.value.Type != "System.ListException" {
 		t.Fatalf("homogeneous sort error = %v, want System.ListException", err)
 	}
-	mixed = []Value{Null, Object("Rank")}
+	mixed = []Value{Null, rank()}
 	if err := machine.sortComparableValues(mixed, &Result{}); err != nil {
 		t.Fatalf("second mixed sort: %v", err)
+	}
+}
+
+// Object values without the captured class-instance marker keep the base outcome.
+func TestComparableSortUncapturedObjectValueNeighbor(t *testing.T) {
+	program, err := CompileAnonymous(`return 0;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ChildComparable", IsInterface: true, Interfaces: []string{"Comparable"}}); err != nil {
+		t.Fatal(err)
+	}
+	method := Method{Name: "Rank.compareTo", ClassName: "Rank", ReturnType: "Integer", Params: []Param{{Name: "other", Type: "Object"}}, Program: program}
+	if err := machine.RegisterClass(Class{Name: "Rank", Interfaces: []string{"ChildComparable"}, Methods: map[string]Method{"compareTo": method}}); err != nil {
+		t.Fatal(err)
+	}
+	values := []Value{Object("Rank"), Object("Rank")}
+	if err := machine.sortComparableValues(values, &Result{}); err != nil {
+		t.Fatalf("object-value sort: %v", err)
 	}
 }
