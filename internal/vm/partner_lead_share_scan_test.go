@@ -99,3 +99,33 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	delete(state.Records, share.ID)
 	check(true)
 }
+
+func TestPartnerLeadShareScanTracksAliasedRecordMutation(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "LeadShare")
+	shares := org.Objects["LeadShare"]
+	id := storage.ID("00T000000000001")
+	shares.PutRecord(id, storage.Record{ID: id, Object: "LeadShare", Fields: map[string]storage.Value{"RowCause": storage.StringValue("Owner")}})
+	org.Objects["LeadShare"] = shares
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if got := machine.partnerLeadNonOwnerShares(); len(got) != 0 {
+		t.Fatalf("initial non-owner shares = %d", len(got))
+	}
+	before, ok := shares.RecordsToken()
+	if !ok {
+		t.Fatal("fixture needs a versioned share map")
+	}
+	clone := storage.ObjectState{}
+	clone.SetRecords(shares.Records)
+	row := clone.Records[id]
+	row.Fields["RowCause"] = storage.StringValue("Manual")
+	clone.PutRecord(id, row)
+	after, _ := shares.RecordsToken()
+	if before != after {
+		t.Fatal("mutation unexpectedly advanced original token")
+	}
+	if got := machine.partnerLeadNonOwnerShares(); len(got) != 1 {
+		t.Fatalf("aliased non-owner shares = %d, want 1", len(got))
+	}
+}
