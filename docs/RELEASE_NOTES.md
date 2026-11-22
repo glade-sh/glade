@@ -84,6 +84,7 @@
 - **Incremental frontend edits.** Reuse captured source and sidecar digests for compatibility and edit discovery while retaining live generation checks. In a synthetic 1,500-class project with sidecars, allocations fell from about 266,000 to 230,000 per edit.
 - **Platform symbol memory.** Excluded platform types reserve a full symbol only when first accessed, reducing retained startup heap.
 - **Nested enum lookup in test runtimes.** Cloned runtimes reuse an unchanged frozen class index. Runtimes with later registrations or other class-map writes use a full index.
+- **Built-in calls.** Repeated calls avoid redundant normalization for canonical built-in names while retaining runtime precedence checks.
 
 ### CI
 
