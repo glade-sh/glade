@@ -511,6 +511,9 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 		defer vm.beginPartnerLeadShareScan()()
 	}
 	return scan.Find(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+		if vm.publicLeadWithUncapturedCreator(existing.Object, existing) {
+			return true, true
+		}
 		if !principalResolved {
 			userID = vm.currentUserID()
 			principalResolved = true
