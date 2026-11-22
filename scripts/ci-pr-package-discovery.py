@@ -11,6 +11,21 @@ mode, directory, *packages = sys.argv[1:]
 directory = Path(directory)
 if not packages or len(packages) != len(set(packages)):
     raise ValueError('invalid assigned packages')
+resolved = []
+for package in packages:
+    if not (package.startswith('.') or os.path.isabs(package)):
+        resolved.append(package)
+        continue
+    result = subprocess.run(['go', 'list', '-f', '{{.ImportPath}}{{"\t"}}{{if or .TestGoFiles .XTestGoFiles}}has-tests{{else}}no-tests{{end}}', package],
+                            text=True, capture_output=True, check=True)
+    rows = result.stdout.splitlines()
+    fields = rows[0].split('\t') if len(rows) == 1 else []
+    if len(fields) != 2 or not fields[0] or fields[1] not in ('has-tests', 'no-tests'):
+        raise ValueError('invalid assigned package: ' + package)
+    resolved.append(fields[0])
+if len(resolved) != len(set(resolved)):
+    raise ValueError('duplicate assigned package identities')
+packages = resolved
 path = directory / 'discovery.json'
 if mode == 'collect':
     discovery = {}

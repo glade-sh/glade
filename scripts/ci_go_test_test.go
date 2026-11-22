@@ -772,7 +772,11 @@ func durationHistoryRouteFixtureCount(t *testing.T, packageName string, elapsed 
 				if err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(path, bytes.ReplaceAll(data, []byte(fixturePackage), []byte(packageName)), 0o600); err != nil {
+				data = bytes.ReplaceAll(data, []byte(fixturePackage), []byte(packageName))
+				if name == "events.json" {
+					data = append(data, []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q}\n", packageName))...)
+				}
+				if err := os.WriteFile(path, data, 0o600); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -872,6 +876,26 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 				})
 			}
 		}
+	}
+}
+
+func TestCISemaDurationHistoryRejectsMissingPackageTerminal(t *testing.T) {
+	fixture := durationHistoryRouteFixture(t, semaFixturePackage, [2]float64{1, 1})
+	path := filepath.Join(fixture.shards[0], "events.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	terminal := []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q}\n", semaFixturePackage))
+	if !bytes.HasSuffix(data, terminal) {
+		t.Fatal("fixture has no package terminal")
+	}
+	if err := os.WriteFile(path, bytes.TrimSuffix(data, terminal), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := runDurationHistoryRoute(t, "sema", "cli", fixture)
+	if err == nil || !strings.Contains(out, "missing package results:") {
+		t.Fatalf("missing package terminal accepted: %v\n%s", err, out)
 	}
 }
 

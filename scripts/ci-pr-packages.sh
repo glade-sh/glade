@@ -13,6 +13,8 @@ if [[ -n "${CI_TEST_RUN_REGEX:-}" ]]; then test_selection=(-run "$CI_TEST_RUN_RE
 bash scripts/ci-pr-browser-go-test.sh "$dir/events.json" "${test_selection[@]}" "$@" || rc=$?
 validation=0
 python3 scripts/ci-pr-package-discovery.py validate "$dir" "$@" || validation=$?
-bash scripts/ci-go-test.sh package-summary remaining-go 'PR packages' "$dir/events.json" "$dir/summary.json" "$dir/metadata.tsv" "$@" || validation=$?
+canonical_packages=()
+while IFS=$'\t' read -r package status; do canonical_packages+=("$package"); done < "$dir/metadata.tsv"
+bash scripts/ci-go-test.sh package-summary remaining-go 'PR packages' "$dir/events.json" "$dir/summary.json" "$dir/metadata.tsv" "${canonical_packages[@]}" || validation=$?
 if (( rc != 0 )); then exit "$rc"; fi
 exit "$validation"

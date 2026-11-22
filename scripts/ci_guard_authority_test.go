@@ -123,4 +123,30 @@ func TestCIGuardRelativePackageDiscovery(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err == nil {
 		t.Fatalf("accepted terminal for another package: %s", out)
 	}
+	cmd = exec.Command("python3", "scripts/ci-pr-package-discovery.py", "collect", dir, "./scripts", pkg)
+	cmd.Dir = ".."
+	if out, err := cmd.CombinedOutput(); err == nil {
+		t.Fatalf("accepted duplicate package identities: %s", out)
+	}
+}
+
+func TestCIGuardCanonicalValidationWithoutGo(t *testing.T) {
+	dir := t.TempDir()
+	const pkg = "github.com/glade-sh/glade/scripts"
+	if err := os.WriteFile(filepath.Join(dir, "discovery.json"), []byte(`{"`+pkg+`":["TestExample"]}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(`{"Action":"pass","Package":"`+pkg+`","Test":"TestExample"}`+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	bin := t.TempDir()
+	if err := os.WriteFile(filepath.Join(bin, "go"), []byte("#!/bin/sh\nexit 97\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("python3", "scripts/ci-pr-package-discovery.py", "validate", dir, pkg)
+	cmd.Dir = ".."
+	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("canonical validation without Go: %v\n%s", err, out)
+	}
 }
