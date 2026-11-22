@@ -783,8 +783,9 @@ type RuntimeError struct {
 	// An assertion records its Apex frames where it fails; a trigger boundary
 	// reports them in the DmlException text. externalEntry marks the Assert
 	// class methods that native Salesforce lists as an external entry frame.
-	stackText     string
-	externalEntry bool
+	stackText                string
+	externalEntry            bool
+	anonymousCallerProjected bool
 }
 
 const maxApexCallDepth = 1000
@@ -812,6 +813,14 @@ func (e *RuntimeError) ExceptionMessage() string {
 	return e.Message
 }
 
+// CapturedAnonymousStackTrace reports the captured anonymous-call projection.
+func (e *RuntimeError) CapturedAnonymousStackTrace() (string, bool) {
+	if !e.anonymousCallerProjected {
+		return "", false
+	}
+	return apexStackTraceString(e.Stack), true
+}
+
 func unsupportedCallError(callee string) error {
 	return &RuntimeError{Type: "UnsupportedFeature", Message: fmt.Sprintf("unsupported call %q", callee)}
 }
@@ -822,11 +831,13 @@ type testExecutionEntry struct {
 }
 
 type callFrame struct {
-	Symbol    string
-	File      string
-	Line      int
-	Column    int
-	statement bool
+	Symbol                   string
+	File                     string
+	Line                     int
+	Column                   int
+	statement                bool
+	anonymousDirectCandidate bool
+	anonymousDirectThrow     bool
 	// Projection-only anonymous caller location; structured frames stay intact.
 	anonymousCallerLine int
 	APIVersion          string

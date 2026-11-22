@@ -226,6 +226,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				if value.Kind == ValueNull {
 					return execOutcome{}, newNullDereferenceError("")
 				}
+				if len(stack) == 2 && len(vm.callStack) == 1 && stack[0].anonymousDirectCandidate {
+					stack[0].anonymousDirectThrow = vm.callStack[0].anonymousDirectThrow
+				}
 				thrown = annotateException(value, stack)
 			} else {
 				if len(vm.activeExceptions) == 0 {
@@ -1507,6 +1510,9 @@ func (vm *VM) executeTryScoped(source string, inst ir.Instruction, result *Resul
 		for _, catchClause := range vmCatchClauses(inst) {
 			if !vm.exceptionMatchesAny(catchClause.Types, out.thrown) {
 				continue
+			}
+			if len(out.thrownStack) > 0 {
+				out.thrownStack[0].anonymousDirectThrow = false
 			}
 			if vm.coverage != nil {
 				vm.coverSourcePos(source, catchClause.Pos)

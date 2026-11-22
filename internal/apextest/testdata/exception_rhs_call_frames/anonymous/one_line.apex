@@ -1,0 +1,1 @@
+Integer value = FrameProbe.fail();
