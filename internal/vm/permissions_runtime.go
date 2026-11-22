@@ -160,7 +160,18 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	}
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
 	if method == "isAccessible" && vm.apexMetadataObjectReadable(objectName) {
+		if granted, applicable := vm.customMetadataTypeAccess(objectName); applicable {
+			return granted
+		}
 		return true
+	}
+	if (method == "isAccessible" || method == "isCreateable") && hasSuffixFold(objectName, "__share") {
+		// A generated share table is accessible, and creatable in the describe,
+		// exactly when its parent is accessible (native rows
+		// share_mdt_runas_access, API 62.0 and 67.0).
+		if _, definition, ok := vm.describeObjectDefinition(objectName); ok && storage.IsGeneratedShareObject(definition) {
+			return vm.currentUserObjectPermission(definition.Metadata["parentObject"], "isAccessible")
+		}
 	}
 	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
 		if storage.IDsEqual(storage.ID(source.ID), storage.ID(profilePermissionSetID)) {
@@ -398,6 +409,18 @@ func (vm *VM) fieldPermissionPrincipal() Value {
 func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
 	if vm.Org == nil {
 		return true
+	}
+	if method == "isAccessible" {
+		if granted, applicable := vm.customMetadataTypeAccess(objectName); applicable {
+			return granted
+		}
+		// The columns of a generated share table carry no field permissions:
+		// they are readable exactly when the table is.
+		if hasSuffixFold(objectName, "__share") {
+			if _, definition, ok := vm.describeObjectDefinition(objectName); ok && storage.IsGeneratedShareObject(definition) {
+				return vm.currentUserObjectPermission(definition.Metadata["parentObject"], "isAccessible")
+			}
+		}
 	}
 	user := vm.fieldPermissionPrincipal()
 	profileID := stringField(user, "ProfileId")

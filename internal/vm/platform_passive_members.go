@@ -3369,6 +3369,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Bool(false), receiver, false, true, nil
 				}
 			}
+			if method == "isCreateable" && vm.replayDescribeStandardEvent(name.Text) {
+				// share_mdt_event_runas rows (API 62.0 and 67.0).
+				return Bool(false), receiver, false, true, nil
+			}
 			return Bool(vm.currentUserObjectPermission(name.Text, method)), receiver, false, true, nil
 		case "isCustom":
 			if len(args) != 0 {

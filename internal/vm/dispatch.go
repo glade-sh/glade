@@ -1048,6 +1048,11 @@ platformStaticCall:
 	case "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
 		op := strings.TrimPrefix(callee, "Database.")
 		op = strings.TrimSuffix(op, "Immediate")
+		if op == "insert" && vm.standardEventImmediateInsert(args) {
+			// A named method inserts the standard error event as it would
+			// publish it (native rows share_mdt_event_runas, API 62.0 and 67.0).
+			return vm.eventBusPublishWithNamedSource([]Value{cloneValue(args[0])}, result, true, false)
+		}
 		return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, false, false)
 	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
 		if len(args) != 1 {

@@ -23,6 +23,7 @@
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
+- **Share tables, custom metadata access and `BatchApexErrorEvent` in tests (Apex API 62.0, 67.0).** A custom object's `__Share` table is accessible, with its columns, exactly when its parent object is, and its rows show exactly when the parent record does, for a runAs user. A runAs user reads a custom metadata type in `USER_MODE` (MasterLabel, DeveloperName and custom fields, with no field permission) only with the Custom Metadata Types grant, and `ORDER BY MasterLabel` or `Label` on such a type keeps the default record order. A named test publishes a `BatchApexErrorEvent` with its fields set, from `EventBus.publish`, `List` publish and `Database.insertImmediate`, as the captured rows show: enqueued with the trigger run below API 67.0, a failed result at 67.0, and an exception thrown by the event trigger stays out of the test.
 
 ### Changes
 

@@ -6916,7 +6916,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecMinimumAccessCanReadRecordTypeAndCustomMetadataDescribe",
+   "name": "TestExecMinimumAccessReadsRecordTypeButNotUngrantedCustomMetadataDescribe",
    "durationMillis": 50
   },
   {

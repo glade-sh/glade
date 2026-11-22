@@ -1119,7 +1119,10 @@ func (vm *VM) deliverPlatformEventGroup(records []storage.Record, result *Result
 		}
 		return err
 	}
-	if len(records) > 0 && isChangeEventObjectName(records[0].Object) && consumedSubscriberException(err) {
+	// The standard error event's trigger is consumed the same way (native rows
+	// share_mdt_event_runas, API 62.0 and 67.0: an exception thrown by the
+	// trigger does not reach the test).
+	if len(records) > 0 && (isChangeEventObjectName(records[0].Object) || vm.replayDescribeStandardEvent(records[0].Object)) && consumedSubscriberException(err) {
 		return nil
 	}
 	return err
