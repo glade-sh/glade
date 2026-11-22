@@ -323,3 +323,86 @@ func TestDuplicateBulkObservesStoredChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestDuplicateBulkMatchesFullScanRuleShapes(t *testing.T) {
+	for _, shape := range []string{"or", "unsupported", "folded-field", "blank", "cross-object", "peers"} {
+		t.Run(shape, func(t *testing.T) {
+			base, _ := duplicateIndexFixture(400)
+			object := base.Objects["Lead"]
+			rule := object.Definition.DuplicateRules[0]
+			rows := []storage.Record{
+				{Object: "Lead", Fields: benchLeadFields(1, false)},
+				{Object: "Lead", Fields: benchLeadFields(2, false)},
+			}
+			switch shape {
+			case "or":
+				rule.MatchRules[0].BooleanFilter = "1 OR 2"
+			case "unsupported":
+				rule.MatchRules[0].BooleanFilter = "1 OR 99"
+			case "folded-field":
+				for id, original := range object.Records {
+					record := original.Clone()
+					record.Fields["firstname"] = record.Fields["FirstName"]
+					delete(record.Fields, "FirstName")
+					object.PutRecord(id, record)
+				}
+			case "blank":
+				rule.MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "MatchBlanks"}}
+			case "cross-object":
+				storage.EnsureStandardObject(&base, "Contact")
+				contacts := base.Objects["Contact"]
+				for i := 0; i < 400; i++ {
+					id := storage.ID(fmt.Sprintf("003%012d", i+1))
+					contacts.PutRecord(id, storage.Record{ID: id, Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue(fmt.Sprintf("person%d@example.invalid", i))}})
+				}
+				base.Objects["Contact"] = contacts
+				rule.MatchRules[0].Object = "Contact"
+				rule.MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "NullNotAllowed"}}
+				rule.MatchRules[0].Mapping = &storage.MatchingRuleMapping{InputObject: "Lead", OutputObject: "Contact", Fields: []storage.MatchingRuleMapPair{{Input: "Email", Output: "Email"}}}
+				for i := range rows {
+					rows[i].Fields["Email"] = storage.StringValue(fmt.Sprintf("person%d@example.invalid", i))
+				}
+			case "peers":
+				rows[0].Fields = benchLeadFields(900, false)
+				rows[1].Fields = benchLeadFields(900, false)
+			}
+			object.Definition.DuplicateRules = []storage.DuplicateRule{rule}
+			base.Objects["Lead"] = object
+			var expectedResults []dml.Result
+			var expectedReports []dml.DuplicateReport
+			for _, fullScan := range []bool{true, false} {
+				org := storage.SnapshotRuntimeOrg(&base)
+				engine := dml.NewEngine(&org)
+				engine.Options.EnforceDuplicateRules = true
+				engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+				if fullScan {
+					engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+						return dml.FindDuplicateMatches(&org, rule, row, exclude)
+					}
+				}
+				batch := []storage.Record{rows[0].Clone(), rows[1].Clone()}
+				results := engine.Insert(batch)
+				reports := engine.TakeDuplicateReports()
+				for _, result := range results {
+					if !result.Success {
+						t.Fatalf("insert: %+v", result)
+					}
+				}
+				if fullScan {
+					wantReports := 2
+					if shape == "unsupported" {
+						wantReports = 0
+					} else if shape == "peers" {
+						wantReports = 1
+					}
+					if len(reports) != wantReports {
+						t.Fatalf("reference reports: got %d, want %d", len(reports), wantReports)
+					}
+					expectedResults, expectedReports = results, reports
+				} else if !reflect.DeepEqual(results, expectedResults) || !reflect.DeepEqual(reports, expectedReports) {
+					t.Fatalf("results or reports differ from full scan: %+v", reports)
+				}
+			}
+		})
+	}
+}
