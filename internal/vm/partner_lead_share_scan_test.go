@@ -57,7 +57,47 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	if !machine.partnerLeadPrivateExternalDefault("Lead") {
 		t.Fatal("restored principal did not match")
 	}
+	machine.testContext.CurrentUser.Fields["ProfileId"] = String("00e000000000001")
+	if machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("changed profile matched inside the same pass")
+	}
+	machine.testContext.CurrentUser.Fields["ProfileId"] = String("00e000000000002")
+	machine.testContext.CurrentUser.Fields["Id"] = String("005000000000001")
+	if machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("changed user matched inside the same pass")
+	}
+	machine.testContext.CurrentUser.Fields["Id"] = String("005000000000002")
 	endPrincipalScan()
+	profile := profiles.Records["00e000000000002"]
+	unnamedProfile := profile
+	unnamedProfile.Fields = maps.Clone(profile.Fields)
+	delete(unnamedProfile.Fields, "Name")
+	profiles.PutRecord(unnamedProfile.ID, unnamedProfile)
+	org.Objects["Profile"] = profiles
+	projectedProfile := Object("Profile")
+	projectedProfile.Fields["Name"] = String("Partner Community User")
+	machine.testContext.CurrentUser.Fields["Profile"] = projectedProfile
+	endProfileScan := machine.beginPartnerLeadShareScan()
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("projected profile did not match")
+	}
+	projectedProfile.Fields["Name"] = String("Standard User")
+	if machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("changed projected profile matched inside the same pass")
+	}
+	endProfileScan()
+	delete(machine.testContext.CurrentUser.Fields, "Profile")
+	profiles.PutRecord(profile.ID, profile)
+	org.Objects["Profile"] = profiles
+	lead.Definition.SharingModel = "ReadWrite"
+	org.Objects["Lead"] = lead
+	endActorScan := machine.beginPartnerLeadShareScan()
+	if !machine.partnerLeadPrivateExternalDefaultForNamedAccess("Lead", "") || machine.partnerLeadPrivateExternalDefaultForNamedAccess("Lead", "005000000000001") {
+		t.Fatal("actor change reused the wrong sharing policy")
+	}
+	endActorScan()
+	lead.Definition.SharingModel = "ReadWriteTransfer"
+	org.Objects["Lead"] = lead
 	permissions := org.Objects["ObjectPermissions"]
 	grant := permissions.Records["110000000000001"]
 	originalGrant := grant
@@ -68,6 +108,20 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	check(false)
 	permissions.PutRecord(originalGrant.ID, originalGrant)
 	org.Objects["ObjectPermissions"] = permissions
+	check(true)
+	machine.currentMethod.APIVersion = "68.0"
+	check(false)
+	machine.currentMethod.APIVersion = "67.0"
+	check(true)
+	license := licenses.Records["100000000000001"]
+	wrongLicense := license
+	wrongLicense.Fields = maps.Clone(license.Fields)
+	wrongLicense.Fields["LicenseDefinitionKey"] = storage.StringValue("unrelated")
+	licenses.PutRecord(wrongLicense.ID, wrongLicense)
+	org.Objects["UserLicense"] = licenses
+	check(false)
+	licenses.PutRecord(license.ID, license)
+	org.Objects["UserLicense"] = licenses
 	check(true)
 	share := storage.Record{ID: "00T000000000001", Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Owner"), "UserOrGroupId": storage.IDValue("005000000000002"), "LeadAccessLevel": storage.StringValue("Read")}}
 	put := func() {
