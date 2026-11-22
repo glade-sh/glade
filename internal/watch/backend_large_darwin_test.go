@@ -57,6 +57,46 @@ func TestWatcherLargeProjectLifecycle(t *testing.T) {
 	awaitScopedChange(t, w, renamed, ChangeDeleted)
 }
 
+func TestWatcherReconcilesDirectoryChangesAndScope(t *testing.T) {
+	workspace := t.TempDir()
+	root := filepath.Join(workspace, "project")
+	oldDir := filepath.Join(root, "old")
+	newDir := filepath.Join(root, "new")
+	first := filepath.Join(oldDir, "First.cls")
+	second := filepath.Join(oldDir, "Second.cls")
+	writeWatchFile(t, first, "first")
+	writeWatchFile(t, second, "second")
+	external := filepath.Join(workspace, "config", "glade.yml")
+	scope := Scope{Roots: []string{root}, Files: []string{external}}
+	initial, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Scope: scope, Backend: BackendNative, Debounce: 100 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	if err := os.Rename(oldDir, newDir); err != nil {
+		t.Fatal(err)
+	}
+	awaitScopedChanges(t, w, map[string]ChangeOp{
+		first: ChangeDeleted, second: ChangeDeleted,
+		filepath.Join(newDir, "First.cls"):  ChangeAdded,
+		filepath.Join(newDir, "Second.cls"): ChangeAdded,
+	})
+	writeWatchFile(t, external, "project: {}")
+	awaitScopedChange(t, w, external, ChangeAdded)
+	writeWatchFile(t, filepath.Join(workspace, "neighbor", "Ignored.cls"), "neighbor")
+	select {
+	case changes := <-w.Changes():
+		t.Fatalf("unrelated neighbor produced changes: %#v", changes)
+	case err := <-w.Errors():
+		t.Fatal(err)
+	case <-time.After(600 * time.Millisecond):
+	}
+}
+
 func BenchmarkWatcherLargeProjectIdle(b *testing.B) {
 	root, initial := largeWatcherProject(b)
 	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: BackendNative, Debounce: 200 * time.Millisecond}, initial)
