@@ -1,0 +1,37 @@
+family=namespaced_field_keyset
+capture_utc=2026-11-22
+source=authorized persistent Developer org with a namespace; no org was created or deleted
+apis=62.0 67.0
+routes=anonymous executed at each API; @IsTest class compiled at each API, synchronous test, assertion failure transports observation
+setup=synthetic custom object with four text fields; temporary permission set assigned to capture user for field access
+observation=field map key set string, then key set string after retaining custom field keys, then remaining map size
+normalization=namespace replaced consistently with garden, preserving its observed alphabetical position between createddate and id; no ids or user information included
+repeats=two runs in the same org with separately named synthetic components but the same object and field shape; all four route and API outputs match
+cleanup=each permission assignment deleted; both sets of deployed permission sets, objects, and test classes deleted; queries returned zero remaining for each and assignment
+limits=namespace owner context only; no global-describe or subscriber capture
+capture_timestamps=not recorded in the available capture provenance
+coverage_original=field key-set text and retained-key mutation at APIs 62 and 67 only
+replay=parity pin; the captured-row test passes with the unchanged origin/main runtime and does not demonstrate a product regression
+
+recapture_started_utc=2026-11-22T06:22:18Z
+recapture_finished_utc=2026-11-22T06:23:41Z
+recapture_source=authorized persistent namespaced Developer org; namespace owner context; no org created or deleted
+recapture_apis=62.0 67.0 68.0
+recapture_routes=anonymous and synchronous isTest; class API matches route API
+recapture_repeats=two executions per API and route for each probe
+recapture_setup=synthetic object, four custom text fields, six test classes, and temporary permission set assigned to capture user
+recapture_observations=org.tsv recapture rows repeat field key-set text and retainAll; describe/org.tsv records global lookup, custom and standard field map lookups, and attempted key-set removal alongside fresh and cloned maps
+recapture_normalization=namespace replaced consistently with garden; record identifiers and user information excluded
+recapture_cleanup=permission assignment removed; destructive deployment requested purge for the synthetic object, classes and permission set; queries verified active object, classes, permission set and assignment absent
+recapture_limit=namespace owner context only; subscriber execution was not captured
+
+ownership_started_utc=2026-11-22T06:26:28Z
+ownership_finished_utc=2026-11-22T06:27:30Z
+ownership_source=authorized persistent namespaced Developer org; namespace owner context
+ownership_apis=62.0 67.0 68.0
+ownership_routes=anonymous and synchronous isTest; class API matches route API
+ownership_repeats=two executions per API and route
+ownership_setup=synthetic object, four custom text fields, nine test classes and temporary permission set assigned to capture user
+ownership_observations=ownership/org.tsv records successful key-set removals and separately obtained or cloned map contents
+ownership_normalization=namespace replaced consistently with garden; record identifiers and user information excluded
+ownership_cleanup=permission assignment removed; destructive deployment requested purge for synthetic object, classes and permission set; queries verified active object, classes, permission set and assignment absent

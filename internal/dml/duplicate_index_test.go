@@ -40,6 +40,18 @@ func duplicateIndexFixture(n int) (storage.OrgState, []storage.Record) {
 	return org, rows
 }
 
+func duplicateOutcomeDigest(t *testing.T, results []dml.Result, reports []dml.DuplicateReport) string {
+	t.Helper()
+	payload, err := json.Marshal(struct {
+		Results []dml.Result
+		Reports []dml.DuplicateReport
+	}{results, reports})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(payload))
+}
+
 func TestDuplicateBulkMatchesFullScan(t *testing.T) {
 	base, rows := duplicateIndexFixture(1000)
 	var referenceResults []dml.Result
@@ -83,6 +95,45 @@ func TestDuplicateBulkMatchesFullScan(t *testing.T) {
 			continue
 		}
 		if !reflect.DeepEqual(got, referenceResults) || !reflect.DeepEqual(reports, referenceReports) {
+			t.Fatal("batch results or ordered reports differ from full scan")
+		}
+	}
+}
+
+func TestDuplicateBulkMatchesFullScan20000(t *testing.T) {
+	base, rows := duplicateIndexFixture(20000)
+	var referenceResults []dml.Result
+	var referenceReports []dml.DuplicateReport
+	for _, fullScan := range []bool{true, false} {
+		org := storage.SnapshotRuntimeOrg(&base)
+		engine := dml.NewEngine(&org)
+		engine.Options.EnforceDuplicateRules = true
+		engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+		if fullScan {
+			engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+				return dml.FindDuplicateMatches(&org, rule, row, exclude)
+			}
+		}
+		batch := make([]storage.Record, len(rows))
+		for i := range rows {
+			batch[i] = rows[i].Clone()
+		}
+		results := engine.Insert(batch)
+		reports := engine.TakeDuplicateReports()
+		for _, result := range results {
+			if !result.Success {
+				t.Fatalf("insert: %+v", result)
+			}
+		}
+		if fullScan {
+			if len(reports) == 0 {
+				t.Fatal("fixture has no matches")
+			}
+			t.Logf("full scan outcome sha256: %s", duplicateOutcomeDigest(t, results, reports))
+			referenceResults, referenceReports = results, reports
+			continue
+		}
+		if !reflect.DeepEqual(results, referenceResults) || !reflect.DeepEqual(reports, referenceReports) {
 			t.Fatal("batch results or ordered reports differ from full scan")
 		}
 	}
@@ -197,5 +248,246 @@ func TestDuplicateScanRefreshesValues(t *testing.T) {
 	result, ok := dml.FindDuplicateMatches(&org, rule, candidate, nil)
 	if !ok || len(result.Matches) != 1 || len(result.Matches[0].Records) != 100 {
 		t.Fatalf("changed candidate: %+v", result)
+	}
+}
+
+// A statement's later duplicate checks must observe changes to stored rows,
+// including field-map writes that do not advance the storage record token.
+func TestDuplicateBulkObservesStoredChanges(t *testing.T) {
+	for _, mutation := range []string{"field-map", "put", "delete", "replace-map"} {
+		t.Run(mutation, func(t *testing.T) {
+			base, _ := duplicateIndexFixture(400)
+			targetID := storage.ID("00Q000000000001")
+			matching := benchLeadFields(900, false)
+			if mutation == "delete" {
+				object := base.Objects["Lead"]
+				target := object.Records[targetID].Clone()
+				target.Fields = matching
+				object.PutRecord(targetID, target)
+				base.Objects["Lead"] = object
+			}
+			rows := []storage.Record{
+				{Object: "Lead", Fields: benchLeadFields(901, false)},
+				{Object: "Lead", Fields: matching},
+			}
+			var expectedResults []dml.Result
+			var expectedReports []dml.DuplicateReport
+			for _, fullScan := range []bool{true, false} {
+				org := storage.SnapshotRuntimeOrg(&base)
+				engine := dml.NewEngine(&org)
+				engine.Options.EnforceDuplicateRules = true
+				engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+				if fullScan {
+					engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+						return dml.FindDuplicateMatches(&org, rule, row, exclude)
+					}
+				}
+				created := 0
+				engine.ChangeObserver = func(operation string, _, _ storage.Record) {
+					if operation != "CREATE" {
+						return
+					}
+					created++
+					if created != 1 {
+						return
+					}
+					object := org.Objects["Lead"]
+					target := object.Records[targetID]
+					switch mutation {
+					case "field-map":
+						for key, value := range matching {
+							target.Fields[key] = value
+						}
+					case "put":
+						target = target.Clone()
+						target.Fields = matching
+						object.PutRecord(targetID, target)
+					case "delete":
+						object.DeleteRecord(targetID)
+					case "replace-map":
+						target = target.Clone()
+						target.Fields = matching
+						records := make(map[storage.ID]storage.Record, len(object.Records))
+						for id, record := range object.Records {
+							records[id] = record
+						}
+						records[targetID] = target
+						object.SetRecords(records)
+					}
+					org.Objects["Lead"] = object
+				}
+				batch := []storage.Record{rows[0].Clone(), rows[1].Clone()}
+				results := engine.Insert(batch)
+				reports := engine.TakeDuplicateReports()
+				for _, result := range results {
+					if !result.Success {
+						t.Fatalf("insert: %+v", result)
+					}
+				}
+				if fullScan {
+					if mutation == "delete" && len(reports) != 0 || mutation != "delete" && len(reports) != 1 {
+						t.Fatalf("reference reports: %+v", reports)
+					}
+					t.Logf("full scan outcome sha256: %s", duplicateOutcomeDigest(t, results, reports))
+					expectedResults, expectedReports = results, reports
+				} else if !reflect.DeepEqual(results, expectedResults) || !reflect.DeepEqual(reports, expectedReports) {
+					t.Fatalf("results or reports differ from full scan: %+v", reports)
+				}
+			}
+		})
+	}
+}
+
+func TestDuplicateBulkMatchesFullScanRuleShapes(t *testing.T) {
+	for _, shape := range []string{"or", "unsupported", "folded-field", "blank", "cross-object", "peers"} {
+		t.Run(shape, func(t *testing.T) {
+			base, _ := duplicateIndexFixture(400)
+			object := base.Objects["Lead"]
+			rule := object.Definition.DuplicateRules[0]
+			rows := []storage.Record{
+				{Object: "Lead", Fields: benchLeadFields(1, false)},
+				{Object: "Lead", Fields: benchLeadFields(2, false)},
+			}
+			switch shape {
+			case "or":
+				rule.MatchRules[0].BooleanFilter = "1 OR 2"
+			case "unsupported":
+				rule.MatchRules[0].BooleanFilter = "1 OR 99"
+			case "folded-field":
+				for id, original := range object.Records {
+					record := original.Clone()
+					record.Fields["lastname"] = record.Fields["LastName"]
+					delete(record.Fields, "LastName")
+					object.PutRecord(id, record)
+				}
+			case "blank":
+				rule.MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "MatchBlanks"}}
+			case "cross-object":
+				storage.EnsureStandardObject(&base, "Contact")
+				contacts := base.Objects["Contact"]
+				for i := 0; i < 400; i++ {
+					id := storage.ID(fmt.Sprintf("003%012d", i+1))
+					contacts.PutRecord(id, storage.Record{ID: id, Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue(fmt.Sprintf("person%d@example.invalid", i%4))}})
+				}
+				base.Objects["Contact"] = contacts
+				rule.MatchRules[0].Object = "Contact"
+				rule.MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "NullNotAllowed"}}
+				rule.MatchRules[0].Mapping = &storage.MatchingRuleMapping{InputObject: "Lead", OutputObject: "Contact", Fields: []storage.MatchingRuleMapPair{{Input: "Email", Output: "Email"}}}
+				for i := range rows {
+					rows[i].Fields["Email"] = storage.StringValue(fmt.Sprintf("person%d@example.invalid", i))
+				}
+			case "peers":
+				rows[0].Fields = benchLeadFields(900, false)
+				rows[1].Fields = benchLeadFields(900, false)
+			}
+			object.Definition.DuplicateRules = []storage.DuplicateRule{rule}
+			base.Objects["Lead"] = object
+			var expectedResults []dml.Result
+			var expectedReports []dml.DuplicateReport
+			for _, fullScan := range []bool{true, false} {
+				org := storage.SnapshotRuntimeOrg(&base)
+				engine := dml.NewEngine(&org)
+				engine.Options.EnforceDuplicateRules = true
+				engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+				if fullScan {
+					engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+						return dml.FindDuplicateMatches(&org, rule, row, exclude)
+					}
+				}
+				batch := []storage.Record{rows[0].Clone(), rows[1].Clone()}
+				results := engine.Insert(batch)
+				reports := engine.TakeDuplicateReports()
+				for _, result := range results {
+					if !result.Success {
+						t.Fatalf("insert: %+v", result)
+					}
+				}
+				if fullScan {
+					wantReports := 2
+					if shape == "unsupported" {
+						wantReports = 0
+					} else if shape == "peers" {
+						wantReports = 1
+					}
+					if len(reports) != wantReports {
+						t.Fatalf("reference reports: got %d, want %d", len(reports), wantReports)
+					}
+					t.Logf("full scan outcome sha256: %s", duplicateOutcomeDigest(t, results, reports))
+					expectedResults, expectedReports = results, reports
+				} else if !reflect.DeepEqual(results, expectedResults) || !reflect.DeepEqual(reports, expectedReports) {
+					t.Fatalf("results or reports differ from full scan: %+v", reports)
+				}
+			}
+		})
+	}
+}
+
+func TestDuplicateBulkUpdateAndUpsertMatchFullScan(t *testing.T) {
+	for _, operation := range []string{"update", "upsert", "external-upsert-id", "external-upsert-key"} {
+		t.Run(operation, func(t *testing.T) {
+			base, _ := duplicateIndexFixture(400)
+			object := base.Objects["Lead"]
+			rule := object.Definition.DuplicateRules[0]
+			rule.ActionOnUpdate = "Allow"
+			rule.OperationsOnUpdate = []string{"Report"}
+			object.Definition.DuplicateRules = []storage.DuplicateRule{rule}
+			base.Objects["Lead"] = object
+			rows := []storage.Record{
+				{ID: "00Q000000000350", Object: "Lead", Fields: benchLeadFields(13, true)},
+				{ID: "00Q000000000351", Object: "Lead", Fields: benchLeadFields(13, true)},
+			}
+			if operation == "external-upsert-key" {
+				object.Definition.Fields["IndexKey__c"] = storage.Field{APIName: "IndexKey__c", Type: storage.FieldString, ExternalID: true}
+				for i := range rows {
+					key := fmt.Sprintf("key%d", i)
+					existing := object.Records[rows[i].ID].Clone()
+					existing.Fields["IndexKey__c"] = storage.StringValue(key)
+					object.PutRecord(rows[i].ID, existing)
+					rows[i].ID = ""
+					rows[i].Fields["IndexKey__c"] = storage.StringValue(key)
+				}
+				base.Objects["Lead"] = object
+			}
+			var expectedResults []dml.Result
+			var expectedReports []dml.DuplicateReport
+			for _, fullScan := range []bool{true, false} {
+				org := storage.SnapshotRuntimeOrg(&base)
+				engine := dml.NewEngine(&org)
+				engine.Options.EnforceDuplicateRules = true
+				engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+				if fullScan {
+					engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+						return dml.FindDuplicateMatches(&org, rule, row, exclude)
+					}
+				}
+				batch := []storage.Record{rows[0].Clone(), rows[1].Clone()}
+				var results []dml.Result
+				switch operation {
+				case "update":
+					results = engine.Update(batch)
+				case "upsert":
+					results = engine.Upsert(batch)
+				case "external-upsert-id":
+					results = engine.UpsertWithExternalID(batch, "Id")
+				case "external-upsert-key":
+					results = engine.UpsertWithExternalID(batch, "IndexKey__c")
+				}
+				reports := engine.TakeDuplicateReports()
+				for _, result := range results {
+					if !result.Success {
+						t.Fatalf("%s: %+v", operation, result)
+					}
+				}
+				if fullScan {
+					if len(reports) == 0 {
+						t.Fatal("fixture has no duplicate reports")
+					}
+					t.Logf("full scan outcome sha256: %s", duplicateOutcomeDigest(t, results, reports))
+					expectedResults, expectedReports = results, reports
+				} else if !reflect.DeepEqual(results, expectedResults) || !reflect.DeepEqual(reports, expectedReports) {
+					t.Fatalf("%s differs from full scan: %+v", operation, reports)
+				}
+			}
+		})
 	}
 }

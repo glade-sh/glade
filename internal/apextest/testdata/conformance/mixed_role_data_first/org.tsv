@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	"{""role"":""MIXED_DML_OPERATION"",""account"":""ok""}"
+62.0	isTest	"{""role"":""MIXED_DML_OPERATION"",""account"":""ok""}"
+67.0	anonymous	"{""role"":""MIXED_DML_OPERATION"",""account"":""ok""}"
+67.0	isTest	"{""role"":""MIXED_DML_OPERATION"",""account"":""ok""}"
