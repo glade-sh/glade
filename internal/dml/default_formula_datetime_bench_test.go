@@ -19,7 +19,7 @@ func BenchmarkDefaultFormulaDatetime(b *testing.B) {
 	fields := map[string]storage.Field{
 		"Moment__c":   {APIName: "Moment__c", Type: storage.FieldDateTime, DefaultValue: "NOW()"},
 		"Offset__c":   {APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+MOD(MINUTE(TIMEVALUE(NOW())),15)/1440"},
-		"Minute__c":   {APIName: "Minute__c", Type: storage.FieldDecimal, DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Minute__c":   {APIName: "Minute__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
 		"Tomorrow__c": {APIName: "Tomorrow__c", Type: storage.FieldDate, DefaultValue: "TODAY()+1"},
 		"Number__c":   {APIName: "Number__c", Type: storage.FieldDecimal, DefaultValue: "1+2*3"},
 		"Blank__c":    {APIName: "Blank__c", Type: storage.FieldDateTime},
@@ -45,4 +45,33 @@ func BenchmarkDefaultFormulaDatetime(b *testing.B) {
 		b.Fatal(err)
 	}
 	b.Logf("unchanged fields sha256=%x; offset=%t minute=%t", sha256.Sum256(encoded), offset, minute)
+}
+
+// Benchmark unchanged defaults on the same object shape to detect overhead
+// outside the two captured formulas.
+func BenchmarkDefaultFormulaNeighbor(b *testing.B) {
+	org := storage.NewOrgState()
+	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 7, 0, 0, time.UTC) }
+	fields := map[string]storage.Field{
+		"Moment__c":   {APIName: "Moment__c", Type: storage.FieldDateTime, DefaultValue: "NOW()"},
+		"Tomorrow__c": {APIName: "Tomorrow__c", Type: storage.FieldDate, DefaultValue: "TODAY()+1"},
+		"Number__c":   {APIName: "Number__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "1+2*3"},
+	}
+	for i := 0; i < 20; i++ {
+		name := fmt.Sprintf("Extra%02d__c", i)
+		fields[name] = storage.Field{APIName: name, Type: storage.FieldString, DefaultValue: "'value'"}
+	}
+	definition := storage.ObjectDefinition{APIName: "DefaultProbe__c", Fields: fields}
+	var record storage.Record
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		record = storage.Record{Object: definition.APIName, Fields: map[string]storage.Value{}}
+		applyFieldDefaults(&org, definition, &record, "", nil)
+	}
+	b.StopTimer()
+	encoded, err := json.Marshal(record.Fields)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Logf("outcome sha256=%x", sha256.Sum256(encoded))
 }

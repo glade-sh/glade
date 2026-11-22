@@ -43,7 +43,7 @@ func TestDefaultFormulaDatetimeInsert(t *testing.T) {
 		"Name":        {APIName: "Name", Type: storage.FieldString},
 		"Moment__c":   {APIName: "Moment__c", Type: storage.FieldDateTime, DefaultValue: "NOW()"},
 		"Offset__c":   {APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+MOD(MINUTE(TIMEVALUE(NOW())),15)/1440"},
-		"Minute__c":   {APIName: "Minute__c", Type: storage.FieldDecimal, DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Minute__c":   {APIName: "Minute__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
 		"Tomorrow__c": {APIName: "Tomorrow__c", Type: storage.FieldDate, DefaultValue: "TODAY()+1"},
 		"Number__c":   {APIName: "Number__c", Type: storage.FieldDecimal, DefaultValue: "1+2*3"},
 		"Blank__c":    {APIName: "Blank__c", Type: storage.FieldDateTime},

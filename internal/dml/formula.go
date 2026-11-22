@@ -258,7 +258,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		defaultValueFormula:           options.DefaultValueFormula,
 	}
 	if parser.defaultValueFormula {
-		parser.defaultValueFormula = capturedMinuteDefaultShape(parser.tokens, field.Type)
+		parser.defaultValueFormula = capturedMinuteDefaultShape(parser.tokens, field)
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -272,7 +272,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 
 // Keep the new clock functions within the numeric and datetime default
 // expression shapes captured at APIs 62 and 67.
-func capturedMinuteDefaultShape(tokens []formulaToken, fieldType storage.FieldType) bool {
+func capturedMinuteDefaultShape(tokens []formulaToken, field storage.Field) bool {
 	ident := func(i int, name string) bool {
 		return tokens[i].typ == formulaTokenIdent && strings.EqualFold(tokens[i].text, name)
 	}
@@ -283,10 +283,10 @@ func capturedMinuteDefaultShape(tokens []formulaToken, fieldType storage.FieldTy
 		return ident(i, "MINUTE") && symbol(i+1, "(") && ident(i+2, "TIMEVALUE") && symbol(i+3, "(") &&
 			ident(i+4, "NOW") && symbol(i+5, "(") && symbol(i+6, ")") && symbol(i+7, ")") && symbol(i+8, ")")
 	}
-	if fieldType == storage.FieldDecimal && len(tokens) == 10 {
+	if field.Type == storage.FieldDecimal && strings.EqualFold(strings.TrimSpace(field.DisplayType), "DOUBLE") && len(tokens) == 10 {
 		return minute(0) && tokens[9].typ == formulaTokenEOF
 	}
-	if fieldType == storage.FieldDateTime && len(tokens) == 21 {
+	if field.Type == storage.FieldDateTime && len(tokens) == 21 {
 		return ident(0, "NOW") && symbol(1, "(") && symbol(2, ")") && symbol(3, "+") && ident(4, "MOD") &&
 			symbol(5, "(") && minute(6) && symbol(15, ",") && tokens[16].typ == formulaTokenNumber &&
 			symbol(17, ")") && symbol(18, "/") && tokens[19].typ == formulaTokenNumber && tokens[20].typ == formulaTokenEOF

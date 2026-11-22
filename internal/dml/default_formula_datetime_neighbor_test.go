@@ -15,10 +15,13 @@ func TestDefaultFormulaDatetimeNeighborUnchanged(t *testing.T) {
 	def := storage.ObjectDefinition{APIName: "DefaultProbe__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
 		"Name":            {APIName: "Name", Type: storage.FieldString},
 		"TimeOnly__c":     {APIName: "TimeOnly__c", Type: storage.FieldTime, DefaultValue: "TIMEVALUE(NOW())"},
-		"TextTime__c":     {APIName: "TextTime__c", Type: storage.FieldDecimal, DefaultValue: `MINUTE(TIMEVALUE("12:34:56"))`},
-		"Extra__c":        {APIName: "Extra__c", Type: storage.FieldDecimal, DefaultValue: "MINUTE(TIMEVALUE(NOW()))+1"},
+		"TextTime__c":     {APIName: "TextTime__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: `MINUTE(TIMEVALUE("12:34:56"))`},
+		"Extra__c":        {APIName: "Extra__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))+1"},
 		"DirectOffset__c": {APIName: "DirectOffset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+MINUTE(TIMEVALUE(NOW()))/1440"},
-		"Shifted__c":      {APIName: "Shifted__c", Type: storage.FieldDecimal, DefaultValue: "MINUTE(TIMEVALUE(NOW()+1))"},
+		"Shifted__c":      {APIName: "Shifted__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()+1))"},
+		"Currency__c":     {APIName: "Currency__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Percent__c":      {APIName: "Percent__c", Type: storage.FieldDecimal, DisplayType: "PERCENT", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Unknown__c":      {APIName: "Unknown__c", Type: storage.FieldDecimal, DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
 	}}
 	org.Objects[def.APIName] = storage.ObjectState{Definition: def, Records: map[storage.ID]storage.Record{}}
 	engine := NewEngine(&org)
@@ -27,7 +30,7 @@ func TestDefaultFormulaDatetimeNeighborUnchanged(t *testing.T) {
 		t.Fatalf("insert: %+v", result)
 	}
 	record := org.Objects[def.APIName].Records[result[0].ID]
-	for _, name := range []string{"TimeOnly__c", "TextTime__c", "Shifted__c", "Extra__c", "DirectOffset__c"} {
+	for _, name := range []string{"TimeOnly__c", "TextTime__c", "Shifted__c", "Extra__c", "DirectOffset__c", "Currency__c", "Percent__c", "Unknown__c"} {
 		if value, ok := record.Fields[name]; ok && value.Kind != storage.ValueNull {
 			t.Errorf("%s changed from baseline: %+v", name, value)
 		}
