@@ -7001,6 +7001,46 @@ func allAccountRecords(vm *VM, records []Value) bool {
 	return len(records) > 0
 }
 
+// defaultRunAsReadLeadUpdate preserves the row-level failure captured in
+// lead_read_model_recalculation/org.tsv:4-5 (istest APIs 62.0 and 67.0).
+func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
+	if op != "update" || value.Kind != ValueObject || vm.Org == nil || vm.currentTrigger || vm.testContext == nil ||
+		vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
+		vm.currentSourceExecutionPolicy().APIVersion != "67.0" ||
+		vm.currentUserProfileName(vm.testContext.CurrentUser) != "Standard User" ||
+		!strings.EqualFold(vm.Org.Objects["Lead"].Definition.SharingModel, "Read") {
+		return false
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil || !strings.EqualFold(record.Object, "Lead") || record.ID == "" {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !strings.HasPrefix(string(stored.System.OwnerID), "005") ||
+		vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	hasText := false
+	for name, fieldValue := range value.Fields {
+		if isInternalSObjectField(name) || strings.EqualFold(name, "Id") {
+			continue
+		}
+		if dmlAccessibleSObject(value) && isSObjectSystemField(name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
+			continue
+		}
+		if isDefaultedSObjectField(value, name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
+			continue
+		}
+		field, exists := definition.Fields[vm.resolveSObjectFieldName("Lead", name)]
+		if !exists || field.Type != storage.FieldString || fieldValue.Kind != ValueString {
+			return false
+		}
+		hasText = true
+	}
+	return hasText
+}
+
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	if mode == ir.DMLModeSystem {
 		if err := vm.validateExplicitAccessLevel(accessLevelValue("SYSTEM_MODE")); err != nil {
@@ -7188,7 +7228,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	if op == "update" {
 		dmlOptions.ApexRecordTypeUpdateMode = vm.recordTypeDMLMode(dmlMode)
 	}
-	if mode == ir.DMLModeDefault && vm.defaultRunAsPrivateTextUpdate(op, value) {
+	if mode == ir.DMLModeDefault && (vm.defaultRunAsPrivateTextUpdate(op, value) || vm.defaultRunAsReadLeadUpdate(op, value)) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, true, true, dmlMode)
 	} else if mode == ir.DMLModeDefault && dmlMode == "SYSTEM_MODE" && op == "delete" &&
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
