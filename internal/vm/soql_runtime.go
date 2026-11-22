@@ -2002,6 +2002,10 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		anonymousPartnerShape = extraFieldProjection
 	}
 
+	queryLower := ""
+	if anonymousManualShape || anonymousPartnerShape {
+		queryLower = strings.ToLower(queryText)
+	}
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
@@ -2056,19 +2060,21 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				record.ID = storage.ID(text)
 				if manualRead {
 					idText := string(record.ID)
-					if len(idText) < 15 || !strings.Contains(strings.ToLower(queryText), strings.ToLower(idText[:15])) ||
+					if len(idText) < 15 || !strings.Contains(queryLower, strings.ToLower(idText[:15])) ||
 						!vm.capturedAnonymousManualReadRecord(objectName, record, current, string(user.ID), deniedControl) {
 						continue
 					}
 				}
 				if partnerLead {
 					idText := string(record.ID)
-					_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
-					ownerProfile, _ := owner.GetField("ProfileId")
-					if len(idText) < 15 || !strings.Contains(strings.ToLower(queryText), strings.ToLower(idText[:15])) ||
-						!found || vm.currentProfileName(storageValueIDText(ownerProfile)) != "System Administrator" ||
+					if len(idText) < 15 || !strings.Contains(queryLower, strings.ToLower(idText[:15])) ||
 						record.System.IsDeleted || !storage.IDsEqual(record.System.CreatedByID, storage.ID(current)) ||
 						storage.IDsEqual(record.System.OwnerID, storage.ID(current)) || storage.IDsEqual(record.System.OwnerID, user.ID) {
+						continue
+					}
+					_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+					ownerProfile, _ := owner.GetField("ProfileId")
+					if !found || vm.currentProfileName(storageValueIDText(ownerProfile)) != "System Administrator" {
 						continue
 					}
 				}
