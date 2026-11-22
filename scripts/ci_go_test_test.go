@@ -1797,7 +1797,6 @@ func ciRequiredAggregateProblem(workflow string) string {
 	}{
 		{name: "job continue-on-error", marker: "\n    continue-on-error:"},
 		{name: "step continue-on-error", marker: "\n        continue-on-error:"},
-		{name: "step condition", marker: "\n        if:"},
 	} {
 		if strings.Contains(job, forbidden.marker) {
 			return "required-ci must not define " + forbidden.name
@@ -1825,9 +1824,12 @@ func ciRequiredAggregateProblem(workflow string) string {
 			return fmt.Sprintf("required-ci %s marker count = %d, want 1", check.name, strings.Count(job, check.want))
 		}
 	}
-	_, steps, found := strings.Cut(job, "    steps:\n")
-	if !found || strings.Count(steps, "      - ") != 1 {
-		return fmt.Sprintf("required-ci step count = %d, want 1", strings.Count(steps, "      - "))
+	requireStep := workflowStepBlockText(job, "      - name: Require all CI jobs")
+	if strings.Count(requireStep, "        if: ${{ always() }}") != 1 {
+		return "required-ci aggregate step must run after prior failures"
+	}
+	if strings.Count(job, "      - name: Require all CI jobs") != 1 {
+		return "required-ci must define exactly one aggregate step"
 	}
 	return ""
 }
@@ -1835,7 +1837,11 @@ func ciRequiredAggregateProblem(workflow string) string {
 func requiredAggregateShell(t *testing.T, job string) string {
 	t.Helper()
 	marker := "        run: |\n"
-	_, script, found := strings.Cut(job, marker)
+	step := workflowStepBlockText(job, "      - name: Require all CI jobs")
+	if step == "" {
+		step = job
+	}
+	_, script, found := strings.Cut(step, marker)
 	if !found {
 		t.Fatal("required-ci missing shell run block")
 	}
@@ -3298,10 +3304,10 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
-		"rename display":          strings.Replace(workflow, "    name: Required CI\n    outputs:\n", "    name: Required Checks\n    outputs:\n", 1),
+		"rename display":          strings.Replace(workflow, "    name: Required CI\n    permissions:\n", "    name: Required Checks\n    permissions:\n", 1),
 		"job continue on error":   strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
-		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        continue-on-error: true\n        env:\n", 1),
-		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        if: false\n        env:\n", 1),
+		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        continue-on-error: true\n        env:\n", 1),
+		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        id: require\n        env:\n", 1),
 	}
 	for name, mutated := range mutations {
 		t.Run(name, func(t *testing.T) {

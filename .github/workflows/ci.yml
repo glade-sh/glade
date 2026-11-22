@@ -2301,8 +2301,12 @@ jobs:
 
   required-ci:
     name: Required CI
+    permissions:
+      contents: read
+      actions: read
     outputs:
       coverage: ${{ steps.require.outputs.coverage }}
+      classification: ${{ steps.classify.outputs.classification }}
     needs:
       - tree-reuse-gate
       - reused-tree-ci
@@ -2335,7 +2339,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Classify individual CI workers
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?filter=latest&per_page=100" > "$RUNNER_TEMP/ci-jobs.json"
+          python3 scripts/ci-worker-classification.py "$RUNNER_TEMP/ci-jobs.json"
       - name: Require all CI jobs
+        if: ${{ always() }}
         id: require
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
