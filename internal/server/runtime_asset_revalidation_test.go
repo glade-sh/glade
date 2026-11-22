@@ -32,13 +32,13 @@ func runtimeAssetFixture(t testing.TB, content []byte) string {
 	return root
 }
 
-func runtimeAssetResponse(tag string) *httptest.ResponseRecorder {
+func runtimeAssetResponse(s *Server, tag string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/lightning/runtime/shell/asset.css", nil)
 	if tag != "" {
 		req.Header.Set("If-None-Match", tag)
 	}
-	(&Server{}).serveLightningShellRuntime(rec, req, []string{"shell", "asset.css"})
+	s.serveLightningShellRuntime(rec, req, []string{"shell", "asset.css"})
 	return rec
 }
 
@@ -47,13 +47,14 @@ func TestLightningRuntimeAssetRevalidation(t *testing.T) {
 	t.Setenv("GLADE_HOME", "")
 	t.Setenv("GLADE_ROOT", root)
 	t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "0")
-	first := runtimeAssetResponse("")
+	s := &Server{}
+	first := runtimeAssetResponse(s, "")
 	wantTag := fmt.Sprintf("\"%x\"", sha256.Sum256([]byte("first")))
 	if first.Code != http.StatusOK || first.Body.String() != "first" || first.Header().Get("ETag") != wantTag || !strings.Contains(first.Header().Get("Cache-Control"), "no-cache") {
 		t.Fatalf("first response: %d %q %v", first.Code, first.Body.String(), first.Header())
 	}
 	for _, tag := range []string{wantTag, "W/" + wantTag, "\"other\", " + wantTag, "*"} {
-		got := runtimeAssetResponse(tag)
+		got := runtimeAssetResponse(s, tag)
 		if got.Code != http.StatusNotModified || got.Body.Len() != 0 || got.Header().Get("ETag") != wantTag {
 			t.Fatalf("validator %q: %d %q %v", tag, got.Code, got.Body.String(), got.Header())
 		}
@@ -69,24 +70,24 @@ func TestLightningRuntimeAssetRevalidation(t *testing.T) {
 	if err := os.Chtimes(asset, info.ModTime(), info.ModTime()); err != nil {
 		t.Fatal(err)
 	}
-	changed := runtimeAssetResponse(wantTag)
+	changed := runtimeAssetResponse(s, wantTag)
 	if changed.Code != http.StatusOK || changed.Body.String() != "other" || changed.Header().Get("ETag") == wantTag {
 		t.Fatalf("same-size edit: %d %q %v", changed.Code, changed.Body.String(), changed.Header())
 	}
 	secondRoot := runtimeAssetFixture(t, []byte("third"))
 	t.Setenv("GLADE_ROOT", secondRoot)
-	switched := runtimeAssetResponse(changed.Header().Get("ETag"))
+	switched := runtimeAssetResponse(s, changed.Header().Get("ETag"))
 	if switched.Code != http.StatusOK || switched.Body.String() != "third" {
 		t.Fatalf("root changed: %d %q", switched.Code, switched.Body.String())
 	}
-	stale := runtimeAssetResponse("\"missing\"")
+	stale := runtimeAssetResponse(s, "\"missing\"")
 	if stale.Code != http.StatusOK || stale.Body.String() != "third" {
 		t.Fatalf("stale validator: %d %q", stale.Code, stale.Body.String())
 	}
 	if err := os.Remove(filepath.Join(secondRoot, "lwcruntime/src/shell/asset.css")); err != nil {
 		t.Fatal(err)
 	}
-	if missing := runtimeAssetResponse(switched.Header().Get("ETag")); missing.Code == http.StatusNotModified || missing.Code == http.StatusOK {
+	if missing := runtimeAssetResponse(s, switched.Header().Get("ETag")); missing.Code == http.StatusNotModified || missing.Code == http.StatusOK {
 		t.Fatalf("removed asset: %d %q", missing.Code, missing.Body.String())
 	}
 }
@@ -101,13 +102,21 @@ func BenchmarkLightningRuntimeAssetTransfer(b *testing.B) {
 	b.Setenv("GLADE_ROOT", root)
 	b.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "0")
 	tag := fmt.Sprintf("\"%x\"", sha256.Sum256(content))
-	for _, tc := range []struct{ name, tag string }{{"cold", ""}, {"conditional", tag}} {
+	s := &Server{}
+	for _, tc := range []struct {
+		name, tag string
+		first     bool
+	}{{"first", "", true}, {"cold", "", false}, {"conditional", tag, false}} {
 		b.Run(tc.name, func(b *testing.B) {
 			var bytes int
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				rec := runtimeAssetResponse(tc.tag)
+				server := s
+				if tc.first {
+					server = &Server{}
+				}
+				rec := runtimeAssetResponse(server, tc.tag)
 				bytes += rec.Body.Len()
 			}
 			b.ReportMetric(float64(bytes)/float64(b.N), "transfer-B/op")

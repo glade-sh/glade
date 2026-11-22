@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -39,5 +40,20 @@ func TestRuntimeAssetDigestCache(t *testing.T) {
 	}
 	if got := calls.Load(); got != 3 {
 		t.Fatalf("changed content or path missed: %d hashes", got)
+	}
+	for i := 0; i < 256; i++ {
+		cache.validator(fmt.Sprint(i), nil, digest)
+	}
+	if got := cache.validator("shell/a", []byte("other"), digest); got != "digest:other" {
+		t.Fatal(got)
+	}
+	if got := calls.Load(); got != 260 {
+		t.Fatalf("evicted content was not recomputed: %d hashes", got)
+	}
+	large := bytes.Repeat([]byte("x"), (32<<20)+1)
+	cache.validator("large", large, func([]byte) string { calls.Add(1); return "large" })
+	cache.validator("large", large, func([]byte) string { calls.Add(1); return "large" })
+	if got := calls.Load(); got != 262 {
+		t.Fatalf("oversized content was retained: %d hashes", got)
 	}
 }

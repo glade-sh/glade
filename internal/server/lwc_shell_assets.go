@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"html"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
@@ -724,6 +726,42 @@ func lwcShellWorkbenchNavLinks(model lwcshell.WorkbenchModel) []lwcShellNavLink 
 	return links
 }
 
+type runtimeAssetDigestEntry struct {
+	content []byte
+	tag     string
+}
+
+type runtimeAssetDigestCache struct {
+	mu      sync.Mutex
+	entries map[string]runtimeAssetDigestEntry
+	bytes   int
+}
+
+func (c *runtimeAssetDigestCache) validator(key string, content []byte, digest func([]byte) string) string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if entry, ok := c.entries[key]; ok && bytes.Equal(entry.content, content) {
+		return entry.tag
+	}
+	tag := digest(content)
+	const maxBytes = 32 << 20
+	_, present := c.entries[key]
+	if c.entries == nil || c.bytes+len(content) > maxBytes || (!present && len(c.entries) >= 256) {
+		c.entries = make(map[string]runtimeAssetDigestEntry)
+		c.bytes = 0
+	}
+	if len(content) <= maxBytes {
+		c.bytes -= len(c.entries[key].content)
+		c.entries[key] = runtimeAssetDigestEntry{content: content, tag: tag}
+		c.bytes += len(content)
+	}
+	return tag
+}
+
+func runtimeAssetDigest(content []byte) string {
+	return fmt.Sprintf("\"%x\"", sha256.Sum256(content))
+}
+
 func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Request, parts []string) {
 	if r.Method != http.MethodGet || len(parts) < 2 {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
@@ -735,7 +773,9 @@ func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
-	tag := fmt.Sprintf("\"%x\"", sha256.Sum256(content))
+	kind, _ := cleanLightningRuntimeAssetKind(parts[0])
+	name, _ := cleanLightningRuntimeAssetName(strings.Join(parts[1:], "/"))
+	tag := s.runtimeAssetDigests.validator(kind+"/"+name, content, runtimeAssetDigest)
 	w.Header().Set("ETag", tag)
 	w.Header().Set("Cache-Control", "private, no-cache")
 	for _, header := range r.Header.Values("If-None-Match") {
