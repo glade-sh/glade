@@ -17,8 +17,16 @@ import (
 
 // BenchmarkDaemonBodyEdit runs every test after an equivalent one-line body
 // edit, including the watcher's update and warm. The digest checks the full
-// set of test outcomes against the initial run on every iteration.
+// set of test outcomes against the initial run and a cold daemon on every iteration.
 func BenchmarkDaemonBodyEdit(b *testing.B) {
+	benchmarkDaemonBodyEdit(b, true)
+}
+
+func BenchmarkDaemonCachedBodyEdit(b *testing.B) {
+	benchmarkDaemonBodyEdit(b, false)
+}
+
+func benchmarkDaemonBodyEdit(b *testing.B, noDiskCache bool) {
 	for _, size := range []struct {
 		name     string
 		services int
@@ -67,7 +75,7 @@ func BenchmarkDaemonBodyEdit(b *testing.B) {
 			if err := d.Warm(); err != nil {
 				b.Fatal(err)
 			}
-			request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1}, "", 0, 0, false)
+			request := NewRunRequestV1(apextest.Options{NoDiskCache: noDiskCache, Parallelism: 1}, "", 0, 0, false)
 			prime, _, _, err := d.RunRequestV1(context.Background(), request, nil, nil)
 			if err != nil || prime.Summary().Passed != size.tests+1 {
 				b.Fatalf("prime: %+v, %v, %s", prime.Summary(), err, runProblems(prime))
@@ -103,6 +111,22 @@ func BenchmarkDaemonBodyEdit(b *testing.B) {
 				}
 				if got := bodyEditOutcomeDigest(run); got != want {
 					b.Fatalf("outcomes changed: got %x want %x; %s", got, want, runProblems(run))
+				}
+				b.StopTimer()
+				apextest.InvalidateRuntimeCaches()
+				cold, err := New(root)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if err := cold.Warm(); err != nil {
+					b.Fatal(err)
+				}
+				coldRun, _, _, err := cold.RunRequestV1(context.Background(), request, nil, nil)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if got, coldGot := bodyEditOutcomeDigest(run), bodyEditOutcomeDigest(coldRun); got != coldGot {
+					b.Fatalf("warm and cold outcomes differ: warm %x cold %x", got, coldGot)
 				}
 			}
 		})

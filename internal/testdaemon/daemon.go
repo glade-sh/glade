@@ -384,10 +384,17 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 		}
 	}
 	if exact {
-		graph = watch.BuildReferenceGraph(index)
 		artifacts, err = typesys.RefreshBuildArtifacts(index, &previous.artifacts)
 		if err != nil {
 			return false, err
+		}
+		if bodyEditKeepsDeclarations(previous.index, index, previous.artifacts, artifacts, changes) {
+			graph, err = d.refreshGraphFn(previous.graph, index, changes)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			graph = watch.BuildReferenceGraph(index)
 		}
 	}
 	d.publishGeneration(daemonGeneration{serial: previous.serial + 1, project: p, index: index, artifacts: artifacts, graph: graph})
