@@ -1995,6 +1995,8 @@ def terminals(path, expected):
             event = json.loads(line, object_pairs_hook=no_dupes)
             if event.get("Package") != PACKAGE: reject(f"event {line_number} has wrong package")
             name, action = event.get("Test"), event.get("Action")
+            if isinstance(name, str) and "/" in name and action in ("fail", "skip"):
+                reject(f"non-passing sema subtest {name}")
             if not isinstance(name, str) or "/" in name or action not in ("pass", "fail", "skip"): continue
             if name in result: reject(f"duplicate terminal result for {name}")
             result[name] = action
