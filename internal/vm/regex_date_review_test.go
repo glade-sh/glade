@@ -237,3 +237,21 @@ func TestReviewRegexDateUncapturedRoutes(t *testing.T) {
 		t.Errorf("pattern split = %d, want 1", got)
 	}
 }
+
+// Empty replacement on a lone pair is not among the captured replacement rows.
+func TestReviewRegexDateEmptyReplacementSinglePair(t *testing.T) {
+	source := `String stringResult = '😀'.replaceAll('','-'); String matcherResult = Pattern.compile('').matcher('😀').replaceAll('-');`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"stringResult", "matcherResult"} {
+		if got := machine.Globals[name].Text; got != "-😀-" {
+			t.Errorf("%s = %q, want %q", name, got, "-😀-")
+		}
+	}
+}
