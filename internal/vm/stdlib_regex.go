@@ -188,7 +188,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 			// starting at this byte. The ordinary engine uses byte offsets.
 			at := -startByte - 2
 			startByte = nextRegexSearchIndex(input, at)
-			if at >= region.startByte && startByte <= region.endByte {
+			if capturedAPI && at >= region.startByte && startByte <= region.endByte {
 				plan, planErr := matcherRegexp2PlanForInput(receiver, input)
 				if planErr != nil {
 					return Null, receiver, false, true, planErr
@@ -247,7 +247,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
-			if capturedAPI && region.startByte == 0 && region.endByte == len(input) && matcherCapturedPositionSubject(input) && indices[1] < len(input) {
+			if capturedAPI && region.startByte == 0 && region.endByte == len(input) && indices[1] < len(input) && matcherCapturedPositionSubject(input) && matcherEmptyFindPattern(receiver, input) {
 				r, _ := decodeApexRune(input[indices[1]:])
 				if r > 0xffff && next <= region.endByte {
 					next = -indices[1] - 2

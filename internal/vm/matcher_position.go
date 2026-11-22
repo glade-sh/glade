@@ -81,6 +81,15 @@ func (s *matcherMidPairSubject) allows(plan *regexp2Plan) (bool, error) {
 	return allowed, nil
 }
 
+func matcherEmptyFindPattern(matcher Value, input string) bool {
+	plan, err := matcherRegexp2PlanForInput(matcher, input)
+	if err != nil || plan.grapheme != nil || plan.linear != nil || plan.publicGroupCount() != 0 {
+		return false
+	}
+	tree, err := syntax.Parse(plan.originalSource, syntax.Perl)
+	return err == nil && tree.Op == syntax.OpEmptyMatch
+}
+
 // matcherEmptyMidPair observes a zero-width match at the UTF-16 boundary
 // within a supplementary rune. The surrounding runes are kept for assertions.
 func matcherEmptyMidPair(plan *regexp2Plan, text string, subject *matcherMidPairSubject, at int, allowStar bool) (*regexp2.Match, error) {
@@ -88,7 +97,14 @@ func matcherEmptyMidPair(plan *regexp2Plan, text string, subject *matcherMidPair
 		return nil, nil
 	}
 	tree, err := syntax.Parse(plan.originalSource, syntax.Perl)
-	if err != nil || (tree.Op != syntax.OpEmptyMatch && (!allowStar || len(text) != 4)) {
+	if err != nil {
+		return nil, nil
+	}
+	if allowStar {
+		if (tree.Op == syntax.OpEmptyMatch && len(text) != 6) || (tree.Op != syntax.OpEmptyMatch && len(text) != 4) {
+			return nil, nil
+		}
+	} else if tree.Op != syntax.OpEmptyMatch {
 		return nil, nil
 	}
 	allowed, err := subject.allows(plan)
