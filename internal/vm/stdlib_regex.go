@@ -490,6 +490,25 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 		if !all {
 			break
 		}
+		// A zero-width match advances by one UTF-16 unit. Check the
+		// otherwise unrepresentable boundary within a supplementary rune.
+		if start == end && start < len(regionRunes) && regionRunes[start] > 0xffff {
+			r := regionRunes[start] - 0x10000
+			hi, lo := rune(0xd800)+(r>>10), rune(0xdc00)+(r&0x3ff)
+			between, probeErr := matcherEmptyMidPair(plan, regionText, regionRunes, start)
+			if probeErr != nil {
+				return "", probeErr
+			}
+			if between != nil {
+				replacement := expandRegexp2PlanReplacement(plan, between, segments)
+				if replacement != "" {
+					out.WriteString(apexStringFromUTF16Units([]uint16{uint16(hi)}))
+					out.WriteString(replacement)
+					out.WriteString(apexStringFromUTF16Units([]uint16{uint16(lo)}))
+					last = start + 1
+				}
+			}
+		}
 		match, err = plan.findNextValid(regionText, match)
 		if err != nil {
 			return "", err

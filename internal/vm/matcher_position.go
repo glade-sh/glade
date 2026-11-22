@@ -3,7 +3,40 @@ package vm
 import (
 	"sort"
 	"unicode/utf8"
+
+	"github.com/dlclark/regexp2"
 )
+
+// matcherEmptyMidPair observes a zero-width match at the UTF-16 boundary
+// within a supplementary rune. The surrounding runes are kept for assertions.
+func matcherEmptyMidPair(plan *regexp2Plan, text string, runes []rune, at int) (*regexp2.Match, error) {
+	if at < 0 || at >= len(runes) || runes[at] <= 0xffff || plan.grapheme != nil || plan.linear != nil || plan.publicGroupCount() != 0 {
+		return nil, nil
+	}
+	// Preserve assertion-dependent empty matches, whose mid-pair behavior
+	// is not established by the captured empty-subject-capable patterns.
+	empty, err := searchRegexp2(plan.re, "", func() (*regexp2.Match, error) {
+		return plan.re.FindStringMatch("")
+	})
+	if err != nil || empty == nil || empty.Length != 0 {
+		return nil, err
+	}
+	r := runes[at] - 0x10000
+	probe := make([]rune, 0, len(runes)+1)
+	probe = append(probe, runes[:at]...)
+	probe = append(probe, 0xd800+(r>>10), 0xdc00+(r&0x3ff))
+	probe = append(probe, runes[at+1:]...)
+	match, err := searchRegexp2(plan.re, text, func() (*regexp2.Match, error) {
+		return plan.re.FindRunesMatchStartingAt(probe, at+1)
+	})
+	if err != nil || match == nil || match.Index != at+1 || match.Length != 0 {
+		return nil, err
+	}
+	if err := plan.checkStackDepth(match); err != nil {
+		return nil, err
+	}
+	return match, nil
+}
 
 // matcherPositions maps between UTF-16 boundaries and byte boundaries. A
 // boundary within a surrogate pair is represented by the pair's first byte
