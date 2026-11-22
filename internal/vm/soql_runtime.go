@@ -371,12 +371,23 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	}
 	var childVisible func(string, storage.Record) bool
 	var childFieldReadable func(string, string) bool
+	var endChildLeadScan func()
+	endChildScan := func() {
+		if endChildLeadScan != nil {
+			endChildLeadScan()
+			endChildLeadScan = nil
+		}
+	}
 	if accounting == soqlOrdinaryAccounting && explicitUserMode && (apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentSourceExecutionPolicy().APIVersion) {
+		defer endChildScan()
 		// The unconditional-visibility test depends only on the object and
 		// the actor, which are fixed for the life of one query. Decide it once
 		// per object instead of once per row.
 		unrestricted := map[string]bool{}
 		childVisible = func(objectName string, record storage.Record) bool {
+			if endChildLeadScan == nil && strings.EqualFold(objectName, "Lead") {
+				endChildLeadScan = vm.beginPartnerLeadShareScan()
+			}
 			all, ok := unrestricted[objectName]
 			if !ok {
 				all = vm.userModeUnrestrictedObject(objectName, vm.currentUserID())
@@ -404,6 +415,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		return vm.userRecordAccessForRelationship(objectName, record, query.SecurityMode, explicitMode, accessSequence, permissionSetID != "")
 	}, NestedUserRecordAccess: vm.userRecordAccessForRecord}
 	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
+	endChildScan()
 	if err != nil && executeOrg == vm.Org && vm.lazySpreadCompletesMissingObject(err) {
 		// The executor met a catalog object the lazy spread had not added
 		// (a relationship target, a TYPEOF type, a nested subquery). The
@@ -417,6 +429,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			}
 		}
 		result, err = soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
+		endChildScan()
 	}
 	if err != nil {
 		var queryErr *soql.QueryError
@@ -3362,6 +3375,9 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 	}
 	if canonical, ok := vm.resolveObjectName(objectName); ok {
 		objectName = canonical
+	}
+	if strings.EqualFold(objectName, "Lead") {
+		defer vm.beginPartnerLeadShareScan()()
 	}
 	state, ok := vm.Org.Objects[objectName]
 	if !ok {

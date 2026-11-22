@@ -502,6 +502,13 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 	userID := ""
 	principalResolved := false
 	var unrestricted map[string]bool
+	leadScan := strings.EqualFold(record.Object, "Lead")
+	for _, matching := range rule.MatchRules {
+		leadScan = leadScan || strings.EqualFold(matching.Object, "Lead")
+	}
+	if leadScan {
+		defer vm.beginPartnerLeadShareScan()()
+	}
 	return dml.FindDuplicateMatchesAmong(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
 		if !principalResolved {
 			userID = vm.currentUserID()
