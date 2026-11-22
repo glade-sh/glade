@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -65,6 +66,100 @@ func BenchmarkChildRelationshipPointQueries(b *testing.B) {
 		}
 		if len(result.Records) != 1 || len(result.Records[0].Children["Contacts"]) != 3 {
 			b.Fatalf("unexpected result: %#v", result)
+		}
+	}
+}
+
+func TestChildRelationshipIndexMatchesFreshAfterWrites(t *testing.T) {
+	org := childIndexBenchOrg(2, 2)
+	child := org.Objects["Contact"]
+	var versioned storage.ObjectState
+	versioned.Definition = child.Definition
+	versioned.SetRecords(child.Records)
+	org.Objects["Contact"] = versioned
+	query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account ORDER BY Id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	compare := func(label string) {
+		t.Helper()
+		got, err := ExecuteWithCache(org, query, cache)
+		if err != nil {
+			t.Fatalf("%s cached: %v", label, err)
+		}
+		want, err := ExecuteWithCache(org, query, NewExecutionCache())
+		if err != nil {
+			t.Fatalf("%s fresh: %v", label, err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s: cached %#v, fresh %#v", label, got, want)
+		}
+	}
+	compare("first")
+	compare("warm")
+	id := storage.ID("003000000000000")
+	child = org.Objects["Contact"]
+	row := child.Records[id].Clone()
+	row.Fields["AccountId"] = storage.IDValue("001000000000001")
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("move")
+	row.System.IsDeleted = true
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("delete")
+	row.System.IsDeleted = false
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("undelete")
+	child.DeleteRecord(id)
+	org.Objects["Contact"] = child
+	compare("remove")
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("insert")
+	row.ExplicitNulls = map[string]bool{"AccountId": true}
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("explicit null")
+	child.SetRecords(map[storage.ID]storage.Record{})
+	org.Objects["Contact"] = child
+	compare("replace map")
+}
+
+func TestChildRelationshipIndexConcurrentReuse(t *testing.T) {
+	org := childIndexBenchOrg(8, 3)
+	cache := NewExecutionCache()
+	query, err := Parse("SELECT Id,(SELECT Id FROM Contacts) FROM Account ORDER BY Id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := ExecuteWithCache(org, query, NewExecutionCache())
+	if err != nil {
+		t.Fatal(err)
+	}
+	const workers = 8
+	failures := make(chan error, workers)
+	for range workers {
+		go func() {
+			for range 10 {
+				got, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					failures <- err
+					return
+				}
+				if !reflect.DeepEqual(got, want) {
+					failures <- fmt.Errorf("cached result differs from fresh result")
+					return
+				}
+			}
+			failures <- nil
+		}()
+	}
+	for range workers {
+		if err := <-failures; err != nil {
+			t.Error(err)
 		}
 	}
 }
