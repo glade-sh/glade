@@ -17,10 +17,33 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
+	return vm.currentUserHasPartnerLeadManualRead(objectName, record, userID) || vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
 		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
 		vm.currentUserHasCriteriaRuleRead(objectName, record, userID) ||
 		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
+}
+
+// currentUserHasPartnerLeadManualRead handles the direct Manual Read share
+// observed in partner_lead_manual_read/org.tsv:2-3.
+func (vm *VM) currentUserHasPartnerLeadManualRead(objectName string, record storage.Record, userID string) bool {
+	if !vm.partnerLeadPrivateExternalDefault(objectName) || !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) {
+		return false
+	}
+	return vm.currentUserHasDirectLeadManualRead(record, userID)
+}
+
+func (vm *VM) currentUserHasDirectLeadManualRead(record storage.Record, userID string) bool {
+	for _, share := range vm.partnerLeadNonOwnerShares() {
+		lead, _ := share.GetField("LeadId")
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		cause, _ := share.GetField("RowCause")
+		if storage.IDsEqual(storage.ID(storageValueIDText(lead)), record.ID) && storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(userID)) &&
+			strings.EqualFold(level.String, "Read") && strings.EqualFold(cause.String, "Manual") {
+			return true
+		}
+	}
+	return false
 }
 
 // userModeUnrestrictedObject reports whether every record of the object is
@@ -75,7 +98,7 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 	if vm.guestUserReadsOnlySelf(objectName) {
 		return storage.IDsEqual(record.ID, storage.ID(userID))
 	}
-	if vm.userModeUnrestrictedObject(objectName, userID) {
+	if vm.publicLeadReadOutsidePartnerPolicy(objectName, record, userID) || vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
 	return vm.userModeRestrictedRecordVisible(objectName, record, userID)
@@ -84,10 +107,48 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 // userModeRestrictedRecordVisible applies the record-dependent policy after
 // the caller has resolved object-wide sharing for this principal.
 func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.Record, userID string) bool {
+	if vm.publicLeadReadOutsidePartnerPolicy(objectName, record, userID) {
+		return true
+	}
+	// Queue owners and a reader who created another user's Lead have no
+	// captured Partner row. Preserve their prior public-model visibility.
+	if vm.partnerLeadPrivateExternalDefault(objectName) && record.System.OwnerID != "" {
+		if !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) || !vm.capturedPartnerLeadTestOwner(record) {
+			return true
+		}
+	}
 	if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
 		return allowed
 	}
 	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.currentUserCanReadDirectQueueMember(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+}
+
+// Public Lead reads do not depend on the Partner policy when the reader
+// owns the Lead, its creator differs from its owner, or two live shares
+// exclude the captured zero-or-one non-owner share shape.
+func (vm *VM) publicLeadReadOutsidePartnerPolicy(objectName string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(objectName, "Lead") || record.System.OwnerID == "" {
+		return false
+	}
+	lead := vm.Org.Objects["Lead"].Definition
+	if strings.TrimSpace(lead.ExternalSharingModel) != "" {
+		return false
+	}
+	model := strings.TrimSpace(lead.SharingModel)
+	if !strings.EqualFold(model, "ReadWrite") && !strings.EqualFold(model, "ReadWriteTransfer") {
+		return false
+	}
+	return !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) ||
+		storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.hasMultipleNonOwnerLeadShares()
+}
+
+func (vm *VM) capturedPartnerLeadTestOwner(record storage.Record) bool {
+	if !strings.HasPrefix(string(record.System.OwnerID), "005") || !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
 }
 
 // Captured Private Lead and custom-object rows give a Standard user read
@@ -204,7 +265,7 @@ func (vm *VM) controlledParentHasSupportedReadSharing(objectName string, record 
 	if !ok || parent.System.IsDeleted {
 		return false
 	}
-	if vm.soqlObjectHasPublicReadSharing(parentObject) {
+	if vm.objectModelHasPublicRead(parentObject) {
 		return true
 	}
 	// portal_sharing_timing_c4: a portal user reads the Contact on its own

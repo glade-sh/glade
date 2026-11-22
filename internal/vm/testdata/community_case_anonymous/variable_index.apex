@@ -1,0 +1,1 @@
+List<Case> cases=[SELECT Id FROM Case LIMIT 1]; Integer i=0; String result; try {if(cases.isEmpty()) result='missing'; else {delete as user cases[i]; result='ok';}} catch(Exception e){result=e.getTypeName();} System.debug('OBS|delete='+result);

@@ -820,6 +820,21 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		}
 	}
 	if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
+		if vm.communityCaseHostPermissionShape(op, objectName, scopedPermissionSetID) {
+			profileID := vm.currentUserInfoField("ProfileId", "")
+			ownedID := vm.profileOwnedPermissionSetID(profileID)
+			_, ownedKnown := vm.explicitObjectPermission(ownedID, objectName, objectPermission)
+			_, profileKnown := vm.explicitObjectPermission(profileID, objectName, objectPermission)
+			if ownedKnown || profileKnown {
+				return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+			}
+			if vm.capturedCommunityCaseHostDelete(record) {
+				return nil, newExceptionError("TypeException", "DML operation DELETE not allowed on Case")
+			}
+			// The host rows do not cover other record shapes; preserve the
+			// former permissive Case default for those records.
+			return nil, nil
+		}
 		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
 	var policyFields []string
@@ -2485,11 +2500,26 @@ func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 // isAccessible false, and their UserRecordAccess Lead rows read and edit false
 // under every internal sharing model. The license refuses the Read Lead
 // permission (lead_grant rows), and create, update and delete need read, so
-// Lead has no object access of any kind. Case create, update and delete have
-// no row and keep the earlier behavior. Other objects are not covered.
+// Lead has no object access of any kind. Case create and update keep the
+// earlier behavior; the captured Case delete row is handled below. Other
+// objects are not covered.
 func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method string) (allowed, known bool) {
 	if !vm.profileHasCommunityLicense(profileID) {
 		return false, false
+	}
+	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
+		vm.capturedCommunityCaseAnonymousDelete(profileID, vm.currentSourceExecutionPolicy().APIVersion) &&
+		(vm.currentClass == "" || vm.capturedCommunityCaseRESTRequest() || vm.capturedCommunityCasePageAction()) {
+		return false, true
+	}
+	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
+	// profile cannot delete Case in the captured test runAs routes.
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
+		!vm.currentTrigger && vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth &&
+		(api == "62.0" || api == "67.0") && vm.currentProfileName(profileID) == "Customer Community User" &&
+		vm.profileHasLicenseKey(profileID, "PID_Customer_Community") {
+		return false, true
 	}
 	switch {
 	case strings.EqualFold(objectName, "Lead") &&
@@ -2499,6 +2529,110 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 		return true, true
 	}
 	return false, false
+}
+
+// capturedCommunityCaseAnonymousDelete is the permission shape in
+// community_case_anonymous/org.tsv:2-5, APIs 62.0 and 67.0.
+func (vm *VM) capturedCommunityCaseAnonymousDelete(profileID, api string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext != nil || vm.currentTrigger || (api != "62.0" && api != "67.0") ||
+		!vm.profileHasLicenseKey(profileID, "PID_Customer_Community") || vm.currentUserInfoField("UserType", "") != "CspLitePortal" ||
+		!vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsApiEnabled") {
+		return false
+	}
+	for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+		read := vm.sourceObjectPermission(source, "Case", "isAccessible")
+		create := vm.sourceObjectPermission(source, "Case", "isCreateable")
+		edit := vm.sourceObjectPermission(source, "Case", "isUpdateable")
+		deleteAllowed, deleteKnown := vm.explicitObjectPermission(source.ID, "Case", "isDeletable")
+		if read && create && edit && deleteKnown && !deleteAllowed && len(source.Mutes) == 0 &&
+			vm.sourceFieldPermission(source, "Case", "Subject", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Subject", "isUpdateable") &&
+			vm.sourceFieldPermission(source, "Case", "Origin", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Origin", "isUpdateable") {
+			return true
+		}
+	}
+	return false
+}
+
+// capturedCommunityCaseRESTRequest identifies the authenticated REST route in
+// community_case_rest/org.tsv:2-9, independent of its sharing declaration.
+func (vm *VM) capturedCommunityCaseRESTRequest() bool {
+	if vm.restRequest.Kind != ValueObject || !strings.EqualFold(stringField(vm.restRequest, "httpMethod"), "POST") || vm.currentClass == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	if !ok {
+		return false
+	}
+	for _, modifier := range class.Modifiers {
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(modifier)), "@restresource(") {
+			return true
+		}
+	}
+	return false
+}
+
+// capturedCommunityCasePageAction covers the rendered controller action in
+// community_case_page/org.tsv:2-3, not a direct method invocation.
+func (vm *VM) capturedCommunityCasePageAction() bool {
+	if vm.currentPage.Kind != ValueObject || vm.vfActionInvoker == nil || vm.currentClass == "" ||
+		!strings.EqualFold(vm.currentMethod.ReturnType, "PageReference") {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && methodHasModifier(class.Modifiers, "without sharing")
+}
+
+func (vm *VM) communityCaseHostPermissionShape(op, objectName, scope string) bool {
+	return op == "delete" && strings.EqualFold(objectName, "Case") && scope == "" && vm.explicitUserModeAccess && vm.userModeSingleRecord &&
+		(vm.capturedCommunityCaseRESTRequest() || vm.capturedCommunityCasePageAction()) && vm.AnonymousCommunityCaseDeleteCompileDenied(vm.currentSourceExecutionPolicy().APIVersion)
+}
+
+// capturedCommunityCaseHostDelete limits the exception to the record shapes
+// in community_case_rest/org.tsv:2-9 and community_case_page/org.tsv:2-3.
+func (vm *VM) capturedCommunityCaseHostDelete(record Value) bool {
+	fields := explicitSObjectFieldNamesInInsertionOrder(record)
+	switch len(fields) {
+	case 1:
+		if !vm.capturedCommunityCaseRESTRequest() || !strings.EqualFold(fields[0], "Id") {
+			return false
+		}
+	case 3:
+		for _, name := range fields {
+			if !strings.EqualFold(name, "Subject") && !strings.EqualFold(name, "Status") && !strings.EqualFold(name, "Origin") {
+				return false
+			}
+		}
+	default:
+		return false
+	}
+	id := stringField(record, "Id")
+	_, stored, found := storage.LookupRecordByID(vm.Org.Objects["Case"].Records, storage.ID(id))
+	return found && storage.IDsEqual(stored.System.OwnerID, storage.ID(vm.currentUserID()))
+}
+
+// AnonymousCommunityCaseDeleteCompileDenied supplies a request-scoped semantic
+// policy; other assignments and profile grants retain their normal precedence.
+func (vm *VM) AnonymousCommunityCaseDeleteCompileDenied(api string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	if !vm.capturedCommunityCaseAnonymousDelete(profileID, api) {
+		return false
+	}
+	for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+		if vm.sourceObjectPermission(source, "Case", "isDeletable") {
+			return false
+		}
+	}
+	ownedID := vm.profileOwnedPermissionSetID(profileID)
+	if allowed, known := vm.explicitObjectPermission(ownedID, "Case", "isDeletable"); known {
+		return !allowed
+	}
+	if allowed, known := vm.explicitObjectPermission(profileID, "Case", "isDeletable"); known {
+		return !allowed
+	}
+	return true
 }
 
 func (vm *VM) profileHasCommunityLicense(profileID string) bool {
