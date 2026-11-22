@@ -133,6 +133,13 @@ func TestChildRelationshipIndexMatchesFreshAfterWrites(t *testing.T) {
 	child.SetRecords(map[storage.ID]storage.Record{})
 	org.Objects["Contact"] = child
 	compare("replace map")
+	row.ExplicitNulls = nil
+	child.PutRecord(id, row)
+	org.Objects["Contact"] = child
+	compare("insert after replacement")
+	child.ClearRecords()
+	org.Objects["Contact"] = child
+	compare("clear")
 }
 
 func TestChildRelationshipIndexConcurrentReuse(t *testing.T) {
