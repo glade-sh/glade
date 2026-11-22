@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome
+case_create_update	62.0	anonymous	true	true	describe=true,true,true,false|insert=ok|update=ok
+case_create_update	67.0	anonymous	true	true	describe=true,true,true,false|insert=ok|update=ok
+case_delete	62.0	anonymous	false	false	DML operation Delete not allowed on Case
+case_delete	67.0	anonymous	false	false	DML operation Delete not allowed on Case
