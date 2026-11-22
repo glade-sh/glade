@@ -1957,7 +1957,7 @@ func (vm *VM) userRecordAccessForRelationship(objectName string, record storage.
 }
 
 func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) storage.OrgState {
-	defer vm.beginPartnerLeadShareScan()()
+	defer vm.beginPartnerLeadReadPass()()
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
@@ -2219,14 +2219,21 @@ func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storag
 // test run switches its run-as user; an anonymous execution has no test
 // context and switches the execution user, which the same checks read.
 func (vm *VM) actAsNamedUser(user Value) func() {
+	principal := &vm.executionUser
 	if vm.testContext != nil {
-		previous := vm.testContext.CurrentUser
-		vm.testContext.CurrentUser = user
-		return func() { vm.testContext.CurrentUser = previous }
+		principal = &vm.testContext.CurrentUser
 	}
-	previous := vm.executionUser
-	vm.executionUser = user
-	return func() { vm.executionUser = previous }
+	previousUser, previousPass := *principal, vm.partnerLeadShares
+	*principal = user
+	if previousPass != nil && previousPass.fixedReader {
+		namedPass := *previousPass
+		namedPass.policyResolved = false
+		vm.partnerLeadShares = &namedPass
+	}
+	return func() {
+		*principal = previousUser
+		vm.partnerLeadShares = previousPass
+	}
 }
 
 func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
@@ -5255,8 +5262,8 @@ func (vm *VM) beginPartnerLeadShareScan() func() {
 	return func() { vm.partnerLeadShares = nil }
 }
 
-// These record loops run without Apex, DML or a change of principal. A scan
-// that evaluates different named users shares only its non-owner rows.
+// These record loops run without Apex or DML. actAsNamedUser scopes the
+// policy to each named reader while retaining the read-only share rows.
 func (vm *VM) beginPartnerLeadReadPass() func() {
 	if vm.partnerLeadShares != nil {
 		return func() {}
