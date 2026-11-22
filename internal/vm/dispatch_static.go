@@ -439,7 +439,20 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 	return calls
 }()
 
+// Derive exact spellings from the same table, including its collision winners.
+// The folded lookup remains authoritative for every other spelling.
+var exactBuiltinStaticCalls = func() map[string]string {
+	calls := make(map[string]string, len(canonicalBuiltinStaticCalls))
+	for _, canonical := range canonicalBuiltinStaticCalls {
+		calls[canonical] = canonical
+	}
+	return calls
+}()
+
 func canonicalBuiltinStaticCall(callee string) (string, bool) {
+	if canonical, ok := exactBuiltinStaticCalls[callee]; ok {
+		return canonical, true
+	}
 	if canonical, ok := canonicalBuiltinStaticCalls[strings.ToLower(callee)]; ok {
 		return canonical, true
 	}
