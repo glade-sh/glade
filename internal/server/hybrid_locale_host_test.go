@@ -78,3 +78,32 @@ func TestHybridLocaleAnonymousHost(t *testing.T) {
 		}
 	}
 }
+
+// NATIVE ../apextest/testdata/regex_java_divergence/org.tsv:2504-2505,2517
+func TestRegexUTF16AnonymousHost(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	s := New(&org)
+	token := case340OwnedTokenFor(t, s, string(storage.DefaultUserID))
+	body := `Matcher m=Pattern.compile('').matcher('a\uD83D\uDE00b'); String positions='';
+while(m.find()) { positions += m.start()+','; }
+System.assertEquals('0,1,2,3,4,', positions);
+System.assertEquals(9, 'a\uD83D\uDE00b'.replaceAll('','-').length());
+Matcher r=Pattern.compile('.').matcher('\uD83D\uDE00'); r.region(1,2); System.assert(r.find());`
+	payload, err := json.Marshal(map[string]string{"anonymousBody": body})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	var result struct {
+		Compiled bool `json:"compiled"`
+		Success  bool `json:"success"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil || rec.Code != http.StatusOK || !result.Compiled || !result.Success {
+		t.Fatalf("status %d, response %s, error %v", rec.Code, rec.Body.String(), err)
+	}
+}

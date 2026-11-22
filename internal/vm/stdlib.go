@@ -1435,10 +1435,17 @@ func matcherOptionalGroupIndex(name string, args []Value) (int, error) {
 	return int(args[0].Int), nil
 }
 
-func matcherGroupValue(matcher Value, input string, groupIndex int) (Value, error) {
+func matcherGroupValue(matcher Value, input string, groupIndex int, cache *preparedMatcherCache) (Value, error) {
 	start, end, err := matcherGroupByteBounds(matcher, groupIndex)
 	if err != nil {
 		return Null, err
+	}
+	if start <= -2 || end <= -2 {
+		first, last, err := matcherGroupBounds(matcher, input, groupIndex, cache)
+		if err != nil {
+			return Null, err
+		}
+		return String(apexSubstringUnits(input, first, last)), nil
 	}
 	if start < 0 || end < 0 {
 		return typedNull("String"), nil
@@ -1446,10 +1453,30 @@ func matcherGroupValue(matcher Value, input string, groupIndex int) (Value, erro
 	return String(input[start:end]), nil
 }
 
-func matcherGroupBounds(matcher Value, input string, groupIndex int) (int, int, error) {
+func matcherGroupBounds(matcher Value, input string, groupIndex int, cache *preparedMatcherCache) (int, int, error) {
 	start, end, err := matcherGroupByteBounds(matcher, groupIndex)
 	if err != nil {
 		return 0, 0, err
+	}
+	if start <= -2 || end <= -2 {
+		positions := matcherPositionsFor(cache, matcher.Ref, input)
+		convert := func(index int) (int, bool) {
+			inside := index <= -2
+			if inside {
+				index = -index - 2
+			}
+			unit, ok := positions.unitAtByte(index)
+			if inside {
+				unit++
+			}
+			return unit, ok
+		}
+		first, okFirst := convert(start)
+		last, okLast := convert(end)
+		if !okFirst || !okLast {
+			return 0, 0, fmt.Errorf("Matcher stored invalid group position")
+		}
+		return first, last, nil
 	}
 	if start < 0 || end < 0 {
 		return -1, -1, nil

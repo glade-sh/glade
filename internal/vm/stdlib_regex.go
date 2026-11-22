@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/dlclark/regexp2"
 )
@@ -146,6 +147,11 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
 		}
+		if len(args) == 0 {
+			if found, handled, regionErr := matcherFindSingleLowRegion(receiver, input, cache); handled || regionErr != nil {
+				return Bool(found), receiver, true, true, regionErr
+			}
+		}
 		entry := cache.use(receiver.Ref, input)
 		region, err := preparedMatcherRegion(entry, receiver, input)
 		if err != nil {
@@ -172,6 +178,31 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 			matcherClearMatch(receiver)
 		} else if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
 			startByte = int(index.Int)
+		}
+		if startByte <= -2 {
+			// The cursor points between the two UTF-16 units of the rune
+			// starting at this byte. The ordinary engine uses byte offsets.
+			at := -startByte - 2
+			startByte = nextRegexSearchIndex(input, at)
+			if at >= region.startByte && startByte <= region.endByte {
+				plan, planErr := matcherRegexp2PlanForInput(receiver, input)
+				if planErr != nil {
+					return Null, receiver, false, true, planErr
+				}
+				subject := matcherMidPairSubjectFor(cache, receiver.Ref, input)
+				runeAt := subject.runeAtByte(at)
+				match, matchErr := matcherEmptyMidPair(plan, input, subject, runeAt)
+				if matchErr != nil {
+					return Null, receiver, false, true, matchErr
+				}
+				if match != nil {
+					matcherSaveMatch(receiver, []int{-at - 2, -at - 2})
+					receiver.Fields["index"] = Int(int64(startByte))
+					receiver.Fields["hitEnd"] = Bool(false)
+					matcherSetRequireEnd(receiver, false)
+					return Bool(true), receiver, true, true, nil
+				}
+			}
 		}
 		if startByte < region.startByte {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find start before region")
@@ -212,6 +243,12 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
+			if indices[1] < len(input) {
+				r, _ := decodeApexRune(input[indices[1]:])
+				if r > 0xffff && next <= region.endByte {
+					next = -indices[1] - 2
+				}
+			}
 		}
 		if next > region.endByte {
 			next = region.endByte + 1
@@ -223,7 +260,7 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		group, err := matcherGroupValue(receiver, input, groupIndex)
+		group, err := matcherGroupValue(receiver, input, groupIndex, cache)
 		return group, receiver, false, true, err
 	case "groupCount":
 		if len(args) != 0 {
@@ -300,9 +337,15 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		}
 		start, end := int(args[0].Int), int(args[1].Int)
 		if err := validateMatcherRegion(input, start, end); err != nil {
-			return Null, receiver, false, true, err
+			if !matcherCapturedLowRegion(receiver, input, start, end) {
+				return Null, receiver, false, true, err
+			}
 		}
 		startByte, _ := byteIndexForApexStringIndex(input, start)
+		if matcherSingleLowSurrogateRegion(input, start, end) {
+			startByte, _, _ = matcherPositionsFor(cache, receiver.Ref, input).byteAtUnit(start)
+			startByte = -startByte - 2
+		}
 		receiver.Fields["regionStart"] = args[0]
 		receiver.Fields["regionEnd"] = args[1]
 		matcherClearMatch(receiver)
@@ -312,6 +355,9 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.regionStart expects 0 arguments")
 		}
+		if start, end := receiver.Fields["regionStart"], receiver.Fields["regionEnd"]; start.Kind == ValueInt && end.Kind == ValueInt && matcherSingleLowSurrogateRegion(input, int(start.Int), int(end.Int)) {
+			return start, receiver, false, true, nil
+		}
 		region, err := matcherRegion(receiver, input)
 		if err != nil {
 			return Null, receiver, false, true, err
@@ -320,6 +366,9 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 	case "regionEnd":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.regionEnd expects 0 arguments")
+		}
+		if start, end := receiver.Fields["regionStart"], receiver.Fields["regionEnd"]; start.Kind == ValueInt && end.Kind == ValueInt && matcherSingleLowSurrogateRegion(input, int(start.Int), int(end.Int)) {
+			return end, receiver, false, true, nil
 		}
 		region, err := matcherRegion(receiver, input)
 		if err != nil {
@@ -473,6 +522,7 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	var out strings.Builder
 	last := 0
 	replaced := false
+	var midPair *matcherMidPairSubject
 	for match != nil {
 		start := match.Index
 		end := match.Index + match.Length
@@ -495,7 +545,10 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 		if start == end && start < len(regionRunes) && regionRunes[start] > 0xffff {
 			r := regionRunes[start] - 0x10000
 			hi, lo := rune(0xd800)+(r>>10), rune(0xdc00)+(r&0x3ff)
-			between, probeErr := matcherEmptyMidPair(plan, regionText, regionRunes, start)
+			if midPair == nil {
+				midPair = &matcherMidPairSubject{runes: regionRunes, splitAt: -1, valid: utf8.ValidString(regionText)}
+			}
+			between, probeErr := matcherEmptyMidPair(plan, regionText, midPair, start)
 			if probeErr != nil {
 				return "", probeErr
 			}
