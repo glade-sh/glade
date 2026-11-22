@@ -35,6 +35,7 @@ func partnerLeadChildVisibilityMachine(t testing.TB) (*VM, ir.Program) {
 	org.Objects["ObjectPermissions"] = permissions
 	fields := org.Objects["FieldPermissions"]
 	fields.PutRecord("0FP000000000001", storage.Record{ID: "0FP000000000001", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue("00e000000000002"), "SObjectType": storage.StringValue("Lead"), "Field": storage.StringValue("Lead.CaseLink__c"), "PermissionsRead": storage.BooleanValue(true)}})
+	fields.PutRecord("0FP000000000002", storage.Record{ID: "0FP000000000002", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue("00e000000000002"), "SObjectType": storage.StringValue("Lead"), "Field": storage.StringValue("Lead.LastName"), "PermissionsRead": storage.BooleanValue(true)}})
 	org.Objects["FieldPermissions"] = fields
 	caseID := storage.ID("500000000000001")
 	cases := org.Objects["Case"]
@@ -48,7 +49,7 @@ func partnerLeadChildVisibilityMachine(t testing.TB) (*VM, ir.Program) {
 	shares := org.Objects["LeadShare"]
 	for i := 0; i < 200; i++ {
 		id := storage.ID(fmt.Sprintf("00Q%012d", i+1))
-		leads.PutRecord(id, storage.Record{ID: id, Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000003"}, Fields: map[string]storage.Value{"CaseLink__c": storage.IDValue(caseID)}})
+		leads.PutRecord(id, storage.Record{ID: id, Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000003"}, Fields: map[string]storage.Value{"CaseLink__c": storage.IDValue(caseID), "LastName": storage.StringValue("Neighbor")}})
 		sid := storage.ID(fmt.Sprintf("00T%012d", i+1))
 		shares.PutRecord(sid, storage.Record{ID: sid, Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue(id), "RowCause": storage.StringValue("Owner")}})
 	}
@@ -64,6 +65,19 @@ func partnerLeadChildVisibilityMachine(t testing.TB) (*VM, ir.Program) {
 		t.Fatal(err)
 	}
 	return machine, program
+}
+
+func TestPartnerLeadSuggestionsPublicNeighbor(t *testing.T) {
+	machine, _ := partnerLeadChildVisibilityMachine(t)
+	option := Object("Search.SuggestionOption")
+	option.Fields["limit"] = Int(200)
+	result, err := machine.searchSuggestionRows("Neighbor", "Lead", option, accessLevelValue("USER_MODE"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.List) != 200 {
+		t.Fatalf("visible suggestions = %d, want 200", len(result.List))
+	}
 }
 
 func TestPartnerLeadChildVisibilityPublicNeighbor(t *testing.T) {
