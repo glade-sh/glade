@@ -9,6 +9,7 @@ import (
 func TestCICodeQLChangeScope(t *testing.T) {
 	for _, tc := range []struct{ name, paths, want string }{
 		{"docs", "docs/guide.md\x00README.md\x00", "false"},
+		{"nested markdown", "internal/vm/README.md\x00", "false"},
 		{"go source", "internal/vm/example.go\x00", "true"},
 		{"docs source", "docs/example.go\x00", "true"},
 		{"fixture", "testdata/README.md\x00", "true"},
