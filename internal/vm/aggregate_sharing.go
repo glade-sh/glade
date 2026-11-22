@@ -2,6 +2,7 @@ package vm
 
 import (
 	"maps"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
@@ -15,6 +16,9 @@ import (
 func (vm *VM) orgWithVisibleAggregateInputs(org *storage.OrgState, query soql.Query) *storage.OrgState {
 	if org == nil || len(query.Aggregates) == 0 && len(query.GroupBy) == 0 && !soqlHasRowWindow(query) || soqlSharingCountQuery(query) {
 		return org
+	}
+	if strings.EqualFold(query.Object, "Lead") {
+		defer vm.beginPartnerLeadShareScan()()
 	}
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {

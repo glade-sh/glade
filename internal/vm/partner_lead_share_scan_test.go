@@ -33,6 +33,7 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	check := func(want bool) {
 		t.Helper()
+		defer machine.beginPartnerLeadShareScan()()
 		if got := machine.partnerLeadPrivateExternalDefault("Lead"); got != want {
 			t.Fatalf("share shape: got %v want %v", got, want)
 		}
@@ -45,9 +46,16 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 		org.Objects["LeadShare"] = state
 	}
 	put()
-	check(true)
-	if _, versioned := org.Objects["LeadShare"].RecordsToken(); !versioned || machine.partnerLeadShares == nil {
-		t.Fatal("share map did not exercise the versioned index")
+	endScan := machine.beginPartnerLeadShareScan()
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("owner share changed the captured shape")
+	}
+	if machine.partnerLeadShares == nil || !machine.partnerLeadShares.ready {
+		t.Fatal("share pass did not exercise the index")
+	}
+	endScan()
+	if machine.partnerLeadShares != nil {
+		t.Fatal("share index survived its record pass")
 	}
 	share.Fields = map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Manual"), "UserOrGroupId": storage.IDValue("005000000000002"), "LeadAccessLevel": storage.StringValue("Read")}
 	put()
@@ -109,9 +117,11 @@ func TestPartnerLeadShareScanTracksAliasedRecordMutation(t *testing.T) {
 	org.Objects["LeadShare"] = shares
 	machine := New(nil)
 	machine.SetOrg(&org)
+	endScan := machine.beginPartnerLeadShareScan()
 	if got := machine.partnerLeadNonOwnerShares(); len(got) != 0 {
 		t.Fatalf("initial non-owner shares = %d", len(got))
 	}
+	endScan()
 	before, ok := shares.RecordsToken()
 	if !ok {
 		t.Fatal("fixture needs a versioned share map")
@@ -125,6 +135,8 @@ func TestPartnerLeadShareScanTracksAliasedRecordMutation(t *testing.T) {
 	if before != after {
 		t.Fatal("mutation unexpectedly advanced original token")
 	}
+	endScan = machine.beginPartnerLeadShareScan()
+	defer endScan()
 	if got := machine.partnerLeadNonOwnerShares(); len(got) != 1 {
 		t.Fatalf("aliased non-owner shares = %d, want 1", len(got))
 	}

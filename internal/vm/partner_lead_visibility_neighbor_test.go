@@ -76,12 +76,14 @@ func BenchmarkPartnerLeadVisibilityOwnerShares(b *testing.B) {
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		endScan := machine.beginPartnerLeadShareScan()
 		visible := 0
 		for _, record := range lead.Records {
 			if machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
 				visible++
 			}
 		}
+		endScan()
 		if visible != 200 {
 			b.Fatalf("visible = %d, want 200", visible)
 		}

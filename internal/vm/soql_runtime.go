@@ -1936,6 +1936,7 @@ func (vm *VM) userRecordAccessForRelationship(objectName string, record storage.
 }
 
 func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) storage.OrgState {
+	defer vm.beginPartnerLeadShareScan()()
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
@@ -2770,6 +2771,12 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// A search reads permission rows and never changes them, so one answer per
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
+	for _, spec := range query.Returning {
+		if strings.EqualFold(spec.Object, "Lead") {
+			defer vm.beginPartnerLeadShareScan()()
+			break
+		}
+	}
 	groups := make([]soslResultGroup, 0, len(query.Returning))
 	// Native allocation was measured with one to five and ten objects on
 	// both routes (sosl_result_windows and sosl_result_windows_wide).
@@ -4837,7 +4844,9 @@ func (vm *VM) soqlSharingUserID(query soql.Query) string {
 }
 
 func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
-
+	if strings.EqualFold(query.Object, "Lead") {
+		defer vm.beginPartnerLeadShareScan()()
+	}
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {
 		return result
@@ -5195,16 +5204,21 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 }
 
 type partnerLeadShareIndex struct {
-	token  storage.RecordsToken
+	ready  bool
 	shares []storage.Record
 }
 
-// partnerLeadNonOwnerShares caches only the versioned share map's filtering.
-// The reader, Lead records, metadata and permissions are evaluated each time.
+// beginPartnerLeadShareScan scopes the index to a read-only record pass.
+// No index survives a pass, including when records share mutable field maps.
+func (vm *VM) beginPartnerLeadShareScan() func() {
+	previous := vm.partnerLeadShares
+	vm.partnerLeadShares = &partnerLeadShareIndex{}
+	return func() { vm.partnerLeadShares = previous }
+}
+
 func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
 	state := vm.Org.Objects["LeadShare"]
-	token, versioned := state.RecordsToken()
-	if versioned && vm.partnerLeadShares != nil && vm.partnerLeadShares.token == token {
+	if vm.partnerLeadShares != nil && vm.partnerLeadShares.ready {
 		return vm.partnerLeadShares.shares
 	}
 	var shares []storage.Record
@@ -5214,10 +5228,9 @@ func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
 			shares = append(shares, share)
 		}
 	}
-	if versioned {
-		vm.partnerLeadShares = &partnerLeadShareIndex{token: token, shares: shares}
-	} else {
-		vm.partnerLeadShares = nil
+	if vm.partnerLeadShares != nil {
+		vm.partnerLeadShares.shares = shares
+		vm.partnerLeadShares.ready = true
 	}
 	return shares
 }
