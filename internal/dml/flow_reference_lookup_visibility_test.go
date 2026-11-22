@@ -34,19 +34,19 @@ func TestFlowReferenceIDLookupVisibilityScope(t *testing.T) {
 }
 
 func TestFlowRelationshipFilterFaultRuntimeScope(t *testing.T) {
-	left := storage.WorkflowCriteriaItem{Field: "Parent.Name", Operation: "equals", SourceField: "Parent.Name"}
+	left := storage.WorkflowCriteriaItem{Field: "Name", Operation: "equals", SourceField: "Parent.Name"}
 	right := storage.WorkflowCriteriaItem{Field: "Name", Operation: "equals", Value: "value"}
 	for _, tc := range []struct {
 		name   string
 		lookup storage.FlowRecordLookup
 		want   bool
 	}{
-		{"captured", storage.FlowRecordLookup{GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, true},
-		{"one_filter", storage.FlowRecordLookup{GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left}}, false},
-		{"or", storage.FlowRecordLookup{GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "or", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
-		{"different_source", storage.FlowRecordLookup{GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{{Field: "Parent.Name", Operation: "equals", SourceField: "Name"}, right}}, false},
-		{"collection", storage.FlowRecordLookup{StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
-		{"assign_null", storage.FlowRecordLookup{GetFirstRecordOnly: true, StoreOutputAutomatically: true, AssignNullValuesIfNoRecordsFound: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
+		{"captured", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, true},
+		{"one_filter", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left}}, false},
+		{"or", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "or", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
+		{"different_source", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{{Field: "Name", Operation: "equals", SourceField: "Name"}, right}}, false},
+		{"collection", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
+		{"assign_null", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, AssignNullValuesIfNoRecordsFound: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := flowCapturedRelationshipFilterRuntime(tc.lookup); got != tc.want {
