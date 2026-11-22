@@ -10,6 +10,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -499,6 +500,11 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		switch callerMethod.APIVersion {
 		case "62.0", "67.0", "68.0":
 			entryFrame.anonymousCallerLine = callLine
+			if method.IsStatic && len(method.Params) == 0 && len(method.Program.Instructions) == 1 {
+				inst := method.Program.Instructions[0]
+				entryFrame.anonymousDirectCandidate = inst.Op == ir.OpThrow && inst.Expr.Kind == ir.ExprCall &&
+					strings.HasPrefix(inst.Expr.Callee, "new:") && len(inst.Expr.Args) == 0 && len(inst.Expr.NamedArgs) == 0 && inst.Expr.Left == nil
+			}
 		}
 	}
 	vm.callStack = append(vm.callStack, entryFrame)

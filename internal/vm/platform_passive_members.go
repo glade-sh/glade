@@ -1784,38 +1784,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return record, receiver, false, true, nil
 		case "getDescribe":
-			if len(args) > 1 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 or 1 arguments")
-			}
-			if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "SObjectDescribeOptions") {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects SObjectDescribeOptions")
-			}
-			objectValue, ok := receiver.Fields["object"]
-			if !ok || objectValue.Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
-			}
-			objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectValue.Text)
-			if !ok {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
-			}
-			appendTraceLazy(result, "apex.describe.sobject", "apex.describe", func() map[string]any {
-				return vm.traceDescribeArgs("SObjectType.getDescribe", map[string]any{
-					trace.ArgObject: objectName,
-				})
-			})
-			describe := vm.describeSObjectValue(objectName, definition)
-			optionOverride := ""
-			if len(args) == 1 && args[0].Text != "" {
-				optionOverride = strings.ToUpper(args[0].Text)
-			}
-			nameOverride := ""
-			if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
-				if name, ok := describe.Fields["name"]; ok && name.Kind == ValueString {
-					nameOverride = localSchemaName(name.Text)
-				}
-			}
-			describe = overlaySObjectDescribe(describe, nameOverride, optionOverride)
-			return describe, receiver, false, true, nil
+			return vm.callSObjectTypeDescribe(receiver, args, result, false)
 		case "getLocalName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getLocalName expects 0 arguments")
@@ -6218,6 +6187,45 @@ func (vm *VM) sObjectTypeDescribeShouldUseLocalName(typeName string) bool {
 		return strings.EqualFold(namespace, currentNamespace)
 	}
 	return strings.EqualFold(namespace, strings.TrimSpace(vm.Org.Namespace))
+}
+
+func (vm *VM) callSObjectTypeDescribe(receiver Value, args []Value, result *Result, borrow bool) (Value, Value, bool, bool, error) {
+	if len(args) > 1 {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 or 1 arguments")
+	}
+	if len(args) == 1 && !isSchemaDescribeOptionValue(args[0], "SObjectDescribeOptions") {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects SObjectDescribeOptions")
+	}
+	objectValue, ok := receiver.Fields["object"]
+	if !ok || objectValue.Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
+	}
+	objectName, definition, ok := vm.describeAPI68ObjectDefinition(objectValue.Text)
+	if !ok {
+		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
+	}
+	appendTraceLazy(result, "apex.describe.sobject", "apex.describe", func() map[string]any {
+		return vm.traceDescribeArgs("SObjectType.getDescribe", map[string]any{
+			trace.ArgObject: objectName,
+		})
+	})
+	describe := vm.describeSObjectValue(objectName, definition)
+	optionOverride := ""
+	if len(args) == 1 && args[0].Text != "" {
+		optionOverride = strings.ToUpper(args[0].Text)
+	}
+	nameOverride := ""
+	if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
+		if name, ok := describe.Fields["name"]; ok && name.Kind == ValueString {
+			nameOverride = localSchemaName(name.Text)
+		}
+	}
+	if borrow && optionOverride == "" && (nameOverride == "" || nameOverride == describe.Fields["name"].Text) {
+		describe.Ref = newValueRef()
+	} else {
+		describe = overlaySObjectDescribe(describe, nameOverride, optionOverride)
+	}
+	return describe, receiver, false, true, nil
 }
 
 // callSObjectFieldDescribe keeps eager and temporary reads on the same validation,
