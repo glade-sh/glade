@@ -155,9 +155,10 @@ System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valu
 	}
 }
 
-// These anonymous projections have no matching native row. Preserve their
-// pre-existing empty named projection.
+// NATIVE projection_controls/org.tsv:2-3 anonymous APIs 68.0 and 67.0.
+// Other projections preserve their pre-existing empty named projection.
 func TestManualReadUncapturedProjection(t *testing.T) {
+	rows := readCriteriaTSV(t, filepath.Join(criteriaSharingFixtures, "custom_manual_share_lifecycle", "projection_controls", "org.tsv"))
 	for _, tc := range []struct{ name, api, model string }{
 		{"api68", "68.0", "Private"},
 		{"public", "67.0", "ReadWrite"},
@@ -219,8 +220,21 @@ System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valu
 				query = strings.Replace(query, "RecordId,HasReadAccess FROM", "RecordId,HasReadAccess,HasEditAccess FROM", 1)
 			}
 			got := runCriteriaExec(t, root, db, query)
-			if got != "row=0:read=missing" {
-				t.Fatalf("uncaptured projection changed: %s", got)
+			want := "row=0:read=missing"
+			rowID := map[string]string{"api68": "api68_projection", "extra-field": "api67_extra_field"}[tc.name]
+			if rowID != "" {
+				want = ""
+				for _, row := range rows {
+					if row["id"] == rowID && row["api"] == tc.api {
+						want = row["outcome"]
+					}
+				}
+				if want == "" {
+					t.Fatalf("missing native row for %s", rowID)
+				}
+			}
+			if got != want {
+				t.Fatalf("projection: got %s, want %s", got, want)
 			}
 		})
 	}

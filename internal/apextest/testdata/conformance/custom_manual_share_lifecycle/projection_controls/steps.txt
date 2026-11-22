@@ -1,0 +1,12 @@
+Reconstructed templates for the synthetic capture requests. The <record-name>
+placeholder stands for a distinct record name per API. Object metadata, reader
+setup and permission assignment match ../source/steps.txt and its metadata.
+
+Commit this record in one anonymous request:
+insert new ProbeAccess__c(Name='<record-name>');
+
+In a later anonymous request, run at API 68.0:
+User u=[SELECT Id FROM User WHERE Alias='probeusr' LIMIT 1]; ProbeAccess__c rec=[SELECT Id FROM ProbeAccess__c WHERE Name='<record-name>' LIMIT 1]; List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:rec.Id]; System.debug(LoggingLevel.ERROR,'OBS|row='+a.size()+':read='+(a.isEmpty()?'missing':String.valueOf(a[0].HasReadAccess)));
+
+In a later anonymous request, run at API 67.0 with the same code except for:
+SELECT RecordId,HasReadAccess,HasEditAccess FROM UserRecordAccess
