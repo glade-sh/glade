@@ -52,3 +52,33 @@ func TestComparableSortUncapturedIndirectNullNeighbor(t *testing.T) {
 		t.Fatalf("first sorted value = %v, want null", values[0])
 	}
 }
+
+// NATIVE homogeneous indirect sort: ../apextest/testdata/conformance/stdlib_comparable_interface/org.tsv:2-5.
+func TestComparableSortIndirectDecisionIsPerCall(t *testing.T) {
+	program, err := CompileAnonymous(`return 0;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ChildComparable", IsInterface: true, Interfaces: []string{"Comparable"}}); err != nil {
+		t.Fatal(err)
+	}
+	method := Method{Name: "Rank.compareTo", ClassName: "Rank", ReturnType: "Integer", Params: []Param{{Name: "other", Type: "Object"}}, Program: program}
+	if err := machine.RegisterClass(Class{Name: "Rank", Interfaces: []string{"ChildComparable"}, Methods: map[string]Method{"compareTo": method}}); err != nil {
+		t.Fatal(err)
+	}
+	mixed := []Value{Object("Rank"), Null}
+	if err := machine.sortComparableValues(mixed, &Result{}); err != nil {
+		t.Fatalf("mixed sort: %v", err)
+	}
+	homogeneous := []Value{Object("Rank"), Object("Rank")}
+	err = machine.sortComparableValues(homogeneous, &Result{})
+	thrown, ok := err.(*apexThrowError)
+	if !ok || thrown.value.Type != "System.ListException" {
+		t.Fatalf("homogeneous sort error = %v, want System.ListException", err)
+	}
+	mixed = []Value{Null, Object("Rank")}
+	if err := machine.sortComparableValues(mixed, &Result{}); err != nil {
+		t.Fatalf("second mixed sort: %v", err)
+	}
+}
