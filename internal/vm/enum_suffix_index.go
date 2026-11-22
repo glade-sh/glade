@@ -15,7 +15,6 @@ type enumSuffixClassIndex struct {
 	generation uint64
 	classCount int
 	bySuffix   map[string][]string
-	partial    bool
 }
 
 // enumSuffixClassCandidates returns the class entry keys whose current class
@@ -24,19 +23,17 @@ func (vm *VM) enumSuffixClassCandidates(suffix string) []string {
 	// Gated stub enums of this simple name were entries before the gate.
 	vm.bindGatedPlatformClassesNamed(suffix)
 	index := vm.enumSuffixClasses
-	root := vm.enumSuffixFrozenRoot()
-	if index == nil || index.generation != vm.classLookupGeneration || index.classCount != len(vm.Classes) || index.partial != (root != nil) {
+	if index == nil || index.generation != vm.classLookupGeneration || index.classCount != len(vm.Classes) {
+		root := vm.enumSuffixFrozenRoot()
 		if root != nil {
-			index = &enumSuffixClassIndex{generation: vm.classLookupGeneration, classCount: len(vm.Classes), bySuffix: make(map[string][]string), partial: true}
+			index = &enumSuffixClassIndex{generation: vm.classLookupGeneration, classCount: len(vm.Classes), bySuffix: make(map[string][]string, len(root.enumSuffixKeys))}
+			for name := range root.enumSuffixKeys {
+				index.bySuffix[name] = vm.enumSuffixCandidatesFromRoot(root, name)
+			}
 		} else {
 			index = vm.buildEnumSuffixClassIndex()
 		}
 		vm.enumSuffixClasses = index
-	}
-	if root != nil {
-		if _, ok := index.bySuffix[suffix]; !ok {
-			index.bySuffix[suffix] = vm.enumSuffixCandidatesFromRoot(root, suffix)
-		}
 	}
 	return index.bySuffix[suffix]
 }
@@ -63,47 +60,30 @@ func (vm *VM) buildFrozenEnumSuffixKeys() map[string][]string {
 }
 
 func (vm *VM) enumSuffixFrozenRoot() *frozenClassLookup {
-	if vm.classValuesWritten || (vm.classMapWritten && vm.classOverlay == nil) {
+	// A registration makes Classes private, so subsequent writes can change
+	// existing entries without changing its size or the overlay's write set.
+	// Layers can inherit such changes. Only an untouched root is safe to share.
+	if vm.classValuesWritten || vm.classMapWritten || vm.classOverlay != nil {
 		return nil
 	}
-	var generation *frozenClassLookup
-	if vm.classOverlay != nil {
-		generation = vm.classOverlay.from
-	} else {
-		generation = vm.frozenClassLookup
-	}
+	generation := vm.frozenClassLookup
 	if generation == nil || generation.copyPlan == nil || !generation.copyPlan.uniformAliases {
+		return nil
+	}
+	if generation.base != nil {
 		return nil
 	}
 	if generation.searchEntries == nil {
 		return nil
 	}
-	expectedCount := len(generation.searchEntries)
-	if vm.classOverlay != nil {
-		expectedCount += len(vm.classOverlay.added)
-	}
-	if len(vm.Classes) != expectedCount {
+	if len(vm.Classes) != len(generation.searchEntries) {
 		return nil
 	}
-	root := generation.rootGeneration()
-	if root.copyPlan == nil || !root.copyPlan.uniformAliases {
-		return nil
-	}
-	return root
+	return generation
 }
 
 func (vm *VM) enumSuffixCandidatesFromRoot(root *frozenClassLookup, suffix string) []string {
-	var written map[string]struct{}
-	if vm.classOverlay != nil {
-		written = vm.classOverlay.written
-	} else if vm.frozenClassLookup != root {
-		written = vm.frozenClassLookup.written
-	}
-	keys := append([]string(nil), root.enumSuffixKeys[suffix]...)
-	for key := range written {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := root.enumSuffixKeys[suffix]
 	seen := make(map[string]bool, len(keys))
 	var out []string
 	for _, key := range keys {
