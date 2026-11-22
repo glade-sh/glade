@@ -71,3 +71,39 @@ func TestPartnerLeadExternalDefaultUncapturedProjection(t *testing.T) {
 		})
 	}
 }
+
+// ReadWriteTransfer with a non-owner share has no matching native row.
+func TestPartnerLeadTransferDefaultUncapturedShare(t *testing.T) {
+	for _, target := range []string{"005000000000002", "005000000000003"} {
+		t.Run(target, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.APIVersion = "67.0"
+			storage.EnsureStandardObject(&org, "Lead")
+			storage.EnsureStandardObject(&org, "LeadShare")
+			storage.EnsureStandardObject(&org, "Profile")
+			lead := org.Objects["Lead"]
+			lead.Definition.SharingModel = "ReadWriteTransfer"
+			record := storage.Record{ID: "00Q000000000001", Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000001"}}
+			lead.Records = map[storage.ID]storage.Record{record.ID: record}
+			org.Objects["Lead"] = lead
+			shares := org.Objects["LeadShare"]
+			shares.Records = map[storage.ID]storage.Record{"00T000000000001": {Fields: map[string]storage.Value{
+				"LeadId": storage.StringValue(string(record.ID)), "UserOrGroupId": storage.StringValue(target),
+				"LeadAccessLevel": storage.StringValue("Read"), "RowCause": storage.StringValue("Manual"),
+			}}}
+			org.Objects["LeadShare"] = shares
+			profiles := org.Objects["Profile"]
+			profiles.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User")}}}
+			org.Objects["Profile"] = profiles
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.EnableTestContext()
+			machine.testContext.CurrentUser = stripInaccessibleTestUser()
+			machine.testContext.RunAsDepth = 1
+			machine.currentMethod = Method{APIVersion: "67.0"}
+			if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+				t.Fatal("uncaptured shared Lead visibility changed")
+			}
+		})
+	}
+}
