@@ -2,7 +2,7 @@ capture: lead-transfer-manual
 started: 2026-11-22T04:42:00Z
 finished: 2026-11-22T04:42:49Z
 apis: 62.0 67.0
-routes: istest 
+routes: istest
 cases: 1
 sf: @salesforce/cli/2.157.8
 hub: campaign Dev Hub (scratch org, 30 days, deleted and deletion verified after the run; DurationDays=30 recorded in creation result)
