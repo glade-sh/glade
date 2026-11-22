@@ -80,7 +80,10 @@ func TestReviewRegexDateCacheEvictionAlias(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	alias := m
+	alias, _, _, _, err := callMatcherMemberWithCache(m, "usePattern", []Value{p}, &cache)
+	if err != nil || alias.Ref == m.Ref {
+		t.Fatalf("alias identity: %v %v", alias, err)
+	}
 	found, _, _, _, err := callMatcherMemberWithCache(m, "find", nil, &cache)
 	if err != nil || !found.Bool {
 		t.Fatalf("first find %v %v", found, err)
@@ -106,7 +109,9 @@ func TestReviewRegexDateCacheEvictionAlias(t *testing.T) {
 func TestReviewRegexDateUncapturedAPI(t *testing.T) {
 	source := `String positions = ''; Matcher m = Pattern.compile('').matcher('😀'); while (m.find()) { positions += m.start() + ','; }
  Integer splitSize = '😀'.split('').size();
- Integer replacedLength = '😀'.replaceAll('','-').length();`
+ Integer replacedLength = '😀'.replaceAll('','-').length();
+ Integer patternSplitSize = Pattern.compile('').split('😀').size();
+ Integer matcherReplaceLength = Pattern.compile('').matcher('😀').replaceAll('-').length();`
 	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "66.0"})
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +125,7 @@ func TestReviewRegexDateUncapturedAPI(t *testing.T) {
 			t.Errorf("%s = %q, want %q", name, got, want)
 		}
 	}
-	for name, want := range map[string]int64{"splitSize": 1, "replacedLength": 4} {
+	for name, want := range map[string]int64{"splitSize": 1, "replacedLength": 4, "patternSplitSize": 1, "matcherReplaceLength": 4} {
 		if got := machine.Globals[name].Int; got != want {
 			t.Errorf("%s = %d, want %d", name, got, want)
 		}
