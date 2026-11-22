@@ -3,6 +3,7 @@ package testreport
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -48,5 +49,17 @@ func BenchmarkLargeReportJSON(b *testing.B) {
 		if err := writeReportJSON(io.Discard, value); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+type reportJSONErrorWriter struct{ writes int }
+
+func (w *reportJSONErrorWriter) Write([]byte) (int, error) { w.writes++; return 0, io.ErrClosedPipe }
+
+func TestReportJSONWriterError(t *testing.T) {
+	w := &reportJSONErrorWriter{}
+	err := writeReportJSON(w, largeJSONReport())
+	if !errors.Is(err, io.ErrClosedPipe) || w.writes != 1 {
+		t.Fatalf("error = %v, writes = %d", err, w.writes)
 	}
 }
