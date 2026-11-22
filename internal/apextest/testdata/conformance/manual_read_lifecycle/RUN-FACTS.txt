@@ -1,6 +1,6 @@
 capture: private custom-object Manual Read sharing lifecycle
 apis: 62.0 67.0
-routes: istest
+routes: istest anonymous
 org: fresh 30-day scratch org on campaign Dev Hub, deleted after the capture
 shape: private custom object, Standard User with read permission, admin-owned record, direct Manual Read share
 checkpoint: query UserRecordAccess for reader and record as administrator, and run a with-sharing count as the reader
