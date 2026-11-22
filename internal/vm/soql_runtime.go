@@ -1977,7 +1977,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 }
 
 var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
-var manualReadAccessProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=.+?\s+and\s+recordid\s*=`)
+var manualReadAccessProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)\s+and\s+recordid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)(?:\s+[a-z0-9]{15,18})*\s*$`)
 
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
@@ -2055,8 +2055,22 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName string) bool {
 	profileID := storageValueIDText(user.Fields["ProfileId"])
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
-	for _, source := range vm.assignedPermissionSources(string(user.ID), false) {
-		if !storage.IDsEqual(storage.ID(source.ID), storage.ID(profilePermissionSetID)) && vm.sourceObjectPermission(source, objectName, "isAccessible") {
+	for _, assignment := range vm.Org.Objects["PermissionSetAssignment"].Records {
+		if assignment.System.IsDeleted || vm.permissionAssignmentNotYetApplied(assignment, string(user.ID)) {
+			continue
+		}
+		assignee, _ := assignment.GetField("AssigneeId")
+		group, _ := assignment.GetField("PermissionSetGroupId")
+		set, _ := assignment.GetField("PermissionSetId")
+		setID := storageValueIDText(set)
+		if !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), user.ID) || storageValueIDText(group) != "" || setID == "" ||
+			storage.IDsEqual(storage.ID(setID), storage.ID(profilePermissionSetID)) {
+			continue
+		}
+		if id, _, ok := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(setID)); ok {
+			setID = string(id)
+		}
+		if vm.sourceObjectPermission(permissionGrantSource{ID: setID}, objectName, "isAccessible") {
 			return true
 		}
 	}
