@@ -10,7 +10,10 @@ import (
 	"testing"
 )
 
-// NATIVE ../vm/testdata/conformance/hybrid_locale_tokens/{fr,de}/org.tsv:4-5 istest 62.0,67.0
+// NATIVE ../vm/testdata/conformance/hybrid_locale_tokens/fr/org.tsv:4 istest 62.0
+// NATIVE ../vm/testdata/conformance/hybrid_locale_tokens/fr/org.tsv:5 istest 67.0
+// NATIVE ../vm/testdata/conformance/hybrid_locale_tokens/de/org.tsv:4 istest 62.0
+// NATIVE ../vm/testdata/conformance/hybrid_locale_tokens/de/org.tsv:5 istest 67.0
 func TestHybridLocaleProjectRunner(t *testing.T) {
 	for _, tc := range []struct{ fixture, locale, language string }{{"fr", "fr_FR", "fr"}, {"de", "de_DE", "de"}} {
 		for _, api := range []string{"62.0", "67.0"} {
