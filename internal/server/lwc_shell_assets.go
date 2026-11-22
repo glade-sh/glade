@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"html"
 	"net/http"
@@ -13,7 +11,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
@@ -61,7 +58,9 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	workbenchMode := lwcShellWorkbenchMode(activeContext, builderActive, homeActive)
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>Glade LWC Shell</title>`)
-	b.WriteString(`<link rel="stylesheet" href="/lightning/runtime/shell/glade-shell.css">`)
+	b.WriteString(`<link rel="stylesheet" href="`)
+	b.WriteString(lightningRuntimeAssetURL("shell", "glade-shell.css"))
+	b.WriteString(`">`)
 	b.WriteString(lwcbrowser.BootstrapHTML(cfg))
 	b.WriteString(`</head><body class="glade-shell" data-glade-shell="workbench" data-glade-app-mode="`)
 	b.WriteString(html.EscapeString(model.Mode))
@@ -156,7 +155,9 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(`(function(){var mounts=`)
 	b.WriteString(mountsJSON)
 	b.WriteString(`;function create(m,done){window.$Lightning.createComponent(m.qualified,m.attrs,m.hostId,function(cmp,status,msg){if(done){done(cmp,status,msg);}});}function go(){var theme=null;var rest=[];for(var i=0;i<mounts.length;i++){if(!theme&&mounts[i].region==="theme"){theme=mounts[i];}else{rest.push(mounts[i]);}}if(!theme){for(var j=0;j<mounts.length;j++){create(mounts[j]);}return;}create(theme,function(cmp,status){if(status!=="SUCCESS"||!cmp){for(var j=0;j<rest.length;j++){create(rest[j]);}return;}cmp.setAttribute("data-glade-theme-wrapper","true");for(var k=0;k<rest.length;k++){var host=document.getElementById(rest[k].hostId);if(host){cmp.appendChild(host);}create(rest[k]);}});}if(window.$Lightning){go();}else{window.addEventListener("load",go);}})();`)
-	b.WriteString(`</script><script type="module" src="/lightning/runtime/shell/app.js"></script></body></html>`)
+	b.WriteString(`</script><script type="module" src="`)
+	b.WriteString(lightningRuntimeAssetURL("shell", "app.js"))
+	b.WriteString(`"></script></body></html>`)
 	return b.String()
 }
 
@@ -726,75 +727,70 @@ func lwcShellWorkbenchNavLinks(model lwcshell.WorkbenchModel) []lwcShellNavLink 
 	return links
 }
 
-type runtimeAssetDigestEntry struct {
-	content []byte
-	tag     string
-}
-
-type runtimeAssetDigestCache struct {
-	mu      sync.Mutex
-	entries map[string]runtimeAssetDigestEntry
-	bytes   int
-}
-
-func (c *runtimeAssetDigestCache) validator(key string, content []byte, digest func([]byte) string) string {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if entry, ok := c.entries[key]; ok && bytes.Equal(entry.content, content) {
-		return entry.tag
-	}
-	tag := digest(content)
-	const maxBytes = 32 << 20
-	_, present := c.entries[key]
-	if c.entries == nil || c.bytes+len(content) > maxBytes || (!present && len(c.entries) >= 256) {
-		c.entries = make(map[string]runtimeAssetDigestEntry)
-		c.bytes = 0
-	}
-	if len(content) <= maxBytes {
-		c.bytes -= len(c.entries[key].content)
-		c.entries[key] = runtimeAssetDigestEntry{content: content, tag: tag}
-		c.bytes += len(content)
-	}
-	return tag
-}
-
-func runtimeAssetDigest(content []byte) string {
-	return fmt.Sprintf("\"%x\"", sha256.Sum256(content))
-}
-
 func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Request, parts []string) {
 	if r.Method != http.MethodGet || len(parts) < 2 {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
 		return
 	}
-	contentType, content, ok := lightningRuntimeAsset(parts[0], strings.Join(parts[1:], "/"))
-	if !ok {
-		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
-		return
-	}
-	w.Header().Set("Content-Type", contentType)
-	kind, _ := cleanLightningRuntimeAssetKind(parts[0])
-	name, _ := cleanLightningRuntimeAssetName(strings.Join(parts[1:], "/"))
-	tag := s.runtimeAssetDigests.validator(kind+"/"+name, content, runtimeAssetDigest)
-	w.Header().Set("ETag", tag)
-	w.Header().Set("Cache-Control", "private, no-cache")
-	for _, header := range r.Header.Values("If-None-Match") {
-		for _, candidate := range strings.Split(header, ",") {
-			candidate = strings.TrimSpace(candidate)
-			if candidate == "*" || strings.TrimPrefix(candidate, "W/") == tag {
+	var content []byte
+	found := lightningRuntimeAssetWith(parts[0], strings.Join(parts[1:], "/"), func(file, contentType string) bool {
+		// The validator comes from the file's stamp, so a request never hashes
+		// the body. An unstamped or just-written file gets no validator.
+		tag := runtimeAssetETag(file)
+		w.Header().Set("Content-Type", contentType)
+		if want := r.URL.Query().Get("v"); want != "" && want == runtimeAssetContentVersion(file) {
+			// The URL names these exact bytes, so they never need revalidation.
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			// Pragma and Expires from the former no-store header are dropped;
+			// current browsers honour Cache-Control alone.
+			w.Header().Set("Cache-Control", "private, no-cache")
+		}
+		if tag != "" {
+			w.Header().Set("ETag", tag)
+			if runtimeAssetNotModified(r, tag) {
 				w.WriteHeader(http.StatusNotModified)
-				return
+				content = []byte{}
+				return true
 			}
 		}
+		body, err := os.ReadFile(file)
+		if err != nil {
+			return false
+		}
+		content = body
+		return true
+	})
+	if !found {
+		w.Header().Del("Content-Type")
+		w.Header().Del("Cache-Control")
+		w.Header().Del("ETag")
+		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
+		return
 	}
 	_, _ = w.Write(content)
 }
 
-func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
+func runtimeAssetNotModified(r *http.Request, tag string) bool {
+	for _, header := range r.Header.Values("If-None-Match") {
+		for _, candidate := range strings.Split(header, ",") {
+			candidate = strings.TrimSpace(candidate)
+			if candidate == "*" || strings.TrimPrefix(candidate, "W/") == strings.TrimPrefix(tag, "W/") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// lightningRuntimeAssetWith finds the first readable regular file for the
+// asset, in the same order the bytes are served from, and calls use while the
+// installed toolchain stays leased. use returns false to try the next candidate.
+func lightningRuntimeAssetWith(kind, name string, use func(file, contentType string) bool) bool {
 	kind, kindOK := cleanLightningRuntimeAssetKind(kind)
 	name, nameOK := cleanLightningRuntimeAssetName(name)
 	if !kindOK || !nameOK {
-		return "", nil, false
+		return false
 	}
 	candidates := []string{name}
 	if strings.HasSuffix(name, ".js") {
@@ -802,28 +798,60 @@ func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
 	}
 	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		for _, candidate := range candidates {
-			content, err := os.ReadFile(filepath.Join(sourceRoot, "lwcruntime", "src", kind, candidate))
-			if err == nil {
-				return lightningRuntimeContentType(candidate), content, true
+			file := filepath.Join(sourceRoot, "lwcruntime", "src", kind, candidate)
+			if info, err := os.Stat(file); err == nil && info.Mode().IsRegular() && use(file, lightningRuntimeContentType(candidate)) {
+				return true
 			}
 		}
 	}
 	root, release, err := gladehome.LeaseRoot()
 	if err != nil {
-		return "", nil, false
+		return false
 	}
 	defer release()
 	dir, err := gladehome.RuntimeAssetDirAt(root, kind)
 	if err != nil {
-		return "", nil, false
+		return false
 	}
 	for _, candidate := range candidates {
-		content, err := os.ReadFile(filepath.Join(dir, candidate))
-		if err == nil {
-			return lightningRuntimeContentType(candidate), content, true
+		file := filepath.Join(dir, candidate)
+		if info, err := os.Stat(file); err == nil && info.Mode().IsRegular() && use(file, lightningRuntimeContentType(candidate)) {
+			return true
 		}
 	}
-	return "", nil, false
+	return false
+}
+
+func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
+	var contentType string
+	var content []byte
+	ok := lightningRuntimeAssetWith(kind, name, func(file, ct string) bool {
+		body, err := os.ReadFile(file)
+		if err != nil {
+			return false
+		}
+		contentType, content = ct, body
+		return true
+	})
+	if !ok {
+		return "", nil, false
+	}
+	return contentType, content, true
+}
+
+// lightningRuntimeAssetURL names a shell asset by its content so the browser
+// can keep it. The unversioned URL stays served for old pages and bookmarks.
+func lightningRuntimeAssetURL(kind, name string) string {
+	base := "/lightning/runtime/" + kind + "/" + name
+	version := ""
+	lightningRuntimeAssetWith(kind, name, func(file, _ string) bool {
+		version = runtimeAssetContentVersion(file)
+		return version != ""
+	})
+	if version == "" {
+		return base
+	}
+	return base + "?v=" + version
 }
 
 func cleanLightningRuntimeAssetKind(kind string) (string, bool) {

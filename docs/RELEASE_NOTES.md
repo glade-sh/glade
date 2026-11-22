@@ -94,7 +94,8 @@
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 - **LWC preview bundle ownership.** Preview configuration indexes multiple bundle roots instead of comparing every source with every root. On a synthetic 1,000-bundle preview, Go allocations fell from about 2.05 million to 52,000 with identical compiled artifacts.
-- **LWC runtime assets.** Browsers can revalidate unchanged runtime assets using a content-derived ETag. In a local test, a repeated request for a 980,746-byte stylesheet transferred no response body.
+- **LWC runtime assets.** The local shell names its stylesheet and entry script by content (`?v=` with a content hash), so browsers keep them without revalidating. Unversioned URLs still work and revalidate with an ETag taken from the file's stamp, so an unchanged asset costs no body transfer, no disk read and no hashing. The hash is computed once per content version.
+- **Visualforce Lightning bootstrap.** A project with no LWC sources no longer starts Node on every page request. The empty manifest is written directly, with the same bytes the compiler wrote.
 
 ### CI
 

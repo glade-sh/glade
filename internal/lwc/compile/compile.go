@@ -149,7 +149,10 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 	}
 	cfg.LightningModules = opts.LightningModules
 	cfg.CompleteLocalModuleInventory = opts.CompleteLocalModuleInventory
-	result, err := runCompiler(p, cfg, roots)
+	result, handled, err := compileWithoutBundles(p, cfg, roots)
+	if !handled && err == nil {
+		result, err = runCompiler(p, cfg, roots)
+	}
 	if err != nil {
 		return Manifest{}, err
 	}
@@ -357,6 +360,39 @@ func filesInBundle(root string, paths []string) []string {
 		}
 	}
 	return files
+}
+
+// compileWithoutBundles answers a project with no LWC sources without starting
+// Node. It writes the same empty manifest the compiler writes. When Node or the
+// installed toolchain is absent it declines, so the compiler reports its usual
+// failure.
+func compileWithoutBundles(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, bool, error) {
+	if len(cfg.LWCFiles) > 0 || len(cfg.LWCHTMLFiles) > 0 || len(cfg.LWCMetaFiles) > 0 {
+		return compileResult{}, false, nil
+	}
+	if _, err := exec.LookPath("node"); err != nil {
+		return compileResult{}, false, nil
+	}
+	toolchainDir := filepath.Join(roots.DependencyRoot, "third_party", "lwc")
+	if shared := strings.TrimSpace(os.Getenv("GLADE_LWC_DEPS_DIR")); shared != "" {
+		toolchainDir = shared
+	}
+	for _, name := range []string{"@babel/parser", "@babel/traverse", "@lwc/compiler", "@lwc/template-compiler", "@lwc/shared"} {
+		if _, err := os.Stat(filepath.Join(toolchainDir, "node_modules", filepath.FromSlash(name), "package.json")); err != nil {
+			return compileResult{}, false, nil
+		}
+	}
+	if _, err := loadSalesforceImports(p, nil); err != nil {
+		return compileResult{}, true, err
+	}
+	if err := os.MkdirAll(cfg.OutDir, 0o755); err != nil {
+		return compileResult{}, true, err
+	}
+	manifestPath := filepath.Join(cfg.OutDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte("{\n  \"modules\": {}\n}"), 0o644); err != nil {
+		return compileResult{}, true, err
+	}
+	return compileResult{Modules: map[string]ModuleEntry{}}, true, nil
 }
 
 func runCompiler(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, error) {
