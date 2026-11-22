@@ -1252,7 +1252,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, workflowText)
 
-	wantJobs := []string{"codeql", "codeql-fast", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
+	wantJobs := []string{"codeql", "codeql-fast", "codeql-scope", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
 		gotJobs = append(gotJobs, name)
