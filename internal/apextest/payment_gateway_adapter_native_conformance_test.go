@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -83,7 +82,7 @@ func TestPaymentGatewayAdapterNativeConformance(t *testing.T) {
 				}
 			}
 			if id == "INTERFACE_CONSTRUCTION" {
-				if row[3] != "False" || len(errors) == 0 || !strings.Contains(strings.ToLower(strings.Join(errors, " | ")), "construct") {
+				if row[3] != "False" || len(errors) != 1 || errors[0] != row[5] {
 					t.Fatalf("native %v; Glade errors %v", row, errors)
 				}
 				return
