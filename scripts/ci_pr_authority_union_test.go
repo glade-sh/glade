@@ -126,3 +126,25 @@ func TestCIPRPackageAudit(t *testing.T) {
 		})
 	}
 }
+
+func TestCIPRDoctorAudit(t *testing.T) {
+	for _, tc := range []struct {
+		action string
+		ok     bool
+	}{{"pass", true}, {"skip", false}, {"fail", false}} {
+		t.Run(tc.action, func(t *testing.T) {
+			dir := t.TempDir()
+			program := "#!/bin/bash\nprintf '%s\\n' '{\"Action\":\"" + tc.action + "\",\"Package\":\"github.com/glade-sh/glade/internal/gladecli\",\"Test\":\"TestDoctor\"}' '{\"Action\":\"pass\",\"Package\":\"github.com/glade-sh/glade/internal/gladecli\"}'\n"
+			if err := os.WriteFile(filepath.Join(dir, "go"), []byte(program), 0700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "scripts/ci-pr-doctor-test.sh", filepath.Join(dir, "evidence"), "^(TestDoctor)$")
+			cmd.Dir = ".."
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"))
+			out, err := cmd.CombinedOutput()
+			if (err == nil) != tc.ok {
+				t.Fatalf("doctor audit error=%v output=%s", err, out)
+			}
+		})
+	}
+}
