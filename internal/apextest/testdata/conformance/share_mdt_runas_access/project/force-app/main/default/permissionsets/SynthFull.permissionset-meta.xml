@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>SynthFull</label>
+    <hasActivationRequired>false</hasActivationRequired>
+    <customMetadataTypeAccesses><enabled>true</enabled><name>Synth__mdt</name></customMetadataTypeAccesses>
+    <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Synth_Doc__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>
