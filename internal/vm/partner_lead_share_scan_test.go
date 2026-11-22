@@ -260,3 +260,19 @@ func TestPartnerLeadUncapturedCreatorAvoidsShareScan(t *testing.T) {
 		break
 	}
 }
+
+func TestUncapturedCreatorRetainsPrivateExternalSharing(t *testing.T) {
+	machine, _ := partnerLeadChildVisibilityMachine(t)
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	machine.testContext.CurrentUser.Fields["UserType"] = String("CspLitePortal")
+	lead := machine.Org.Objects["Lead"]
+	lead.Definition.ExternalSharingModel = "Private"
+	machine.Org.Objects["Lead"] = lead
+	for _, record := range lead.Records {
+		if machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+			t.Fatal("uncaptured creator bypassed the private external model")
+		}
+		return
+	}
+	t.Fatal("fixture has no Lead records")
+}
