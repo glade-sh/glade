@@ -9,11 +9,21 @@ import (
 )
 
 // NATIVE partner_lead_anonymous_access/org.tsv:2-5 anonymous APIs 62.0 and 67.0.
+// API 68 and the additional selected field preserve the uncaptured base shape.
 func TestPartnerLeadAnonymousAccessNativeConformance(t *testing.T) {
 	base := filepath.Join(criteriaSharingFixtures, "partner_lead_anonymous_access")
 	rows := readCriteriaTSV(t, filepath.Join(base, "org.tsv"))
-	for _, api := range []string{"62.0", "67.0"} {
-		t.Run(api, func(t *testing.T) {
+	for _, tc := range []struct {
+		name, api         string
+		extra, uncaptured bool
+	}{
+		{"62.0", "62.0", false, false},
+		{"67.0", "67.0", false, false},
+		{"68.0-uncaptured", "68.0", false, true},
+		{"67.0-extra-field", "67.0", true, true},
+	} {
+		api := tc.api
+		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			for _, tree := range []string{"project", "local-setup"} {
 				source := filepath.Join(base, tree)
@@ -50,6 +60,9 @@ func TestPartnerLeadAnonymousAccessNativeConformance(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				if name == "observe" && tc.extra {
+					script = []byte(strings.ReplaceAll(string(script), "HasEditAccess FROM", "HasEditAccess,HasDeleteAccess FROM"))
+				}
 				if name == "setup-records" {
 					script = []byte(strings.Replace(string(script), "a.IsPartner=true;", "a.put('IsPartner',true);", 1))
 				}
@@ -74,7 +87,9 @@ func TestPartnerLeadAnonymousAccessNativeConformance(t *testing.T) {
 						want = row["outcome"]
 					}
 				}
-				if want == "" {
+				if tc.uncaptured {
+					want = "first=0:missing:missing|second=0:missing:missing"
+				} else if want == "" {
 					t.Fatalf("missing native %s %s observation", api, phase)
 				}
 				if got := act("observe"); got != want {

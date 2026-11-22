@@ -22,7 +22,7 @@
 
 - In Apex tests, a Standard User’s denied Lead text update under Read sharing reports the captured DML exception at API 67.0. A Customer Community user’s Case delete permission and user-mode delete follow the captured API 62.0 and 67.0 results.
 
-- In Apex tests, a Partner Community user’s Lead visibility and Manual Read share follow the captured private external default at API 62.0 and 67.0.
+- A Partner Community user’s Lead visibility, Manual Read share and named anonymous access rows follow the captured private external default at API 62.0 and 67.0.
 
 - In anonymous Apex, the captured administrator-to-Standard-User access queries return read rows for private custom records, including the observed denied projections and Manual Read grant and revoke.
 

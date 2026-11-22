@@ -29,6 +29,10 @@ func (vm *VM) currentUserHasPartnerLeadManualRead(objectName string, record stor
 	if !vm.partnerLeadPrivateExternalDefault(objectName) || !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) {
 		return false
 	}
+	return vm.currentUserHasDirectLeadManualRead(record, userID)
+}
+
+func (vm *VM) currentUserHasDirectLeadManualRead(record storage.Record, userID string) bool {
 	for _, share := range vm.Org.Objects["LeadShare"].Records {
 		if share.System.IsDeleted {
 			continue

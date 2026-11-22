@@ -1992,21 +1992,27 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	}
 	current := vm.currentUserInfoField("Id", "")
 	api := vm.currentSourceExecutionPolicy().APIVersion
-	deniedControl, anonymousManualShape := false, false
+	deniedControl, anonymousManualShape, anonymousPartnerShape := false, false, false
 	if vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0" || api == "68.0") &&
 		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" {
 		standardProjection := manualReadAccessProjection.MatchString(queryText)
-		deniedControl = api == "68.0" && standardProjection || api == "67.0" && manualReadExtraFieldProjection.MatchString(queryText)
+		extraFieldProjection := (api == "62.0" || api == "67.0") && manualReadExtraFieldProjection.MatchString(queryText)
+		deniedControl = api == "68.0" && standardProjection || api == "67.0" && extraFieldProjection
 		anonymousManualShape = (api == "62.0" || api == "67.0") && standardProjection || deniedControl
+		anonymousPartnerShape = extraFieldProjection
 	}
+
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
 		portal := portalUserTypeRecord(user)
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
+		profile, _ := user.GetField("ProfileId")
+		partner := anonymousPartnerShape && vm.currentProfileName(storageValueIDText(profile)) == "Partner Community User"
+
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !partner && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
 			continue
 		}
-		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
+		if vm.testContext == nil && !partner && !vm.namedUserIsCapturedStandard(user) {
 			continue
 		}
 		seen[string(user.ID)] = true
@@ -2020,13 +2026,20 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				!vm.currentUserObjectPermission(objectName, "isCreateable") &&
 				!vm.currentUserObjectPermission(objectName, "isUpdateable") &&
 				!vm.currentUserObjectPermission(objectName, "isDeletable") && vm.hasAssignedManualReadPermission(user, objectName)
-			if vm.testContext == nil && !manualRead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+			partnerLead := partner && strings.EqualFold(objectName, "Lead") && vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, current) &&
+				vm.currentUserObjectPermission(objectName, "isAccessible") &&
+				!vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") && vm.hasAssignedReadOnlyPermission(user, objectName)
+
+			if partner && !partnerLead {
+				continue
+			}
+			if vm.testContext == nil && !manualRead && !partnerLead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
 				continue
 			}
 			// Native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0): a
 			// test reads a named limited user's rows on a custom object too, so
 			// a Standard User's rows include the project's custom objects.
-			if !portal && !manualRead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+			if !portal && !manualRead && !partnerLead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
 			object := vm.Org.Objects[objectName]
@@ -2048,7 +2061,22 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 						continue
 					}
 				}
+				if partnerLead {
+					idText := string(record.ID)
+					_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+					ownerProfile, _ := owner.GetField("ProfileId")
+					if len(idText) < 15 || !strings.Contains(strings.ToLower(queryText), strings.ToLower(idText[:15])) ||
+						!found || vm.currentProfileName(storageValueIDText(ownerProfile)) != "System Administrator" ||
+						record.System.IsDeleted || !storage.IDsEqual(record.System.CreatedByID, storage.ID(current)) ||
+						storage.IDsEqual(record.System.OwnerID, storage.ID(current)) || storage.IDsEqual(record.System.OwnerID, user.ID) {
+						continue
+					}
+				}
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
+				if partnerLead {
+					access.Fields["HasReadAccess"] = storage.BooleanValue(!record.System.IsDeleted && vm.currentUserHasDirectLeadManualRead(record, string(user.ID)))
+					access.Fields["HasEditAccess"] = storage.BooleanValue(false)
+				}
 				access.ID = storage.ID(fmt.Sprintf("0UR%012d", *sequence))
 				*sequence++
 				accessObject.PutRecord(access.ID, access)
@@ -2061,8 +2089,17 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 // hasAssignedManualReadPermission requires the separate reader permission set
 // used by the captured anonymous projection, not a profile-only grant.
 func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName string) bool {
+	return vm.hasAssignedReaderPermission(user, objectName, false)
+}
+
+func (vm *VM) hasAssignedReadOnlyPermission(user storage.Record, objectName string) bool {
+	return vm.hasAssignedReaderPermission(user, objectName, true)
+}
+
+func (vm *VM) hasAssignedReaderPermission(user storage.Record, objectName string, readOnly bool) bool {
 	profileID := storageValueIDText(user.Fields["ProfileId"])
 	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
+	readGrant := false
 	for _, assignment := range vm.Org.Objects["PermissionSetAssignment"].Records {
 		if assignment.System.IsDeleted || vm.permissionAssignmentNotYetApplied(assignment, string(user.ID)) {
 			continue
@@ -2071,18 +2108,37 @@ func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName st
 		group, _ := assignment.GetField("PermissionSetGroupId")
 		set, _ := assignment.GetField("PermissionSetId")
 		setID := storageValueIDText(set)
-		if !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), user.ID) || storageValueIDText(group) != "" || setID == "" ||
-			storage.IDsEqual(storage.ID(setID), storage.ID(profilePermissionSetID)) {
+		if !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), user.ID) {
+			continue
+		}
+		if readOnly && storageValueIDText(group) != "" {
+			return false
+		}
+		if storageValueIDText(group) != "" || setID == "" || storage.IDsEqual(storage.ID(setID), storage.ID(profilePermissionSetID)) {
 			continue
 		}
 		if id, _, ok := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(setID)); ok {
 			setID = string(id)
 		}
-		if vm.sourceObjectPermission(permissionGrantSource{ID: setID}, objectName, "isAccessible") {
-			return true
+		source := permissionGrantSource{ID: setID}
+		if readOnly {
+			for _, method := range []string{"isCreateable", "isUpdateable", "isDeletable"} {
+				if vm.sourceObjectPermission(source, objectName, method) {
+					return false
+				}
+			}
+		}
+		if vm.sourceObjectPermission(source, objectName, "isAccessible") {
+			if !readOnly {
+				return true
+			}
+			if readGrant {
+				return false
+			}
+			readGrant = true
 		}
 	}
-	return false
+	return readGrant
 }
 
 // capturedAnonymousManualReadRecord limits anonymous named projections to the
@@ -4999,17 +5055,25 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 // and partner_lead_transfer_manual_read/org.tsv:2-3
 // (APIs 62.0 and 67.0).
 func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
+	return vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
+}
+
+func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorID string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil && actorID == "" || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
 		return false
 	}
 	api := vm.currentSourceExecutionPolicy().APIVersion
-	if (api != "62.0" && api != "67.0") || vm.currentUserProfileName(vm.testContext.CurrentUser) != "Partner Community User" {
+	profile := vm.currentProfileName(vm.currentUserInfoField("ProfileId", ""))
+	if vm.testContext != nil {
+		profile = vm.currentUserProfileName(vm.testContext.CurrentUser)
+	}
+	if (api != "62.0" && api != "67.0") || profile != "Partner Community User" {
 		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
 	model := strings.TrimSpace(definition.SharingModel)
 	transfer := strings.EqualFold(model, "ReadWriteTransfer")
-	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || strings.TrimSpace(definition.ExternalSharingModel) != "" {
+	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || actorID != "" && !transfer || strings.TrimSpace(definition.ExternalSharingModel) != "" {
 		return false
 	}
 	nonOwnerShares := 0
@@ -5029,7 +5093,7 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 			parent, _ := share.GetField("LeadId")
 			_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
 			if !found || !strings.HasPrefix(string(lead.System.OwnerID), "005") ||
-				!storage.IDsEqual(lead.System.OwnerID, lead.System.CreatedByID) {
+				(actorID == "" && !storage.IDsEqual(lead.System.OwnerID, lead.System.CreatedByID) || actorID != "" && !storage.IDsEqual(lead.System.CreatedByID, storage.ID(actorID))) {
 				return false
 			}
 		}
