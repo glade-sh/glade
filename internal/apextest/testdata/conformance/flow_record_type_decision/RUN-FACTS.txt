@@ -19,5 +19,5 @@ residue: before every anonymous run the state is settled; records found there ta
 residue: this org held one anonymous case (org-per-api): async work it started cannot reach another case, so it is not tainted; records it left in the checked objects were still found and removed
 residue rows: 0=2, n/a=2
 lifetime correction: the capture helper was invoked through a wrapper that changed --duration-days from 1 to 30; create results reported DurationDays=30.
-flow API: the org-per-api run deployed the flow at the API of its scratch org.
+flow API: both orgs deployed the flows as authored at 67.0; only the Apex classes ran per API (62.0 and 67.0 copies), so api62 keeps the flows at 67.0.
 profile: the Admin profile makes both record types visible with Other_Type as its default, so an Account inserted without RecordTypeId gets Other_Type.
