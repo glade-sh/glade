@@ -18,7 +18,15 @@ func TestCIRequiredPRPlanCoversSelectedRoutes(t *testing.T) {
 	if validation < 0 || emit < 0 || validation > emit {
 		t.Fatal("selector must validate the selected packages and matrix before emitting it")
 	}
-	results := `{"pr-select":{"result":"success"},"pr-tests":{"result":"success"},"early-guards":{"result":"success"},"pr-guards":{"result":"success"},"workflow-lint":{"result":"success"},"site":{"result":"success"},"vet":{"result":"success"},"leak-scan":{"result":"success"}}`
+	results := `{"pr-select":{"result":"success"},"pr-tests":{"result":"success"},"pr-authority-union":{"result":"success"},"early-guards":{"result":"success"},"pr-guards":{"result":"success"},"workflow-lint":{"result":"success"},"site":{"result":"success"},"vet":{"result":"success"},"leak-scan":{"result":"success"}}`
+	for _, result := range []string{"failure", "cancelled", "skipped"} {
+		withoutUnion := strings.Replace(results, `"pr-authority-union":{"result":"success"}`, `"pr-authority-union":{"result":"`+result+`"}`, 1)
+		cmd := exec.Command("bash", "-c", script)
+		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+withoutUnion, "EVENT_NAME=pull_request", "SMOKE_REQUIRED=false", "PR_BROWSER=false", `PR_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, `PR_VALIDATED_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, `PR_SELECTION=[]`)
+		if out, err := cmd.CombinedOutput(); err == nil || !strings.Contains(string(out), "PR worker evidence union did not pass") {
+			t.Fatalf("union %s: %v %s", result, err, out)
+		}
+	}
 	const apex = "github.com/glade-sh/glade/internal/apextest"
 	planner := exec.Command("python3", "ci-pr-plan.py")
 	planner.Stdin = strings.NewReader(`["` + apex + `"]`)

@@ -74,7 +74,7 @@ if [ "$1" = api ]; then echo 901; else mkdir -p "$7"; cp -R "$FAKE_EVIDENCE"/ape
 		cmd.Dir = root
 		stage = filepath.Join(root, "ci-artifacts", "apextest-history-input")
 	}
-	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+evidence, "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT=1", "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+filepath.Join(root, "history", "apextest-duration-history.json"), "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_BENCHMARK_PAIR=0", "RUNNER_TEMP="+root)
+	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+evidence, "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT=1", "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+filepath.Join(root, "history", "apextest-duration-history.json"), "CI_APEXTEST_HISTORY_STAGE="+stage, "RUNNER_TEMP="+root)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("workflow input route: %v\n%s", err, out)
 	}
@@ -109,7 +109,7 @@ func TestCICase319RetryUsesCachedSchedulingProfile(t *testing.T) {
 	}
 	stage := filepath.Join(root, "stage")
 	cmd := exec.Command("bash", "ci-apex-history-input.sh")
-	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT=2", "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+history, "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_BENCHMARK_PAIR=0", "CI_APEXTEST_RETRY_PROFILE_PATH="+profile, "RUNNER_TEMP="+root)
+	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT=2", "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+history, "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_RETRY_PROFILE_PATH="+profile, "RUNNER_TEMP="+root)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("retry input: %v\n%s", err, out)
 	}
