@@ -29,9 +29,10 @@ type frozenClassLookup struct {
 
 	// Derived artifacts of this generation, shared like keys. A nil
 	// searchEntries or copyPlan disables layering on this generation.
-	searchEntries []classNameSearchEntry
-	topLevel      map[string]topLevelClassLookup
-	copyPlan      *classCopyPlan
+	searchEntries  []classNameSearchEntry
+	topLevel       map[string]topLevelClassLookup
+	copyPlan       *classCopyPlan
+	enumSuffixKeys map[string][]string
 
 	// contributors maps each root key to every Classes key that writes it
 	// in a full build. It is built once, by the first registering clone.
@@ -1278,6 +1279,7 @@ func (vm *VM) FreezeClassLookup() {
 	}
 	generation := nextClassLookupGeneration.Add(1)
 	frozen := &frozenClassLookup{generation: generation, keys: keys}
+	frozen.enumSuffixKeys = vm.buildFrozenEnumSuffixKeys()
 	vm.frozenClassLookup = frozen
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
 	vm.classMapWritten = false

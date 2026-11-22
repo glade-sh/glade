@@ -223,6 +223,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 		written:       o.written,
 		searchEntries: mergeClassNameSearchEntries(from.searchEntries, o.added),
 		topLevel:      vm.patchTopLevelClassLookup(from.topLevel, root.contributors, written, o.affectedTop),
+		copyPlan:      plan,
 	}
 	vm.frozenClassLookup = layer
 	vm.sharedClassCopyPlan = plan

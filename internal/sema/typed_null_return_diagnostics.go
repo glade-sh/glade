@@ -34,6 +34,8 @@ func capturedListReturnConversion(returnType, valueType string, model *semaTypeM
 // No diagnostics are added, removed or reordered, and Message retains the root.
 func capturedReturnDependencyNativeText(index typesys.Index, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	var sources *semaSources
+	type testKey struct{ caller, member int }
+	compiled := make(map[testKey][]ir.Instruction)
 	for i := range diagnostics {
 		d := &diagnostics[i]
 		if d.Code != "GLADESEMA019" || d.Range == nil ||
@@ -50,7 +52,7 @@ func capturedReturnDependencyNativeText(index typesys.Index, diagnostics []diagn
 					member.Range.Start.Offset > d.Range.Start.Offset || member.Range.End.Offset < d.Range.Start.Offset {
 					continue
 				}
-				for _, caller := range index.Types {
+				for callerIndex, caller := range index.Types {
 					if !caller.IsTest || !caller.HasSourceSnapshot() || caller.Dependency ||
 						hasModifier(caller.Modifiers, vm.AnonymousClassModifier) {
 						continue
@@ -65,7 +67,7 @@ func capturedReturnDependencyNativeText(index typesys.Index, diagnostics []diagn
 					if digest, bound := index.SourceDigest(caller.File); !bound || sha256.Sum256([]byte(text)) != digest {
 						continue
 					}
-					for _, test := range caller.Members {
+					for testIndex, test := range caller.Members {
 						if !test.IsTest || !hasModifier(test.Modifiers, "static") || len(test.Parameters) != 0 || test.BodyRange == nil {
 							continue
 						}
@@ -73,8 +75,16 @@ func capturedReturnDependencyNativeText(index typesys.Index, diagnostics []diagn
 						if start < 0 || end < start || end > len(text) {
 							continue
 						}
-						program, err := vm.CompileAnonymousWithOptions(text[start:end], vm.CompileOptions{APIVersion: caller.EffectiveAPIVersion})
-						if err == nil && capturedDirectReturnCall(program.Instructions, owner.Name, member.Name) {
+						key := testKey{caller: callerIndex, member: testIndex}
+						instructions, cached := compiled[key]
+						if !cached {
+							program, err := vm.CompileAnonymousWithOptions(text[start:end], vm.CompileOptions{APIVersion: caller.EffectiveAPIVersion})
+							if err == nil {
+								instructions = program.Instructions
+							}
+							compiled[key] = instructions
+						}
+						if capturedDirectReturnCall(instructions, owner.Name, member.Name) {
 							d.NativeMessage = fmt.Sprintf("Dependent class is invalid and needs recompilation:\n Class %s : %s", owner.Name, d.NativeMessage)
 							break
 						}

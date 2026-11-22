@@ -19,6 +19,7 @@
 - Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
 - **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
+- Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
 
 ### Changes
 
@@ -79,6 +80,13 @@
 - **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
 - **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
 - **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
+- **Repeated field scans and diagnostics.** Reuse literal matches within runtime field inference and compiled test bodies while selecting native diagnostic text. In focused synthetic benchmarks, the repeated diagnostic case used 143 allocations instead of about 2,171, and the large field scan used 34,315 instead of about 35,540.
+- **Incremental frontend edits.** Reuse captured source and sidecar digests for compatibility and edit discovery while retaining live generation checks. In a synthetic 1,500-class project with sidecars, allocations fell from about 266,000 to 230,000 per edit.
+- **Platform symbol memory.** Excluded platform types reserve a full symbol only when first accessed, reducing retained startup heap.
+- **Nested enum lookup in test runtimes.** Cloned runtimes reuse an unchanged frozen class index. Runtimes with later registrations or other class-map writes use a full index.
+- **Built-in calls.** Repeated calls avoid redundant normalization for canonical built-in names while retaining runtime precedence checks.
+- **Scalar object describes.** Direct scalar reads from object type describes avoid copying the describe root when it cannot escape. On a synthetic object with 64 generated fields, a warm read used 272 bytes and 17 allocations instead of 14,112 bytes and 90 allocations.
+- **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
 
 ### CI
 
