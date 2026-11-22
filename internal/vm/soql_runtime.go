@@ -5012,6 +5012,7 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || strings.TrimSpace(definition.ExternalSharingModel) != "" {
 		return false
 	}
+	nonOwnerShares := 0
 	for _, share := range vm.Org.Objects["LeadShare"].Records {
 		if share.System.IsDeleted {
 			continue
@@ -5019,6 +5020,18 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 		cause, _ := share.GetField("RowCause")
 		if strings.EqualFold(cause.String, "Owner") {
 			continue
+		}
+		if transfer {
+			nonOwnerShares++
+			if nonOwnerShares > 1 {
+				return false
+			}
+			parent, _ := share.GetField("LeadId")
+			_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
+			if !found || !strings.HasPrefix(string(lead.System.OwnerID), "005") ||
+				!storage.IDsEqual(lead.System.OwnerID, lead.System.CreatedByID) {
+				return false
+			}
 		}
 		target, _ := share.GetField("UserOrGroupId")
 		level, _ := share.GetField("LeadAccessLevel")
