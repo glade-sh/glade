@@ -18,14 +18,14 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func callStdlibMember(receiver Value, method string, args []Value, capturedAPI bool) (Value, Value, bool, bool, error) {
 	switch receiver.Kind {
 	case ValueInt:
 		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "decimalValue")
 		return callIntegerMember(receiver, method, args)
 	case ValueString:
 		method = canonicalStdlibMemberName(method, stringStdlibMethodNames...)
-		value, handled, err := callStringMember(receiver, method, args)
+		value, handled, err := callStringMemberWithPolicy(receiver, method, args, false, capturedAPI)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
 		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "pow", "scale", "precision", "stripTrailingZeros")
@@ -2547,6 +2547,10 @@ func stringStaticStripAll(args []Value) (Value, error) {
 }
 
 func stringRegexReplace(name, text string, args []Value, all bool) (string, error) {
+	return stringRegexReplaceWithPolicy(name, text, args, all, true)
+}
+
+func stringRegexReplaceWithPolicy(name, text string, args []Value, all, capturedAPI bool) (string, error) {
 	for _, arg := range args {
 		if arg.Kind == ValueNull {
 			return "", newExceptionError("System.NullPointerException", "Argument cannot be null.")
@@ -2557,9 +2561,9 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	}
 	matcher := Object("Matcher")
 	matcher.Fields["patternSource"] = args[0]
-	replaced, err := matcherReplaceRegexp2(name, matcher, text, matcherRegionBounds{
+	replaced, err := matcherReplaceRegexp2WithPolicy(name, matcher, text, matcherRegionBounds{
 		endIndex: apexStringLength(text), endRune: utf8.RuneCountInString(text), endByte: len(text),
-	}, args[1:], all)
+	}, args[1:], all, capturedAPI)
 	var groupErr *stringReplacementGroupError
 	if errors.As(err, &groupErr) {
 		return "", newExceptionError("StringException", fmt.Sprintf("Index out of Bounds: No group %d", groupErr.group))
@@ -2678,6 +2682,10 @@ func stringRegexReplaceNegativeLookbehindLiteral(callee, text, pattern, replacem
 }
 
 func stringRegexSplit(text string, args []Value) ([]string, error) {
+	return stringRegexSplitWithPolicy(text, args, true)
+}
+
+func stringRegexSplitWithPolicy(text string, args []Value, capturedAPI bool) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
@@ -2693,20 +2701,28 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 	if len(args) == 2 {
 		limit = args[1].Int
 	}
-	return splitRegex("String.split", args[0].Text, text, limit)
+	return splitRegexWithPolicy("String.split", args[0].Text, text, limit, capturedAPI)
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
+	return splitRegexWithPolicy(name, pattern, text, limit, true)
+}
+
+func splitRegexWithPolicy(name, pattern, text string, limit int64, capturedAPI bool) ([]string, error) {
 	if pattern == "" {
-		return splitStringCharacters(text, limit), nil
+		return splitStringCharactersWithPolicy(text, limit, capturedAPI), nil
 	}
 	return splitRegexRegexp2(name, pattern, text, limit)
 }
 
 func splitStringCharacters(text string, limit int64) []string {
+	return splitStringCharactersWithPolicy(text, limit, true)
+}
+
+func splitStringCharactersWithPolicy(text string, limit int64, capturedAPI bool) []string {
 	// Native empty-pattern splitting with the default limit visits each UTF-16
 	// boundary, including the boundary between the halves of a pair.
-	if limit == 0 && utf8.ValidString(text) {
+	if capturedAPI && limit == 0 && matcherCapturedPositionSubject(text) {
 		for _, r := range text {
 			if r > 0xffff {
 				units := apexStringUTF16Units(text)
@@ -2840,7 +2856,7 @@ func patternSplitValue(pattern Value, args []Value) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return splitRegex("Pattern.split", source, args[0].Text, limit)
+	return splitRegexWithPolicy("Pattern.split", source, args[0].Text, limit, false)
 }
 
 func unsupportedJavaRegexFeature(source string) string {

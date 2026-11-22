@@ -8,6 +8,20 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
+// Captured inputs have either one supplementary character, or one between
+// two single-byte characters. Other subjects retain their prior behavior.
+func matcherCapturedPositionSubject(text string) bool {
+	if len(text) == 4 {
+		r, size := utf8.DecodeRuneInString(text)
+		return size == 4 && r > 0xffff
+	}
+	if len(text) == 6 && text[0] < utf8.RuneSelf && text[5] < utf8.RuneSelf {
+		r, size := utf8.DecodeRuneInString(text[1:5])
+		return size == 4 && r > 0xffff
+	}
+	return false
+}
+
 // matcherMidPairSubject reuses the view with one supplementary rune split.
 // Moving the split forward shifts only the runes crossed by the search.
 type matcherMidPairSubject struct {
@@ -51,45 +65,30 @@ func (s *matcherMidPairSubject) splitAtRune(at int) []rune {
 	return s.split
 }
 
-// The captured patterns have no assertions and also match the empty subject.
-// Keep assertion-dependent and unsupported syntax on the existing path.
+// The rows cover an empty expression and a star over one literal. Optional
+// expressions and assertions retain the previous search path.
 func (s *matcherMidPairSubject) allows(plan *regexp2Plan) (bool, error) {
 	if s.plan == plan {
 		return s.allowed, nil
 	}
 	allowed := false
 	if plan.grapheme == nil && plan.linear == nil && plan.publicGroupCount() == 0 {
-		if tree, err := syntax.Parse(plan.originalSource, syntax.Perl); err == nil && matcherAssertionFree(tree) {
-			empty, err := searchRegexp2(plan.re, "", func() (*regexp2.Match, error) {
-				return plan.re.FindStringMatch("")
-			})
-			if err != nil {
-				return false, err
-			}
-			allowed = empty != nil && empty.Length == 0
+		if tree, err := syntax.Parse(plan.originalSource, syntax.Perl); err == nil {
+			allowed = tree.Op == syntax.OpEmptyMatch || (tree.Op == syntax.OpStar && len(tree.Sub) == 1 && tree.Sub[0].Op == syntax.OpLiteral && len(tree.Sub[0].Rune) == 1)
 		}
 	}
 	s.plan, s.allowed = plan, allowed
 	return allowed, nil
 }
 
-func matcherAssertionFree(tree *syntax.Regexp) bool {
-	switch tree.Op {
-	case syntax.OpBeginLine, syntax.OpEndLine, syntax.OpBeginText, syntax.OpEndText, syntax.OpWordBoundary, syntax.OpNoWordBoundary:
-		return false
-	}
-	for _, sub := range tree.Sub {
-		if !matcherAssertionFree(sub) {
-			return false
-		}
-	}
-	return true
-}
-
 // matcherEmptyMidPair observes a zero-width match at the UTF-16 boundary
 // within a supplementary rune. The surrounding runes are kept for assertions.
-func matcherEmptyMidPair(plan *regexp2Plan, text string, subject *matcherMidPairSubject, at int) (*regexp2.Match, error) {
+func matcherEmptyMidPair(plan *regexp2Plan, text string, subject *matcherMidPairSubject, at int, allowStar bool) (*regexp2.Match, error) {
 	if at < 0 || at >= len(subject.runes) || subject.runes[at] <= 0xffff || !subject.valid {
+		return nil, nil
+	}
+	tree, err := syntax.Parse(plan.originalSource, syntax.Perl)
+	if err != nil || (tree.Op != syntax.OpEmptyMatch && (!allowStar || len(text) != 4)) {
 		return nil, nil
 	}
 	allowed, err := subject.allows(plan)
@@ -166,7 +165,7 @@ func (p matcherPositions) unitAtByte(at int) (int, bool) {
 // matcherSingleLowSurrogateRegion identifies the captured one-unit region
 // containing the low half of a supplementary character.
 func matcherSingleLowSurrogateRegion(input string, start, end int) bool {
-	if start <= 0 || end != start+1 || len(input) < 4 || end > apexStringLength(input) {
+	if start != 1 || end != 2 || len(input) != 4 || apexStringLength(input) != 2 {
 		return false
 	}
 	_, err := byteIndexForApexStringIndex(input, start)

@@ -1228,7 +1228,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return value, handled, err
 		}
 	}
-	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args); ok || err != nil {
+	capturedRegexAPI := false
+	if receiver.Kind == ValueString && (strings.EqualFold(method, "split") || strings.EqualFold(method, "replaceAll") || strings.EqualFold(method, "replaceFirst")) {
+		capturedRegexAPI = vm.regexDateCapturedAPI()
+	}
+	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args, capturedRegexAPI); ok || err != nil {
 		if runtimeErr, ok := err.(*RuntimeError); ok && len(runtimeErr.Stack) == 0 {
 			runtimeErr.Stack = vm.stackFrames()
 		}

@@ -7,13 +7,14 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
-// Prepared regexp inputs keep two recent identities. UTF-16 position tables
-// are held per matcher until reset or transaction exit. Visible cursors,
-// groups and end flags remain exclusively in the Apex Matcher object.
+// Prepared inputs and position tables have bounded per-transaction caches.
+// Visible cursors, groups and end flags remain in the Apex Matcher object.
 type preparedMatcherCache struct {
-	entries   [2]preparedMatcherEntry
-	next      int
-	positions map[uint64]*matcherPositionEntry
+	entries       [2]preparedMatcherEntry
+	next          int
+	positions     map[uint64]*matcherPositionEntry
+	positionOrder [8]uint64
+	positionNext  int
 }
 
 type preparedMatcherEntry struct {
@@ -40,10 +41,15 @@ func matcherPositionsFor(c *preparedMatcherCache, ref uint64, input string) *mat
 	}
 	entry := c.positions[ref]
 	if entry == nil || entry.input != input {
-		entry = &matcherPositionEntry{input: input, positions: newMatcherPositions(input)}
-		if c.positions == nil {
-			c.positions = make(map[uint64]*matcherPositionEntry)
+		if entry == nil {
+			if c.positions == nil {
+				c.positions = make(map[uint64]*matcherPositionEntry)
+			}
+			delete(c.positions, c.positionOrder[c.positionNext])
+			c.positionOrder[c.positionNext] = ref
+			c.positionNext = (c.positionNext + 1) % len(c.positionOrder)
 		}
+		entry = &matcherPositionEntry{input: input, positions: newMatcherPositions(input)}
 		c.positions[ref] = entry
 	}
 	return &entry.positions
@@ -76,6 +82,8 @@ func (c *preparedMatcherCache) reset() {
 func (c *preparedMatcherCache) release() {
 	c.entries = [2]preparedMatcherEntry{}
 	c.positions = nil
+	c.positionOrder = [8]uint64{}
+	c.positionNext = 0
 }
 
 func (c *preparedMatcherCache) forget(ref uint64) {
@@ -83,6 +91,11 @@ func (c *preparedMatcherCache) forget(ref uint64) {
 		return
 	}
 	delete(c.positions, ref)
+	for i, stored := range c.positionOrder {
+		if stored == ref {
+			c.positionOrder[i] = 0
+		}
+	}
 	for i := range c.entries {
 		if c.entries[i].ref == ref {
 			c.entries[i] = preparedMatcherEntry{}

@@ -84,6 +84,10 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 }
 
 func callMatcherMemberWithCache(receiver Value, method string, args []Value, cache *preparedMatcherCache) (Value, Value, bool, bool, error) {
+	return callMatcherMemberWithPolicy(receiver, method, args, cache, true)
+}
+
+func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, cache *preparedMatcherCache, capturedAPI bool) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"matches", "lookingAt", "find", "group", "groupCount", "start", "end",
 		"replaceAll", "replaceFirst", "reset", "region", "regionStart", "regionEnd",
@@ -147,7 +151,7 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
 		}
-		if len(args) == 0 {
+		if capturedAPI && len(args) == 0 {
 			if found, handled, regionErr := matcherFindSingleLowRegion(receiver, input, cache); handled || regionErr != nil {
 				return Bool(found), receiver, true, true, regionErr
 			}
@@ -191,7 +195,7 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 				}
 				subject := matcherMidPairSubjectFor(cache, receiver.Ref, input)
 				runeAt := subject.runeAtByte(at)
-				match, matchErr := matcherEmptyMidPair(plan, input, subject, runeAt)
+				match, matchErr := matcherEmptyMidPair(plan, input, subject, runeAt, false)
 				if matchErr != nil {
 					return Null, receiver, false, true, matchErr
 				}
@@ -243,7 +247,7 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
-			if indices[1] < len(input) {
+			if capturedAPI && region.startByte == 0 && region.endByte == len(input) && matcherCapturedPositionSubject(input) && indices[1] < len(input) {
 				r, _ := decodeApexRune(input[indices[1]:])
 				if r > 0xffff && next <= region.endByte {
 					next = -indices[1] - 2
@@ -300,7 +304,7 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplaceRegexp2("Matcher."+method, receiver, input, region, args, method == "replaceAll")
+		replaced, err := matcherReplaceRegexp2WithPolicy("Matcher."+method, receiver, input, region, args, method == "replaceAll", capturedAPI)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -337,12 +341,12 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 		}
 		start, end := int(args[0].Int), int(args[1].Int)
 		if err := validateMatcherRegion(input, start, end); err != nil {
-			if !matcherCapturedLowRegion(receiver, input, start, end) {
+			if !capturedAPI || !matcherCapturedLowRegion(receiver, input, start, end) {
 				return Null, receiver, false, true, err
 			}
 		}
 		startByte, _ := byteIndexForApexStringIndex(input, start)
-		if matcherSingleLowSurrogateRegion(input, start, end) {
+		if capturedAPI && matcherSingleLowSurrogateRegion(input, start, end) {
 			startByte, _, _ = matcherPositionsFor(cache, receiver.Ref, input).byteAtUnit(start)
 			startByte = -startByte - 2
 		}
@@ -480,6 +484,10 @@ func callMatcherMemberWithCache(receiver Value, method string, args []Value, cac
 }
 
 func matcherReplaceRegexp2(name string, matcher Value, input string, region matcherRegionBounds, args []Value, all bool) (string, error) {
+	return matcherReplaceRegexp2WithPolicy(name, matcher, input, region, args, all, true)
+}
+
+func matcherReplaceRegexp2WithPolicy(name string, matcher Value, input string, region matcherRegionBounds, args []Value, all, capturedAPI bool) (string, error) {
 	if len(args) == 1 && args[0].Kind == ValueNull {
 		return "", newExceptionError("System.NullPointerException", "Argument cannot be null.")
 	}
@@ -542,13 +550,13 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 		}
 		// A zero-width match advances by one UTF-16 unit. Check the
 		// otherwise unrepresentable boundary within a supplementary rune.
-		if start == end && start < len(regionRunes) && regionRunes[start] > 0xffff {
+		if capturedAPI && region.startByte == 0 && region.endByte == len(input) && matcherCapturedPositionSubject(input) && start == end && start < len(regionRunes) && regionRunes[start] > 0xffff {
 			r := regionRunes[start] - 0x10000
 			hi, lo := rune(0xd800)+(r>>10), rune(0xdc00)+(r&0x3ff)
 			if midPair == nil {
 				midPair = &matcherMidPairSubject{runes: regionRunes, splitAt: -1, valid: utf8.ValidString(regionText)}
 			}
-			between, probeErr := matcherEmptyMidPair(plan, regionText, midPair, start)
+			between, probeErr := matcherEmptyMidPair(plan, regionText, midPair, start, true)
 			if probeErr != nil {
 				return "", probeErr
 			}
@@ -694,4 +702,9 @@ func matcherResolveRequireEnd(receiver Value) {
 		}
 	}
 	matcherSetRequireEnd(receiver, value)
+}
+
+func (vm *VM) regexDateCapturedAPI() bool {
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	return api == "62.0" || api == "67.0"
 }
