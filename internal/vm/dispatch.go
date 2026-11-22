@@ -3804,7 +3804,10 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPathPrefix expects 0 arguments")
 		}
-		return String(vm.firstOrgRecordString("Site", "UrlPathPrefix", "")), nil
+		// Native answers the empty string without a Site request context, in
+		// anonymous and test execution, with or without Sites declared. The
+		// seeded local Site record is not request state.
+		return String(""), nil
 	case "Site.getPrefix":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPrefix expects 0 arguments")

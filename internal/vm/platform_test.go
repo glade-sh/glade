@@ -13686,7 +13686,7 @@ System.assertEquals(null, Site.getName());
 System.assertEquals('/site/SiteTemplate.apexp', Site.getTemplate().getUrl());
 System.assertEquals(null, Site.getSiteType());
 System.assertEquals(null, Site.getSiteTypeLabel());
-System.assertEquals('local', Site.getPathPrefix());
+System.assertEquals('', Site.getPathPrefix());
 System.assertEquals('system@example.invalid', Site.getAdminEmail());
 System.assertEquals(UserInfo.getUserId(), Site.getAdminId());
 System.assertEquals('Local Site', Site.getMasterLabel());
