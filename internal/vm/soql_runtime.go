@@ -5194,6 +5194,34 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 	return vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
 }
 
+type partnerLeadShareIndex struct {
+	token  storage.RecordsToken
+	shares []storage.Record
+}
+
+// partnerLeadNonOwnerShares caches only the versioned share map's filtering.
+// The reader, Lead records, metadata and permissions are evaluated each time.
+func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
+	state := vm.Org.Objects["LeadShare"]
+	token, versioned := state.RecordsToken()
+	if versioned && vm.partnerLeadShares != nil && vm.partnerLeadShares.token == token {
+		return vm.partnerLeadShares.shares
+	}
+	var shares []storage.Record
+	for _, share := range state.Records {
+		cause, _ := share.GetField("RowCause")
+		if !share.System.IsDeleted && !strings.EqualFold(cause.String, "Owner") {
+			shares = append(shares, share)
+		}
+	}
+	if versioned {
+		vm.partnerLeadShares = &partnerLeadShareIndex{token: token, shares: shares}
+	} else {
+		vm.partnerLeadShares = nil
+	}
+	return shares
+}
+
 func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorID string) bool {
 	if vm == nil || vm.Org == nil || vm.testContext == nil && actorID == "" || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
 		return false
@@ -5214,14 +5242,8 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 		return false
 	}
 	nonOwnerShares := 0
-	for _, share := range vm.Org.Objects["LeadShare"].Records {
-		if share.System.IsDeleted {
-			continue
-		}
+	for _, share := range vm.partnerLeadNonOwnerShares() {
 		cause, _ := share.GetField("RowCause")
-		if strings.EqualFold(cause.String, "Owner") {
-			continue
-		}
 		if transfer {
 			nonOwnerShares++
 			if nonOwnerShares > 1 {

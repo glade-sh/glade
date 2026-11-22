@@ -45,8 +45,23 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	}
 	put()
 	check(true)
+	if _, versioned := org.Objects["LeadShare"].RecordsToken(); !versioned || machine.partnerLeadShares == nil {
+		t.Fatal("share map did not exercise the versioned index")
+	}
 	share.Fields = map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Manual"), "UserOrGroupId": storage.IDValue("005000000000002"), "LeadAccessLevel": storage.StringValue("Read")}
 	put()
+	check(true)
+	if !machine.currentUserHasDirectLeadManualRead(lead.Records["00Q000000000001"], "005000000000002") {
+		t.Fatal("manual share was not indexed")
+	}
+	changedLead := lead.Records["00Q000000000001"]
+	changedLead.System.CreatedByID = "005000000000003"
+	lead.PutRecord(changedLead.ID, changedLead)
+	org.Objects["Lead"] = lead
+	check(false)
+	changedLead.System.CreatedByID = changedLead.System.OwnerID
+	lead.PutRecord(changedLead.ID, changedLead)
+	org.Objects["Lead"] = lead
 	check(true)
 	share.Fields = map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Manual"), "UserOrGroupId": storage.IDValue("005000000000003"), "LeadAccessLevel": storage.StringValue("Read")}
 	put()
@@ -60,5 +75,10 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	state := org.Objects["LeadShare"]
 	state.DeleteRecord(share.ID)
 	org.Objects["LeadShare"] = state
+	check(true)
+	state = storage.ObjectState{Definition: state.Definition, Records: map[storage.ID]storage.Record{share.ID: share}}
+	org.Objects["LeadShare"] = state
+	check(false)
+	delete(state.Records, share.ID)
 	check(true)
 }

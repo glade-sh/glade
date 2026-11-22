@@ -33,10 +33,7 @@ func (vm *VM) currentUserHasPartnerLeadManualRead(objectName string, record stor
 }
 
 func (vm *VM) currentUserHasDirectLeadManualRead(record storage.Record, userID string) bool {
-	for _, share := range vm.Org.Objects["LeadShare"].Records {
-		if share.System.IsDeleted {
-			continue
-		}
+	for _, share := range vm.partnerLeadNonOwnerShares() {
 		lead, _ := share.GetField("LeadId")
 		target, _ := share.GetField("UserOrGroupId")
 		level, _ := share.GetField("LeadAccessLevel")

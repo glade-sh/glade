@@ -399,7 +399,8 @@ type VM struct {
 	// permissionChecks memoizes user permission answers inside one record
 	// loop that cannot change the org or the current user (see
 	// beginPermissionCheckMemo). Nil outside such a loop.
-	permissionChecks *permissionCheckMemo
+	permissionChecks  *permissionCheckMemo
+	partnerLeadShares *partnerLeadShareIndex
 	// --- Describe caches ---
 	describeCache               map[describeCacheKey]Value
 	fieldDescribeCache          map[describeCacheKey]Value
