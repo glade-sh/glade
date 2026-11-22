@@ -1,6 +1,8 @@
 package soql
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -95,6 +97,11 @@ func TestChildRelationshipIndexMatchesFreshAfterWrites(t *testing.T) {
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("%s: cached %#v, fresh %#v", label, got, want)
 		}
+		encoded, err := json.Marshal(got)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("outcome %s %x", label, sha256.Sum256(encoded))
 	}
 	compare("first")
 	compare("warm")
@@ -161,5 +168,47 @@ func TestChildRelationshipIndexConcurrentReuse(t *testing.T) {
 		if err := <-failures; err != nil {
 			t.Error(err)
 		}
+	}
+}
+
+func TestChildRelationshipIndexCacheScope(t *testing.T) {
+	org := childIndexBenchOrg(2, 1)
+	child := org.Objects["Contact"]
+	child.Definition.Fields["OtherId"] = storage.Field{APIName: "OtherId", Type: storage.FieldReference}
+	for id, row := range child.Records {
+		row.Fields["OtherId"] = row.Fields["AccountId"]
+		child.Records[id] = row
+	}
+	cache := NewExecutionCache()
+	index := func(name, field string) map[storage.ID][]string {
+		return childRelationshipIndex(org, name, child, field, newChildRelationshipQueryCache(cache))
+	}
+	first := index("Contact", "AccountId")
+	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() != reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("unversioned unchanged rows should be checked and reused")
+	}
+	if got := index("Contact", "OtherId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("different field reused index")
+	}
+	first = index("Contact", "AccountId")
+	if got := index("Other", "AccountId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("different object reused index")
+	}
+	first = index("Contact", "AccountId")
+	org.Namespace = "sample"
+	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("different namespace reused index")
+	}
+	row := child.Records["003000000000000"].Clone()
+	row.Fields["accountid"] = row.Fields["AccountId"]
+	delete(row.Fields, "AccountId")
+	child.Records[row.ID] = row
+	first = index("Contact", "AccountId")
+	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("case-folded field lookup must build a fresh index")
+	}
+	first = index("Contact", "Id")
+	if got := index("Contact", "Id"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("non-plain field must build a fresh index")
 	}
 }
