@@ -29,6 +29,7 @@
 - Test daemon watchers now detect restored files whose size and modification time are unchanged, keeping test selection current.
 
 - Test daemon requests immediately after a save retry when their source snapshot has drifted, avoiding a spurious compile error. Compile progress remains paired if a save happens after compilation starts.
+- **Duplicate matching limitations.** The duplicate matching guide now summarizes known divergences and why unmeasured shapes remain limitations.
 
 ### Performance
 

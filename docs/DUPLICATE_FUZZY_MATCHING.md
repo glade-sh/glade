@@ -711,6 +711,27 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   the stored values; a flow update, a standard-rule update report and
   `runAsCurrentUser` are not captured.
 
+### Divergence and disposition
+
+These limitations remain open. The native fixtures establish the differences
+listed here; they do not establish a safe general rule for the missing shapes.
+Counts in the earlier fit table describe that measured version, not a new
+measurement of the current scorer.
+
+| Area | Native observation and Glade divergence | Reason to retain the limitation |
+|---|---|---|
+| Custom Last Name | The two holdouts in the fit table each have two native matches the port misses. | The rows do not establish a general key or phonetic rule for their different shapes. |
+| Keyboard Distance | Some captured additive-cost pairs differ by one confidence point; several trailing characters have no positive row. | The cost model is approximate and the missing tails have no positive evidence. |
+| First Name | Some native nickname and alias-key behavior is absent from the captured tables. | The dictionary and alias keys are unpublished; entries outside the rows cannot be derived safely. |
+| Syllable Alignment | Some vowel variants, joined spellings and acronyms miss, and plural confidences vary. | The captured shapes do not establish the general algorithm. |
+| Custom Street | The measured panels agree except for the explicitly unmeasured shapes listed under Custom rule panels. | Those shapes have no native observations sufficient to fit a rule. |
+| Title | The table stops at six words and some moved-word confidences differ. | The rows do not establish the longer-title table or a general rotation loss. |
+| Blank fields | Contact MatchBlanks and blank last and company names are not captured. | No native rows establish those decisions. |
+| Unknown fuzzy methods | Rules using an unknown method are left unenforced. | Their matching semantics are not known. |
+| Field differences | Fuzzy custom and Person Account field differences are empty; `FDIFF2` confidence is checked only for records both sides return. | The field sets are not captured and unmatched records have no comparable confidence. |
+| Update gate and reports | Some repeat-edit baselines retain stored values; flow updates, standard-rule update reports and `runAsCurrentUser` remain unmeasured. | The existing rows do not establish these routes and sequences. |
+| Standard rules | The standard-rule gaps below include missed first and last names, approximate Street and raw scores, phone attribution and the inactive Person Account rule. | Their individual residuals or missing captures do not prove a broader replacement. |
+
 ## Standard rules
 
 The standard rules are off by default. `duplicateRules.standard: on` in
