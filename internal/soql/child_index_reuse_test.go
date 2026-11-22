@@ -215,6 +215,10 @@ func TestChildRelationshipIndexCacheScope(t *testing.T) {
 	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() != reflect.ValueOf(got).UnsafePointer() {
 		t.Fatal("versioned unchanged rows should be checked and reused")
 	}
+	child.TouchRecords()
+	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("a new record version must invalidate the index")
+	}
 	uncached := func() map[storage.ID][]string {
 		return childRelationshipIndex(org, "Contact", unversioned, "AccountId", newChildRelationshipQueryCache(cache))
 	}
