@@ -1993,10 +1993,11 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	current := vm.currentUserInfoField("Id", "")
 	api := vm.currentSourceExecutionPolicy().APIVersion
 	deniedControl, anonymousManualShape, anonymousPartnerShape := false, false, false
-	if vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0" || api == "68.0") &&
+	visualforcePartner := api == "59.0" && vm.capturedPartnerVisualforce59()
+	if vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0" || api == "68.0" || visualforcePartner) &&
 		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" {
 		standardProjection := manualReadAccessProjection.MatchString(queryText)
-		extraFieldProjection := (api == "62.0" || api == "67.0") && manualReadExtraFieldProjection.MatchString(queryText)
+		extraFieldProjection := (api == "62.0" || api == "67.0" || visualforcePartner) && manualReadExtraFieldProjection.MatchString(queryText)
 		deniedControl = api == "68.0" && standardProjection || api == "67.0" && extraFieldProjection
 		anonymousManualShape = (api == "62.0" || api == "67.0") && standardProjection || deniedControl
 		anonymousPartnerShape = extraFieldProjection
@@ -5073,7 +5074,7 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 	if vm.testContext != nil {
 		profile = vm.currentUserProfileName(vm.testContext.CurrentUser)
 	}
-	if (api != "62.0" && api != "67.0") || profile != "Partner Community User" {
+	if (api != "62.0" && api != "67.0" && !(actorID != "" && vm.capturedPartnerVisualforce59())) || profile != "Partner Community User" {
 		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
@@ -5110,7 +5111,20 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 			return false
 		}
 	}
+	if api == "59.0" && nonOwnerShares != 1 {
+		return false
+	}
 	return true
+}
+
+// capturedPartnerVisualforce59 is the controller route in
+// partner_lead_named_access/org.tsv:2, not an anonymous Apex API extension.
+func (vm *VM) capturedPartnerVisualforce59() bool {
+	if vm.currentSourceExecutionPolicy().APIVersion != "59.0" || vm.currentPage.Kind != ValueObject || vm.vfActionInvoker == nil || vm.currentClass == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && methodHasModifier(class.Modifiers, "without sharing")
 }
 
 func (vm *VM) currentUserIsCapturedPortalUser() bool {
