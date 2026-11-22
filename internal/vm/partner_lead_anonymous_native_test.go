@@ -41,14 +41,14 @@ func TestPartnerLeadAnonymousNativeConformance(t *testing.T) {
 				storage.EnsureStandardObject(&org, name)
 			}
 			profile := org.Objects["Profile"]
-			profile.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner API User"), "UserLicenseId": storage.IDValue("100000000000001"), "PermissionsApiEnabled": storage.BooleanValue(true)}}}
+			profile.Records = map[storage.ID]storage.Record{"00e000000000001": {ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("System Administrator")}}, "00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner API User"), "UserLicenseId": storage.IDValue("100000000000001"), "PermissionsApiEnabled": storage.BooleanValue(true)}}}
 			org.Objects["Profile"] = profile
 			license := org.Objects["UserLicense"]
-			license.Records = map[storage.ID]storage.Record{"100000000000001": {ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community")}}}
+			license.Records = map[storage.ID]storage.Record{"100000000000001": {ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community"), "LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}}}
 			org.Objects["UserLicense"] = license
 			user := storage.Record{ID: "005000000000002", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000002"), "UserType": storage.StringValue("PowerPartner")}}
 			users := org.Objects["User"]
-			users.Records = map[storage.ID]storage.Record{user.ID: user}
+			users.Records = map[storage.ID]storage.Record{user.ID: user, "005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001"), "UserType": storage.StringValue("Standard")}}}
 			org.Objects["User"] = users
 			sets := org.Objects["PermissionSet"]
 			sets.Records = map[storage.ID]storage.Record{"0PS000000000001": {ID: "0PS000000000001", Object: "PermissionSet", Fields: map[string]storage.Value{"PermissionsApiEnabled": storage.BooleanValue(true)}}}
