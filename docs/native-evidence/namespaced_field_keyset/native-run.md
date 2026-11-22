@@ -1,4 +1,4 @@
-Native rows: `org.tsv`
+Native rows: `internal/apextest/testdata/conformance/namespaced_field_keyset/org.tsv`
 
 The original capture was made on 2026-11-22 in an authorized persistent namespaced Developer org, in namespace owner context. Its start and finish timestamps were not recorded in the available capture provenance. No org was created or deleted. APIs 62.0 and 67.0 were exercised anonymously and through synchronous isTest classes compiled at each API. Two runs used separately named synthetic components of the same object and field shape; all four route and API outputs matched.
 

@@ -1,4 +1,4 @@
-Native rows: `org.tsv`
+Native rows: `internal/apextest/testdata/conformance/namespaced_field_keyset/ownership/org.tsv`
 
 Captured 2026-11-22 from 06:26:28Z to 06:27:30Z in an authorized persistent namespaced Developer org, in namespace owner context. APIs 62.0, 67.0 and 68.0 were exercised anonymously and through synchronous isTest classes compiled at each API, twice per API and route.
 
