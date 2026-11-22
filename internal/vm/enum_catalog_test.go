@@ -173,6 +173,41 @@ func TestEnumCatalogUnregisteredCountChange(t *testing.T) {
 	})
 }
 
+func TestEnumCatalogUnregisteredSameCountWithOverlay(t *testing.T) {
+	base := New(nil)
+	for _, class := range []Class{{Name: "Outer.State", EnumValues: []string{"Ready"}}, {Name: "Outer.Phase"}} {
+		if err := base.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base.FreezeClassLookup()
+	for _, mode := range []string{"before registration", "active overlay", "frozen layer"} {
+		t.Run(mode, func(t *testing.T) {
+			clone := base.CloneRuntimeFrozenShared(nil)
+			mutate := func() {
+				class := clone.Classes["Outer.Phase"]
+				class.EnumValues = []string{"Open"}
+				clone.Classes["Outer.Phase"] = class
+			}
+			if mode == "before registration" {
+				clone.prepareClassMapWrite()
+				mutate()
+			}
+			if err := clone.RegisterClass(Class{Name: "Late.State", EnumValues: []string{"New"}}); err != nil {
+				t.Fatal(err)
+			}
+			if mode != "before registration" {
+				mutate()
+			}
+			if mode == "frozen layer" {
+				clone.FreezeClassLookup()
+			}
+			checkEnumCatalog(t, clone, "Phase", "State", "Missing")
+			checkEnumCatalog(t, base, "Phase", "State")
+		})
+	}
+}
+
 func TestEnumCatalogEmptySuffix(t *testing.T) {
 	base := New(nil)
 	if err := base.RegisterClass(Class{Name: "Outer.State", EnumValues: []string{"Ready"}}); err != nil {
