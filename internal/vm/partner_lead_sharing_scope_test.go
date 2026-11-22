@@ -72,7 +72,7 @@ func TestPartnerLeadExternalDefaultUncapturedProjection(t *testing.T) {
 	}
 }
 
-// ReadWriteTransfer with a non-owner share has no matching native row.
+// A share for another reader retains the uncaptured public-model visibility.
 func TestPartnerLeadTransferDefaultUncapturedShare(t *testing.T) {
 	for _, target := range []string{"005000000000002", "005000000000003"} {
 		t.Run(target, func(t *testing.T) {
@@ -103,6 +103,13 @@ func TestPartnerLeadTransferDefaultUncapturedShare(t *testing.T) {
 			machine.currentMethod = Method{APIVersion: "67.0"}
 			if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
 				t.Fatal("uncaptured shared Lead visibility changed")
+			}
+			if target == "005000000000003" {
+				other := record
+				other.ID = "00Q000000000002"
+				if !machine.userModeRecordVisible("Lead", other, machine.currentUserID()) {
+					t.Fatal("uncaptured share to another reader changed unshared Lead visibility")
+				}
 			}
 		})
 	}
