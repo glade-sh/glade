@@ -20,7 +20,7 @@ func TestCIRequiredPRPlan(t *testing.T) {
 	if err != nil {
 		t.Fatalf("plan: %v", err)
 	}
-	results := `{"pr-select":{"result":"success"},"pr-tests":{"result":"success"},"early-guards":{"result":"success"},"pr-guards":{"result":"success"},"workflow-lint":{"result":"success"},"site":{"result":"success"},"vet":{"result":"success"},"leak-scan":{"result":"success"}}`
+	results := `{"pr-select":{"result":"success"},"pr-tests":{"result":"success"},"pr-authority-union":{"result":"success"},"early-guards":{"result":"success"},"pr-guards":{"result":"success"},"workflow-lint":{"result":"success"},"site":{"result":"success"},"vet":{"result":"success"},"leak-scan":{"result":"success"}}`
 	for _, tc := range []struct {
 		name, plan, results string
 		success             bool
@@ -36,6 +36,8 @@ func TestCIRequiredPRPlan(t *testing.T) {
 		{"duplicate worker", `{"include":[{"shard":1,"packages":["x"],"pool":[],"browser":false},{"shard":1,"packages":["x"],"pool":[],"browser":false}]}`, results, false},
 		{"empty real worker", `{"include":[{"shard":1,"packages":[],"pool":[],"browser":false}]}`, results, false},
 		{"missing matrix result", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, strings.Replace(results, `,"pr-tests":{"result":"success"}`, ``, 1), false},
+		{"missing union", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, strings.Replace(results, `,"pr-authority-union":{"result":"success"}`, ``, 1), false},
+		{"failed union", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, strings.Replace(results, `"pr-authority-union":{"result":"success"}`, `"pr-authority-union":{"result":"failure"}`, 1), false},
 		{"cancelled matrix", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, strings.Replace(results, `"pr-tests":{"result":"success"}`, `"pr-tests":{"result":"cancelled"}`, 1), false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
