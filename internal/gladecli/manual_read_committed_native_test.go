@@ -143,6 +143,7 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 		{"api68", "68.0", "Private"},
 		{"public", "67.0", "ReadWrite"},
 		{"extra-field", "67.0", "Private"},
+		{"view-all", "67.0", "Private"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			base := filepath.Join(criteriaSharingFixtures, "manual_read_lifecycle")
@@ -162,6 +163,9 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 				}
 				content := strings.ReplaceAll(string(b), "67.0", tc.api)
 				content = strings.ReplaceAll(content, "<sharingModel>Private</sharingModel>", "<sharingModel>"+tc.model+"</sharingModel>")
+				if tc.name == "view-all" {
+					content = strings.ReplaceAll(content, "<viewAllRecords>false</viewAllRecords>", "<viewAllRecords>true</viewAllRecords>")
+				}
 				writeTestFile(t, filepath.Join(root, "force-app/main/default", rel), content)
 				return nil
 			}); err != nil {
