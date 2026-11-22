@@ -27,7 +27,7 @@ func TestRunRequestBodyEditReusesSemanticState(t *testing.T) {
 		t.Fatal(err)
 	}
 	apextest.InvalidateRuntimeCaches()
-	request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1}, "", 0, 0, false)
+	request := NewRunRequestV1(apextest.Options{Parallelism: 1}, "", 0, 0, false)
 	run, _, _, err := d.RunRequestV1(context.Background(), request, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -74,5 +74,36 @@ func TestRunRequestBodyEditReusesSemanticState(t *testing.T) {
 	}
 	if !reflect.DeepEqual(run, coldRun) {
 		t.Fatal("warm and cold reports differ beyond durations")
+	}
+}
+
+// The no-cache option is a cache-independent run, including semantic state.
+func TestRunRequestNoCacheBypassesSemanticState(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
+	root := incrementalProject(t)
+	path := filepath.Join(root, "force-app/main/default/classes/Util.cls")
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Warm(); err != nil {
+		t.Fatal(err)
+	}
+	before := d.semaState.LastStats()
+	writeFile(t, path, `public class Util { public static Integer twice(Integer v) { return v + v; } }`)
+	if err := d.UpdateChanges([]watch.Change{{Path: path, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Util"}}); err != nil {
+		t.Fatal(err)
+	}
+	apextest.InvalidateRuntimeCaches()
+	request := NewRunRequestV1(apextest.Options{NoDiskCache: true, Parallelism: 1}, "", 0, 0, false)
+	run, _, _, err := d.RunRequestV1(context.Background(), request, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("no-cache request summary: %+v; %s", got, runProblems(run))
+	}
+	if after := d.semaState.LastStats(); after != before {
+		t.Fatalf("no-cache request changed semantic state: before %+v after %+v", before, after)
 	}
 }
