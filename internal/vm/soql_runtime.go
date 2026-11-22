@@ -4989,7 +4989,8 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 
 // partnerLeadPrivateExternalDefault is the named and with-sharing test shape
 // captured in partner_lead_external_default/org.tsv:2-3 and
-// partner_lead_manual_read/org.tsv:2-3 (APIs 62.0 and 67.0).
+// partner_lead_manual_read/org.tsv:2-3 and partner_lead_transfer_default/org.tsv:2-3
+// (APIs 62.0 and 67.0).
 func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
 		return false
@@ -4999,7 +5000,9 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
-	if !storage.StandardObjectShapeDeclared(definition) || !strings.EqualFold(strings.TrimSpace(definition.SharingModel), "ReadWrite") || strings.TrimSpace(definition.ExternalSharingModel) != "" {
+	model := strings.TrimSpace(definition.SharingModel)
+	transfer := strings.EqualFold(model, "ReadWriteTransfer")
+	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || strings.TrimSpace(definition.ExternalSharingModel) != "" {
 		return false
 	}
 	for _, share := range vm.Org.Objects["LeadShare"].Records {
@@ -5009,6 +5012,9 @@ func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
 		cause, _ := share.GetField("RowCause")
 		if strings.EqualFold(cause.String, "Owner") {
 			continue
+		}
+		if transfer {
+			return false
 		}
 		target, _ := share.GetField("UserOrGroupId")
 		level, _ := share.GetField("LeadAccessLevel")
