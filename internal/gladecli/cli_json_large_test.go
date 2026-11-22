@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,6 +37,7 @@ func TestLargeCLIJSONEnvelopeCompatibility(t *testing.T) {
 			if !bytes.Equal(got.Bytes(), want.Bytes()) {
 				t.Fatal("encoded bytes differ")
 			}
+			t.Logf("json sha256 %x", sha256.Sum256(got.Bytes()))
 		})
 	}
 }

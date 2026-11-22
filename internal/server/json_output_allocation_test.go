@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,7 @@ func TestServerJSONEncoderCompatibility(t *testing.T) {
 			if !bytes.Equal(got.Bytes(), want.Bytes()) {
 				t.Fatal("encoded bytes differ")
 			}
+			t.Logf("json sha256 %x", sha256.Sum256(got.Bytes()))
 		})
 	}
 }
