@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	_ "embed"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"sort"
@@ -207,17 +208,33 @@ func connectAPICapturedShape() *connectAPIShape {
 // decoded shape shares one buffer instead of one allocation per name.
 const connectAPIShapeFormat = "glade-connectapi-shape\t1"
 
-func decodeConnectAPIShape(archive []byte) (*connectAPIShape, error) {
+func inflateConnectAPIShape(archive []byte) (string, error) {
 	reader, err := gzip.NewReader(bytes.NewReader(archive))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer reader.Close()
-	data, err := io.ReadAll(reader)
+	var text strings.Builder
+	// The trailer is a hint only: concatenated gzip members may inflate to
+	// more, and an untrusted trailer must not demand an arbitrary allocation.
+	if len(archive) >= 4 {
+		size := binary.LittleEndian.Uint32(archive[len(archive)-4:])
+		if size <= 16<<20 && uint64(size) <= uint64(len(archive))*16 {
+			text.Grow(int(size))
+		}
+	}
+	_, err = io.Copy(&text, reader)
+	if err != nil {
+		return "", err
+	}
+	return text.String(), nil
+}
+
+func decodeConnectAPIShape(archive []byte) (*connectAPIShape, error) {
+	text, err := inflateConnectAPIShape(archive)
 	if err != nil {
 		return nil, err
 	}
-	text := string(data)
 	header, rest, ok := strings.Cut(text, "\n")
 	if !ok || header != connectAPIShapeFormat {
 		return nil, fmt.Errorf("unexpected archive header %q", header)
