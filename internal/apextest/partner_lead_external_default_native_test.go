@@ -53,3 +53,27 @@ func TestPartnerLeadExternalDefaultNativeConformance(t *testing.T) {
 		})
 	}
 }
+
+// API 68 is an uncaptured neighbor; keep the original local result.
+func TestPartnerLeadExternalDefaultUncapturedAPI(t *testing.T) {
+	const base = "testdata/conformance/partner_lead_external_default"
+	const api = "68.0"
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+	copyTree(t, filepath.Join(base, "project"), filepath.Join(root, "force-app/main/default"), api)
+	copyTree(t, filepath.Join(base, "project-scratch-def.json"), filepath.Join(root, "config/project-scratch-def.json"), api)
+	classPath := filepath.Join(root, "force-app/main/default/classes/PartnerLeadDefaultTest.cls")
+	source, err := os.ReadFile(classPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, classPath, strings.Replace(string(source), "a.IsPartner = true; update a;", "a.IsPartner = true; update as system a;", 1))
+	run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{"PartnerLeadDefaultTest"}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
+	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+		t.Fatalf("expected asserted observation: %+v", run.Summary())
+	}
+	got := run.Suites[0].Cases[0].Problem.Message
+	if !strings.Contains(got, "access=true,true|describe=true|count=1") {
+		t.Fatalf("uncaptured API 68 local observation changed: %s", got)
+	}
+}
