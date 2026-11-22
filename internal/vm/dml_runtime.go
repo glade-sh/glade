@@ -7045,8 +7045,14 @@ func (vm *VM) defaultAnonymousReadLeadUpdate(op string, value Value) bool {
 		}
 	}
 	selected, queried := value.Fields[sobjectQueriedFieldsField]
-	if !permissionSetFound || !queried || selected.Kind != ValueMap || len(selected.Map) != 3 || !vm.capturedReadLeadUpdate(op, value, true) {
+	if !permissionSetFound || !queried || selected.Kind != ValueMap || len(selected.Map) != 3 ||
+		selected.Map[mapKey(String("company"))].Kind != ValueBool || !vm.capturedReadLeadUpdate(op, value, true) {
 		return false
+	}
+	for _, name := range explicitSObjectFieldNamesInInsertionOrder(value) {
+		if !strings.EqualFold(name, "Id") && !strings.EqualFold(name, "Company") {
+			return false
+		}
 	}
 	record, err := vm.recordFromValue(&value)
 	if err != nil {
