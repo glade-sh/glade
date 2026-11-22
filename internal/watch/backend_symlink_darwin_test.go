@@ -37,6 +37,11 @@ func TestWatcherLinkedFileTargetEdits(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer watcher.Close()
+			if !createLater {
+				if _, ok := watcher.(*NativeWatcher); !ok {
+					t.Fatalf("existing linked file used %T, want native fallback", watcher)
+				}
+			}
 			if createLater {
 				if err := os.Symlink(target, linked); err != nil {
 					t.Fatal(err)
