@@ -433,7 +433,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// provenance when the later output filter handles other query routes.
 	aggregateInputRows := result.AggregateInputRows
 	if !ordinaryHierarchyQuery {
-		if defaultMode && vm.capturedPartnerLeadAnonymousQuery(query) {
+		if defaultMode && vm.capturedPartnerLeadAnonymousQuery(query) && vm.capturedPartnerLeadAnonymousResult(result) {
 			result = vm.filterCapturedPartnerLeadAnonymous(result)
 		} else {
 			result = vm.applySOQLSharing(query, result)
@@ -4891,6 +4891,47 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	return result
 }
 
+// capturedPartnerLeadAnonymousResult limits the row to the two matching,
+// same-owner Leads and at most one share observed in the native transaction.
+func (vm *VM) capturedPartnerLeadAnonymousResult(result soql.Result) bool {
+	if len(result.Records) != 2 {
+		return false
+	}
+	var owner storage.ID
+	var firstName string
+	for i, projected := range result.Records {
+		_, record, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, projected.ID)
+		if !found || !vm.capturedPartnerLeadAnonymousRecord(record) {
+			return false
+		}
+		name, ok := record.GetField("LastName")
+		if !ok || name.Kind != storage.ValueString {
+			return false
+		}
+		if i == 0 {
+			owner = record.System.OwnerID
+			firstName = name.String
+		} else if !storage.IDsEqual(owner, record.System.OwnerID) || strings.EqualFold(firstName, name.String) {
+			return false
+		}
+	}
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		parent, _ := share.GetField("LeadId")
+		id := storage.ID(storageValueIDText(parent))
+		if !storage.IDsEqual(id, result.Records[0].ID) && !storage.IDsEqual(id, result.Records[1].ID) {
+			return false
+		}
+	}
+	return true
+}
+
 func (vm *VM) filterCapturedPartnerLeadAnonymous(result soql.Result) soql.Result {
 	visible := result.Records[:0]
 	for _, projected := range result.Records {
@@ -4924,6 +4965,9 @@ func (vm *VM) capturedPartnerLeadAnonymousQuery(query soql.Query) bool {
 		if value.Kind != storage.ValueString {
 			return false
 		}
+	}
+	if strings.EqualFold(query.Where.Values[0].String, query.Where.Values[1].String) {
+		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
 	profile := vm.currentUserInfoField("ProfileId", "")
