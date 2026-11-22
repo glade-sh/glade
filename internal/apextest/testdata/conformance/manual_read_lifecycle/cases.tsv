@@ -6,3 +6,9 @@ manual_read_committed_revoked	istest	ShareCommitTest	62.0 67.0
 manual_read_anonymous_denied	anonymous	observe.apex	62.0 67.0
 manual_read_anonymous_granted	anonymous	observe.apex	62.0 67.0
 manual_read_anonymous_revoked	anonymous	observe.apex	62.0 67.0
+manual_read_api62_committed_denied	istest	ShareCommitTest	62.0 67.0
+manual_read_api62_anonymous_denied	anonymous	observe.apex	62.0 67.0
+manual_read_api62_committed_granted	istest	ShareCommitTest	62.0 67.0
+manual_read_api62_anonymous_granted	anonymous	observe.apex	62.0 67.0
+manual_read_api62_committed_revoked	istest	ShareCommitTest	62.0 67.0
+manual_read_api62_anonymous_revoked	anonymous	observe.apex	62.0 67.0

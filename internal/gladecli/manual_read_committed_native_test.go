@@ -110,8 +110,18 @@ System.debug('row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(
 				if want == "" {
 					t.Fatalf("missing native row for %s %s", api, phase)
 				}
-				if got := observe(); got != want {
-					t.Errorf("%s: Glade=%q native=%q", phase, got, want)
+				gotCommitted := observe()
+				if gotCommitted != want {
+					t.Errorf("%s: Glade=%q native=%q", phase, gotCommitted, want)
+				}
+				want62 := ""
+				for _, row := range rows {
+					if row["id"] == "manual_read_api62_committed_"+phase && row["api"] == api {
+						_, want62, _ = strings.Cut(row["outcome"], "Assertion Failed: ")
+					}
+				}
+				if want62 == "" || gotCommitted != want62 {
+					t.Errorf("API 62 mutation %s: Glade=%q native=%q", phase, gotCommitted, want62)
 				}
 				anonymousWant := ""
 				for _, row := range rows {
@@ -130,6 +140,15 @@ System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valu
 				got := runCriteriaExec(t, root, db, query)
 				if got != anonymousWant {
 					t.Errorf("anonymous %s: Glade=%q native=%q", phase, got, anonymousWant)
+				}
+				anonymous62 := ""
+				for _, row := range rows {
+					if row["id"] == "manual_read_api62_anonymous_"+phase && row["api"] == api {
+						_, anonymous62, _ = strings.Cut(row["outcome"], "Assertion Failed: ")
+					}
+				}
+				if anonymous62 == "" || got != anonymous62 {
+					t.Errorf("anonymous API 62 mutation %s: Glade=%q native=%q", phase, got, anonymous62)
 				}
 			}
 		})
