@@ -39,9 +39,11 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	check := func(want bool) {
 		t.Helper()
-		defer machine.beginPartnerLeadShareScan()()
-		if got := machine.partnerLeadPrivateExternalDefault("Lead"); got != want {
-			t.Fatalf("share shape: got %v want %v", got, want)
+		defer machine.beginPartnerLeadReadPass()()
+		for range 2 {
+			if got := machine.partnerLeadPrivateExternalDefault("Lead"); got != want {
+				t.Fatalf("share shape: got %v want %v", got, want)
+			}
 		}
 	}
 	check(true)

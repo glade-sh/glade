@@ -159,11 +159,18 @@ func TestPartnerLeadMultipleSharesKeepLiveAccess(t *testing.T) {
 	machine.testContext.CurrentUser.Fields["ProfileId"] = String("00e000000000003")
 	machine.testContext.CurrentUser.Fields["UserType"] = String("Standard")
 	machine.testContext.RunAsDepth++
+	end := machine.beginPartnerLeadReadPass()
+	if got := len(machine.partnerLeadNonOwnerShares()); got != 2 {
+		t.Fatalf("warmed non-owner rows = %d, want 2", got)
+	}
 	check("nested runAs queue member", true)
 	machine.testContext.CurrentUser.Fields["UserRoleId"] = String("00E000000000001")
 	check("member with role", true)
 	members.DeleteRecord(membership)
 	check("removed member with role", false)
+	members.PutRecord(membership, storage.Record{ID: membership, Fields: map[string]storage.Value{"GroupId": storage.IDValue(row.System.OwnerID), "UserOrGroupId": storage.IDValue("005000000000003")}})
+	check("rejoined queue during same pass", true)
+	end()
 	machine.testContext.CurrentUser = prior
 	machine.testContext.RunAsDepth--
 	check("restored partner", false)
