@@ -8,7 +8,7 @@ Native rows: `internal/vm/testdata/partner_lead_anonymous/org.tsv`
 - Routes in retained rows: anonymous.
 - Retained org.tsv SHA-256: 39c72c60b0bce000b382df399b257cdbe896ca6a48a27f1402e11595ac04011a.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/vm/testdata/partner_lead_anonymous/RUN-FACTS.txt).
 
 The following source hashes were computed from the retained files after capture; they are not contemporaneous capture receipts. Project snapshots or probe literals were compared byte for byte with the fixture.
 

@@ -8,7 +8,7 @@ Native rows: `internal/apextest/testdata/conformance/partner_lead_anonymous_acce
 - Routes in retained rows: anonymous.
 - Retained org.tsv SHA-256: 59885093d51fa1531e16ca955d52c58bcfa4568c5d92797efd44b647db4302eb.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/apextest/testdata/conformance/partner_lead_anonymous_access/RUN-FACTS.txt).
 
 The following source hashes were computed from the retained files after capture; they are not contemporaneous capture receipts. Project snapshots or probe literals were compared byte for byte with the fixture.
 

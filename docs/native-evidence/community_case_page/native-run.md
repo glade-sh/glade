@@ -8,7 +8,7 @@ Native rows: `internal/visualforce/testdata/community_case_page/org.tsv`
 - Routes in retained rows: visualforce.
 - Retained org.tsv SHA-256: 822234d0d21792e0050559942859d1be894a5e841f13abf7e1cb5928da693a52.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/visualforce/testdata/community_case_page/RUN-FACTS.txt).
 
 The following source hashes were computed from the retained files after capture; they are not contemporaneous capture receipts. Project snapshots or probe literals were compared byte for byte with the fixture.
 

@@ -8,4 +8,4 @@ Native rows: `internal/apextest/testdata/conformance/partner_lead_manual_read/or
 
 - Retained org.tsv SHA-256: 256dfc2cd74307cfe3247cd13266766178d65bba6997c8dc0a52e2053dbe0747.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/apextest/testdata/conformance/partner_lead_manual_read/RUN-FACTS.txt).

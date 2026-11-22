@@ -8,7 +8,7 @@ Native rows: `internal/apextest/testdata/conformance/manual_read_lifecycle/org.t
 
 - Retained org.tsv SHA-256: 18874d508789be3ef664af995072cd4b196339b66879e995bf40895959f48c2d.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/apextest/testdata/conformance/manual_read_lifecycle/RUN-FACTS.txt).
 
 The following source hashes were computed from the retained files after capture; they are not contemporaneous capture receipts. Each listed source matches a retained probe literal.
 

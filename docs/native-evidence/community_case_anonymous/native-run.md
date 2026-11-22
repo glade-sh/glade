@@ -8,7 +8,7 @@ Native rows: `internal/vm/testdata/community_case_anonymous/org.tsv`
 - Routes in retained rows: anonymous.
 - Retained org.tsv SHA-256: 9ed6d510d47547f7d70f648b820d0432d50713fe1d81e00b9d6a8dec44780b2f.
 
-The retained capture and cleanup facts are in [RUN-FACTS.txt](RUN-FACTS.txt).
+The retained capture and cleanup facts are in [RUN-FACTS.txt](../../../internal/vm/testdata/community_case_anonymous/RUN-FACTS.txt).
 
 The following source hashes were computed from retained files after capture, not recorded at capture time. The API-substituted sources and the three control sources match retained probe expressions byte for byte.
 
