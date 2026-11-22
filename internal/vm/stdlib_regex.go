@@ -114,6 +114,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 		receiver.Fields["hitEnd"] = Bool(hitEnd)
 		matcherSetRequireEnd(receiver, false)
 		if indices == nil {
+			matcherRestorePriorCursor(receiver, input)
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
@@ -136,6 +137,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 		receiver.Fields["hitEnd"] = Bool(hitEnd)
 		matcherSetRequireEnd(receiver, false)
 		if indices == nil {
+			matcherRestorePriorCursor(receiver, input)
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
@@ -309,7 +311,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 			return Null, receiver, false, true, err
 		}
 		// K003: replacement leaves the matcher at the last search result.
-		err = matcherReplaceSearchStateWithCache(receiver, method == "replaceAll", cache)
+		err = matcherReplaceSearchStateWithPolicy(receiver, method == "replaceAll", cache, capturedAPI)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -590,8 +592,12 @@ func matcherReplaceSearchState(matcher Value, all bool) error {
 }
 
 func matcherReplaceSearchStateWithCache(matcher Value, all bool, cache *preparedMatcherCache) error {
+	return matcherReplaceSearchStateWithPolicy(matcher, all, cache, true)
+}
+
+func matcherReplaceSearchStateWithPolicy(matcher Value, all bool, cache *preparedMatcherCache, capturedAPI bool) error {
 	for {
-		found, _, _, _, err := callMatcherMemberWithCache(matcher, "find", nil, cache)
+		found, _, _, _, err := callMatcherMemberWithPolicy(matcher, "find", nil, cache, capturedAPI)
 		if err != nil || !found.Bool || !all {
 			return err
 		}
