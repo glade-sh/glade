@@ -76,7 +76,11 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 						t.Fatalf("expected exception: %v", err)
 					}
 					for _, frame := range fault.Stack {
-						got = append(got, fmt.Sprintf("%s: line %d, column 1", frame.Symbol, frame.Line))
+						symbol := frame.Symbol
+						if strings.Contains(symbol, ".") && !strings.HasPrefix(symbol, "Class.") {
+							symbol = "Class." + symbol
+						}
+						got = append(got, fmt.Sprintf("%s: line %d, column 1", symbol, frame.Line))
 					}
 				} else {
 					id := strings.TrimSuffix(row[0], "_test")
@@ -86,7 +90,11 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 						t.Fatalf("missing failure: %#v", result)
 					}
 					for _, frame := range result.Suites[0].Cases[0].Problem.Stack {
-						got = append(got, fmt.Sprintf("%s: line %d, column 1", frame.Symbol, frame.Line))
+						symbol := frame.Symbol
+						if strings.Contains(symbol, ".") && !strings.HasPrefix(symbol, "Class.") {
+							symbol = "Class." + symbol
+						}
+						got = append(got, fmt.Sprintf("%s: line %d, column 1", symbol, frame.Line))
 					}
 				}
 				if strings.Join(got, "\n") != want {
