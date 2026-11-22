@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+locale	62.0	anonymous	True	True	OBS=de_DE&#124;Friday&#124;Fri&#124;February&#124;Feb&#124;5&#124;Saturday&#124;Sat&#124;February&#124;Feb&#124;6&#124;Saturday&#124;Sat&#124;January&#124;Jan&#124;6	n/a	n/a	0
+locale	67.0	anonymous	True	True	OBS=de_DE&#124;Friday&#124;Fri&#124;February&#124;Feb&#124;5&#124;Saturday&#124;Sat&#124;February&#124;Feb&#124;6&#124;Saturday&#124;Sat&#124;January&#124;Jan&#124;6	n/a	n/a	0
+locale_test	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: de_DE|Friday|Fri|February|Feb|5|Saturday|Sat|February|Feb|6|Saturday|Sat|January|Jan|6	62.0	n/a	n/a
+locale_test	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: de_DE|Friday|Fri|February|Feb|5|Saturday|Sat|February|Feb|6|Saturday|Sat|January|Jan|6	67.0	n/a	n/a

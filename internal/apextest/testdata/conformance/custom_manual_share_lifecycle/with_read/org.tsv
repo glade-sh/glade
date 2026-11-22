@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome
+before_share	62.0	anonymous	true	true	1:false,false,None
+after_share_commit	62.0	anonymous	true	true	1:true,false,Read
+after_share_delete_commit	62.0	anonymous	true	true	1:false,false,None
+after_record_delete_commit	62.0	anonymous	true	true	0:none
+before_share	67.0	anonymous	true	true	1:false,false,None
+after_share_commit	67.0	anonymous	true	true	1:true,false,Read
+after_share_delete_commit	67.0	anonymous	true	true	1:false,false,None
+after_record_delete_commit	67.0	anonymous	true	true	0:none
+before_share	68.0	anonymous	true	true	1:false,false,None
+after_share_commit	68.0	anonymous	true	true	1:true,false,Read
+after_share_delete_commit	68.0	anonymous	true	true	1:false,false,None
+after_record_delete_commit	68.0	anonymous	true	true	0:none

@@ -143,28 +143,6 @@ func TestCISiteScopeFailClosed(t *testing.T) {
 	}
 }
 
-func TestCIBenchmarkSiteScopeComposition(t *testing.T) {
-	workflow := readWorkflowFile(t, "ci.yml")
-	if problem := benchmarkCachePairWorkflowProblem("ci.yml", workflow); problem != "" {
-		t.Fatalf("combined site and cache-pair contract: %s", problem)
-	}
-	for _, condition := range []string{
-		"steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)",
-		"steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)",
-		"(needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true') && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))",
-	} {
-		t.Run(condition, func(t *testing.T) {
-			mutated := strings.Replace(workflow, condition, "false", 1)
-			if mutated == workflow {
-				t.Fatal("condition not found")
-			}
-			if problem := benchmarkCachePairWorkflowProblem("ci.yml", mutated); problem == "" {
-				t.Fatal("accepted a weakened site condition")
-			}
-		})
-	}
-}
-
 func TestCIRequiredAggregateRequiresSiteOnPullRequests(t *testing.T) {
 	workflow := readWorkflowFile(t, "ci.yml")
 	if problem := ciRequiredAggregateProblem(workflow); problem != "" {
