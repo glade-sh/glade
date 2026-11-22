@@ -161,9 +161,9 @@ var recordsReadOnlyCallees = map[string]bool{
 	"LookupRecordByID": true, "cloneRecordMap": true, "sortedStorageRecords": true,
 	"sortedCustomDataRecords": true, "cartChildRecords": true, "canonicalSummaryParentIDs": true,
 	"next": true, "revokeChangedUsers": true,
-	// duplicateCandidateIndex.candidates ranges over the map and checks membership only.
-	"candidates": true,
-	"Sprintf":    true, "Fprintf": true, "Printf": true, "Errorf": true, "Marshal": true,
+	// duplicateCandidateIndex.readIndexedDuplicateCandidates ranges over the map and checks membership only.
+	"readIndexedDuplicateCandidates": true,
+	"Sprintf":                        true, "Fprintf": true, "Printf": true, "Errorf": true, "Marshal": true,
 }
 
 func calleeName(fun ast.Expr) string {
@@ -364,6 +364,8 @@ func f(object State) {
 	helper(alias)
 	_ = len(object.Records)
 	_ = LookupRecordByID(object.Records, id)
+	_ = index.readIndexedDuplicateCandidates(object.Records)
+	_ = candidates(object.Records)
 }
 `
 	fset := token.NewFileSet()
@@ -375,7 +377,7 @@ func f(object State) {
 	for _, finding := range scanRecordWrites(fset, file) {
 		lines = append(lines, finding.line)
 	}
-	want := []int{4, 7, 8, 9, 10, 12}
+	want := []int{4, 7, 8, 9, 10, 12, 16}
 	if !slices.Equal(lines, want) {
 		t.Fatalf("flagged lines = %v, want %v", lines, want)
 	}

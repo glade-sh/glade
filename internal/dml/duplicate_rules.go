@@ -448,11 +448,11 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 					}
 				}
 				if chosen >= 0 {
-					selected = index.candidates(objectName, &prepared, chosen, true, records)
+					selected = index.readIndexedDuplicateCandidates(objectName, &prepared, chosen, true, records)
 				} else {
 					for _, term := range terms[:count] {
 						if !prepared.items[term].leftBlank {
-							selected = index.candidates(objectName, &prepared, term, false, records)
+							selected = index.readIndexedDuplicateCandidates(objectName, &prepared, term, false, records)
 							break
 						}
 					}

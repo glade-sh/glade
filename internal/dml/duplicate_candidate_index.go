@@ -61,11 +61,11 @@ func (scan *DuplicateMatchScan) Find(org *storage.OrgState, rule storage.Duplica
 	return findDuplicateMatchesAmong(org, rule, record, exclude, access, among, index)
 }
 
-// candidates uses the necessary key in fuzzyLastName, or groups other
+// readIndexedDuplicateCandidates uses the necessary key in fuzzyLastName, or groups other
 // required terms by their actual values and asks the existing scorer about
 // each group. Values that are not directly readable as nonblank strings always
 // reach the normal scan. The groups are refreshed on every call.
-func (index *duplicateCandidateIndex) candidates(object string, prepared *preparedCustomMatch, term int, nameKey bool, records map[storage.ID]storage.Record) []storage.ID {
+func (index *duplicateCandidateIndex) readIndexedDuplicateCandidates(object string, prepared *preparedCustomMatch, term int, nameKey bool, records map[storage.ID]storage.Record) []storage.ID {
 	if index.fields == nil {
 		index.fields = make(map[duplicateIndexFieldKey]*duplicateIndexedField)
 	}
