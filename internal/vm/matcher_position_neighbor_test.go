@@ -53,12 +53,15 @@ func TestMatcherRegionUncapturedNeighbors(t *testing.T) {
 		name, input, pattern string
 		start, end           int64
 		wantError            bool
+		boundsMethod         string
 	}{
-		{"ascii", "abc", ".", 1, 2, false},
-		{"bmp", "aéb", ".", 1, 2, false},
-		{"wholePair", "a😀b", ".", 1, 3, false},
-		{"highHalf", "😀", ".", 0, 1, true},
-		{"literalLowHalf", "😀", "x", 1, 2, true},
+		{"ascii", "abc", ".", 1, 2, false, ""},
+		{"bmp", "aéb", ".", 1, 2, false, ""},
+		{"wholePair", "a😀b", ".", 1, 3, false, ""},
+		{"highHalf", "😀", ".", 0, 1, true, ""},
+		{"literalLowHalf", "😀", "x", 1, 2, true, ""},
+		{"transparentLowHalf", "😀", ".", 1, 2, true, "useTransparentBounds"},
+		{"unanchoredLowHalf", "😀", ".", 1, 2, true, "useAnchoringBounds"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			pattern, err := patternCompile([]Value{String(tc.pattern)})
@@ -68,6 +71,11 @@ func TestMatcherRegionUncapturedNeighbors(t *testing.T) {
 			matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String(tc.input)})
 			if err != nil {
 				t.Fatal(err)
+			}
+			if tc.boundsMethod != "" {
+				if _, _, _, _, err = callMatcherMember(matcher, tc.boundsMethod, []Value{Bool(tc.boundsMethod == "useTransparentBounds")}); err != nil {
+					t.Fatal(err)
+				}
 			}
 			_, _, _, _, err = callMatcherMember(matcher, "region", []Value{Int(tc.start), Int(tc.end)})
 			if tc.wantError {
