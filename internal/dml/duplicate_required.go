@@ -1,6 +1,10 @@
 package dml
 
-import "github.com/glade-sh/glade/internal/storage"
+import (
+	"sync"
+
+	"github.com/glade-sh/glade/internal/storage"
+)
 
 // requiredDuplicateTerms selects terms which must match for every supported
 // successful outcome. Unknown filter outcomes retain the normal scan.
@@ -34,27 +38,69 @@ func requiredDuplicateTerms(p *preparedCustomMatch) (terms [2]int, count int) {
 	return terms, count
 }
 
-// duplicateTermVerdicts memoizes one term only for the duration of one scan.
-// Unusual field representations use the original scorer.
+// duplicateTermVerdicts memoizes one fuzzy term only for the duration of one
+// scan. Unusual field representations use the original scorer. The filter
+// only skips records the scorer would reject, so turning it off never changes
+// an outcome; it is off for Exact terms, whose verdict costs no more than a
+// memo lookup, and it switches off once the memo is full and lookups mostly
+// missed (highly distinct values), so distinct data pays at most one bounded
+// warm-up and no per-scan allocation beyond the pooled memo.
 type duplicateTermVerdicts struct {
 	term   int
 	values map[string]bool
+	pooled *map[string]bool
+	hits   int
+	misses int
+	off    bool
 }
 
 const maxDuplicateTermMemoValues = 96
 
+var duplicateTermMemoPool = sync.Pool{New: func() any {
+	values := make(map[string]bool, maxDuplicateTermMemoValues)
+	return &values
+}}
+
+func newDuplicateTermVerdicts(p *preparedCustomMatch, term int) duplicateTermVerdicts {
+	return duplicateTermVerdicts{term: term, off: p.items[term].exact}
+}
+
 func (v *duplicateTermVerdicts) mayMatch(p *preparedCustomMatch, existing storage.Record) bool {
-	item := p.items[v.term]
+	if v.off {
+		return true
+	}
+	item := &p.items[v.term]
 	value, ok := existing.Fields[item.field]
 	if !ok || value.Kind != storage.ValueString {
 		return true
 	}
-	if matched, ok := v.values[value.String]; ok {
+	if v.values == nil {
+		v.pooled = duplicateTermMemoPool.Get().(*map[string]bool)
+		v.values = *v.pooled
+	} else if matched, ok := v.values[value.String]; ok {
+		v.hits++
 		return matched
 	}
-	matched, _ := p.verdict(v.term, existing)
-	if len(v.values) < maxDuplicateTermMemoValues {
-		v.values[value.String] = matched
+	if len(v.values) >= maxDuplicateTermMemoValues {
+		if v.hits < v.misses {
+			v.off = true
+			return true
+		}
+		matched, _ := p.verdict(v.term, existing)
+		return matched
 	}
+	v.misses++
+	matched, _ := p.verdict(v.term, existing)
+	v.values[value.String] = matched
 	return matched
+}
+
+// release returns the memo to the pool at the end of a scan.
+func (v *duplicateTermVerdicts) release() {
+	if v.pooled == nil {
+		return
+	}
+	clear(v.values)
+	duplicateTermMemoPool.Put(v.pooled)
+	v.values, v.pooled = nil, nil
 }

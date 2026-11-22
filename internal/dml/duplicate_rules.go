@@ -436,7 +436,7 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 			terms, count := requiredDuplicateTerms(&prepared)
 			termCount = count
 			for i := 0; i < termCount; i++ {
-				termVerdicts[i] = duplicateTermVerdicts{term: terms[i], values: make(map[string]bool)}
+				termVerdicts[i] = newDuplicateTermVerdicts(&prepared, terms[i])
 			}
 			if index != nil && among == nil {
 				chosen := -1
@@ -520,6 +520,9 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 					return result, false
 				}
 			}
+		}
+		for i := 0; i < termCount; i++ {
+			termVerdicts[i].release()
 		}
 		sort.Sort(byMatchCreation{&match})
 		// Native account_overflow rows select the earliest 100 for every kind
