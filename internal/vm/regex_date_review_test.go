@@ -255,3 +255,33 @@ func TestReviewRegexDateEmptyReplacementSinglePair(t *testing.T) {
 		}
 	}
 }
+
+func TestReviewRegexDatePatternSwitchNeighbor(t *testing.T) {
+	optional, err := patternCompile([]Value{String("z?")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	empty, err := patternCompile([]Value{String("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, _, err := callPatternMember(optional, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, _, _, _, err := callMatcherMember(matcher, "find", nil)
+	if err != nil || !found.Bool {
+		t.Fatalf("first find %v, %v", found, err)
+	}
+	if _, _, _, _, err = callMatcherMember(matcher, "usePattern", []Value{empty}); err != nil {
+		t.Fatal(err)
+	}
+	found, _, _, _, err = callMatcherMember(matcher, "find", nil)
+	if err != nil || !found.Bool {
+		t.Fatalf("second find %v, %v", found, err)
+	}
+	start, _, _, _, err := callMatcherMember(matcher, "start", nil)
+	if err != nil || start.Int != 2 {
+		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
