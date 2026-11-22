@@ -137,21 +137,32 @@ func TestChildRelationshipIndexMatchesFreshAfterWrites(t *testing.T) {
 
 func TestChildRelationshipIndexConcurrentReuse(t *testing.T) {
 	org := childIndexBenchOrg(8, 3)
+	other := org.Clone()
+	child := other.Objects["Contact"]
+	row := child.Records["003000000000000"].Clone()
+	row.Fields["AccountId"] = storage.IDValue("001000000000001")
+	child.PutRecord(row.ID, row)
+	other.Objects["Contact"] = child
+	orgs := []storage.OrgState{org, other}
 	cache := NewExecutionCache()
 	query, err := Parse("SELECT Id,(SELECT Id FROM Contacts) FROM Account ORDER BY Id")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, err := ExecuteWithCache(org, query, NewExecutionCache())
-	if err != nil {
-		t.Fatal(err)
+	wants := make([]Result, len(orgs))
+	for i, item := range orgs {
+		wants[i], err = ExecuteWithCache(item, query, NewExecutionCache())
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	const workers = 8
 	failures := make(chan error, workers)
-	for range workers {
+	for worker := range workers {
 		go func() {
+			item, want := orgs[worker%len(orgs)], wants[worker%len(orgs)]
 			for range 10 {
-				got, err := ExecuteWithCache(org, query, cache)
+				got, err := ExecuteWithCache(item, query, cache)
 				if err != nil {
 					failures <- err
 					return
