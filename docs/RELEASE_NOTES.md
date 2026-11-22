@@ -123,7 +123,7 @@
 
 - **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
 
-- **Record-triggered Flow criteria.** After-save create decisions compare the current profile with direct record text fields, and Get Records follows captured test pricebook visibility and relationship-filter fault behavior at API 62.0 and 67.0.
+- **Record-triggered Flow criteria.** Several more Flow shapes now match captured Salesforce behavior at API 62.0 and 67.0. After-save decisions compare `$Profile.Name` with literals and record text fields (EqualTo and NotEqualTo), and NotEqualTo reads String constants. Get Records follows a parent's lookup field, filters custom metadata by a formula value, hides the test-isolated standard price book, and faults on relationship-path filters. Send Email renders text-template subjects and bodies and rejects an unknown org-wide sender.
 
 ## v0.3.12
 
