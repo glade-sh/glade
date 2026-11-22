@@ -212,7 +212,7 @@
     "./internal/storage": 23,
     "./internal/testdaemon": 38,
     "./internal/testutil/toolchaininstall": 5,
-    "./internal/typesys": 2,
+    "./internal/typesys": 3,
     "./internal/visualforce": 7,
     "./internal/vm": 72,
     "./internal/watch": 1,
