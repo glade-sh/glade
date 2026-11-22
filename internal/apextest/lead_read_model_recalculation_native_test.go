@@ -13,8 +13,7 @@ import (
 // NATIVE after recalculation the Standard User has Lead read and no edit, and the update fails
 // testdata/conformance/lead_read_model_recalculation/org.tsv:4-5 istest 62.0 67.0
 //
-// Only the recalculated Lead observation is asserted, and the update only as failing: at
-// 67.0 Glade raises SecurityException where native raises DmlException (parked). The Case part is not: the declared
+// Only the recalculated Lead observation is asserted. The Case part is not: the declared
 // Read Case model was not applied natively (external_user_case_lead_sharing models rows).
 func TestLeadReadModelRecalculationNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/lead_read_model_recalculation"
@@ -42,15 +41,8 @@ func TestLeadReadModelRecalculationNativeConformance(t *testing.T) {
 				t.Fatalf("expected one asserted observation: %+v", run.Summary())
 			}
 			_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, "Assertion Failed: ")
-			failed := func(text string) string {
-				return regexp.MustCompile(`updLead=[A-Za-z.]+`).ReplaceAllStringFunc(strings.Join(lead.FindAllString(text, -1), "|"), func(m string) string {
-					if m == "updLead=ok" {
-						return m
-					}
-					return "updLead=fail"
-				})
-			}
-			if g, w := failed(got), failed(want); g != w || w == "" {
+			g, w := strings.Join(lead.FindAllString(got, -1), "|"), strings.Join(lead.FindAllString(want, -1), "|")
+			if g != w || w == "" {
 				t.Errorf("api %s: Glade=%q native=%q", api, got, want)
 			}
 		})
