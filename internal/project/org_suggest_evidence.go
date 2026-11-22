@@ -7,24 +7,24 @@ import (
 )
 
 var (
-	setupStringRE         = regexp.MustCompile(`'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"`)
-	setupJoinedStringsRE  = regexp.MustCompile(`'(?:\\.|[^'\\])*'(?:\s*\+\s*'(?:\\.|[^'\\])*')+`)
-	setupQueryRootRE      = regexp.MustCompile(`(?i)\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+([A-Za-z_][A-Za-z0-9_]*))?`)
-	setupCodeTokenRE      = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*|[^\s]`)
-	networkCallRE         = regexp.MustCompile(`(?i)\bNetwork\s*\.\s*(getNetworkId|getLoginUrl|getLogoutUrl|getSelfRegUrl|forgotPassword|communitiesLanding)\s*\(`)
-	networkObjectRE       = regexp.MustCompile(`(?i)^(Network|NetworkMember)$`)
-	networkSchemaTokenRE  = regexp.MustCompile(`(?i)\b(?:Schema\s*\.\s*SObjectType\s*\.\s*(?:Network|NetworkMember)\b|(?:Network|NetworkMember)\s*\.\s*SObjectType\b)`)
-	networkSchemaLookupRE = regexp.MustCompile(`(?i)\bSchema\s*\.\s*getGlobalDescribe\s*\(\s*\)\s*\.\s*get\s*\(\s*'(?:Network|NetworkMember)'\s*\)`)
-	portalFieldRE         = regexp.MustCompile(`(?i)\bIsPortalEnabled\b`)
-	portalAssignmentRE    = regexp.MustCompile(`(?i)\bIsPortalEnabled\s*=`)
-	territoryFieldRE      = regexp.MustCompile(`(?i)\bTerritory2Id\b`)
-	territoryAssignmentRE = regexp.MustCompile(`(?i)\bTerritory2Id\s*=`)
-	externalUserTypeRE    = regexp.MustCompile(`(?i)\bUserType\s*={1,2}\s*'(CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'`)
-	territoryTypeRE       = regexp.MustCompile(`(?i)^(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)$`)
-	territoryUseRE        = regexp.MustCompile(`(?i)\b(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)\b\s*(?:[>\[]|[A-Za-z_][A-Za-z0-9_]*\b|\.\s*(SObjectType|fields)\b)`)
-	territoryNewRE        = regexp.MustCompile(`(?i)\bnew\s+(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)\s*\(`)
-	schemaImportRE        = regexp.MustCompile(`(?i)\bimport\b[^;\n]*\bfrom\s*['"]@salesforce/schema/([^'"]+)['"]`)
-	territorySchemaRE     = regexp.MustCompile(`(?i)\bSchema\s*\.\s*getGlobalDescribe\s*\(\s*\)\s*\.\s*get\s*\(\s*'(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)'\s*\)`)
+	setupStringRE         = newSetupRegexp(`'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"`)
+	setupJoinedStringsRE  = newSetupRegexp(`'(?:\\.|[^'\\])*'(?:\s*\+\s*'(?:\\.|[^'\\])*')+`)
+	setupQueryRootRE      = newSetupRegexp(`(?i)\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+([A-Za-z_][A-Za-z0-9_]*))?`)
+	setupCodeTokenRE      = newSetupRegexp(`[A-Za-z_][A-Za-z0-9_]*|[^\s]`)
+	networkCallRE         = newSetupRegexp(`(?i)\bNetwork\s*\.\s*(getNetworkId|getLoginUrl|getLogoutUrl|getSelfRegUrl|forgotPassword|communitiesLanding)\s*\(`)
+	networkObjectRE       = newSetupRegexp(`(?i)^(Network|NetworkMember)$`)
+	networkSchemaTokenRE  = newSetupRegexp(`(?i)\b(?:Schema\s*\.\s*SObjectType\s*\.\s*(?:Network|NetworkMember)\b|(?:Network|NetworkMember)\s*\.\s*SObjectType\b)`)
+	networkSchemaLookupRE = newSetupRegexp(`(?i)\bSchema\s*\.\s*getGlobalDescribe\s*\(\s*\)\s*\.\s*get\s*\(\s*'(?:Network|NetworkMember)'\s*\)`)
+	portalFieldRE         = newSetupRegexp(`(?i)\bIsPortalEnabled\b`)
+	portalAssignmentRE    = newSetupRegexp(`(?i)\bIsPortalEnabled\s*=`)
+	territoryFieldRE      = newSetupRegexp(`(?i)\bTerritory2Id\b`)
+	territoryAssignmentRE = newSetupRegexp(`(?i)\bTerritory2Id\s*=`)
+	externalUserTypeRE    = newSetupRegexp(`(?i)\bUserType\s*={1,2}\s*'(CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'`)
+	territoryTypeRE       = newSetupRegexp(`(?i)^(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)$`)
+	territoryUseRE        = newSetupRegexp(`(?i)\b(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)\b\s*(?:[>\[]|[A-Za-z_][A-Za-z0-9_]*\b|\.\s*(SObjectType|fields)\b)`)
+	territoryNewRE        = newSetupRegexp(`(?i)\bnew\s+(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)\s*\(`)
+	schemaImportRE        = newSetupRegexp(`(?i)\bimport\b[^;\n]*\bfrom\s*['"]@salesforce/schema/([^'"]+)['"]`)
+	territorySchemaRE     = newSetupRegexp(`(?i)\bSchema\s*\.\s*getGlobalDescribe\s*\(\s*\)\s*\.\s*get\s*\(\s*'(Territory2|Territory2Model|Territory2Type|UserTerritory2Association|ObjectTerritory2Association)'\s*\)`)
 )
 
 // Only explicit platform contexts count as optional-feature evidence.
@@ -47,15 +47,15 @@ func (scan *setupEvidenceScan) matches(rule featureEvidence) bool {
 	if rule.feature == "Sites" {
 		// Match an identifier, member access, method identifier and call token.
 		// Comments and literal contents cannot supply any of these tokens.
-		tokens := setupCodeTokenRE.FindAllString(code, -1)
+		tokens := setupCodeTokenRE.get().FindAllString(code, -1)
 		for i := 0; i+3 < len(tokens); i++ {
-			if tokens[i] == "Site" && tokens[i+1] == "." && tokens[i+3] == "(" && rule.pattern.MatchString("Site."+tokens[i+2]) {
+			if tokens[i] == "Site" && tokens[i+1] == "." && tokens[i+3] == "(" && rule.pattern.get().MatchString("Site."+tokens[i+2]) {
 				return true
 			}
 		}
 		return false
 	}
-	for _, loc := range schemaImportRE.FindAllStringSubmatchIndex(source, -1) {
+	for _, loc := range schemaImportRE.get().FindAllStringSubmatchIndex(source, -1) {
 		if code[loc[0]] == source[loc[0]] && setupMetadataReference(source[loc[2]:loc[3]], rule.feature) {
 			return true
 		}
@@ -63,29 +63,29 @@ func (scan *setupEvidenceScan) matches(rule featureEvidence) bool {
 	// NetworksEnabled needs no pattern here: only queries and schema references
 	// of the objects count, and the Network class calls are Communities evidence.
 	if rule.feature == "Communities" {
-		if networkCallRE.MatchString(code) || scan.mayContain("isportalenabled", "usertype") && (typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE)) {
+		if networkCallRE.get().MatchString(code) || scan.mayContain("isportalenabled", "usertype") && (typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE.get())) {
 			return true
 		}
-	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE, source, code)) {
+	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.get().MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE.get(), source, code)) {
 		return true
-	} else if rule.feature == "Territory2" && (territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || scan.mayContain("territory2id") && (typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE))) {
+	} else if rule.feature == "Territory2" && (territoryUseRE.get().MatchString(code) || territoryNewRE.get().MatchString(code) || setupMatchOutsideString(territorySchemaRE.get(), source, code) || scan.mayContain("territory2id") && (typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE.get()))) {
 		return true
 	}
 	for _, query := range scan.executedQueries() {
-		root := fromObjectRE.FindStringSubmatch(query)
+		root := fromObjectRE.get().FindStringSubmatch(query)
 		if len(root) != 2 {
 			continue
 		}
 		queryCode := maskSetupStrings(query)
 		if rule.feature == "Territory2" {
-			if territoryTypeRE.MatchString(root[1]) || (strings.EqualFold(root[1], "Opportunity") && territoryFieldRE.MatchString(queryCode)) {
+			if territoryTypeRE.get().MatchString(root[1]) || (strings.EqualFold(root[1], "Opportunity") && territoryFieldRE.get().MatchString(queryCode)) {
 				return true
 			}
 		} else if rule.feature == "NetworksEnabled" {
-			if networkObjectRE.MatchString(root[1]) {
+			if networkObjectRE.get().MatchString(root[1]) {
 				return true
 			}
-		} else if strings.EqualFold(root[1], "User") && (portalFieldRE.MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE, query, queryCode)) {
+		} else if strings.EqualFold(root[1], "User") && (portalFieldRE.get().MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE.get(), query, queryCode)) {
 			return true
 		}
 	}
@@ -93,7 +93,7 @@ func (scan *setupEvidenceScan) matches(rule featureEvidence) bool {
 }
 
 func maskSetupStrings(source string) string {
-	return setupStringRE.ReplaceAllStringFunc(source, func(s string) string { return strings.Repeat(" ", len(s)) })
+	return setupStringRE.get().ReplaceAllStringFunc(source, func(s string) string { return strings.Repeat(" ", len(s)) })
 }
 
 func setupMatchOutsideString(pattern *regexp.Regexp, source, code string) bool {
@@ -108,7 +108,7 @@ func setupMatchOutsideString(pattern *regexp.Regexp, source, code string) bool {
 func setupConstructorEvidence(source, code, object string, field *regexp.Regexp) bool {
 	pattern := regexp.MustCompile(`(?i)\bnew\s+` + object + `\s*\([^)]*\)`)
 	for _, loc := range pattern.FindAllStringIndex(code, -1) {
-		if field.MatchString(code[loc[0]:loc[1]]) || (object == "User" && setupMatchOutsideString(externalUserTypeRE, source[loc[0]:loc[1]], code[loc[0]:loc[1]])) {
+		if field.MatchString(code[loc[0]:loc[1]]) || (object == "User" && setupMatchOutsideString(externalUserTypeRE.get(), source[loc[0]:loc[1]], code[loc[0]:loc[1]])) {
 			return true
 		}
 	}
@@ -196,17 +196,17 @@ func setupMetadataReference(value, feature string) bool {
 	}
 	if feature == "PersonAccounts" {
 		object, field, ok := strings.Cut(value, ".")
-		return ok && ((strings.EqualFold(object, "Account") && personAccountFieldRE.MatchString(field)) || (strings.EqualFold(object, "Contact") && strings.EqualFold(field, "IsPersonAccount")))
+		return ok && ((strings.EqualFold(object, "Account") && personAccountFieldRE.get().MatchString(field)) || (strings.EqualFold(object, "Contact") && strings.EqualFold(field, "IsPersonAccount")))
 	}
 	if feature == "MultiCurrency" {
 		object, field, ok := strings.Cut(value, ".")
-		return currencyTypeRE.MatchString(value) || (ok && currencyObjectRE.MatchString(object) && strings.EqualFold(field, "CurrencyIsoCode"))
+		return currencyTypeRE.get().MatchString(value) || (ok && currencyObjectRE.get().MatchString(object) && strings.EqualFold(field, "CurrencyIsoCode"))
 	}
 	if feature == "Territory2" {
-		return territoryTypeRE.MatchString(strings.SplitN(value, ".", 2)[0]) || strings.EqualFold(value, "Opportunity.Territory2Id")
+		return territoryTypeRE.get().MatchString(strings.SplitN(value, ".", 2)[0]) || strings.EqualFold(value, "Opportunity.Territory2Id")
 	}
 	if feature == "NetworksEnabled" {
-		return networkObjectRE.MatchString(strings.SplitN(value, ".", 2)[0])
+		return networkObjectRE.get().MatchString(strings.SplitN(value, ".", 2)[0])
 	}
 	return strings.EqualFold(value, "User.IsPortalEnabled")
 }

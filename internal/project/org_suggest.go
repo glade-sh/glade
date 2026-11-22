@@ -34,7 +34,7 @@ type featureEvidence struct {
 	feature            string
 	reason             string
 	covered            []string
-	pattern            *regexp.Regexp
+	pattern            *lazySetupRegexp
 	unsupported        bool
 	customPersonFields map[string]bool
 }
@@ -44,7 +44,7 @@ var featureEvidenceRules = []featureEvidence{
 		feature: "PersonAccounts",
 		reason:  "source uses Person Account fields (IsPersonAccount, PersonContactId, Person* contact fields, or __pc fields)",
 		covered: []string{"PersonAccounts"},
-		pattern: regexp.MustCompile(`(?i)\b` + personAccountFieldPattern + `\b`),
+		pattern: newSetupRegexp(`(?i)\b` + personAccountFieldPattern + `\b`),
 	},
 	{
 		feature: "Communities",
@@ -60,13 +60,13 @@ var featureEvidenceRules = []featureEvidence{
 		feature: "Sites",
 		reason:  "source calls the Site class",
 		covered: []string{"Sites"},
-		pattern: regexp.MustCompile(`\bSite\.(getBaseUrl|getBaseSecureUrl|getBaseRequestUrl|getCurrentSiteUrl|getDomain|getErrorDescription|getErrorMessage|getOriginalUrl|getPathPrefix|getSiteId|getSiteType|getTemplate|isLoginEnabled|isPasswordExpired|isRegistrationEnabled|login|forgotPassword|changePassword|createExternalUser|createPersonAccountPortalUser)\b`),
+		pattern: newSetupRegexp(`\bSite\.(getBaseUrl|getBaseSecureUrl|getBaseRequestUrl|getCurrentSiteUrl|getDomain|getErrorDescription|getErrorMessage|getOriginalUrl|getPathPrefix|getSiteId|getSiteType|getTemplate|isLoginEnabled|isPasswordExpired|isRegistrationEnabled|login|forgotPassword|changePassword|createExternalUser|createPersonAccountPortalUser)\b`),
 	},
 	{
 		feature: "MultiCurrency",
 		reason:  "source uses CurrencyIsoCode, CurrencyType, DatedConversionRate, or convertCurrency",
 		covered: []string{"MultiCurrency"},
-		pattern: regexp.MustCompile(`(?i)\bCurrencyIsoCode\b|\bFROM\s+(CurrencyType|DatedConversionRate)\b|\bconvertCurrency\s*\(`),
+		pattern: newSetupRegexp(`(?i)\bCurrencyIsoCode\b|\bFROM\s+(CurrencyType|DatedConversionRate)\b|\bconvertCurrency\s*\(`),
 	},
 	{
 		feature:     "Territory2",
@@ -85,17 +85,17 @@ var (
 		".html": true, ".js": true,
 	}
 	suggestSuffixes          = []string{".flow-meta.xml", ".field-meta.xml", ".object-meta.xml", ".permissionset-meta.xml", ".app-meta.xml"}
-	permSetNameRE            = regexp.MustCompile(`'([A-Za-z][A-Za-z0-9_]*)'`)
-	soqlBlockRE              = regexp.MustCompile(`(?is)\[\s*SELECT\b([^\]]*)\]`)
-	fromObjectRE             = regexp.MustCompile(`(?i)\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)`)
-	recordTypeFilterRE       = regexp.MustCompile(`(?i)\bRecordType\.(DeveloperName|Name)\s*=\s*'([^']+)'`)
-	directRecordTypeFilterRE = regexp.MustCompile(`(?i)\b((?:[A-Za-z_][A-Za-z0-9_]*\s*\.\s*)*)(DeveloperName|Name)\s*=\s*'([^']+)'`)
-	sobjectTypeFilterRE      = regexp.MustCompile(`(?i)\bSObjectType\s*=\s*'([^']+)'`)
-	roleNameFilterRE         = regexp.MustCompile(`(?i)\b(?:DeveloperName|Name)\s*=\s*'([^']+)'`)
-	userRoleCtorRE           = regexp.MustCompile(`(?is)\bnew\s+UserRole\s*\(([^)]*)\)`)
-	roleFieldValueRE         = regexp.MustCompile(`(?i)\b(?:DeveloperName|Name)\s*=\s*'([^']+)'`)
-	recordTypeDescribeRE     = regexp.MustCompile(`(?i)\bSchema\.SObjectType\.([A-Za-z_][A-Za-z0-9_]*)\s*(?:\.getDescribe\s*\(\s*\))?\.getRecordTypeInfosBy(DeveloperName|Name)\s*\(\s*\)\s*\.get\s*\(\s*'([^']+)'`)
-	recordTypeSObjectRE      = regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\.SObjectType\.getDescribe\s*\(\s*\)\.getRecordTypeInfosBy(DeveloperName|Name)\s*\(\s*\)\s*\.get\s*\(\s*'([^']+)'`)
+	permSetNameRE            = newSetupRegexp(`'([A-Za-z][A-Za-z0-9_]*)'`)
+	soqlBlockRE              = newSetupRegexp(`(?is)\[\s*SELECT\b([^\]]*)\]`)
+	fromObjectRE             = newSetupRegexp(`(?i)\bFROM\s+([A-Za-z_][A-Za-z0-9_]*)`)
+	recordTypeFilterRE       = newSetupRegexp(`(?i)\bRecordType\.(DeveloperName|Name)\s*=\s*'([^']+)'`)
+	directRecordTypeFilterRE = newSetupRegexp(`(?i)\b((?:[A-Za-z_][A-Za-z0-9_]*\s*\.\s*)*)(DeveloperName|Name)\s*=\s*'([^']+)'`)
+	sobjectTypeFilterRE      = newSetupRegexp(`(?i)\bSObjectType\s*=\s*'([^']+)'`)
+	roleNameFilterRE         = newSetupRegexp(`(?i)\b(?:DeveloperName|Name)\s*=\s*'([^']+)'`)
+	userRoleCtorRE           = newSetupRegexp(`(?is)\bnew\s+UserRole\s*\(([^)]*)\)`)
+	roleFieldValueRE         = newSetupRegexp(`(?i)\b(?:DeveloperName|Name)\s*=\s*'([^']+)'`)
+	recordTypeDescribeRE     = newSetupRegexp(`(?i)\bSchema\.SObjectType\.([A-Za-z_][A-Za-z0-9_]*)\s*(?:\.getDescribe\s*\(\s*\))?\.getRecordTypeInfosBy(DeveloperName|Name)\s*\(\s*\)\s*\.get\s*\(\s*'([^']+)'`)
+	recordTypeSObjectRE      = newSetupRegexp(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\.SObjectType\.getDescribe\s*\(\s*\)\.getRecordTypeInfosBy(DeveloperName|Name)\s*\(\s*\)\s*\.get\s*\(\s*'([^']+)'`)
 )
 
 const suggestMaxFileBytes = 2 << 20
@@ -219,7 +219,7 @@ func SuggestOrgSetup(root string) []OrgSetupSuggestion {
 	needed := map[string][]string{}
 	for _, entry := range permSetFiles {
 		rel, text, _ := strings.Cut(entry, "\x00")
-		for _, m := range permSetNameRE.FindAllStringSubmatch(text, -1) {
+		for _, m := range permSetNameRE.get().FindAllStringSubmatch(text, -1) {
 			if permSets[m[1]] && !assigned[m[1]] {
 				needed[m[1]] = append(needed[m[1]], rel)
 			}
@@ -318,11 +318,11 @@ func missingMetadataSuggestions(root string, p Project) []OrgSetupSuggestion {
 
 func recordTypeReferences(source string) []setupNameReference {
 	var out []setupNameReference
-	for _, query := range soqlBlockRE.FindAllStringSubmatch(source, -1) {
+	for _, query := range soqlBlockRE.get().FindAllStringSubmatch(source, -1) {
 		object := ""
 		alias := ""
-		filter := recordTypeFilterRE
-		if match := setupQueryRootRE.FindStringSubmatch(query[1]); len(match) == 3 {
+		filter := recordTypeFilterRE.get()
+		if match := setupQueryRootRE.get().FindStringSubmatch(query[1]); len(match) == 3 {
 			object = match[1]
 			alias = match[2]
 			switch strings.ToUpper(alias) {
@@ -331,8 +331,8 @@ func recordTypeReferences(source string) []setupNameReference {
 			}
 		}
 		if strings.EqualFold(object, "RecordType") {
-			filter = directRecordTypeFilterRE
-			if match := sobjectTypeFilterRE.FindStringSubmatch(query[1]); len(match) == 2 {
+			filter = directRecordTypeFilterRE.get()
+			if match := sobjectTypeFilterRE.get().FindStringSubmatch(query[1]); len(match) == 2 {
 				object = match[1]
 			} else {
 				object = ""
@@ -343,7 +343,7 @@ func recordTypeReferences(source string) []setupNameReference {
 		}
 		for _, match := range filter.FindAllStringSubmatch(query[1], -1) {
 			name := match[2]
-			if filter == directRecordTypeFilterRE {
+			if filter == directRecordTypeFilterRE.get() {
 				qualifier := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(match[1]), "."))
 				if qualifier != "" && !strings.EqualFold(qualifier, "RecordType") && !strings.EqualFold(qualifier, alias) {
 					continue
@@ -353,7 +353,7 @@ func recordTypeReferences(source string) []setupNameReference {
 			out = append(out, setupNameReference{object: object, name: strings.TrimSpace(name)})
 		}
 	}
-	for _, pattern := range []*regexp.Regexp{recordTypeDescribeRE, recordTypeSObjectRE} {
+	for _, pattern := range []*regexp.Regexp{recordTypeDescribeRE.get(), recordTypeSObjectRE.get()} {
 		for _, match := range pattern.FindAllStringSubmatch(source, -1) {
 			out = append(out, setupNameReference{object: match[1], name: strings.TrimSpace(match[3])})
 		}
@@ -363,17 +363,17 @@ func recordTypeReferences(source string) []setupNameReference {
 
 func roleReferences(source string) []string {
 	var out []string
-	for _, query := range soqlBlockRE.FindAllStringSubmatch(source, -1) {
-		match := fromObjectRE.FindStringSubmatch(query[1])
+	for _, query := range soqlBlockRE.get().FindAllStringSubmatch(source, -1) {
+		match := fromObjectRE.get().FindStringSubmatch(query[1])
 		if len(match) != 2 || !strings.EqualFold(match[1], "UserRole") {
 			continue
 		}
-		for _, name := range roleNameFilterRE.FindAllStringSubmatch(query[1], -1) {
+		for _, name := range roleNameFilterRE.get().FindAllStringSubmatch(query[1], -1) {
 			out = append(out, strings.TrimSpace(name[1]))
 		}
 	}
-	for _, constructor := range userRoleCtorRE.FindAllStringSubmatch(source, -1) {
-		for _, name := range roleFieldValueRE.FindAllStringSubmatch(constructor[1], -1) {
+	for _, constructor := range userRoleCtorRE.get().FindAllStringSubmatch(source, -1) {
+		for _, name := range roleFieldValueRE.get().FindAllStringSubmatch(constructor[1], -1) {
 			out = append(out, strings.TrimSpace(name[1]))
 		}
 	}

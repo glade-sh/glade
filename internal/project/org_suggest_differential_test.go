@@ -53,15 +53,15 @@ func originalMatchesSetupFeature(rule featureEvidence, source string, metadata b
 	if rule.feature == "Sites" {
 		// Match an identifier, member access, method identifier and call token.
 		// Comments and literal contents cannot supply any of these tokens.
-		tokens := setupCodeTokenRE.FindAllString(code, -1)
+		tokens := setupCodeTokenRE.get().FindAllString(code, -1)
 		for i := 0; i+3 < len(tokens); i++ {
-			if tokens[i] == "Site" && tokens[i+1] == "." && tokens[i+3] == "(" && rule.pattern.MatchString("Site."+tokens[i+2]) {
+			if tokens[i] == "Site" && tokens[i+1] == "." && tokens[i+3] == "(" && rule.pattern.get().MatchString("Site."+tokens[i+2]) {
 				return true
 			}
 		}
 		return false
 	}
-	for _, loc := range schemaImportRE.FindAllStringSubmatchIndex(source, -1) {
+	for _, loc := range schemaImportRE.get().FindAllStringSubmatchIndex(source, -1) {
 		if code[loc[0]] == source[loc[0]] && setupMetadataReference(source[loc[2]:loc[3]], rule.feature) {
 			return true
 		}
@@ -69,29 +69,29 @@ func originalMatchesSetupFeature(rule featureEvidence, source string, metadata b
 	// NetworksEnabled needs no pattern here: only queries and schema references
 	// of the objects count, and the Network class calls are Communities evidence.
 	if rule.feature == "Communities" {
-		if networkCallRE.MatchString(code) || typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE) {
+		if networkCallRE.get().MatchString(code) || typedSetupFieldEvidence(source, code, "User", `IsPortalEnabled\b|UserType\s*={1,2}\s*'(?:CustomerSuccess|PowerCustomerSuccess|PowerPartner|CspLitePortal)'|(?:get|put)\s*\(\s*'IsPortalEnabled'`) || setupConstructorEvidence(source, code, "User", portalAssignmentRE.get()) {
 			return true
 		}
-	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE, source, code)) {
+	} else if rule.feature == "NetworksEnabled" && (networkSchemaTokenRE.get().MatchString(code) || setupMatchOutsideString(networkSchemaLookupRE.get(), source, code)) {
 		return true
-	} else if rule.feature == "Territory2" && (territoryUseRE.MatchString(code) || territoryNewRE.MatchString(code) || setupMatchOutsideString(territorySchemaRE, source, code) || typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE)) {
+	} else if rule.feature == "Territory2" && (territoryUseRE.get().MatchString(code) || territoryNewRE.get().MatchString(code) || setupMatchOutsideString(territorySchemaRE.get(), source, code) || typedSetupFieldEvidence(source, code, "Opportunity", `Territory2Id\b|(?:get|put)\s*\(\s*'Territory2Id'`) || setupConstructorEvidence(source, code, "Opportunity", territoryAssignmentRE.get())) {
 		return true
 	}
 	for _, query := range setupExecutedQueries(source, code) {
-		root := fromObjectRE.FindStringSubmatch(query)
+		root := fromObjectRE.get().FindStringSubmatch(query)
 		if len(root) != 2 {
 			continue
 		}
 		queryCode := maskSetupStrings(query)
 		if rule.feature == "Territory2" {
-			if territoryTypeRE.MatchString(root[1]) || (strings.EqualFold(root[1], "Opportunity") && territoryFieldRE.MatchString(queryCode)) {
+			if territoryTypeRE.get().MatchString(root[1]) || (strings.EqualFold(root[1], "Opportunity") && territoryFieldRE.get().MatchString(queryCode)) {
 				return true
 			}
 		} else if rule.feature == "NetworksEnabled" {
-			if networkObjectRE.MatchString(root[1]) {
+			if networkObjectRE.get().MatchString(root[1]) {
 				return true
 			}
-		} else if strings.EqualFold(root[1], "User") && (portalFieldRE.MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE, query, queryCode)) {
+		} else if strings.EqualFold(root[1], "User") && (portalFieldRE.get().MatchString(queryCode) || setupMatchOutsideString(externalUserTypeRE.get(), query, queryCode)) {
 			return true
 		}
 	}
@@ -104,7 +104,7 @@ func originalMatchesPlatformFieldFeature(rule featureEvidence, source string, me
 	}
 	source = stripApexComments(source)
 	code := maskSetupStrings(source)
-	for _, loc := range schemaImportRE.FindAllStringSubmatchIndex(source, -1) {
+	for _, loc := range schemaImportRE.get().FindAllStringSubmatchIndex(source, -1) {
 		if code[loc[0]] == source[loc[0]] && setupMetadataReference(source[loc[2]:loc[3]], rule.feature) {
 			return true
 		}
@@ -116,9 +116,9 @@ func originalMatchesPlatformFieldFeature(rule featureEvidence, source string, me
 		objects = nil
 		seen := map[string]bool{}
 		// Include type names in schema lookups, which are string arguments.
-		for _, object := range setupIdentifierRE.FindAllString(source, -1) {
+		for _, object := range setupIdentifierRE.get().FindAllString(source, -1) {
 			key := strings.ToLower(object)
-			if currencyObjectRE.MatchString(object) && !seen[key] {
+			if currencyObjectRE.get().MatchString(object) && !seen[key] {
 				objects = append(objects, object)
 				seen[key] = true
 			}
@@ -186,7 +186,7 @@ func originalSetupQueryUsesPlatformFeature(query, feature string, customPersonFi
 					}
 				}
 			}
-			if feature == "MultiCurrency" && currencyTypeRE.MatchString(object) {
+			if feature == "MultiCurrency" && currencyTypeRE.get().MatchString(object) {
 				return true
 			}
 		case "alias_expression":

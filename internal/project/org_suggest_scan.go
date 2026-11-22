@@ -123,7 +123,7 @@ func queryCouldUseSetupFeature(query, feature string, custom map[string]bool) bo
 			continue
 		}
 		token := lower[start:i]
-		if terms[token] || feature == "PersonAccounts" && custom[token] || feature == "MultiCurrency" && (currencyTypeRE.MatchString(token) || token == "convertcurrency") {
+		if terms[token] || feature == "PersonAccounts" && custom[token] || feature == "MultiCurrency" && (currencyTypeRE.get().MatchString(token) || token == "convertcurrency") {
 			return true
 		}
 		start = -1
