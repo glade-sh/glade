@@ -81,6 +81,12 @@ func (s *matcherMidPairSubject) allows(plan *regexp2Plan) (bool, error) {
 	return allowed, nil
 }
 
+func matcherRestorePriorCursor(matcher Value, input string) {
+	if index := matcher.Fields["index"]; index.Kind == ValueInt && index.Int <= -2 {
+		matcher.Fields["index"] = Int(int64(nextRegexSearchIndex(input, int(-index.Int-2))))
+	}
+}
+
 func matcherEmptyFindPattern(matcher Value, input string) bool {
 	plan, err := matcherRegexp2PlanForInput(matcher, input)
 	if err != nil || plan.grapheme != nil || plan.linear != nil || plan.publicGroupCount() != 0 {

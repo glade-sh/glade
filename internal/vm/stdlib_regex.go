@@ -247,7 +247,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
-			if capturedAPI && region.startByte == 0 && region.endByte == len(input) && indices[1] < len(input) && matcherCapturedPositionSubject(input) && matcherEmptyFindPattern(receiver, input) {
+			if capturedAPI && len(args) == 0 && !matcherUsesFullInputBounds(receiver) && region.startByte == 0 && region.endByte == len(input) && indices[1] < len(input) && matcherCapturedPositionSubject(input) && matcherEmptyFindPattern(receiver, input) {
 				r, _ := decodeApexRune(input[indices[1]:])
 				if r > 0xffff && next <= region.endByte {
 					next = -indices[1] - 2
@@ -417,6 +417,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
+		matcherRestorePriorCursor(receiver, input)
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "appendReplacement", "appendTail":
 		return Null, receiver, false, true, unsupportedCallError("Matcher." + method + " requires Java StringBuffer append semantics")
@@ -439,6 +440,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useAnchoringBounds expects Boolean")
 		}
 		receiver.Fields["anchoringBounds"] = args[0]
+		matcherRestorePriorCursor(receiver, input)
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "useTransparentBounds":
 		cache.forget(receiver.Ref)
@@ -449,6 +451,7 @@ func callMatcherMemberWithPolicy(receiver Value, method string, args []Value, ca
 			return Null, receiver, false, true, fmt.Errorf("Matcher.useTransparentBounds expects Boolean")
 		}
 		receiver.Fields["transparentBounds"] = args[0]
+		matcherRestorePriorCursor(receiver, input)
 		return matcherMutatorResult(receiver), receiver, true, true, nil
 	case "hitEnd", "requireEnd":
 		if len(args) != 0 {
