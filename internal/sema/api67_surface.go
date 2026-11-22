@@ -49,8 +49,11 @@ func semaAPI67ReadOnlyPlatformField(path string) bool {
 	return readOnly
 }
 
-var semaNativeNoArgInterfaceRejections = map[string]struct{}{
-	"commercepayments.paymentgatewayadapter": {},
+var semaNativeInterfaceContracts = map[string]struct {
+	rejectNoArg               bool
+	qualifyMissingMethodOwner bool
+}{
+	"commercepayments.paymentgatewayadapter": {rejectNoArg: true, qualifyMissingMethodOwner: true},
 }
 
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{

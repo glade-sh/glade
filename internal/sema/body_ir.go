@@ -4058,9 +4058,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		}
 	}
 	if (rejectedConstructor || semaPlatformTypeUnavailableInModel(typ.EffectiveAPIVersion, typeName, model)) && !semaProjectTypeShadowsPlatform(model, typeName) {
-		_, captured := semaNativeNoArgInterfaceRejections[normalizeName(resolvedTypeName)]
+		contract, captured := semaNativeInterfaceContracts[normalizeName(resolvedTypeName)]
 		target, known := model.lookupName(resolvedTypeName)
-		if captured && known && target.platform && target.kind == apexast.DeclarationInterface && target.constructorsAuthoritative {
+		if captured && contract.rejectNoArg && known && target.platform && target.kind == apexast.DeclarationInterface && target.constructorsAuthoritative {
 			if len(expr.Args)+len(expr.NamedArgs) == 0 {
 				return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, "Type cannot be constructed: "+resolvedTypeName, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 			}
