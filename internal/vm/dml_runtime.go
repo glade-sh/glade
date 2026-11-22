@@ -7004,6 +7004,15 @@ func allAccountRecords(vm *VM, records []Value) bool {
 // defaultRunAsReadLeadUpdate preserves the row-level failure captured in
 // lead_read_model_recalculation/org.tsv:4-5 (istest APIs 62.0 and 67.0).
 func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
+	entry := vm.testExecutionEntry
+	if entry == nil || !strings.EqualFold(vm.currentClass, entry.className) || len(vm.callStack) != entry.depth {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	if !ok || !class.IsTest || methodHasModifier(class.Modifiers, "with sharing") ||
+		methodHasModifier(class.Modifiers, "without sharing") || methodHasModifier(class.Modifiers, "inherited sharing") {
+		return false
+	}
 	if op != "update" || value.Kind != ValueObject || vm.Org == nil || vm.currentTrigger || vm.testContext == nil ||
 		vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
 		vm.currentSourceExecutionPolicy().APIVersion != "67.0" ||
