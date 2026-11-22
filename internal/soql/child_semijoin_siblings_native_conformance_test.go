@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // NATIVE child query with sibling relationships and a conjunctive semi-join:
@@ -64,6 +66,33 @@ func TestChildSemiJoinSiblingUncapturedModifiersRejected(t *testing.T) {
 			_, err := Parse(tc.query)
 			if err == nil || err.Error() != "soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause" {
 				t.Fatalf("uncaptured modifier: %v", err)
+			}
+		})
+	}
+}
+
+func TestChildSemiJoinSiblingConstructedModifierRejections(t *testing.T) {
+	const source = "SELECT Id, (SELECT Id FROM Contacts WHERE Email != null), (SELECT Id, Name FROM Opportunities WHERE StageName = 'Prospecting' AND Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE Role = 'Decision Maker') LIMIT 1), (SELECT Id FROM Cases LIMIT 1) FROM Account"
+	for _, tc := range []struct {
+		name   string
+		change func(*Query)
+	}{
+		{"parent_scope", func(q *Query) { q.UsingScope = "Mine" }},
+		{"child_update", func(q *Query) { q.ChildQueries[1].Query.ForUpdate = true }},
+		{"child_security", func(q *Query) { q.ChildQueries[1].Query.SecurityMode = "USER_MODE" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			query, err := Parse(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.change(&query)
+			const want = "soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause"
+			if err := validateSemiAntiQuery(query); err == nil || err.Error() != want {
+				t.Fatalf("validation = %v", err)
+			}
+			if _, err := Execute(storage.NewOrgState(), query); err == nil || err.Error() != want {
+				t.Fatalf("execution = %v", err)
 			}
 		})
 	}
