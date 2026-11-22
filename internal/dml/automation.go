@@ -4113,6 +4113,11 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		flowCapturedRelationshipFilterFields(e.Org, sourceDefinition, lookup) {
 		return nil, storage.ObjectDefinition{}, &flowRelationshipLookupFilterError{}
 	}
+	// The captured test-isolated standard price book filter depends only on
+	// the lookup shape, so it is decided once per lookup.
+	hideTestBaseline := e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
+		flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
+		strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName))
 	var records []storage.Record
 	for _, candidate := range target.Records {
 		if candidate.System.IsDeleted {
@@ -4146,9 +4151,7 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		if !matches {
 			continue
 		}
-		if e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
-			flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
-			strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName)) && !e.FlowLookupRecordVisible(candidate.ID) {
+		if hideTestBaseline && !e.FlowLookupRecordVisible(candidate.ID) {
 			continue
 		}
 		records = append(records, candidate.Clone())
