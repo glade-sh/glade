@@ -798,18 +798,19 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 	}
 	if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
 		if vm.communityCaseHostPermissionShape(op, objectName, scopedPermissionSetID) {
+			profileID := vm.currentUserInfoField("ProfileId", "")
+			ownedID := vm.profileOwnedPermissionSetID(profileID)
+			_, ownedKnown := vm.explicitObjectPermission(ownedID, objectName, objectPermission)
+			_, profileKnown := vm.explicitObjectPermission(profileID, objectName, objectPermission)
+			if ownedKnown || profileKnown {
+				return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+			}
 			if vm.capturedCommunityCaseHostDelete(record) {
 				return nil, newExceptionError("TypeException", "DML operation DELETE not allowed on Case")
 			}
 			// The host rows do not cover other record shapes; preserve the
 			// former permissive Case default for those records.
-			profileID := vm.currentUserInfoField("ProfileId", "")
-			ownedID := vm.profileOwnedPermissionSetID(profileID)
-			_, ownedKnown := vm.explicitObjectPermission(ownedID, objectName, objectPermission)
-			_, profileKnown := vm.explicitObjectPermission(profileID, objectName, objectPermission)
-			if !ownedKnown && !profileKnown {
-				return nil, nil
-			}
+			return nil, nil
 		}
 		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
