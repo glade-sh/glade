@@ -41,3 +41,25 @@ func TestCommunityCaseDMLNativeConformance(t *testing.T) {
 		})
 	}
 }
+
+// API 68 has no matching native row. Preserve the pre-existing local result.
+func TestCommunityCaseDMLUncapturedAPI(t *testing.T) {
+	const base = "testdata/conformance/community_case_dml"
+	const api = "68.0"
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+	classes := filepath.Join(root, "force-app/main/default/classes")
+	support := "testdata/conformance/external_user_case_lead_sharing/project/force-app/main/default/classes"
+	copyTree(t, filepath.Join(support, "PclSupport.cls"), filepath.Join(classes, "PclSupport.cls"), api)
+	copyTree(t, filepath.Join(support, "PclSupport.cls-meta.xml"), filepath.Join(classes, "PclSupport.cls-meta.xml"), api)
+	copyTree(t, filepath.Join(base, "project/classes"), classes, api)
+	copyTree(t, filepath.Join(base, "project-scratch-def.json"), filepath.Join(root, "config/project-scratch-def.json"), api)
+	run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{"CommunityCaseDmlTest"}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
+	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+		t.Fatalf("expected asserted observation: %+v", run.Summary())
+	}
+	got := run.Suites[0].Cases[0].Problem.Message
+	if !strings.Contains(got, "describe=true,true,true,true|insert=ok|update=ok|delete=ok") {
+		t.Fatalf("uncaptured API 68 local observation changed: %s", got)
+	}
+}
