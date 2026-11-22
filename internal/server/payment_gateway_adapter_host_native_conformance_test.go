@@ -71,6 +71,15 @@ func TestPaymentGatewayAdapterHostNativeConformance(t *testing.T) {
 			}
 			rec := httptest.NewRecorder()
 			srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", strings.NewReader(string(payload))))
+			if api == "62.0" {
+				// HTTP Execute Anonymous admits 65.0-68.0; source API is independent.
+				// Local contract: docs/RELEASE_POLICY.md, Salesforce API Versions.
+				if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "unsupported API version") {
+					t.Fatalf("anonymous API boundary: status %d, body %s", rec.Code, rec.Body.String())
+				}
+				rec = httptest.NewRecorder()
+				srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", strings.NewReader(string(payload))))
+			}
 			var result struct {
 				Compiled         bool   `json:"compiled"`
 				Success          bool   `json:"success"`
