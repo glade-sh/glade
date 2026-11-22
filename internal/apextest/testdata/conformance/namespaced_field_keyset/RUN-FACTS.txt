@@ -1,0 +1,11 @@
+family=namespaced_field_keyset
+capture_utc=2026-11-22
+source=authorized persistent Developer org with a namespace; no org was created or deleted
+apis=62.0 67.0
+routes=anonymous executed at each API; @IsTest class compiled at each API, synchronous test, assertion failure transports observation
+setup=synthetic custom object with four text fields; temporary permission set assigned to capture user for field access
+observation=field map key set string, then key set string after retaining custom field keys, then remaining map size
+normalization=namespace replaced consistently with garden, preserving its observed alphabetical position between createddate and id; no ids or user information included
+repeats=two runs in the same org with separately named synthetic components but the same object and field shape; all four route and API outputs match
+cleanup=each permission assignment deleted; both sets of deployed permission sets, objects, and test classes deleted; queries returned zero remaining for each and assignment
+limits=namespace owner context only; no global-describe or subscriber capture
