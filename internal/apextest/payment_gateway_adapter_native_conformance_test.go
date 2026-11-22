@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -11,6 +12,12 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:2 anonymous 62.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:3 anonymous 67.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:4 istest 62.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:5 istest 67.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/org.tsv:6 anonymous 62.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/org.tsv:7 anonymous 67.0
 func TestPaymentGatewayAdapterNativeConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "payment_gateway_adapter")
 	read := func(name string) string {
@@ -100,6 +107,58 @@ func TestPaymentGatewayAdapterNativeConformance(t *testing.T) {
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			if _, err := runner.execute(program); err != nil || row[3] != "True" || row[4] != "True" {
 				t.Fatalf("native %v; Glade error %v", row, err)
+			}
+		})
+	}
+}
+
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/test_construction/org.tsv:2 istest 62.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/test_construction/org.tsv:3 istest 67.0
+func TestPaymentGatewayAdapterTestConstructionNativeConformance(t *testing.T) {
+	dir := filepath.Join("testdata", "conformance", "payment_gateway_adapter", "test_construction")
+	read := func(name string) string {
+		t.Helper()
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	reader := csv.NewReader(strings.NewReader(read("org.tsv")))
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("expected two native rows, got %d", len(rows)-1)
+	}
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		if len(row) != 9 || row[0] != "INTERFACE_CONSTRUCTION_TEST" || row[2] != "istest" || row[3] != "false" || row[4] != "false" || (row[1] != "62.0" && row[1] != "67.0") || seen[row[1]] {
+			t.Fatalf("unexpected native row: %v", row)
+		}
+		seen[row[1]] = true
+		t.Run(row[1], func(t *testing.T) {
+			index := nativeBoundaryIndex(t, row[1], map[string]string{"AdapterRejectTest": read("AdapterRejectTest.cls"), "AdapterSupport": read("AdapterSupport.cls")}, nil)
+			analysis := sema.Analyze(index)
+			var messages []string
+			for _, d := range analysis.Diagnostics {
+				if d.Severity == diagnostic.Error {
+					msg := d.NativeMessage
+					if msg == "" {
+						msg = d.Message
+					}
+					messages = append(messages, msg)
+				}
+			}
+			want := strings.TrimPrefix(row[5], "AdapterRejectTest: ")
+			if len(messages) != 1 || messages[0] != want {
+				t.Fatalf("native %q; Glade %v", want, messages)
+			}
+			run := Run(index, Options{SelectedClasses: []string{"AdapterRejectTest"}, SelectedMethod: "reject", NoDiskCache: true, Parallelism: 1})
+			if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 {
+				t.Fatalf("native rejects deployment; Glade %+v, suites %+v", summary, run.Suites)
 			}
 		})
 	}
