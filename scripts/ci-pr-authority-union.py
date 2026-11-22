@@ -79,7 +79,7 @@ for package, (route, base, count) in routes.items():
     if extra:
         # The only non-shard route is the CLI's selected doctor tests. Derive
         # their exact selection from the executor rather than maintaining a list.
-        m = re.search(r"go test (?:-json )?-count=1 -timeout=0 -run '\^\(([^']+)\)\$' ./internal/gladecli", workflow)
+        m = re.search(r"bash scripts/ci-pr-doctor-test.sh [^ ]+ '\^\(([^']+)\)\$'", workflow)
         if package != 'github.com/glade-sh/glade/internal/gladecli' or not m or len(extra) != 1:
             raise ValueError('unexpected non-shard dedicated authority')
         tests = set(m.group(1).split('|'))

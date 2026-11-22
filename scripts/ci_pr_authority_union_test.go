@@ -148,3 +148,57 @@ func TestCIPRDoctorAudit(t *testing.T) {
 		})
 	}
 }
+
+func TestCIPRDoctorUnion(t *testing.T) {
+	const pkg = "github.com/glade-sh/glade/internal/gladecli"
+	for _, omit := range []bool{false, true} {
+		t.Run(fmt.Sprintf("omit=%v", omit), func(t *testing.T) {
+			root := t.TempDir()
+			input := filepath.Join(root, "input")
+			shards := make([]map[string]any, 4)
+			workers := make([]any, 0, 5)
+			names := []string{"TestAlpha", "TestBeta", "TestDelta", "TestGamma"}
+			for i, name := range names {
+				shards[i] = map[string]any{"index": i, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"}
+				workers = append(workers, map[string]any{"shard": 16 + i, "packages": []string{pkg}, "pool": []string{}, "browser": false})
+			}
+			workers = append(workers, map[string]any{"shard": 22, "packages": []string{pkg}, "pool": []string{}, "browser": false})
+			for i := range shards {
+				dir := filepath.Join(input, fmt.Sprintf("pr-authority-1-1-%d", 16+i))
+				shard := filepath.Join(dir, "shard")
+				if err := os.MkdirAll(shard, 0700); err != nil {
+					t.Fatal(err)
+				}
+				writeJSONFixture(t, filepath.Join(dir, "identity.json"), map[string]any{"shard": 16 + i})
+				writeJSONFixture(t, filepath.Join(shard, "plan.json"), map[string]any{"version": 1, "package": pkg, "historyUsed": false, "shards": shards})
+				writeJSONFixture(t, filepath.Join(shard, "selected-shard.json"), shards[i])
+				writeJSONFixture(t, filepath.Join(shard, "validation-summary.json"), map[string]any{"valid": true, "expected": []string{names[i]}, "passed": []string{names[i]}, "deferred": []string{}, "errors": []string{}})
+				os.WriteFile(filepath.Join(shard, "discovery.txt"), []byte(strings.Join(names, "\n")+"\n"), 0600)
+				os.WriteFile(filepath.Join(shard, "events.json"), []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":0.1}\n{\"Action\":\"pass\",\"Package\":%q}\n", pkg, names[i], pkg)), 0600)
+			}
+			dir := filepath.Join(input, "pr-authority-1-1-22")
+			doctor := filepath.Join(dir, "doctor")
+			if err := os.MkdirAll(doctor, 0700); err != nil {
+				t.Fatal(err)
+			}
+			writeJSONFixture(t, filepath.Join(dir, "identity.json"), map[string]any{"shard": 22})
+			os.WriteFile(filepath.Join(doctor, "metadata.tsv"), []byte(pkg+"\thas-tests\n"), 0600)
+			var events strings.Builder
+			for i, name := range nodeIntegrationTests[pkg] {
+				if omit && i == 0 {
+					continue
+				}
+				fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q}\n", pkg, name)
+			}
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q}\n", pkg)
+			os.WriteFile(filepath.Join(doctor, "events.json"), []byte(events.String()), 0600)
+			planPath := filepath.Join(root, "plan.json")
+			writeJSONFixture(t, planPath, map[string]any{"include": workers})
+			cmd := exec.Command("python3", "ci-pr-authority-union.py", planPath, input, filepath.Join(root, "out"))
+			out, err := cmd.CombinedOutput()
+			if (err == nil) == omit {
+				t.Fatalf("doctor union err=%v output=%s", err, out)
+			}
+		})
+	}
+}

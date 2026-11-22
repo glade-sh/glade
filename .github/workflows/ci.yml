@@ -2243,10 +2243,7 @@ jobs:
           export CI_VISUALFORCE_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
           # The full CLI shard route delegates these four tests to the Node lane.
           if [[ "$SHARD" == 22 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
-            mkdir -p ci-artifacts/pr-authority/doctor
-            go test -json -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli | tee ci-artifacts/pr-authority/doctor/events.json
-            printf 'github.com/glade-sh/glade/internal/gladecli\thas-tests\n' > ci-artifacts/pr-authority/doctor/metadata.tsv
-            bash scripts/ci-go-test.sh package-summary gladecli-ci 'PR doctor' ci-artifacts/pr-authority/doctor/events.json ci-artifacts/pr-authority/doctor/summary.json ci-artifacts/pr-authority/doctor/metadata.tsv ./internal/gladecli
+            bash scripts/ci-pr-doctor-test.sh ci-artifacts/pr-authority/doctor '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
           fi
           # Large packages use the same discovery, planning and validation routes
           # as the full suite, one shard per worker: 0-11 Apex, 12-15 VM,
