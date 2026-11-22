@@ -29,6 +29,7 @@ func TestFlowRelationshipFilterFaultScope(t *testing.T) {
 		{"different_source", func(f *flowXML) { f.RecordLookups[0].Filters[0].Value.ElementReference = "$Record.Name" }, false},
 		{"one_filter", func(f *flowXML) { f.RecordLookups[0].Filters = f.RecordLookups[0].Filters[:1] }, false},
 		{"fault_connector", func(f *flowXML) { f.RecordLookups[0].FaultConnector.TargetReference = "Recover" }, false},
+		{"assign_null", func(f *flowXML) { f.RecordLookups[0].AssignNullValuesIfNoRecordsFound = true }, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var raw flowXML
