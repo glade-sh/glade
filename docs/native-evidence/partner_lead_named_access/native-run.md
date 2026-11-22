@@ -1,3 +1,5 @@
+Native rows: `internal/visualforce/testdata/partner_lead_named_access/org.tsv`
+
 # Native capture
 
 - Capture date recorded: 2026-11-22. Exact time is not recorded in the retained facts.

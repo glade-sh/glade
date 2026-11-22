@@ -1,3 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/lead_read_model_recalculation/org.tsv`
+
 # Native capture
 
 - Capture interval: 2026-11-13T01:12:08Z to 2026-11-13T01:13:11Z.

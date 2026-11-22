@@ -1,6 +1,8 @@
+Native rows: `internal/apextest/testdata/conformance/partner_lead_transfer_manual_read/org.tsv`
+
 # Native capture
 
-- Capture interval: 2026-11-22T01:40:24Z to 2026-11-22T01:41:11Z.
+- Capture interval: 2026-11-22T04:42:00Z to 2026-11-22T04:42:49Z.
 - APIs: 62.0 67.0.
 - Routes: istest.
 

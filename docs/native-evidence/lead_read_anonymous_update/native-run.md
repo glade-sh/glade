@@ -1,3 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/lead_read_anonymous_update/org.tsv`
+
 # Native capture
 
 - Capture date recorded: 2026-11-22. Exact time is not recorded in the retained facts.

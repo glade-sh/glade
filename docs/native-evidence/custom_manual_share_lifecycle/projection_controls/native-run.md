@@ -1,3 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/custom_manual_share_lifecycle/projection_controls/org.tsv`
+
 # Native capture
 
 - Capture timestamp: 2026-11-22T03:48:48.198595+00:00.

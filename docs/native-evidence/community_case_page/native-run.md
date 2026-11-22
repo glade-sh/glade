@@ -1,3 +1,5 @@
+Native rows: `internal/visualforce/testdata/community_case_page/org.tsv`
+
 # Native capture
 
 - Capture time is not recorded in the retained facts.

@@ -1,3 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/manual_read_lifecycle/org.tsv`
+
 # Native capture
 
 - Capture time is not recorded in the retained facts.

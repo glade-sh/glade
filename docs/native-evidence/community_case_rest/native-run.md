@@ -1,3 +1,5 @@
+Native rows: `internal/server/testdata/community_case_rest/org.tsv`
+
 # Native capture
 
 - Capture time is not recorded in the retained facts.

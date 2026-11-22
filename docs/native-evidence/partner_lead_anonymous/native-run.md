@@ -1,3 +1,5 @@
+Native rows: `internal/vm/testdata/partner_lead_anonymous/org.tsv`
+
 # Native capture
 
 - Capture time is not recorded in the retained facts.

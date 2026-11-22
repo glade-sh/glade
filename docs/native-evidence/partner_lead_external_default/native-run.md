@@ -1,3 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/partner_lead_external_default/org.tsv`
+
 # Native capture
 
 - Capture interval: 2026-11-22T01:23:20Z to 2026-11-22T01:24:02Z.
