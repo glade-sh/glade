@@ -372,13 +372,17 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	}
 	var childVisible func(string, storage.Record) bool
 	var childFieldReadable func(string, string) bool
-	var endLeadReadScan func()
+	var endLeadReadScan, endChildFieldChecks func()
 	startLeadReadScan := func(objectName string) {
 		if endLeadReadScan == nil && strings.EqualFold(objectName, "Lead") {
 			endLeadReadScan = vm.beginPartnerLeadReadPass()
 		}
 	}
 	endLeadScan := func() {
+		if endChildFieldChecks != nil {
+			endChildFieldChecks()
+			endChildFieldChecks = nil
+		}
 		if endLeadReadScan != nil {
 			endLeadReadScan()
 			endLeadReadScan = nil
@@ -406,6 +410,9 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			return vm.userModeRecordVisible(objectName, record, readerID)
 		}
 		childFieldReadable = func(objectName, field string) bool {
+			if endChildFieldChecks == nil && strings.EqualFold(objectName, "Lead") {
+				endChildFieldChecks = vm.beginPermissionCheckMemo()
+			}
 			return vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", permissionSetID)
 		}
 	}
