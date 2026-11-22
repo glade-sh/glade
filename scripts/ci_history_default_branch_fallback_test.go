@@ -40,7 +40,7 @@ type historyFallbackApexResult struct {
 	staged                   bool
 }
 
-func runHistoryFallbackApex(t *testing.T, refRuns, branchRuns, fallbackBranch, pair string) historyFallbackApexResult {
+func runHistoryFallbackApex(t *testing.T, refRuns, branchRuns, fallbackBranch string) historyFallbackApexResult {
 	t.Helper()
 	f := newCase319BehaviorFixture(t)
 	writeApexFixtureExecutable(t, filepath.Join(f.bin, "gh"), historyFallbackApexGH)
@@ -58,7 +58,6 @@ func runHistoryFallbackApex(t *testing.T, refRuns, branchRuns, fallbackBranch, p
 		"GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT=1", "GITHUB_EVENT_NAME=workflow_dispatch",
 		"CI_DURATION_HISTORY_CACHE_REF=abc", "CI_DURATION_HISTORY_FALLBACK_BRANCH="+fallbackBranch,
 		"CI_APEXTEST_HISTORY_PATH="+f.history, "CI_APEXTEST_HISTORY_STAGE="+f.stage,
-		"CI_APEXTEST_BENCHMARK_PAIR="+pair,
 		"CI_APEXTEST_RETRY_PROFILE_PATH="+filepath.Join(f.root, "no-retry-cache.json"), "RUNNER_TEMP="+f.root)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -76,7 +75,7 @@ func runHistoryFallbackApex(t *testing.T, refRuns, branchRuns, fallbackBranch, p
 }
 
 func TestCIHistoryDefaultBranchFallbackApexUsesDefaultBranchRun(t *testing.T) {
-	r := runHistoryFallbackApex(t, "", "955\n", "main", "0")
+	r := runHistoryFallbackApex(t, "", "955\n", "main")
 	if !strings.Contains(r.calls, "branch=main") || !strings.Contains(r.calls, "event=push") {
 		t.Fatalf("default-branch query missing:\n%s", r.calls)
 	}
@@ -86,7 +85,7 @@ func TestCIHistoryDefaultBranchFallbackApexUsesDefaultBranchRun(t *testing.T) {
 }
 
 func TestCIHistoryDefaultBranchFallbackApexUnsetKeepsBehavior(t *testing.T) {
-	r := runHistoryFallbackApex(t, "", "955\n", "", "0")
+	r := runHistoryFallbackApex(t, "", "955\n", "")
 	if strings.Contains(r.calls, "branch=") || r.downloads != "" || r.staged {
 		t.Fatalf("unset fallback changed behavior: calls=%q downloads=%q staged=%v", r.calls, r.downloads, r.staged)
 	}
@@ -96,23 +95,16 @@ func TestCIHistoryDefaultBranchFallbackApexUnsetKeepsBehavior(t *testing.T) {
 }
 
 func TestCIHistoryDefaultBranchFallbackApexSkippedWhenRefHistoryUsable(t *testing.T) {
-	r := runHistoryFallbackApex(t, "901\n", "955\n", "main", "0")
+	r := runHistoryFallbackApex(t, "901\n", "955\n", "main")
 	if strings.Contains(r.calls, "branch=") || r.downloads != "901\n" || !r.staged {
 		t.Fatalf("usable predecessor history must not query default branch: calls=%q downloads=%q staged=%v", r.calls, r.downloads, r.staged)
 	}
 }
 
 func TestCIHistoryDefaultBranchFallbackApexNothingFoundKeepsDeterministic(t *testing.T) {
-	r := runHistoryFallbackApex(t, "", "", "main", "0")
+	r := runHistoryFallbackApex(t, "", "", "main")
 	if !strings.Contains(r.calls, "branch=main") || r.staged || !strings.Contains(r.output, "using deterministic scheduling fallback") {
 		t.Fatalf("empty fallback must keep deterministic scheduling: calls=%q staged=%v\n%s", r.calls, r.staged, r.output)
-	}
-}
-
-func TestCIHistoryDefaultBranchFallbackApexBenchmarkPairMakesNoLookups(t *testing.T) {
-	r := runHistoryFallbackApex(t, "901\n", "955\n", "main", "3")
-	if r.calls != "" || r.downloads != "" || r.staged {
-		t.Fatalf("benchmark pair must not look up predecessors: calls=%q downloads=%q staged=%v", r.calls, r.downloads, r.staged)
 	}
 }
 

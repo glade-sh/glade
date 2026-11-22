@@ -27,7 +27,6 @@ var ciScenarios = []ciScenario{
 var (
 	ciIfEvent      = regexp.MustCompile(`github\.event_name\s*(==|!=)\s*'(\w+)'`)
 	ciIfHeadRef    = regexp.MustCompile(`startsWith\(github\.head_ref,\s*'([^']+)'\)`)
-	ciIfInputs     = regexp.MustCompile(`inputs\.benchmark_cache_pair\s*(>=|<=|>|<|==)\s*\d+`)
 	ciIfStatusCall = regexp.MustCompile(`\b(success|always)\(\)`)
 )
 
@@ -54,7 +53,6 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		}
 		return "F"
 	})
-	expr = ciIfInputs.ReplaceAllString(expr, "T")
 	// Exercise the maximum selected PR routes when checking the job budget.
 	expr = strings.ReplaceAll(expr, "needs.pr-select.outputs.smoke == 'true'", "T")
 	expr = strings.ReplaceAll(expr, "needs.pr-select.outputs.browser == 'true'", "T")

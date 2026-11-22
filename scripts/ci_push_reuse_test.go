@@ -338,7 +338,6 @@ func TestCIReuseHistoryCacheKeyDimensions(t *testing.T) {
 	if goVersion == "" {
 		t.Fatal("missing go.mod version")
 	}
-	const prefix = "${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}"
 	const osExpr = "${{ runner.os }}"
 	const archExpr = "${{ runner.arch }}"
 	const sumExpr = "${{ hashFiles('go.sum') }}"
@@ -362,7 +361,7 @@ func TestCIReuseHistoryCacheKeyDimensions(t *testing.T) {
 			if strings.ReplaceAll(restore, restoreRef, saveRef) != save {
 				t.Errorf("%s: save and restore expressions differ", step.With["path"])
 			}
-			for _, expression := range []string{prefix, osExpr, archExpr, sumExpr, saveRef} {
+			for _, expression := range []string{osExpr, archExpr, sumExpr, saveRef} {
 				if strings.Count(save, expression) != 1 {
 					t.Errorf("%s: expected exactly one %s", step.With["path"], expression)
 				}
@@ -372,7 +371,7 @@ func TestCIReuseHistoryCacheKeyDimensions(t *testing.T) {
 				t.Errorf("%s: missing Go version", step.With["path"])
 			}
 			render := func(key string, values []string) string {
-				pairs := []string{prefix, "", osExpr, values[0], archExpr, values[1], goVersion, values[2], sumExpr, values[3], saveRef, values[4], restoreRef, values[4]}
+				pairs := []string{osExpr, values[0], archExpr, values[1], goVersion, values[2], sumExpr, values[3], saveRef, values[4], restoreRef, values[4]}
 				return strings.NewReplacer(pairs...).Replace(key)
 			}
 			baseline := []string{"Linux", "X64", goVersion, "sum-a", "sha-a"}
