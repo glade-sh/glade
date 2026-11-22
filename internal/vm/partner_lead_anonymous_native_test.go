@@ -34,7 +34,7 @@ func TestPartnerLeadAnonymousNativeConformance(t *testing.T) {
 	}
 	for _, row := range rows[1:] {
 		row := row
-		for _, variant := range []string{"native", "uncaptured-api68", "uncaptured-no-api", "uncaptured-license", "uncaptured-owner", "uncaptured-fields", "uncaptured-one-value", "uncaptured-explicit-mode"} {
+		for _, variant := range []string{"native", "uncaptured-api68", "uncaptured-no-api", "uncaptured-license", "uncaptured-owner", "uncaptured-fields", "uncaptured-one-value", "uncaptured-explicit-mode", "uncaptured-missing-record", "uncaptured-other-record-owner", "uncaptured-other-share"} {
 			variant := variant
 			t.Run(row[0]+"/"+row[1]+"/"+variant, func(t *testing.T) {
 				org := storage.NewOrgState()
@@ -75,6 +75,26 @@ func TestPartnerLeadAnonymousNativeConformance(t *testing.T) {
 					shares.Records["00T000000000001"] = storage.Record{ID: "00T000000000001", Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "UserOrGroupId": storage.IDValue(user.ID), "LeadAccessLevel": storage.StringValue("Read"), "RowCause": storage.StringValue("Manual")}}
 				}
 				org.Objects["LeadShare"] = shares
+				if variant == "uncaptured-missing-record" {
+					delete(lead.Records, "00Q000000000002")
+					org.Objects["Lead"] = lead
+				}
+				if variant == "uncaptured-other-record-owner" {
+					rec := lead.Records["00Q000000000002"]
+					rec.System.OwnerID = "005000000000003"
+					rec.System.CreatedByID = "005000000000003"
+					lead.Records[rec.ID] = rec
+					org.Objects["Lead"] = lead
+				}
+				if variant == "uncaptured-other-share" {
+					rec := lead.Records["00Q000000000001"]
+					rec.ID = "00Q000000000003"
+					rec.Fields = map[string]storage.Value{"LastName": storage.StringValue("Other"), "Company": storage.StringValue("Synthetic")}
+					lead.Records[rec.ID] = rec
+					org.Objects["Lead"] = lead
+					shares.Records = map[storage.ID]storage.Record{"00T000000000001": {ID: "00T000000000001", Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue(rec.ID), "UserOrGroupId": storage.IDValue(user.ID), "LeadAccessLevel": storage.StringValue("Read"), "RowCause": storage.StringValue("Manual")}}}
+					org.Objects["LeadShare"] = shares
+				}
 				api := row[1]
 				if variant == "uncaptured-api68" {
 					api = "68.0"
@@ -122,7 +142,7 @@ func TestPartnerLeadAnonymousNativeConformance(t *testing.T) {
 				if variant != "native" {
 					want = "OBS|accessible=true|count=2"
 				}
-				if variant == "uncaptured-one-value" {
+				if variant == "uncaptured-one-value" || variant == "uncaptured-missing-record" {
 					want = "OBS|accessible=true|count=1"
 				}
 				if len(result.Debug) != 1 || result.Debug[0] != want {
