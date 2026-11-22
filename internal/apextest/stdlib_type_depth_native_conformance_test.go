@@ -44,6 +44,11 @@ func TestStdlibComparableInterfaceNativeConformance(t *testing.T) {
 	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_comparable_interface", 12)
 }
 
+// NATIVE Comparable inheritance controls: testdata/conformance/stdlib_comparable_inheritance/org.tsv:2-17
+func TestStdlibComparableInheritanceNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_comparable_inheritance", 16)
+}
+
 func runStdlibTypeDepthNativeConformance(t *testing.T, fixture string, expectedRows int) {
 	t.Helper()
 	rows := readNativeTSV(t, filepath.Join(fixture, "org.tsv"))
