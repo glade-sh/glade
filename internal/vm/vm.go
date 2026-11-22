@@ -5321,13 +5321,14 @@ func runtimeError(thrown Value, stack []callFrame) error {
 	message := "unhandled exception"
 	errorType := "Exception"
 	var exceptionMessage *string
+	standardException := false
 	thrown = annotateException(thrown, stack)
 	if thrown.Kind != ValueNull {
 		message = thrown.String()
 		if thrown.Kind == ValueObject && thrown.Type != "" {
 			errorType = thrown.Type
-			_, standard := typesys.StandardExceptionParent(thrown.Type)
-			if _, present := thrown.Fields["message"]; !present && standard {
+			_, standardException = typesys.StandardExceptionParent(thrown.Type)
+			if _, present := thrown.Fields["message"]; !present && standardException {
 				message = "Script-thrown exception"
 			}
 			if context, ok := thrown.Fields["__diagnosticContext"]; ok && context.Kind == ValueString && strings.TrimSpace(context.Text) != "" {
@@ -5340,7 +5341,8 @@ func runtimeError(thrown Value, stack []callFrame) error {
 	err := &RuntimeError{Type: errorType, Message: message, exceptionMessage: exceptionMessage}
 	if len(stack) != 0 {
 		err.Stack = stackFrames(dropActiveEntryFrame(stack))
-		if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 &&
+		if len(stack) == 2 && stack[1].statement && stack[0].anonymousDirectThrow &&
+			thrown.Kind == ValueObject && thrown.classInstance && !standardException && stack[0].anonymousCallerLine > 0 &&
 			thrown.exceptionAnonymousCallerLine == stack[0].anonymousCallerLine {
 			triggerBoundary := false
 			for _, frame := range stack {
@@ -5351,6 +5353,7 @@ func runtimeError(thrown Value, stack []callFrame) error {
 			}
 			if !triggerBoundary {
 				err.Stack = append(err.Stack, StackFrame{Symbol: "AnonymousBlock", Line: stack[0].anonymousCallerLine, Column: 1})
+				err.anonymousCallerProjected = true
 			}
 		}
 	}

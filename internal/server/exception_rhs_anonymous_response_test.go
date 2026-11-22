@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -90,6 +92,17 @@ func TestExceptionRHSAnonymousResponse(t *testing.T) {
 					wantMessage := fmt.Sprintf("%s.FrameException: %s.FrameException:[__lineNumber=2, __stackTrace=Class.%s.fail: line 2, column 1, __thrown=true]", name, name, name)
 					if rec.Code != http.StatusOK || !got.Compiled || got.Success || got.CompileProblem != nil || got.ExceptionMessage == nil || *got.ExceptionMessage != wantMessage || got.ExceptionStackTrace == nil || *got.ExceptionStackTrace != want || got.Line != 1 || got.Column != 1 {
 						t.Errorf("response: %s, want stack %q", rec.Body.String(), want)
+					}
+					var escaped bytes.Buffer
+					if err := xml.EscapeText(&escaped, []byte(strings.ReplaceAll(string(code), "FrameProbe", name))); err != nil {
+						t.Fatal(err)
+					}
+					soapBody := soapEnvelope("<apex:executeAnonymous><apex:String>" + escaped.String() + "</apex:String></apex:executeAnonymous>")
+					soap := httptest.NewRecorder()
+					srv.ServeHTTP(soap, httptest.NewRequest(http.MethodPost, "/services/Soap/s/"+api+"/example", strings.NewReader(soapBody)))
+					soapResult := decodeSOAPResult(t, soap.Body.String())
+					if soap.Code != http.StatusOK || soapResult["compiled"] != "true" || soapResult["success"] != "false" || soapResult["compileProblem"] != "" || soapResult["exceptionMessage"] != wantMessage || soapResult["exceptionStackTrace"] != want || soapResult["line"] != "1" || soapResult["column"] != "1" {
+						t.Errorf("SOAP response: %s, want stack %q", soap.Body.String(), want)
 					}
 				})
 			}

@@ -19,7 +19,7 @@
 - Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
 - **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
-- Uncaught exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases.
+- Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
 
 ### Changes
 

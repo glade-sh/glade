@@ -1,13 +1,18 @@
 package apextest
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -91,6 +96,9 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 					if !errors.As(err, &fault) {
 						t.Fatalf("expected exception: %v", err)
 					}
+					if trace, ok := fault.CapturedAnonymousStackTrace(); !ok || trace != want {
+						t.Errorf("production stack = %q (captured %t), want %q", trace, ok, want)
+					}
 					for _, frame := range fault.Stack {
 						symbol := frame.Symbol
 						if strings.Contains(symbol, ".") && !strings.HasPrefix(symbol, "Class.") {
@@ -105,6 +113,43 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 					if len(result.Suites) != 1 || len(result.Suites[0].Cases) != 1 || result.Suites[0].Cases[0].Problem == nil {
 						t.Fatalf("missing failure: %#v", result)
 					}
+					var report bytes.Buffer
+					if err := testreport.WriteJSON(&report, result); err != nil {
+						t.Fatal(err)
+					}
+					var decoded testreport.Run
+					if err := json.Unmarshal(report.Bytes(), &decoded); err != nil {
+						t.Fatal(err)
+					}
+					if len(decoded.Suites) != 1 || len(decoded.Suites[0].Cases) != 1 || decoded.Suites[0].Cases[0].Problem == nil {
+						t.Fatalf("missing serialized problem: %s", report.String())
+					}
+					last := strings.Split(want, "\n")[1]
+					_, location, ok := strings.Cut(last, ": line ")
+					if !ok {
+						t.Fatalf("invalid native stack %q", want)
+					}
+					lineText, _, ok := strings.Cut(location, ", column ")
+					if !ok {
+						t.Fatalf("invalid native location %q", location)
+					}
+					lineNumber, err := strconv.Atoi(lineText)
+					if err != nil {
+						t.Fatal(err)
+					}
+					probe := "FrameProbe_" + suffix
+					classDir := filepath.Join(index.Project.Root, "force-app/main/default/classes")
+					wantProblem := &testreport.Problem{
+						Type:    probe + ".FrameException",
+						Message: probe + ".FrameException:[__lineNumber=2, __stackTrace=" + want + ", __thrown=true]",
+						Stack: []testreport.StackFrame{
+							{Symbol: probe + ".fail", File: filepath.Join(classDir, probe+".cls"), Line: 2, Column: 36},
+							{Symbol: className + ".runCase", File: filepath.Join(classDir, className+".cls"), Line: lineNumber, Column: 9},
+						},
+					}
+					if gotProblem := decoded.Suites[0].Cases[0].Problem; !reflect.DeepEqual(gotProblem, wantProblem) {
+						t.Errorf("serialized problem = %#v, want %#v", gotProblem, wantProblem)
+					}
 					InvalidateRuntimeCaches()
 					if _, ok := tryLoadDiskRuntime(index); !ok {
 						t.Fatal("runtime was not restored from disk")
@@ -116,6 +161,9 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 					}
 					if fmt.Sprint(cached.Suites[0].Cases[0].Problem.Stack) != fmt.Sprint(result.Suites[0].Cases[0].Problem.Stack) {
 						t.Fatal("cached stack differs")
+					}
+					if !reflect.DeepEqual(cached.Suites[0].Cases[0].Problem, result.Suites[0].Cases[0].Problem) {
+						t.Fatal("cached diagnostic differs")
 					}
 					for _, frame := range result.Suites[0].Cases[0].Problem.Stack {
 						symbol := frame.Symbol
