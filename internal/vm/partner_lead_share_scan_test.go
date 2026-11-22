@@ -45,6 +45,30 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 		}
 	}
 	check(true)
+	endPrincipalScan := machine.beginPartnerLeadShareScan()
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("captured principal did not match")
+	}
+	machine.testContext.CurrentUser.Fields["UserType"] = String("Standard")
+	if machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("changed principal matched inside the same pass")
+	}
+	machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("restored principal did not match")
+	}
+	endPrincipalScan()
+	permissions := org.Objects["ObjectPermissions"]
+	grant := permissions.Records["110000000000001"]
+	originalGrant := grant
+	grant.Fields = maps.Clone(grant.Fields)
+	grant.Fields["PermissionsEdit"] = storage.BooleanValue(true)
+	permissions.PutRecord(grant.ID, grant)
+	org.Objects["ObjectPermissions"] = permissions
+	check(false)
+	permissions.PutRecord(originalGrant.ID, originalGrant)
+	org.Objects["ObjectPermissions"] = permissions
+	check(true)
 	share := storage.Record{ID: "00T000000000001", Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Owner"), "UserOrGroupId": storage.IDValue("005000000000002"), "LeadAccessLevel": storage.StringValue("Read")}}
 	put := func() {
 		state := org.Objects["LeadShare"]
