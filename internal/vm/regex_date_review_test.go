@@ -384,3 +384,54 @@ func TestReviewRegexDateMutatorNeighbors(t *testing.T) {
 		}
 	}
 }
+
+func TestReviewRegexDateFailedMatchesNeighbor(t *testing.T) {
+	pattern, err := patternCompile([]Value{String("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, _, _, _, err := callMatcherMember(matcher, "find", nil)
+	if err != nil || !found.Bool {
+		t.Fatalf("first find %v, %v", found, err)
+	}
+	matched, _, _, _, err := callMatcherMember(matcher, "matches", nil)
+	if err != nil || matched.Bool {
+		t.Fatalf("matches %v, %v", matched, err)
+	}
+	found, _, _, _, err = callMatcherMember(matcher, "find", nil)
+	if err != nil || !found.Bool {
+		t.Fatalf("second find %v, %v", found, err)
+	}
+	start, _, _, _, err := callMatcherMember(matcher, "start", nil)
+	if err != nil || start.Int != 2 {
+		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
+
+func TestReviewRegexDateReplacementAPISwitchNeighbor(t *testing.T) {
+	pattern, err := patternCompile([]Value{String("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cache preparedMatcherCache
+	_, _, _, _, err = callMatcherMemberWithPolicy(matcher, "replaceFirst", []Value{String("-")}, &cache, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, _, _, _, err := callMatcherMemberWithPolicy(matcher, "find", nil, &cache, true)
+	if err != nil || !found.Bool {
+		t.Fatalf("find %v, %v", found, err)
+	}
+	start, _, _, _, err := callMatcherMemberWithPolicy(matcher, "start", nil, &cache, true)
+	if err != nil || start.Int != 2 {
+		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
