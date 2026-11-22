@@ -75,3 +75,48 @@ func BenchmarkBuildCompileConfigPreview(b *testing.B) {
 	}
 	b.Logf("config sha256: %x", digest)
 }
+
+func TestPreviewOwnershipMatchesLegacyNeighbors(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		keys    []string
+		sources []string
+	}{
+		{"one-owner", []string{"alpha", "beta"}, []string{"alpha/a.js", "beta/b.js", "alpha/a.js"}},
+		{"prefix-is-not-owner", []string{"alpha"}, []string{"alphabet/a.js"}},
+		{"nested-owners", []string{"alpha", "alpha/nested"}, []string{"alpha/nested/a.js"}},
+		{"outside", []string{"alpha"}, []string{"outside/a.js"}},
+		{"root-itself", []string{"alpha"}, []string{"alpha"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			p := project.Project{Root: root}
+			for _, key := range tc.keys {
+				dir := filepath.Join(root, filepath.FromSlash(key))
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					t.Fatal(err)
+				}
+				meta := filepath.Join(dir, "bundle.js-meta.xml")
+				if err := os.WriteFile(meta, []byte(`<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion></LightningComponentBundle>`), 0644); err != nil {
+					t.Fatal(err)
+				}
+				p.LWCMetaFiles = append(p.LWCMetaFiles, meta)
+			}
+			for _, source := range tc.sources {
+				p.LWCFiles = append(p.LWCFiles, filepath.Join(root, filepath.FromSlash(source)))
+			}
+			_, _, wantErr := legacySourcePartitions(root, tc.keys, p.LWCFiles, nil)
+			cfg, gotErr := buildCompileConfig(p, root, filepath.Join(root, "dist"), "c")
+			if fmt.Sprint(gotErr) != fmt.Sprint(wantErr) {
+				t.Fatalf("error = %v, legacy = %v", gotErr, wantErr)
+			}
+			if gotErr == nil {
+				for i, source := range tc.sources {
+					if cfg.LWCFiles[i] != source {
+						t.Fatalf("source %d = %q, want %q", i, cfg.LWCFiles[i], source)
+					}
+				}
+			}
+		})
+	}
+}
