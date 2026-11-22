@@ -94,3 +94,33 @@ printf '%s\n' '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/ex
 		})
 	}
 }
+
+func TestCIGuardRelativePackageDiscovery(t *testing.T) {
+	dir := t.TempDir()
+	cmd := exec.Command("bash", "scripts/ci-pr-packages.sh", dir, "./scripts")
+	cmd.Dir = ".."
+	cmd.Env = append(os.Environ(), "CI_TEST_RUN_REGEX=^TestCIWorkerClassification$")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("relative package wrapper: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "discovery.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var discovery map[string][]string
+	if err := json.Unmarshal(data, &discovery); err != nil {
+		t.Fatal(err)
+	}
+	const pkg = "github.com/glade-sh/glade/scripts"
+	if len(discovery) != 1 || len(discovery[pkg]) != 1 || discovery[pkg][0] != "TestCIWorkerClassification" {
+		t.Fatalf("unexpected canonical discovery: %s", data)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(`{"Action":"pass","Package":"example.invalid/scripts","Test":"TestCIWorkerClassification"}`+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cmd = exec.Command("python3", "scripts/ci-pr-package-discovery.py", "validate", dir, "./scripts")
+	cmd.Dir = ".."
+	if out, err := cmd.CombinedOutput(); err == nil {
+		t.Fatalf("accepted terminal for another package: %s", out)
+	}
+}
