@@ -30,6 +30,9 @@ func TestFlowRelationshipFilterFaultScope(t *testing.T) {
 		{"one_filter", func(f *flowXML) { f.RecordLookups[0].Filters = f.RecordLookups[0].Filters[:1] }, false},
 		{"fault_connector", func(f *flowXML) { f.RecordLookups[0].FaultConnector.TargetReference = "Recover" }, false},
 		{"assign_null", func(f *flowXML) { f.RecordLookups[0].AssignNullValuesIfNoRecordsFound = true }, false},
+		{"other_process", func(f *flowXML) { f.ProcessType = "Workflow" }, false},
+		{"sort_order", func(f *flowXML) { f.RecordLookups[0].SortOrder = "Asc" }, false},
+		{"mixed_value", func(f *flowXML) { f.RecordLookups[0].Filters[0].Value.StringValue = "value" }, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var raw flowXML

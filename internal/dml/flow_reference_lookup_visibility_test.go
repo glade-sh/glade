@@ -47,6 +47,7 @@ func TestFlowRelationshipFilterFaultRuntimeScope(t *testing.T) {
 		{"different_source", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{{Field: "Name", Operation: "equals", SourceField: "Name"}, right}}, false},
 		{"collection", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", StoreOutputAutomatically: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
 		{"assign_null", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, AssignNullValuesIfNoRecordsFound: true, CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
+		{"sort_order", storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent.Name", GetFirstRecordOnly: true, StoreOutputAutomatically: true, SortOrder: "Asc", CriteriaLogic: "and", Criteria: []storage.WorkflowCriteriaItem{left, right}}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := flowCapturedRelationshipFilterRuntime(tc.lookup); got != tc.want {
