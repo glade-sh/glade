@@ -288,12 +288,13 @@ var englishWeekdays = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "T
 // from the real day (native FmtJulian rows: 1500-02-29 is a Saturday, day 60,
 // week 9). Sunday-first weeks with one minimal day (en_US). The other tokens
 // keep reading the label.
-func hybridPatternLiterals(pattern string, localDays int64, locale string) string {
+func hybridPatternLiterals(pattern string, localDays int64, locale string, capturedAPI bool) string {
 	year, month, _ := hybridCivil(localDays)
 	if year < 1 {
 		return pattern
 	}
 	english := strings.HasPrefix(strings.ToLower(locale), "en")
+	observedLocale := capturedAPI && (locale == "fr_FR" || locale == "de_DE")
 	weekday := int(((localDays+4)%7 + 7) % 7) // Sunday = 0
 	firstOfMonth := hybridDays(year, month, 1)
 	monthDow := int(((firstOfMonth+4)%7 + 7) % 7)
@@ -350,14 +351,14 @@ func hybridPatternLiterals(pattern string, localDays int64, locale string) strin
 		case 'F':
 			literal = pad((index-1)/7+1, count)
 		case 'E':
-			if english {
+			if english || (observedLocale && (count == 3 || count == 4)) {
 				literal = englishWeekdays[weekday]
 				if count < 4 {
 					literal = literal[:3]
 				}
 			}
 		case 'u':
-			if english {
+			if english || (observedLocale && count == 1) {
 				n := weekday
 				if n == 0 {
 					n = 7

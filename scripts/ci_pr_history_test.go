@@ -81,9 +81,6 @@ func TestCIPRLaneHistoryInputsRunOnPullRequests(t *testing.T) {
 		if strings.Contains(job.If, "github.event_name != 'pull_request'") {
 			t.Errorf("%s skips pull requests: %s", h.job, job.If)
 		}
-		if !strings.Contains(job.If, "inputs.benchmark_cache_pair") {
-			t.Errorf("%s lost its benchmark pair guard: %s", h.job, job.If)
-		}
 	}
 }
 

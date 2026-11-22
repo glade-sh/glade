@@ -16,6 +16,10 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 }
 
 func callStringMemberWithASCII(receiver Value, method string, args []Value, ascii bool) (Value, bool, error) {
+	return callStringMemberWithPolicy(receiver, method, args, ascii, true)
+}
+
+func callStringMemberWithPolicy(receiver Value, method string, args []Value, ascii, capturedAPI bool) (Value, bool, error) {
 	method = canonicalStringMemberMethod(method)
 	switch method {
 	case "length":
@@ -329,13 +333,13 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		return String(strings.ReplaceAll(receiver.Text, target, replacement)), true, nil
 	case "replaceAll":
-		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
+		replaced, err := stringRegexReplaceWithPolicy("String.replaceAll", receiver.Text, args, true, capturedAPI)
 		if err != nil {
 			return Null, true, err
 		}
 		return String(replaced), true, nil
 	case "replaceFirst":
-		replaced, err := stringRegexReplace("String.replaceFirst", receiver.Text, args, false)
+		replaced, err := stringRegexReplaceWithPolicy("String.replaceFirst", receiver.Text, args, false, capturedAPI)
 		if err != nil {
 			return Null, true, err
 		}
@@ -395,7 +399,7 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		}
 		return receiver, true, nil
 	case "split":
-		parts, err := stringRegexSplit(receiver.Text, args)
+		parts, err := stringRegexSplitWithPolicy(receiver.Text, args, capturedAPI)
 		if err != nil {
 			return Null, true, err
 		}
