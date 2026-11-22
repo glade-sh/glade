@@ -78,6 +78,15 @@ func TestCIWorkflowJobCountsStayInsideRunnerLimit(t *testing.T) {
 		if name == "workflow-lint" && job.Strategy.Matrix.Kind == 0 && workflow.Jobs["leak-scan"].If == "" && containsDependency(dependencies, "leak-scan") {
 			continue
 		}
+		// The union is a single PR job that starts after every PR worker has
+		// finished. It replaces at least one worker in the peak, not the budget.
+		worker := workflow.Jobs["pr-tests"]
+		if name == "pr-authority-union" &&
+			strings.Contains(job.If, "github.event_name == 'pull_request'") && !strings.Contains(job.If, "!=") &&
+			!strings.Contains(worker.If, "github.event_name != 'pull_request'") && !strings.Contains(worker.If, "github.event_name == 'schedule'") &&
+			ciJobSerialAfter(dependenciesByJob, name, "pr-tests", job.Strategy.Matrix.Kind != 0) {
+			continue
+		}
 		width := ciJobWidth(t, name, job.Strategy.Matrix)
 		onlyPR := strings.Contains(job.If, "github.event_name == 'pull_request'") && !strings.Contains(job.If, "!=")
 		onlySchedule := strings.Contains(job.If, "github.event_name == 'schedule'")
@@ -134,4 +143,33 @@ func ciReceiptWaitsForJobs(jobs map[string][]string, receipt string) bool {
 		}
 	}
 	return true
+}
+
+// ciJobSerialAfter proves that a single job cannot overlap its predecessor.
+func ciJobSerialAfter(jobs map[string][]string, job, predecessor string, matrix bool) bool {
+	deps, exists := jobs[job]
+	if matrix || !exists || job == predecessor || !containsDependency(deps, predecessor) {
+		return false
+	}
+	if _, exists := jobs[predecessor]; !exists {
+		return false
+	}
+	seen := map[string]bool{}
+	var reachesJob func(string) bool
+	reachesJob = func(name string) bool {
+		if name == job {
+			return true
+		}
+		if seen[name] {
+			return false
+		}
+		seen[name] = true
+		for _, dep := range jobs[name] {
+			if reachesJob(dep) {
+				return true
+			}
+		}
+		return false
+	}
+	return !reachesJob(predecessor)
 }

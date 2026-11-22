@@ -52,7 +52,7 @@ func TestCIPRGuardWorkerRunsRepositoryGuards(t *testing.T) {
 			}
 			for _, marker := range []string{
 				`go build -o "$RUNNER_TEMP/glade" ./cmd/glade`,
-				`go test -count=1 -timeout=0 ./internal/repoguard ./scripts`,
+				`bash scripts/ci-pr-packages.sh "$RUNNER_TEMP/pr-guards" ./internal/repoguard ./scripts`,
 				`git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"`,
 				`(cd third_party/glade-apex-parser && go test -count=1 ./...)`,
 			} {

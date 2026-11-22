@@ -76,7 +76,7 @@ func wallHistoryFixture(t *testing.T, packageName string, historyUsed bool, shar
 		})
 		for file, data := range map[string]string{
 			"discovery.txt": strings.Join(all, "\n") + "\n",
-			"events.json":   wallEventLines(packageName, shardEvents[i]),
+			"events.json":   wallEventLines(packageName, shardEvents[i]) + fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q}\n", packageName),
 		} {
 			if err := os.WriteFile(filepath.Join(dirs[i], file), []byte(data), 0600); err != nil {
 				t.Fatal(err)
