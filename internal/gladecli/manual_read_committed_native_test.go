@@ -144,6 +144,7 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 		{"public", "67.0", "ReadWrite"},
 		{"extra-field", "67.0", "Private"},
 		{"view-all", "67.0", "Private"},
+		{"role", "67.0", "Private"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			base := filepath.Join(criteriaSharingFixtures, "manual_read_lifecycle")
@@ -183,7 +184,12 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				runCriteriaExec(t, root, db, string(script)+"\nSystem.debug('OBS|done');")
+				setup := string(script)
+				if tc.name == "role" && name == "setup" {
+					setup = strings.Replace(setup, "User u=new User(", "UserRole role=new UserRole(Name='Reader Role'); insert role; User u=new User(", 1)
+					setup = strings.Replace(setup, "ProfileId=p.Id,", "ProfileId=p.Id,UserRoleId=role.Id,", 1)
+				}
+				runCriteriaExec(t, root, db, setup+"\nSystem.debug('OBS|done');")
 			}
 			query := `
 User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1];
