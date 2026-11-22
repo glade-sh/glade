@@ -88,6 +88,44 @@ func TestDuplicateBulkMatchesFullScan(t *testing.T) {
 	}
 }
 
+func TestDuplicateBulkMatchesFullScan20000(t *testing.T) {
+	base, rows := duplicateIndexFixture(20000)
+	var referenceResults []dml.Result
+	var referenceReports []dml.DuplicateReport
+	for _, fullScan := range []bool{true, false} {
+		org := storage.SnapshotRuntimeOrg(&base)
+		engine := dml.NewEngine(&org)
+		engine.Options.EnforceDuplicateRules = true
+		engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+		if fullScan {
+			engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+				return dml.FindDuplicateMatches(&org, rule, row, exclude)
+			}
+		}
+		batch := make([]storage.Record, len(rows))
+		for i := range rows {
+			batch[i] = rows[i].Clone()
+		}
+		results := engine.Insert(batch)
+		reports := engine.TakeDuplicateReports()
+		for _, result := range results {
+			if !result.Success {
+				t.Fatalf("insert: %+v", result)
+			}
+		}
+		if fullScan {
+			if len(reports) == 0 {
+				t.Fatal("fixture has no matches")
+			}
+			referenceResults, referenceReports = results, reports
+			continue
+		}
+		if !reflect.DeepEqual(results, referenceResults) || !reflect.DeepEqual(reports, referenceReports) {
+			t.Fatal("batch results or ordered reports differ from full scan")
+		}
+	}
+}
+
 func BenchmarkDuplicateInsertFuzzy200By20000(b *testing.B) {
 	base, rows := duplicateIndexFixture(20000)
 	b.ReportAllocs()
