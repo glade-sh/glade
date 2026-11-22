@@ -1,0 +1,3 @@
+id	route	file
+locale	anonymous	observe.apex
+locale_test	istest	LocaleProbeTest
