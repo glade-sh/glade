@@ -92,13 +92,18 @@ func TestPartnerLeadNamedAccessNativeConformance(t *testing.T) {
 				}
 				org := storage.NewOrgState()
 				org.APIVersion = "67.0"
-				for _, name := range []string{"User", "Profile", "Lead", "LeadShare", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions"} {
+				for _, name := range []string{"User", "Profile", "UserLicense", "Lead", "LeadShare", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions"} {
 					storage.EnsureStandardObject(&org, name)
 				}
+				licenses := org.Objects["UserLicense"]
+				licenses.Records = map[storage.ID]storage.Record{
+					"100000000000001": {ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}},
+				}
+				org.Objects["UserLicense"] = licenses
 				profiles := org.Objects["Profile"]
 				profiles.Records = map[storage.ID]storage.Record{
 					"00e000000000001": {ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("System Administrator")}},
-					"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User")}},
+					"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}},
 				}
 				org.Objects["Profile"] = profiles
 				users := org.Objects["User"]
