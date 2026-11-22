@@ -12,7 +12,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Native rows for four shapes found in the FormulaShare corpus run, captured
+// Native rows for four shapes from a corpus run, captured
 // from scratch orgs at API 62.0 and 67.0 (66.0 for the event handler):
 //
 //   - SOQL on a custom object's __Share table, as the administrator and as a
@@ -236,4 +236,39 @@ func (p *shareMdtProject) runAnonymous(t *testing.T, file string) string {
 	}
 	t.Fatalf("no OUT: line in %v", result.Debug)
 	return ""
+}
+
+// A namespaced project loads no SetupEntityAccess rows for a permission set's
+// custom metadata type grant (applyProjectSecurityEntityGrants), and no native
+// row covers namespaced grants. Such a project keeps the earlier unrestricted
+// read for a runAs user instead of denying a granted user.
+func TestShareMdtNamespacedProjectKeepsCustomMetadataRead(t *testing.T) {
+	dir := filepath.Join("testdata", "conformance", "share_mdt_runas_access")
+	root := t.TempDir()
+	source := filepath.Join(dir, "project")
+	err := filepath.WalkDir(source, func(path string, entry os.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		name, _ := filepath.Rel(source, path)
+		text := string(raw)
+		if name == "sfdx-project.json" {
+			text = strings.Replace(text, `"namespace":""`, `"namespace":"synthns"`, 1)
+		}
+		writeFile(t, filepath.Join(root, name), text)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := loadTestIndex(t, root)
+	project := &shareMdtProject{index: index, api: "62.0"}
+	got := project.runTestClass(t, "RunAsProbeTest")["mFull"]
+	if !strings.Contains(got, `\"m_desc\":\"true,true\"`) && !strings.Contains(got, `"m_desc":"true,true"`) {
+		t.Fatalf("granted runAs user lost custom metadata access in a namespaced project: %s", got)
+	}
 }
