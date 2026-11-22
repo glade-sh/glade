@@ -133,6 +133,7 @@ type Engine struct {
 	pendingCreatedAutomation  map[storage.ID]bool
 	activeCreatedAutomationID storage.ID
 	duplicates                duplicateState
+	duplicateCandidates       *duplicateCandidateIndex
 	// personContactInsert marks the next insertOne as a person account's
 	// platform-created contact.
 	personContactInsert bool
@@ -502,7 +503,19 @@ func (e Engine) systemUserID() storage.ID {
 	return storage.DefaultUserID
 }
 
+func (e *Engine) beginDuplicateCandidateScope(size int) func() {
+	previousCandidates := e.duplicateCandidates
+	if size > 1 {
+		e.duplicateCandidates = &duplicateCandidateIndex{}
+	} else {
+		e.duplicateCandidates = nil
+	}
+	return func() { e.duplicateCandidates = previousCandidates }
+}
+
 func (e *Engine) Insert(records []storage.Record) []Result {
+	restoreDuplicateCandidates := e.beginDuplicateCandidateScope(len(records))
+	defer restoreDuplicateCandidates()
 	e.syncOrgClock()
 	results := make([]Result, len(records))
 	statementStamp := ""
@@ -569,6 +582,8 @@ func (e *Engine) recordJournalSequence(objectName string) {
 }
 
 func (e *Engine) Update(records []storage.Record) []Result {
+	restoreDuplicateCandidates := e.beginDuplicateCandidateScope(len(records))
+	defer restoreDuplicateCandidates()
 	e.syncOrgClock()
 	results := make([]Result, len(records))
 	restoreUniqueBatch := e.beginUniqueBatchContext(records)
@@ -609,6 +624,8 @@ func (e *Engine) UpsertWithExternalID(records []storage.Record, externalIDField 
 }
 
 func (e *Engine) upsert(records []storage.Record, externalIDField string) []Result {
+	restoreDuplicateCandidates := e.beginDuplicateCandidateScope(len(records))
+	defer restoreDuplicateCandidates()
 	e.syncOrgClock()
 	results := make([]Result, len(records))
 	restoreUniqueBatch := e.beginUniqueBatchContext(records)

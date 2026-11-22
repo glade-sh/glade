@@ -371,6 +371,10 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 // given candidate records when among is not nil (records of another object than
 // the scanned one are skipped). A nil among scans the org. The map is read only.
 func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, access func(storage.Record) (detect, disclose bool), among map[storage.ID]storage.Record) (DuplicateResult, bool) {
+	return findDuplicateMatchesAmong(org, rule, record, exclude, access, among, nil)
+}
+
+func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, access func(storage.Record) (detect, disclose bool), among map[storage.ID]storage.Record, index *duplicateCandidateIndex) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
 	personRule := strings.EqualFold(rule.Subtype, "PersonAccount")
 	if org == nil || (rule.Subtype != "" && !personRule) || len(rule.MatchRules) == 0 {
@@ -427,22 +431,40 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		}
 		var termVerdicts [2]duplicateTermVerdicts
 		termCount := 0
+		var selected []storage.ID
 		if usePrepared && len(records) >= 256 {
 			terms, count := requiredDuplicateTerms(&prepared)
 			termCount = count
 			for i := 0; i < termCount; i++ {
 				termVerdicts[i] = duplicateTermVerdicts{term: terms[i], values: make(map[string]bool)}
 			}
-		}
-		for _, existing := range records {
-			if !scan {
-				break
+			if index != nil && among == nil {
+				chosen := -1
+				for _, term := range terms[:count] {
+					item := prepared.items[term]
+					if strings.EqualFold(item.method, "LastName") && !item.leftBlank {
+						chosen = term
+						break
+					}
+				}
+				if chosen >= 0 {
+					selected = index.candidates(objectName, &prepared, chosen, true, records)
+				} else {
+					for _, term := range terms[:count] {
+						if !prepared.items[term].leftBlank {
+							selected = index.candidates(objectName, &prepared, term, false, records)
+							break
+						}
+					}
+				}
 			}
+		}
+		visit := func(existing storage.Record) bool {
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
-				continue
+				return true
 			}
 			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
-				continue
+				return true
 			}
 			possible := true
 			for i := 0; i < termCount; i++ {
@@ -452,7 +474,7 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				}
 			}
 			if !possible {
-				continue
+				return true
 			}
 			var matched bool
 			confidence := 100.0
@@ -466,7 +488,7 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 					matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
 				}
 				if !supported {
-					return result, false
+					return false
 				}
 			}
 			if matched {
@@ -475,14 +497,28 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 					detect, disclose = access(existing)
 				}
 				if !detect {
-					continue
+					return true
 				}
 				result.Detected = true
 				if !disclose {
-					continue
+					return true
 				}
 				match.Records = append(match.Records, existing.Clone())
 				match.Confidences = append(match.Confidences, confidence)
+			}
+			return true
+		}
+		if scan && selected != nil {
+			for _, id := range selected {
+				if !visit(records[id]) {
+					return result, false
+				}
+			}
+		} else if scan {
+			for _, existing := range records {
+				if !visit(existing) {
+					return result, false
+				}
 			}
 		}
 		sort.Sort(byMatchCreation{&match})
@@ -996,7 +1032,7 @@ func (e *Engine) findDuplicateMatches(rule storage.DuplicateRule, record storage
 	if e.DuplicateMatcher != nil {
 		return e.DuplicateMatcher(rule, record, exclude)
 	}
-	return FindDuplicateMatches(e.Org, rule, record, exclude)
+	return findDuplicateMatchesAmong(e.Org, rule, record, exclude, nil, nil, e.duplicateCandidates)
 }
 
 // Native FieldDiff rows (duplicate_runtime_behavior FDIFF, FDIFF2, MIXT) list
