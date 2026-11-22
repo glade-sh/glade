@@ -402,6 +402,8 @@ type VM struct {
 	permissionChecks *permissionCheckMemo
 	// partnerLeadShares is present only during a read-only record pass.
 	partnerLeadShares *partnerLeadShareIndex
+	// These map keys are lookup hints. Always recheck both current share rows.
+	partnerLeadNonOwnerKeys [2]storage.ID
 	// --- Describe caches ---
 	describeCache               map[describeCacheKey]Value
 	fieldDescribeCache          map[describeCacheKey]Value

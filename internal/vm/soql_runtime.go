@@ -5208,10 +5208,10 @@ func capturedStandardNamedObject(objectName string) bool {
 // (lead_grant rows), so no row isolates its sharing default. Other objects
 // keep the internal model for external users until a row covers them.
 func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject string) bool {
-	if vm == nil || vm.Org == nil || !vm.currentUserIsCapturedPortalUser() {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(canonicalObject, "Case") {
 		return false
 	}
-	if !strings.EqualFold(canonicalObject, "Case") || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
+	if !vm.currentUserIsCapturedPortalUser() || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
 		return false
 	}
 	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
@@ -5247,11 +5247,17 @@ func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
 		return vm.partnerLeadShares.shares
 	}
 	var shares []storage.Record
-	for _, share := range state.Records {
-		cause, _ := share.GetField("RowCause")
-		if !share.System.IsDeleted && !strings.EqualFold(cause.String, "Owner") {
+	var keys [2]storage.ID
+	for key, share := range state.Records {
+		if liveNonOwnerLeadShare(share) {
+			if len(shares) < len(keys) {
+				keys[len(shares)] = key
+			}
 			shares = append(shares, share)
 		}
+	}
+	if len(shares) >= len(keys) {
+		vm.partnerLeadNonOwnerKeys = keys
 	}
 	if vm.partnerLeadShares != nil {
 		vm.partnerLeadShares.shares = shares
@@ -5260,8 +5266,34 @@ func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
 	return shares
 }
 
+func liveNonOwnerLeadShare(share storage.Record) bool {
+	cause, _ := share.GetField("RowCause")
+	return !share.System.IsDeleted && !strings.EqualFold(cause.String, "Owner")
+}
+
+// Two distinct live non-owner rows exclude the captured zero-or-one-share
+// policy for every principal. Row fields can change through a shallow copy
+// without advancing RecordsToken, so the keys alone never decide access.
+func (vm *VM) hasMultipleNonOwnerLeadShares() bool {
+	keys := vm.partnerLeadNonOwnerKeys
+	if keys[0] == keys[1] {
+		return false
+	}
+	rows := vm.Org.Objects["LeadShare"].Records
+	for _, key := range keys {
+		row, found := rows[key]
+		if !found || !liveNonOwnerLeadShare(row) {
+			return false
+		}
+	}
+	return true
+}
+
 func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorID string) bool {
 	if vm == nil || vm.Org == nil || vm.testContext == nil && actorID == "" || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
+		return false
+	}
+	if vm.hasMultipleNonOwnerLeadShares() {
 		return false
 	}
 	api := vm.currentSourceExecutionPolicy().APIVersion
@@ -5283,13 +5315,12 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || actorID != "" && !transfer || strings.TrimSpace(definition.ExternalSharingModel) != "" {
 		return false
 	}
-	nonOwnerShares := 0
-	for _, share := range vm.partnerLeadNonOwnerShares() {
+	shares := vm.partnerLeadNonOwnerShares()
+	if len(shares) > 1 {
+		return false
+	}
+	for _, share := range shares {
 		cause, _ := share.GetField("RowCause")
-		nonOwnerShares++
-		if nonOwnerShares > 1 {
-			return false
-		}
 		parent, _ := share.GetField("LeadId")
 		_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
 		if !found {
@@ -5313,7 +5344,7 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 			return false
 		}
 	}
-	if api == "59.0" && nonOwnerShares != 1 {
+	if api == "59.0" && len(shares) != 1 {
 		return false
 	}
 	return true
