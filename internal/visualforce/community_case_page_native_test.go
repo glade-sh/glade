@@ -37,81 +37,102 @@ func TestCommunityCasePageNativeConformance(t *testing.T) {
 	}
 	for _, row := range rows[1:] {
 		row := row
-		t.Run(row[1], func(t *testing.T) {
-			root := t.TempDir()
-			write := func(path string, data []byte) {
-				t.Helper()
-				path = filepath.Join(root, path)
-				if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		for _, variant := range []string{"native", "uncaptured-no-api", "uncaptured-api68", "uncaptured-direct"} {
+			variant := variant
+			t.Run(row[1]+"/"+variant, func(t *testing.T) {
+				root := t.TempDir()
+				write := func(path string, data []byte) {
+					t.Helper()
+					path = filepath.Join(root, path)
+					if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(path, data, 0644); err != nil {
+						t.Fatal(err)
+					}
+				}
+				write("sfdx-project.json", []byte(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`))
+				src := filepath.Join(base, "project")
+				if err := filepath.WalkDir(src, func(path string, entry fs.DirEntry, err error) error {
+					if err != nil || entry.IsDir() {
+						return err
+					}
+					data, err := os.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					if variant == "uncaptured-api68" && strings.HasSuffix(path, ".cls-meta.xml") {
+						data = []byte(strings.ReplaceAll(string(data), "<apiVersion>"+row[1]+"</apiVersion>", "<apiVersion>68.0</apiVersion>"))
+					}
+					rel, err := filepath.Rel(src, path)
+					if err != nil {
+						return err
+					}
+					write(filepath.Join("force-app/main/default", rel), data)
+					return nil
+				}); err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(path, data, 0644); err != nil {
+				p, err := project.Load(root)
+				if err != nil {
 					t.Fatal(err)
 				}
-			}
-			write("sfdx-project.json", []byte(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`))
-			src := filepath.Join(base, "project")
-			if err := filepath.WalkDir(src, func(path string, entry fs.DirEntry, err error) error {
-				if err != nil || entry.IsDir() {
-					return err
-				}
-				data, err := os.ReadFile(path)
+				sch, err := schema.LoadProject(p)
 				if err != nil {
-					return err
+					t.Fatal(err)
 				}
-				rel, err := filepath.Rel(src, path)
+				runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(typesys.Build(p, sch), nil)
 				if err != nil {
-					return err
+					t.Fatal(err)
 				}
-				write(filepath.Join("force-app/main/default", rel), data)
-				return nil
-			}); err != nil {
-				t.Fatal(err)
-			}
-			p, err := project.Load(root)
-			if err != nil {
-				t.Fatal(err)
-			}
-			sch, err := schema.LoadProject(p)
-			if err != nil {
-				t.Fatal(err)
-			}
-			runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(typesys.Build(p, sch), nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			org := communityCasePageOrg(row[1])
-			machine := vm.New(nil)
-			machine.SetOrg(&org)
-			machine.SetCurrentUser(org.Objects["User"].Records["005000000000002"])
-			if err := apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime); err != nil {
-				t.Fatal(err)
-			}
-			visualforce.SetVMRenderEnvironment(machine, p)
-			defer visualforce.ClearVMRenderEnvironment(machine)
-			page := "RouteCasePage" + strings.TrimSuffix(row[1], ".0")
-			program, err := vm.CompileAnonymousWithOptions("System.debug(new PageReference('/apex/"+page+"').getContent().toString());", vm.CompileOptions{APIVersion: row[1]})
-			if err != nil {
-				t.Fatal(err)
-			}
-			result, err := machine.Execute(program)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(result.Debug) != 1 {
-				t.Fatalf("debug rows=%d", len(result.Debug))
-			}
-			body := html.UnescapeString(result.Debug[0])
-			start := strings.Index(body, "OBS|")
-			end := strings.Index(body, "|END")
-			if start < 0 || end < start {
-				t.Fatalf("observation missing in %q", body)
-			}
-			got := body[start+4 : end]
-			if got != row[3] {
-				t.Fatalf("Glade=%q native=%q", got, row[3])
-			}
-		})
+				org := communityCasePageOrg(row[1])
+				if variant == "uncaptured-no-api" {
+					profiles := org.Objects["Profile"]
+					profile := profiles.Records["00e000000000002"]
+					profile.Fields["PermissionsApiEnabled"] = storage.BooleanValue(false)
+					profiles.Records[profile.ID] = profile
+					org.Objects["Profile"] = profiles
+				}
+				machine := vm.New(nil)
+				machine.SetOrg(&org)
+				machine.SetCurrentUser(org.Objects["User"].Records["005000000000002"])
+				if err := apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime); err != nil {
+					t.Fatal(err)
+				}
+				visualforce.SetVMRenderEnvironment(machine, p)
+				defer visualforce.ClearVMRenderEnvironment(machine)
+				page := "RouteCasePage" + strings.TrimSuffix(row[1], ".0")
+				source := "System.debug(new PageReference('/apex/" + page + "').getContent().toString());"
+				if variant == "uncaptured-direct" {
+					source = page + " c=new " + page + "();c.run();System.debug('OBS|'+c.observation+'|END');"
+				}
+				program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: row[1]})
+				if err != nil {
+					t.Fatal(err)
+				}
+				result, err := machine.Execute(program)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(result.Debug) != 1 {
+					t.Fatalf("debug rows=%d", len(result.Debug))
+				}
+				body := html.UnescapeString(result.Debug[0])
+				start := strings.Index(body, "OBS|")
+				end := strings.Index(body, "|END")
+				if start < 0 || end < start {
+					t.Fatalf("observation missing in %q", body)
+				}
+				got := body[start+4 : end]
+				want := row[3]
+				if variant != "native" {
+					want = "describe=true,true,true,true|insert=ok|update=ok|delete=ok"
+				}
+				if got != want {
+					t.Fatalf("Glade=%q want=%q", got, want)
+				}
+			})
+		}
 	}
 }
 
