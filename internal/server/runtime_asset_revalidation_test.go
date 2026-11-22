@@ -58,14 +58,23 @@ func TestLightningRuntimeAssetRevalidation(t *testing.T) {
 			t.Fatalf("validator %q: %d %q %v", tag, got.Code, got.Body.String(), got.Header())
 		}
 	}
-	if err := os.WriteFile(filepath.Join(root, "lwcruntime/src/shell/asset.css"), []byte("other"), 0644); err != nil {
+	asset := filepath.Join(root, "lwcruntime/src/shell/asset.css")
+	info, err := os.Stat(asset)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(asset, []byte("other"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(asset, info.ModTime(), info.ModTime()); err != nil {
 		t.Fatal(err)
 	}
 	changed := runtimeAssetResponse(wantTag)
 	if changed.Code != http.StatusOK || changed.Body.String() != "other" || changed.Header().Get("ETag") == wantTag {
 		t.Fatalf("same-size edit: %d %q %v", changed.Code, changed.Body.String(), changed.Header())
 	}
-	t.Setenv("GLADE_ROOT", runtimeAssetFixture(t, []byte("third")))
+	secondRoot := runtimeAssetFixture(t, []byte("third"))
+	t.Setenv("GLADE_ROOT", secondRoot)
 	switched := runtimeAssetResponse(changed.Header().Get("ETag"))
 	if switched.Code != http.StatusOK || switched.Body.String() != "third" {
 		t.Fatalf("root changed: %d %q", switched.Code, switched.Body.String())
@@ -73,6 +82,12 @@ func TestLightningRuntimeAssetRevalidation(t *testing.T) {
 	stale := runtimeAssetResponse("\"missing\"")
 	if stale.Code != http.StatusOK || stale.Body.String() != "third" {
 		t.Fatalf("stale validator: %d %q", stale.Code, stale.Body.String())
+	}
+	if err := os.Remove(filepath.Join(secondRoot, "lwcruntime/src/shell/asset.css")); err != nil {
+		t.Fatal(err)
+	}
+	if missing := runtimeAssetResponse(switched.Header().Get("ETag")); missing.Code == http.StatusNotModified || missing.Code == http.StatusOK {
+		t.Fatalf("removed asset: %d %q", missing.Code, missing.Body.String())
 	}
 }
 
