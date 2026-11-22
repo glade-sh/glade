@@ -1237,7 +1237,7 @@ func defaultRecordTypeID(definition storage.ObjectDefinition) storage.ID {
 	return ""
 }
 
-func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition, record Value, field storage.Field) (storage.Value, bool) {
+func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition, record Value, field storage.Field, loadDefaults bool) (storage.Value, bool) {
 	if vm != nil {
 		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
 			return value, true
@@ -1254,6 +1254,7 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 	if rawDefault != "" && (strings.Contains(rawDefault, "$RecordType") || strings.ContainsAny(rawDefault, "()+-*/&<>=")) {
 		defaultOptions := vm.formulaEvaluationOptions()
 		defaultOptions.LineFeedBR = true
+		defaultOptions.DefaultValueFormula = loadDefaults
 		if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, vm.Org, definition, stored, defaultOptions); ok {
 			if rawRecordTypeDefaultStorageValue(value, field) {
 				return storage.Value{}, false

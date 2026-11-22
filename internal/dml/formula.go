@@ -35,6 +35,7 @@ type formulaValue struct {
 	fieldType           storage.FieldType
 	display             string
 	missingRelationship bool
+	defaultNow          bool
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -153,6 +154,7 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 // defaults used by stored formulas, validation rules and workflow evaluation.
 type FormulaEvaluationOptions struct {
 	PreserveNumericNull bool
+	DefaultValueFormula bool
 	// QueryBlankNumber preserves null through ROUND, ABS, FLOOR, MOD, MIN and
 	// MAX on queried numeric calculated fields with an explicit BlankAsBlank
 	// policy. Other callers keep the prior null-as-zero behavior.
@@ -253,6 +255,10 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		permissionUserFields:          options.PermissionUserFields,
 		assignmentActive:              options.AssignmentActive,
 		setupUserID:                   options.SetupUserID,
+		defaultValueFormula:           options.DefaultValueFormula,
+	}
+	if parser.defaultValueFormula {
+		parser.defaultValueFormula = capturedMinuteDefaultShape(parser.tokens, field.Type)
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -262,6 +268,30 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		return formulaValue{}, false
 	}
 	return value, true
+}
+
+// Keep the new clock functions within the numeric and datetime default
+// expression shapes captured at APIs 62 and 67.
+func capturedMinuteDefaultShape(tokens []formulaToken, fieldType storage.FieldType) bool {
+	ident := func(i int, name string) bool {
+		return tokens[i].typ == formulaTokenIdent && strings.EqualFold(tokens[i].text, name)
+	}
+	symbol := func(i int, value string) bool {
+		return tokens[i].typ == formulaTokenSymbol && tokens[i].text == value
+	}
+	minute := func(i int) bool {
+		return ident(i, "MINUTE") && symbol(i+1, "(") && ident(i+2, "TIMEVALUE") && symbol(i+3, "(") &&
+			ident(i+4, "NOW") && symbol(i+5, "(") && symbol(i+6, ")") && symbol(i+7, ")") && symbol(i+8, ")")
+	}
+	if fieldType == storage.FieldDecimal && len(tokens) == 10 {
+		return minute(0) && tokens[9].typ == formulaTokenEOF
+	}
+	if fieldType == storage.FieldDateTime && len(tokens) == 21 {
+		return ident(0, "NOW") && symbol(1, "(") && symbol(2, ")") && symbol(3, "+") && ident(4, "MOD") &&
+			symbol(5, "(") && minute(6) && symbol(15, ",") && tokens[16].typ == formulaTokenNumber &&
+			symbol(17, ")") && symbol(18, "/") && tokens[19].typ == formulaTokenNumber && tokens[20].typ == formulaTokenEOF
+	}
+	return false
 }
 
 func finishRecordFormulaValue(formula string, field storage.Field, value formulaValue, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
@@ -671,6 +701,8 @@ type formulaParser struct {
 	permissionUserFields          map[string]storage.Value
 	assignmentActive              func(storage.Record) bool
 	setupUserID                   storage.ID
+	defaultValueFormula           bool
+	defaultMinuteArgument         bool
 }
 
 func (p *formulaParser) setupActor() storage.ID {
@@ -1020,6 +1052,16 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 			}
 			if strings.EqualFold(token.text, "ISCHANGED") {
 				return p.parseIsChangedFunction()
+			}
+			if p.defaultValueFormula && strings.EqualFold(token.text, "MINUTE") {
+				previous := p.defaultMinuteArgument
+				p.defaultMinuteArgument = true
+				args, ok := p.parseArguments()
+				p.defaultMinuteArgument = previous
+				if !ok {
+					return formulaValue{}, false
+				}
+				return p.evaluateFormulaFunction(token.text, args)
 			}
 			args, ok := p.parseArguments()
 			if !ok {
@@ -1788,7 +1830,16 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if p.org != nil && p.org.Now != nil {
 			now = p.org.Now().UTC()
 		}
-		return formulaValue{kind: formulaDate, text: now.Format(time.RFC3339Nano)}, true
+		return formulaValue{kind: formulaDate, text: now.Format(time.RFC3339Nano), defaultNow: p.defaultValueFormula}, true
+	case "MINUTE":
+		if !p.defaultValueFormula || len(args) != 1 || !args[0].defaultNow || args[0].fieldType != storage.FieldTime {
+			return formulaValue{}, false
+		}
+		value, err := time.Parse("15:04:05.999Z", args[0].text)
+		if err != nil {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaNumber, number: float64(value.Minute())}, true
 	case "DATE":
 		if len(args) != 3 {
 			return formulaValue{}, false

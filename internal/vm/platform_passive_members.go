@@ -1728,7 +1728,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						if vm.standardFieldAbsentFromDeclaredBaseline(objectName, field) {
 							continue
 						}
-						if defaultValue, ok := vm.defaultValueForNewSObjectField(definition, record, field); ok {
+						if defaultValue, ok := vm.defaultValueForNewSObjectField(definition, record, field, true); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
 							markLoadedSObjectDefault(&record, name)
 							rememberSchemaCheckboxEquality(&record, definition, field, defaultValue)
