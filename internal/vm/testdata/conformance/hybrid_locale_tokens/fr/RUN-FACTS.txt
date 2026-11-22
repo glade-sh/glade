@@ -17,3 +17,4 @@ residue: every check queries ALL ROWS (records in the recycle bin count); after 
 residue: before every anonymous run the state is settled; records found there taint that row (tainted:arrived-before-run); a run that committed is judged by its limits block: no block, async or e-mail counters above 0, or DML rows with nothing found are tainted, never 0
 residue rows: 0=2, n/a=2
 user settings: {"LocaleSidKey":"fr_FR","LanguageLocaleKey":"fr","TimeZoneSidKey":"GMT"}
+duration correction: command requested 30 days; capture script label was stale.
