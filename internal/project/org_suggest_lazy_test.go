@@ -1,6 +1,8 @@
 package project
 
 import (
+	"os"
+	"os/exec"
 	"regexp"
 	"sync"
 	"testing"
@@ -34,4 +36,25 @@ func TestSetupRegexpLazyConcurrent(t *testing.T) {
 		})
 	}
 	wg.Wait()
+}
+
+func TestSetupPatternsStartUninitialized(t *testing.T) {
+	if os.Getenv("GLADE_SETUP_PATTERNS_CHILD") != "1" {
+		executable, err := os.Executable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(executable, "-test.run=^TestSetupPatternsStartUninitialized$")
+		cmd.Env = append(os.Environ(), "GLADE_SETUP_PATTERNS_CHILD=1")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("fresh process: %v\n%s", err, output)
+		}
+		return
+	}
+	if setupStringRE.compiled != nil || featureEvidenceRules[3].pattern.compiled != nil {
+		t.Fatal("setup patterns initialized at startup")
+	}
+	if setupStringRE.get() == nil || featureEvidenceRules[3].pattern.get() == nil {
+		t.Fatal("setup patterns not initialized on use")
+	}
 }

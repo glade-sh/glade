@@ -1,6 +1,8 @@
 package dml
 
 import (
+	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"testing"
@@ -53,5 +55,27 @@ func TestNameVariantTablesLazyConcurrent(t *testing.T) {
 func BenchmarkNameVariantLookup(b *testing.B) {
 	for b.Loop() {
 		_ = nameVariantOf("alex", "alexander")
+	}
+}
+
+func TestNameVariantTablesStartUninitialized(t *testing.T) {
+	if os.Getenv("GLADE_NAME_VARIANTS_CHILD") != "1" {
+		executable, err := os.Executable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(executable, "-test.run=^TestNameVariantTablesStartUninitialized$")
+		cmd.Env = append(os.Environ(), "GLADE_NAME_VARIANTS_CHILD=1")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("fresh process: %v\n%s", err, output)
+		}
+		return
+	}
+	if nameVariants != nil || nameVariantHeads != nil {
+		t.Fatal("name tables initialized at startup")
+	}
+	pairs, heads := getNameVariantTables()
+	if len(pairs) == 0 || len(heads) == 0 {
+		t.Fatal("name tables not initialized on use")
 	}
 }
