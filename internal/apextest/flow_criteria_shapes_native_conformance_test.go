@@ -115,3 +115,11 @@ func runFlowCriteriaFixture(t *testing.T, name string, wantRows int) {
 func TestFlowCriteriaShapesNativeConformance(t *testing.T) {
 	runFlowCriteriaFixture(t, "flow_criteria_shapes", 30)
 }
+
+// NATIVE $Profile.Name NotEqualTo a literal and $Record.RecordType.DeveloperName
+// against a constant and a literal in an after-save update Flow:
+// testdata/conformance/flow_record_type_decision/org.tsv, anonymous and
+// @IsTest at 62.0 and 67.0.
+func TestFlowRecordTypeDecisionNativeConformance(t *testing.T) {
+	runFlowCriteriaFixture(t, "flow_record_type_decision", 4)
+}
