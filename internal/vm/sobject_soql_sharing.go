@@ -56,7 +56,7 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 	if vm.guestUserReadsOnlySelf(objectName) {
 		return storage.IDsEqual(record.ID, storage.ID(userID))
 	}
-	if vm.userModeUnrestrictedObject(objectName, userID) {
+	if vm.publicLeadWithUncapturedCreator(objectName, record) || vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
 	return vm.userModeRestrictedRecordVisible(objectName, record, userID)
@@ -65,6 +65,9 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 // userModeRestrictedRecordVisible applies the record-dependent policy after
 // the caller has resolved object-wide sharing for this principal.
 func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.Record, userID string) bool {
+	if vm.publicLeadWithUncapturedCreator(objectName, record) {
+		return true
+	}
 	// Queue owners and a reader who created another user's Lead have no
 	// captured Partner row. Preserve their prior public-model visibility.
 	if vm.partnerLeadPrivateExternalDefault(objectName) && record.System.OwnerID != "" {
@@ -76,6 +79,20 @@ func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.
 		return allowed
 	}
 	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.currentUserCanReadDirectQueueMember(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+}
+
+// publicLeadWithUncapturedCreator keeps the existing public result where the
+// Partner exception cannot apply: its captured owner is also the creator.
+func (vm *VM) publicLeadWithUncapturedCreator(objectName string, record storage.Record) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(objectName, "Lead") || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		return false
+	}
+	lead, ok := vm.Org.Objects["Lead"]
+	if !ok || strings.TrimSpace(lead.Definition.ExternalSharingModel) != "" {
+		return false
+	}
+	model := strings.TrimSpace(lead.Definition.SharingModel)
+	return strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "ReadWriteTransfer")
 }
 
 func (vm *VM) capturedPartnerLeadTestOwner(record storage.Record) bool {
