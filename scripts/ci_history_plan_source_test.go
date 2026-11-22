@@ -66,6 +66,7 @@ func writePlannedHistoryEvidence(t *testing.T, root, packageName string, names [
 		for _, name := range tests {
 			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n", packageName, name, elapsed(index, name))
 		}
+		fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q}\n", packageName)
 		for file, data := range map[string]string{
 			"discovery.txt": strings.Join(names, "\n") + "\n",
 			"events.json":   events.String(),
