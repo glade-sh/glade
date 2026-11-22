@@ -2701,7 +2701,7 @@ func stringRegexSplitWithPolicy(text string, args []Value, capturedAPI bool) ([]
 	if len(args) == 2 {
 		limit = args[1].Int
 	}
-	return splitRegexWithPolicy("String.split", args[0].Text, text, limit, capturedAPI)
+	return splitRegexWithPolicy("String.split", args[0].Text, text, limit, capturedAPI && len(args) == 1)
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
