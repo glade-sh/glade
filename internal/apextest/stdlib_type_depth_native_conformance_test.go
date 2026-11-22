@@ -16,7 +16,16 @@ import (
 // NATIVE type argument: testdata/conformance/stdlib_type_depth/org.tsv:5 istest 67.0
 // NATIVE method depth: testdata/conformance/stdlib_type_depth/org.tsv:6-13 anonymous and istest 62.0 and 67.0
 func TestStdlibTypeDepthNativeConformance(t *testing.T) {
-	const fixture = "testdata/conformance/stdlib_type_depth"
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_type_depth", 12)
+}
+
+// NATIVE variable receiver and depth boundary: testdata/conformance/stdlib_type_depth_neighbors/org.tsv:2-11
+func TestStdlibTypeDepthNeighborsNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_type_depth_neighbors", 10)
+}
+
+func runStdlibTypeDepthNativeConformance(t *testing.T, fixture string, expectedRows int) {
+	t.Helper()
 	rows := readNativeTSV(t, filepath.Join(fixture, "org.tsv"))
 	cases := readNativeTSV(t, filepath.Join(fixture, "cases.tsv"))
 	files := make(map[string]string)
@@ -39,14 +48,20 @@ func TestStdlibTypeDepthNativeConformance(t *testing.T) {
 		t.Run(key, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
-			for _, name := range []string{"StdProbe", "AssignProbeTest", "DepthSafeTest", "DepthLimitTest"} {
-				for _, ext := range []string{".cls", ".cls-meta.xml"} {
-					b, err := os.ReadFile(filepath.Join(fixture, "force-app/main/default/classes", name+ext))
-					if err != nil {
-						t.Fatal(err)
-					}
-					writeFile(t, filepath.Join(root, "force-app/main/default/classes", name+ext), strings.ReplaceAll(string(b), "__API__", api))
+			classDir := "force-app/main/default/classes"
+			entries, err := os.ReadDir(filepath.Join(fixture, classDir))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, entry := range entries {
+				if entry.IsDir() {
+					t.Fatalf("unexpected directory %s", entry.Name())
 				}
+				b, err := os.ReadFile(filepath.Join(fixture, classDir, entry.Name()))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, classDir, entry.Name()), strings.ReplaceAll(string(b), "__API__", api))
 			}
 			index := loadTestIndex(t, root)
 			if route == "istest" {
@@ -107,7 +122,7 @@ func TestStdlibTypeDepthNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	if len(seen) != 12 {
-		t.Fatalf("expected 12 native rows, got %d", len(seen))
+	if len(seen) != expectedRows {
+		t.Fatalf("expected %d native rows, got %d", expectedRows, len(seen))
 	}
 }
