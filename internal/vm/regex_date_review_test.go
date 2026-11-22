@@ -169,3 +169,53 @@ func TestReviewRegexDateStarFindNeighbor(t *testing.T) {
 		t.Errorf("star find = %v", starts)
 	}
 }
+
+func TestReviewRegexDateSubjectNeighbors(t *testing.T) {
+	for _, tc := range []struct {
+		input       string
+		starts      []int64
+		replacement string
+		split       []string
+	}{
+		{"😀a", []int64{0, 2, 3}, "-😀-a-", []string{"😀", "a"}},
+		{"😀😀", []int64{0, 2, 4}, "-😀-😀-", []string{"😀", "😀"}},
+		{"aa😀b", []int64{0, 1, 2, 4, 5}, "-a-a-😀-b-", []string{"a", "a", "😀", "b"}},
+	} {
+		t.Run(tc.input, func(t *testing.T) {
+			p, err := patternCompile([]Value{String("")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			m, _, _, _, err := callPatternMember(p, "matcher", []Value{String(tc.input)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var starts []int64
+			for {
+				found, _, _, _, e := callMatcherMember(m, "find", nil)
+				if e != nil {
+					t.Fatal(e)
+				}
+				if !found.Bool {
+					break
+				}
+				start, _, _, _, e := callMatcherMember(m, "start", nil)
+				if e != nil {
+					t.Fatal(e)
+				}
+				starts = append(starts, start.Int)
+			}
+			if !reflect.DeepEqual(starts, tc.starts) {
+				t.Errorf("find = %v, want %v", starts, tc.starts)
+			}
+			got, err := stringRegexReplace("String.replaceAll", tc.input, []Value{String(""), String("-")}, true)
+			if err != nil || got != tc.replacement {
+				t.Errorf("replace = %q, %v; want %q", got, err, tc.replacement)
+			}
+			parts := splitStringCharacters(tc.input, 0)
+			if !reflect.DeepEqual(parts, tc.split) {
+				t.Errorf("split = %q, want %q", parts, tc.split)
+			}
+		})
+	}
+}
