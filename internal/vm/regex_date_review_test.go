@@ -219,3 +219,21 @@ func TestReviewRegexDateSubjectNeighbors(t *testing.T) {
 		})
 	}
 }
+
+func TestReviewRegexDateUncapturedRoutes(t *testing.T) {
+	got, err := stringRegexReplace("String.replaceAll", "a😀b", []Value{String("x*"), String("-")}, true)
+	if err != nil || got != "-a-😀-b-" {
+		t.Errorf("star replacement = %q, %v", got, err)
+	}
+	program, err := CompileAnonymousWithOptions("Integer count = Pattern.compile('').split('😀').size();", CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.Globals["count"].Int; got != 1 {
+		t.Errorf("pattern split = %d, want 1", got)
+	}
+}
