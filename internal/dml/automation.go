@@ -4115,6 +4115,11 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 	}
 	// The captured test-isolated standard price book filter depends only on
 	// the lookup shape, so it is decided once per lookup.
+	var sourceCacheStack [4]flowLookupSourceCache
+	sourceCaches := sourceCacheStack[:]
+	if len(lookup.Criteria) > len(sourceCacheStack) {
+		sourceCaches = make([]flowLookupSourceCache, len(lookup.Criteria))
+	}
 	hideTestBaseline := e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
 		flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
 		strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName))
@@ -4125,8 +4130,9 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		}
 		disjunction := strings.EqualFold(lookup.CriteriaLogic, "or") && len(lookup.Criteria) > 0
 		matches := !disjunction
-		for _, item := range lookup.Criteria {
-			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
+		for index := range lookup.Criteria {
+			item := &lookup.Criteria[index]
+			match, ok := e.evaluateFlowLookupCriteriaCached(item, candidate, target.Definition, source, sourceDefinition, frame, &sourceCaches[index])
 			if !ok {
 				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
 				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
@@ -4292,24 +4298,50 @@ func (e *Engine) flowRecordLookupMatch(lookup storage.FlowRecordLookup, source s
 	return records[0], definition, true, nil
 }
 
+// flowLookupSourceCache holds the parts of one Get Records criterion that do
+// not depend on the candidate record: its resolved target field and the
+// filter value read from the interview. A lookup resolves them once.
+type flowLookupSourceCache struct {
+	done        bool
+	fieldOK     bool
+	valueOK     bool
+	targetField string
+	value       storage.Value
+}
+
 func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
+	return e.evaluateFlowLookupCriteriaCached(&item, target, targetDefinition, source, sourceDefinition, frame, nil)
+}
+
+func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame, cache *flowLookupSourceCache) (bool, bool) {
+	item := criterion
 	if item.Formula != "" {
-		return e.flowLookupFormulaCriterion(item, target, targetDefinition, frame)
+		return e.flowLookupFormulaCriterion(*item, target, targetDefinition, frame)
 	}
 	if strings.TrimSpace(item.SourceField) == "" {
-		return evaluateFlowCoreLookupCriteria(item, target, targetDefinition, e.Org.Namespace)
+		return evaluateFlowCoreLookupCriteria(*item, target, targetDefinition, e.Org.Namespace)
 	}
-	targetField, ok := storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
-	if !ok || targetField == "" {
+	var resolved flowLookupSourceCache
+	if cache != nil && cache.done {
+		resolved = *cache
+	} else {
+		resolved.done = true
+		resolved.targetField, resolved.fieldOK = storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
+		if resolved.fieldOK && resolved.targetField != "" {
+			resolved.value, resolved.valueOK = e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+			if !resolved.valueOK && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
+				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+			}
+		}
+		if cache != nil {
+			*cache = resolved
+		}
+	}
+	targetField := resolved.targetField
+	if !resolved.fieldOK || targetField == "" || !resolved.valueOK {
 		return false, false
 	}
-	sourceValue, ok := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
-	if !ok && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
-		sourceValue, ok = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
-	}
-	if !ok {
-		return false, false
-	}
+	sourceValue := resolved.value
 	targetValue, targetOK := sourceRecordFieldValue(target, targetField)
 	if !targetOK {
 		targetValue = storage.NullValue()
