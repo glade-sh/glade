@@ -7095,7 +7095,6 @@ func (vm *VM) capturedReadLeadUpdate(op string, value Value, queried bool) bool 
 		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
-	hasText := false
 	companyChanged := false
 	for name, fieldValue := range value.Fields {
 		if isInternalSObjectField(name) || strings.EqualFold(name, "Id") {
@@ -7111,18 +7110,15 @@ func (vm *VM) capturedReadLeadUpdate(op string, value Value, queried bool) bool 
 		if !exists || field.Type != storage.FieldString || fieldValue.Kind != ValueString {
 			return false
 		}
-		if !queried {
-			old, present := stored.GetField(name)
-			if !present || old.Kind != storage.ValueString || old.String != fieldValue.Text {
-				if !strings.EqualFold(name, "Company") {
-					return false
-				}
-				companyChanged = true
+		old, present := stored.GetField(name)
+		if !present || old.Kind != storage.ValueString || old.String != fieldValue.Text {
+			if !strings.EqualFold(name, "Company") {
+				return false
 			}
+			companyChanged = true
 		}
-		hasText = true
 	}
-	return hasText && (queried || companyChanged)
+	return companyChanged
 }
 
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {

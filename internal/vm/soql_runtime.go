@@ -5116,11 +5116,12 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	if !ok {
 		return false
 	}
+	return !vm.partnerLeadPrivateExternalDefault(canonical) && vm.objectModelHasPublicRead(canonical)
+}
+
+func (vm *VM) objectModelHasPublicRead(canonical string) bool {
 	definition := vm.Org.Objects[canonical].Definition
 	model := strings.TrimSpace(definition.SharingModel)
-	if vm.partnerLeadPrivateExternalDefault(canonical) {
-		return false
-	}
 	// portal_sharing_timing_c4 (APIs 62.0 and 67.0): a Customer Community,
 	// Community Login or Community Plus user reads a declared external model
 	// (Account externalSharingModel Private hides the child Accounts).

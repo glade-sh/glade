@@ -218,7 +218,7 @@ func (vm *VM) controlledParentHasSupportedReadSharing(objectName string, record 
 	if !ok || parent.System.IsDeleted {
 		return false
 	}
-	if vm.soqlObjectHasPublicReadSharing(parentObject) {
+	if vm.objectModelHasPublicRead(parentObject) {
 		return true
 	}
 	// portal_sharing_timing_c4: a portal user reads the Contact on its own
