@@ -285,3 +285,27 @@ func TestReviewRegexDatePatternSwitchNeighbor(t *testing.T) {
 		t.Fatalf("start %v, %v; want 2", start, err)
 	}
 }
+
+func TestReviewRegexDateVersionSwitchNeighbor(t *testing.T) {
+	pattern, err := patternCompile([]Value{String("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cache preparedMatcherCache
+	found, _, _, _, err := callMatcherMemberWithPolicy(matcher, "find", nil, &cache, true)
+	if err != nil || !found.Bool {
+		t.Fatalf("first find %v, %v", found, err)
+	}
+	found, _, _, _, err = callMatcherMemberWithPolicy(matcher, "find", nil, &cache, false)
+	if err != nil || !found.Bool {
+		t.Fatalf("second find %v, %v", found, err)
+	}
+	start, _, _, _, err := callMatcherMemberWithPolicy(matcher, "start", nil, &cache, false)
+	if err != nil || start.Int != 2 {
+		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
