@@ -176,7 +176,7 @@ func matcherSingleLowSurrogateRegion(input string, start, end int) bool {
 // The captured region search uses a single, non-capturing any-character
 // expression. Other patterns retain their prior region validation behavior.
 func matcherCapturedLowRegion(matcher Value, input string, start, end int) bool {
-	if !matcherSingleLowSurrogateRegion(input, start, end) {
+	if !matcherSingleLowSurrogateRegion(input, start, end) || matcherUsesFullInputBounds(matcher) {
 		return false
 	}
 	plan, err := matcherRegexp2PlanForInput(matcher, input)
@@ -189,7 +189,7 @@ func matcherCapturedLowRegion(matcher Value, input string, start, end int) bool 
 
 func matcherFindSingleLowRegion(matcher Value, input string, cache *preparedMatcherCache) (bool, bool, error) {
 	start, end := matcher.Fields["regionStart"], matcher.Fields["regionEnd"]
-	if start.Kind != ValueInt || end.Kind != ValueInt || !matcherCapturedLowRegion(matcher, input, int(start.Int), int(end.Int)) || matcherUsesFullInputBounds(matcher) {
+	if start.Kind != ValueInt || end.Kind != ValueInt || !matcherCapturedLowRegion(matcher, input, int(start.Int), int(end.Int)) {
 		return false, false, nil
 	}
 	positions := matcherPositionsFor(cache, matcher.Ref, input)
