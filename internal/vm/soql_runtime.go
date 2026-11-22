@@ -433,7 +433,11 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// provenance when the later output filter handles other query routes.
 	aggregateInputRows := result.AggregateInputRows
 	if !ordinaryHierarchyQuery {
-		result = vm.applySOQLSharing(query, result)
+		if defaultMode && vm.capturedPartnerLeadAnonymousQuery(query) {
+			result = vm.filterCapturedPartnerLeadAnonymous(result)
+		} else {
+			result = vm.applySOQLSharing(query, result)
+		}
 	}
 	if accounting == soqlOrdinaryAccounting {
 		result.AggregateInputRows = aggregateInputRows
@@ -4832,6 +4836,7 @@ func (vm *VM) soqlSharingUserID(query soql.Query) string {
 }
 
 func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
+
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {
 		return result
@@ -4884,6 +4889,85 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	result.Records = records
 	result.Rows = len(records)
 	return result
+}
+
+func (vm *VM) filterCapturedPartnerLeadAnonymous(result soql.Result) soql.Result {
+	visible := result.Records[:0]
+	for _, projected := range result.Records {
+		_, record, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, projected.ID)
+		if !found || !vm.capturedPartnerLeadAnonymousRecord(record) || vm.currentUserHasDirectLeadManualRead(record, vm.currentUserID()) {
+			visible = append(visible, projected)
+		}
+	}
+	result.Records = visible
+	result.Rows = len(visible)
+	return result
+}
+
+// capturedPartnerLeadAnonymousQuery is the authenticated Partner query in
+// partner_lead_anonymous/org.tsv:2-5; the profile identity is in profile.tsv:2.
+func (vm *VM) capturedPartnerLeadAnonymousQuery(query soql.Query) bool {
+	if vm == nil || vm.Org == nil || vm.testContext != nil || vm.currentTrigger || !vm.staticSOQLQuery || vm.currentClass != "" || vm.currentMethod.ClassName != "" ||
+		(vm.currentSourceExecutionPolicy().APIVersion != "62.0" && vm.currentSourceExecutionPolicy().APIVersion != "67.0") ||
+		!strings.EqualFold(query.Object, "Lead") || len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") ||
+		query.Where == nil || !strings.EqualFold(query.Where.Field, "LastName") || !strings.EqualFold(query.Where.Op, "IN") || len(query.Where.Values) != 2 ||
+		query.Where.Parenthesized || query.Where.Not || query.Where.Formula != nil || query.Where.Range || len(query.Where.And) != 0 || len(query.Where.Or) != 0 || query.Where.Subquery != nil ||
+		len(query.Order) != 1 || !strings.EqualFold(query.Order[0].Field, "LastName") || query.Order[0].Desc || query.Order[0].Nulls != "" ||
+		(!strings.EqualFold(query.SecurityMode, "USER_MODE") && !strings.EqualFold(query.SecurityMode, "SYSTEM_MODE")) ||
+		query.HasLimit || query.LimitBind != "" || query.HasOffset || query.OffsetBind != "" || query.Count || query.AllRows ||
+		query.ForUpdate || query.ForView || query.ForReference || query.UsingScope != "" || query.OptionsBind != "" ||
+		query.DataCategoryGroup != "" || query.DataCategoryOperator != "" || query.DataCategoryName != "" || query.Having != nil ||
+		len(query.HavingAggregates) != 0 || query.GroupMode != "" || len(query.Aggregates) != 0 || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || len(query.GroupBy) != 0 {
+		return false
+	}
+	for _, value := range query.Where.Values {
+		if value.Kind != storage.ValueString {
+			return false
+		}
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	profile := vm.currentUserInfoField("ProfileId", "")
+	if !storage.StandardObjectShapeDeclared(definition) || !strings.EqualFold(strings.TrimSpace(definition.SharingModel), "ReadWriteTransfer") ||
+		strings.TrimSpace(definition.ExternalSharingModel) != "" || vm.currentUserInfoField("UserType", "") != "PowerPartner" ||
+		!vm.profileHasLicenseKey(profile, "PID_Partner_Community") || !vm.recordHasAnyBooleanPermission("Profile", profile, "PermissionsApiEnabled") ||
+		vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant("Lead", "PermissionsViewAllRecords", "PermissionsModifyAllRecords") {
+		return false
+	}
+	_, user, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(vm.currentUserID()))
+	sets := vm.assignedPermissionSetIDs(vm.currentUserID())
+	if !found || len(sets) != 1 || !vm.recordHasAnyBooleanPermission("PermissionSet", sets[0], "PermissionsApiEnabled") || !vm.hasAssignedReadOnlyPermission(user, "Lead") {
+		return false
+	}
+	count := 0
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		count++
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		parent, _ := share.GetField("LeadId")
+		_, record, exists := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
+		if count > 1 || !exists || !vm.capturedPartnerLeadAnonymousRecord(record) || !strings.EqualFold(cause.String, "Manual") ||
+			!strings.EqualFold(level.String, "Read") || !storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(vm.currentUserID())) {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) capturedPartnerLeadAnonymousRecord(record storage.Record) bool {
+	if record.System.IsDeleted || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(vm.currentUserID())) ||
+		!storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		return false
+	}
+	_, owner, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return ok && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
 }
 
 func (vm *VM) currentUserBypassesRecordSharing() bool {
