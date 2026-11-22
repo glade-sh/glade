@@ -50,24 +50,39 @@ func (e *Engine) flowGlobalDecisionCriterion(item storage.WorkflowCriteriaItem) 
 	return false, false, false
 }
 
-// flowAfterCreateProfileRecordCriterion covers direct profile equality against
-// a triggering-record text field in an after-save create Flow. The two API
-// versions and both routes are captured in flow_direct_profile_decision/org.tsv.
+// flowAfterCreateProfileRecordCriterion covers $Profile.Name equality and
+// inequality in an after-save record-triggered Flow, against a triggering-record
+// text field or a string literal. Both compare case-insensitively; a null record
+// field never equals and always differs. Captured at 62.0 and 67.0 on both
+// routes in flow_direct_profile_decision, flow_profile_comparison_boundaries,
+// flow_profile_record_normalization and flow_criteria_shapes (org.tsv). Other
+// operators, non-ASCII or padded text and other operands are not handled.
 func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition) (bool, bool, bool) {
-	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") {
+		return false, false, false
+	}
+	operation := strings.TrimSpace(item.Operation)
+	equals := strings.EqualFold(operation, "equals")
+	if !equals && !strings.EqualFold(operation, "notEqual") {
 		return false, false, false
 	}
 	reference := flowCriteriaResourceReference(item)
-	const prefix = "$Record."
-	if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
-		return false, false, false
-	}
-	field := reference[len(prefix):]
-	if strings.Contains(field, ".") {
-		return false, false, false
-	}
-	name, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
-	if !ok || definition.Fields[name].Type != storage.FieldString || !strings.EqualFold(definition.Fields[name].DisplayType, "STRING") {
+	name := ""
+	if reference != "" {
+		const prefix = "$Record."
+		if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
+			return false, false, false
+		}
+		field := reference[len(prefix):]
+		if strings.Contains(field, ".") {
+			return false, false, false
+		}
+		resolved, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+		if !ok || definition.Fields[resolved].Type != storage.FieldString || !strings.EqualFold(definition.Fields[resolved].DisplayType, "STRING") {
+			return false, false, false
+		}
+		name = resolved
+	} else if item.Value == "" || !flowProfileComparableText(item.Value) {
 		return false, false, false
 	}
 	parser := formulaParser{org: e.Org, userID: e.systemUserID()}
@@ -76,32 +91,37 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 		return false, false, true
 	}
 	profileName := profile.asString()
-	if strings.TrimSpace(profileName) != profileName {
+	if !flowProfileComparableText(profileName) {
 		return false, false, false
 	}
-	for _, char := range profileName {
+	text := item.Value
+	if name != "" {
+		value, present := sourceRecordFieldValue(record, name)
+		if !present || value.Kind == storage.ValueNull {
+			return !equals, true, true
+		}
+		if value.Kind != storage.ValueString {
+			return false, false, true
+		}
+		if !flowProfileComparableText(value.String) {
+			return false, false, false
+		}
+		text = value.String
+	}
+	return strings.EqualFold(profileName, text) == equals, true, true
+}
+
+// flowProfileComparableText limits the captured comparison to trimmed ASCII.
+func flowProfileComparableText(text string) bool {
+	if strings.TrimSpace(text) != text {
+		return false
+	}
+	for _, char := range text {
 		if char >= 128 {
-			return false, false, false
+			return false
 		}
 	}
-	value, present := sourceRecordFieldValue(record, name)
-	if !present || value.Kind == storage.ValueNull {
-		return false, true, true
-	}
-	if value.Kind != storage.ValueString {
-		return false, false, true
-	}
-	for _, text := range []string{value.String} {
-		if strings.TrimSpace(text) != text {
-			return false, false, false
-		}
-		for _, char := range text {
-			if char >= 128 {
-				return false, false, false
-			}
-		}
-	}
-	return strings.EqualFold(profileName, value.String), true, true
+	return true
 }
 
 func flowGlobalDecisionReference(reference string) bool {

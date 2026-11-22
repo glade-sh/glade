@@ -712,7 +712,7 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 		if !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") || !strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate") {
 			for _, item := range branch.Criteria {
 				if flowGlobalDecisionReference(item.Field) {
-					if strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") && strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create") {
+					if flowAfterSaveProfileRule(rule) {
 						if _, _, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
 							profileAfterCreate = true
 							continue
@@ -847,9 +847,26 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 			}
 		}
 	}
+	if !e.InvocableFlow {
+		for _, rule := range definition.FlowRules {
+			if rule.Name == flowName {
+				if flowAfterSaveProfileRule(rule) {
+					frame.afterSaveTrigger = strings.TrimSpace(rule.RecordTriggerType)
+				}
+				break
+			}
+		}
+	}
 	seedFlowFrame(e, record, frame)
 	e.seedFlowDecisionPrior(flowName, *record, definition, steps, frame)
 	return frame
+}
+
+// flowAfterSaveProfileRule reports the captured after-save create and update
+// record triggers whose $Profile.Name decisions compare natively.
+func flowAfterSaveProfileRule(rule storage.FlowRule) bool {
+	return strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") &&
+		(strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Update"))
 }
 
 type flowRecordCollection struct {
@@ -864,28 +881,31 @@ type flowFrame struct {
 	capturedFormulaBindings bool
 	capturedBeforeCreate    bool
 	capturedAfterCreate     bool
-	pathVisited             map[string]bool
-	stepTargets             map[string][]storage.FlowStep
-	activeTargets           map[string]bool
-	recordCreations         *RecordCreations
-	saveDecisions           bool
-	priorDecisions          bool
-	beforeSaveDecisions     bool
-	scalarBeforeSave        bool
-	afterSaveWriteBack      bool
-	createDecision          bool
-	lookupOutputs           map[string]flowLookupOutput
-	subflowInputs           map[string]flowLookupOutput
-	lookupCollections       map[string]flowRecordCollection
-	matchedObjects          map[string]bool
-	variables               map[string]storage.FlowVariable
-	scalars                 map[string]storage.Value
-	records                 map[string]storage.Record
-	nullRecordDefaults      map[string]bool
-	collections             map[string][]storage.Record
-	textTemplates           map[string]string
-	priorCollections        map[string]bool
-	assigned                map[string]bool
+	// afterSaveTrigger is Create or Update for an after-save record-triggered
+	// Flow interview and empty otherwise.
+	afterSaveTrigger    string
+	pathVisited         map[string]bool
+	stepTargets         map[string][]storage.FlowStep
+	activeTargets       map[string]bool
+	recordCreations     *RecordCreations
+	saveDecisions       bool
+	priorDecisions      bool
+	beforeSaveDecisions bool
+	scalarBeforeSave    bool
+	afterSaveWriteBack  bool
+	createDecision      bool
+	lookupOutputs       map[string]flowLookupOutput
+	subflowInputs       map[string]flowLookupOutput
+	lookupCollections   map[string]flowRecordCollection
+	matchedObjects      map[string]bool
+	variables           map[string]storage.FlowVariable
+	scalars             map[string]storage.Value
+	records             map[string]storage.Record
+	nullRecordDefaults  map[string]bool
+	collections         map[string][]storage.Record
+	textTemplates       map[string]string
+	priorCollections    map[string]bool
+	assigned            map[string]bool
 	// autolaunched preserves Email Alert's interview-origin logging behavior.
 	autolaunched bool
 	// userMode marks an interview of a Flow with runInMode UserMode.
@@ -2540,7 +2560,7 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			continue
 		}
 		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
-			if frame != nil && frame.capturedAfterCreate {
+			if frame != nil && (frame.capturedAfterCreate || frame.afterSaveTrigger != "") {
 				if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, source, definition); handled {
 					if !supported || !matches {
 						return matches, supported
@@ -4252,6 +4272,9 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 		return false, false
 	}
 	sourceValue, ok := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+	if !ok && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
+		sourceValue, ok = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+	}
 	if !ok {
 		return false, false
 	}

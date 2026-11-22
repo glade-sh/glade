@@ -7,10 +7,12 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// NotEqualTo is captured in flow_criteria_shapes/org.tsv (pl rows, 62.0 and
+// 67.0); Contains stays uncaptured.
 func TestFlowProfileDecisionUncapturedOperator(t *testing.T) {
 	engine := &Engine{Org: &storage.OrgState{}}
 	frame := &flowFrame{capturedAfterCreate: true, saveDecisions: true}
-	branch := storage.FlowBranch{Criteria: []storage.WorkflowCriteriaItem{{Field: "$Profile.Name", Operation: "notequal", Value: "{!$Record.Title}"}}}
+	branch := storage.FlowBranch{Criteria: []storage.WorkflowCriteriaItem{{Field: "$Profile.Name", Operation: "contains", Value: "{!$Record.Title}"}}}
 	matched, supported := engine.evaluateFlowFrameBranch(branch, storage.Record{}, storage.ObjectDefinition{}, frame)
 	if matched || supported {
 		t.Fatalf("uncaptured operator changed: matched=%v supported=%v", matched, supported)
@@ -20,7 +22,7 @@ func TestFlowProfileDecisionUncapturedOperator(t *testing.T) {
 func BenchmarkFlowProfileDecisionUncapturedOperator(b *testing.B) {
 	engine := &Engine{Org: &storage.OrgState{}}
 	frame := &flowFrame{capturedAfterCreate: true, saveDecisions: true}
-	branch := storage.FlowBranch{Criteria: []storage.WorkflowCriteriaItem{{Field: "$Profile.Name", Operation: "notequal", Value: "{!$Record.Title}"}}}
+	branch := storage.FlowBranch{Criteria: []storage.WorkflowCriteriaItem{{Field: "$Profile.Name", Operation: "contains", Value: "{!$Record.Title}"}}}
 	for i := 0; i < b.N; i++ {
 		matched, supported := engine.evaluateFlowFrameBranch(branch, storage.Record{}, storage.ObjectDefinition{}, frame)
 		if matched || supported {

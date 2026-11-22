@@ -2336,9 +2336,9 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 					const recordPrefix = "$Record."
 					profileRecordOperand := strings.EqualFold(field, "$Profile.Name") &&
 						strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") &&
-						strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") &&
+						(strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") || strings.EqualFold(strings.TrimSpace(condition.Operator), "NotEqualTo")) &&
 						strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") &&
-						strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") &&
+						(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Update")) &&
 						len(right) > len(recordPrefix) && strings.EqualFold(right[:len(recordPrefix)], recordPrefix) &&
 						!strings.Contains(right[len(recordPrefix):], ".")
 					if strings.EqualFold(field, "$User.Id") || profileRecordOperand {
@@ -2938,6 +2938,32 @@ func inlineFlowConstantMergeFields(text string, constants []flowConstantXML) str
 	return out.String()
 }
 
+// flowRecordStringConstantOperand reads a String constant on the right of a
+// NotEqualTo condition whose left side is a $Record field path. A constant is
+// immutable, so the condition compares its literal value
+// (flow_record_type_decision/org.tsv, 62.0 and 67.0, both routes). Other
+// operators and operands keep their element reference.
+func flowRecordStringConstantOperand(raw flowXML, condition flowConditionXML) (string, bool) {
+	reference := strings.TrimSpace(condition.RightValue.ElementReference)
+	left := strings.TrimSpace(condition.LeftValueReference)
+	const prefix = "$Record."
+	if reference == "" || strings.Contains(reference, ".") || !strings.EqualFold(strings.TrimSpace(condition.Operator), "NotEqualTo") ||
+		len(left) <= len(prefix) || !strings.EqualFold(left[:len(prefix)], prefix) {
+		return "", false
+	}
+	for _, constant := range raw.Constants {
+		if !strings.EqualFold(strings.TrimSpace(constant.Name), reference) {
+			continue
+		}
+		value := constant.Value.StringValue
+		if !strings.EqualFold(strings.TrimSpace(constant.DataType), "String") || value == "" || strings.TrimSpace(value) != value {
+			return "", false
+		}
+		return value, true
+	}
+	return "", false
+}
+
 func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML, visited map[string]bool) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
 	var branches []storage.FlowBranch
 	var diagnostics []diagnostic.Diagnostic
@@ -2980,6 +3006,9 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 						Field:     left,
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowDecisionRightValue(condition.RightValue),
+					}
+					if value, ok := flowRecordStringConstantOperand(raw, condition); ok {
+						item.Value = value
 					}
 					flowVariableEmptyOperand(&item, condition, variables)
 					branch.Criteria = append(branch.Criteria, item)
