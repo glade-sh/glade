@@ -80,6 +80,7 @@ func TestHybridLocaleAnonymousHost(t *testing.T) {
 }
 
 // NATIVE ../apextest/testdata/regex_java_divergence/org.tsv:2504-2505,2517
+// NATIVE ../vm/testdata/conformance/matcher_utf16_replacement/org.tsv:3,5
 func TestRegexUTF16AnonymousHost(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
@@ -89,6 +90,8 @@ func TestRegexUTF16AnonymousHost(t *testing.T) {
 while(m.find()) { positions += m.start()+','; }
 System.assertEquals('0,1,2,3,4,', positions);
 System.assertEquals(9, 'a\uD83D\uDE00b'.replaceAll('','-').length());
+System.assertEquals(9, Pattern.compile('').matcher('a\uD83D\uDE00b').replaceAll('-').length());
+System.assertEquals(5, Pattern.compile('x*').matcher('\uD83D\uDE00').replaceAll('-').length());
 Matcher r=Pattern.compile('.').matcher('\uD83D\uDE00'); r.region(1,2); System.assert(r.find());`
 	payload, err := json.Marshal(map[string]string{"anonymousBody": body})
 	if err != nil {

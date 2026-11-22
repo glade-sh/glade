@@ -21,6 +21,7 @@ import (
 
 // Host adapters replay the anonymous observations in regex_java_divergence/
 // org.tsv:757-758,770,2504-2505,2517; this is not a native host capture.
+// Matcher replacement: ../vm/testdata/conformance/matcher_utf16_replacement/org.tsv:2-5.
 func TestRegexUTF16HostRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -40,6 +41,8 @@ func TestRegexUTF16HostRoutes(t *testing.T) {
  @AuraEnabled(cacheable=true) public static String observe() {
   Matcher m=Pattern.compile('').matcher('a\uD83D\uDE00b'); String positions='';
   while(m.find()) { positions += m.start()+','; }
+  System.assertEquals(9, Pattern.compile('').matcher('a\uD83D\uDE00b').replaceAll('-').length());
+  System.assertEquals(5, Pattern.compile('x*').matcher('\uD83D\uDE00').replaceAll('-').length());
   Matcher r=Pattern.compile('.').matcher('\uD83D\uDE00'); r.region(1,2);
   return positions+'|'+String.valueOf('a\uD83D\uDE00b'.replaceAll('','-').length())+'|'+String.valueOf(r.find());
  }
