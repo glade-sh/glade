@@ -502,6 +502,10 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 	capabilities := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilityErrors := make(map[string]string, len(p.LWCMetaFiles))
 	roots := make([]string, 0, len(p.LWCMetaFiles))
+	var keys []string
+	if len(p.LWCMetaFiles) > 1 {
+		keys = make([]string, 0, len(p.LWCMetaFiles))
+	}
 	for _, metaPath := range p.LWCMetaFiles {
 		root := filepath.Clean(filepath.Dir(metaPath))
 		relative, err := filepath.Rel(projectRoot, root)
@@ -546,17 +550,26 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 			}
 		}
 		roots = append(roots, root)
-	}
-	for _, sourcePath := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
-		matches := 0
-		for _, root := range roots {
-			relative, err := filepath.Rel(root, sourcePath)
-			if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-				matches++
-			}
+		if keys != nil {
+			keys = append(keys, key)
 		}
-		if matches != 1 {
-			return compileConfig{}, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(sourcePath), matches)
+	}
+	if len(roots) > 1 {
+		if _, _, err := partitionBundleSources(projectRoot, keys, p.LWCFiles, p.LWCHTMLFiles); err != nil {
+			return compileConfig{}, err
+		}
+	} else {
+		for _, sourcePath := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
+			matches := 0
+			for _, root := range roots {
+				relative, err := filepath.Rel(root, sourcePath)
+				if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+					matches++
+				}
+			}
+			if matches != 1 {
+				return compileConfig{}, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(sourcePath), matches)
+			}
 		}
 	}
 	return compileConfig{
