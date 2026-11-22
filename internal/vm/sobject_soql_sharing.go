@@ -68,12 +68,7 @@ func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.
 	// Queue owners and a reader who created another user's Lead have no
 	// captured Partner row. Preserve their prior public-model visibility.
 	if vm.partnerLeadPrivateExternalDefault(objectName) && record.System.OwnerID != "" {
-		if !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) || !strings.HasPrefix(string(record.System.OwnerID), "005") || !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
-			return true
-		}
-		_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
-		profile, _ := owner.GetField("ProfileId")
-		if !found || vm.currentProfileName(storageValueIDText(profile)) != "System Administrator" {
+		if !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) || !vm.capturedPartnerLeadTestOwner(record) {
 			return true
 		}
 	}
@@ -81,6 +76,15 @@ func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.
 		return allowed
 	}
 	return vm.controlledParentHasSupportedReadSharing(objectName, record, userID) || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) || vm.currentUserCanSeeSharedRecord(objectName, record, userID) || vm.currentUserCanReadDirectQueueMember(objectName, record, userID) || vm.leadCreatorReadsFromEmptyQueue(objectName, record, userID)
+}
+
+func (vm *VM) capturedPartnerLeadTestOwner(record storage.Record) bool {
+	if !strings.HasPrefix(string(record.System.OwnerID), "005") || !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
 }
 
 // Captured Private Lead and custom-object rows give a Standard user read

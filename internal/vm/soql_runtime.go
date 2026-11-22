@@ -1610,7 +1610,7 @@ func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct,
 		read = live && vm.currentUserObjectPermission(objectName, "isAccessible")
 	}
 	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
-	if direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && strings.HasPrefix(string(record.System.OwnerID), "005") &&
+	if direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.capturedPartnerLeadTestOwner(record) &&
 		!storage.IDsEqual(record.System.CreatedByID, storage.ID(userID)) && !storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) && !vm.currentUserBypassesRecordSharingForWrite() &&
 		!vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
 		edit = false
