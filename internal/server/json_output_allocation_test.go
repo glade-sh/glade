@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -41,5 +42,17 @@ func BenchmarkServerQueryJSON(b *testing.B) {
 		if err := writeServerJSON(io.Discard, value); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+type serverJSONErrorWriter struct{ writes int }
+
+func (w *serverJSONErrorWriter) Write([]byte) (int, error) { w.writes++; return 0, io.ErrClosedPipe }
+
+func TestServerJSONWriterError(t *testing.T) {
+	w := &serverJSONErrorWriter{}
+	err := writeServerJSON(w, serverJSONShape())
+	if !errors.Is(err, io.ErrClosedPipe) || w.writes != 1 {
+		t.Fatalf("error = %v, writes = %d", err, w.writes)
 	}
 }
