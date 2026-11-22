@@ -68,3 +68,30 @@ func TestFlowRelationshipLookupFailureResultScope(t *testing.T) {
 		t.Fatal("unrelated flow error matched")
 	}
 }
+
+func TestFlowRelationshipFilterFieldTypesScope(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		parentType  storage.FieldType
+		siblingType storage.FieldType
+		targets     []string
+		want        bool
+	}{
+		{"text", storage.FieldString, storage.FieldString, []string{"Parent__c"}, true},
+		{"parent_boolean", storage.FieldBoolean, storage.FieldString, []string{"Parent__c"}, false},
+		{"sibling_boolean", storage.FieldString, storage.FieldBoolean, []string{"Parent__c"}, false},
+		{"polymorphic", storage.FieldString, storage.FieldString, []string{"Parent__c", "Other__c"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.OrgState{Objects: map[string]storage.ObjectState{"Parent__c": {Definition: storage.ObjectDefinition{APIName: "Parent__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: tc.parentType, DisplayType: "STRING"}}}}}}
+			definition := storage.ObjectDefinition{APIName: "Child__c", Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, RelationshipName: "Parent__r", ReferenceTo: tc.targets},
+				"Name":      {APIName: "Name", Type: tc.siblingType, DisplayType: "STRING"},
+			}}
+			lookup := storage.FlowRecordLookup{CapturedRelationshipFilterPath: "Parent__r.Name", Criteria: []storage.WorkflowCriteriaItem{{Field: "Name", SourceField: "Parent__r.Name"}, {Field: "Name", Value: "value"}}}
+			if got := flowCapturedRelationshipFilterFields(&org, definition, lookup); got != tc.want {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
