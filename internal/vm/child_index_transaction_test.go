@@ -31,7 +31,8 @@ System.assertEquals(1, [SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE I
 		t.Fatal(err)
 	}
 	org := testDataOrg()
-	org.Objects["Contact"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+	var contact storage.ObjectState
+	contact.Definition = storage.ObjectDefinition{
 		APIName: "Contact", KeyPrefix: "003",
 		Fields: map[string]storage.Field{
 			"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
@@ -39,7 +40,9 @@ System.assertEquals(1, [SELECT Id,(SELECT Id FROM Contacts) FROM Account WHERE I
 			"Name":      {APIName: "Name", Type: storage.FieldString},
 		},
 		Relations: []storage.Relationship{{Field: "AccountId", ParentObjects: []string{"Account"}, ParentRelationship: "Account", ChildRelationship: "Contacts"}},
-	}, Records: make(map[storage.ID]storage.Record)}
+	}
+	contact.SetRecords(make(map[storage.ID]storage.Record))
+	org.Objects["Contact"] = contact
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

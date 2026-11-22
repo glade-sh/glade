@@ -144,6 +144,11 @@ func TestChildRelationshipIndexMatchesFreshAfterWrites(t *testing.T) {
 
 func TestChildRelationshipIndexConcurrentReuse(t *testing.T) {
 	org := childIndexBenchOrg(8, 3)
+	original := org.Objects["Contact"]
+	var versioned storage.ObjectState
+	versioned.Definition = original.Definition
+	versioned.SetRecords(original.Records)
+	org.Objects["Contact"] = versioned
 	other := org.Clone()
 	child := other.Objects["Contact"]
 	row := child.Records["003000000000000"].Clone()
@@ -197,14 +202,27 @@ func TestChildRelationshipIndexCacheScope(t *testing.T) {
 		row.Fields["OtherId"] = row.Fields["AccountId"]
 		child.Records[id] = row
 	}
+	unversioned := child
+	var versioned storage.ObjectState
+	versioned.Definition = child.Definition
+	versioned.SetRecords(child.Records)
+	child = versioned
 	cache := NewExecutionCache()
 	index := func(name, field string) map[storage.ID][]string {
 		return childRelationshipIndex(org, name, child, field, newChildRelationshipQueryCache(cache))
 	}
 	first := index("Contact", "AccountId")
 	if got := index("Contact", "AccountId"); reflect.ValueOf(first).UnsafePointer() != reflect.ValueOf(got).UnsafePointer() {
-		t.Fatal("unversioned unchanged rows should be checked and reused")
+		t.Fatal("versioned unchanged rows should be checked and reused")
 	}
+	uncached := func() map[storage.ID][]string {
+		return childRelationshipIndex(org, "Contact", unversioned, "AccountId", newChildRelationshipQueryCache(cache))
+	}
+	first = uncached()
+	if got := uncached(); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
+		t.Fatal("unversioned rows must not be cached")
+	}
+	first = index("Contact", "AccountId")
 	if got := index("Contact", "OtherId"); reflect.ValueOf(first).UnsafePointer() == reflect.ValueOf(got).UnsafePointer() {
 		t.Fatal("different field reused index")
 	}
