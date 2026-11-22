@@ -95,6 +95,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			if value, handled, err := vm.evalFieldDescribeScalarChain(&expr, result); handled {
 				return value, err
 			}
+			if value, handled, err := vm.evalSObjectDescribeScalarChain(&expr, result); handled {
+				return value, err
+			}
 		}
 		if value, handled, err := vm.evalLocalListCall(expr, result); handled {
 			return value, err
@@ -1055,6 +1058,45 @@ func (vm *VM) evalFieldDescribeScalarChain(expr *ir.Expr, result *Result) (Value
 		}
 	}
 	describe, _, _, _, err := vm.callSObjectFieldDescribe(token, nil, result, true)
+	if err != nil {
+		return Null, true, err
+	}
+	value, _, _, _, err := vm.callPlatformObjectMember(describe, expr.Callee, nil, result)
+	return value, true, err
+}
+
+// evalSObjectDescribeScalarChain borrows a describe only when it cannot escape.
+func (vm *VM) evalSObjectDescribeScalarChain(expr *ir.Expr, result *Result) (Value, bool, error) {
+	if expr.Left == nil || expr.Operator != "" || len(expr.Args) != 0 || len(expr.NamedArgs) != 0 {
+		return Null, false, nil
+	}
+	switch expr.Callee {
+	case "getName", "getLabel", "getLabelPlural", "getKeyPrefix", "isCustom", "isCustomSetting", "isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable":
+	default:
+		return Null, false, nil
+	}
+	inner := expr.Left
+	if inner.Kind != ir.ExprCall || inner.Left != nil || inner.Operator != "" || len(inner.Args) != 0 || len(inner.NamedArgs) != 0 || len(vm.currentMethod.triggerLocalMethods) != 0 {
+		return Null, false, nil
+	}
+	name, method, ok := strings.Cut(inner.Callee, ".")
+	if !ok || method != "getDescribe" || strings.EqualFold(name, "this") || strings.EqualFold(name, "super") {
+		return Null, false, nil
+	}
+	token, local := vm.Globals[name]
+	if !local || (vm.VarTypes[name] != "Schema.SObjectType" && vm.VarTypes[name] != "SObjectType") || token.Kind != ValueObject || token.Type != "Schema.SObjectType" ||
+		token.Runtime != "" || (token.Static != "" && token.Static != token.Type) || token.classInstance || token.projectClass || isStubProxy(token) {
+		return Null, false, nil
+	}
+	if _, builtin := canonicalBuiltinStaticCall(inner.Callee); builtin || normalizeStaticCallCasing(inner.Callee) != inner.Callee {
+		return Null, false, nil
+	}
+	for _, name := range []string{"Schema.SObjectType", "SObjectType", "Schema.DescribeSObjectResult", "DescribeSObjectResult"} {
+		if class, registered := vm.lookupClass(name); registered && !memberlessShadowClass(class) {
+			return Null, false, nil
+		}
+	}
+	describe, _, _, _, err := vm.callSObjectTypeDescribe(token, nil, result, true)
 	if err != nil {
 		return Null, true, err
 	}
