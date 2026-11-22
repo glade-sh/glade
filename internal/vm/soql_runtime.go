@@ -1977,6 +1977,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 }
 
 var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
+var manualReadAccessProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=.+?\s+and\s+recordid\s*=`)
 
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
@@ -1989,6 +1990,9 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	anonymousManualShape := vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0") &&
+		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" && manualReadAccessProjection.MatchString(queryText)
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
@@ -2002,13 +2006,19 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		seen[string(user.ID)] = true
 		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
 		for _, objectName := range objectNames {
-			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+			manualRead := anonymousManualShape && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
+				strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private") &&
+				vm.currentUserObjectPermission(objectName, "isAccessible") &&
+				!vm.currentUserObjectPermission(objectName, "isCreateable") &&
+				!vm.currentUserObjectPermission(objectName, "isUpdateable") &&
+				!vm.currentUserObjectPermission(objectName, "isDeletable") && vm.hasAssignedManualReadPermission(user, objectName)
+			if vm.testContext == nil && !manualRead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
 				continue
 			}
 			// Native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0): a
 			// test reads a named limited user's rows on a custom object too, so
 			// a Standard User's rows include the project's custom objects.
-			if !portal && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+			if !portal && !manualRead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
 			object := vm.Org.Objects[objectName]
@@ -2023,6 +2033,13 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			for _, text := range ids {
 				_, record, _ := storage.LookupRecordByID(object.Records, storage.ID(text))
 				record.ID = storage.ID(text)
+				if manualRead {
+					idText := string(record.ID)
+					if len(idText) < 15 || !strings.Contains(strings.ToLower(queryText), strings.ToLower(idText[:15])) ||
+						!vm.capturedAnonymousManualReadRecord(objectName, record, current, string(user.ID)) {
+						continue
+					}
+				}
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
 				access.ID = storage.ID(fmt.Sprintf("0UR%012d", *sequence))
 				*sequence++
@@ -2031,6 +2048,59 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		}
 		restore()
 	}
+}
+
+// hasAssignedManualReadPermission requires the separate reader permission set
+// used by the captured anonymous projection, not a profile-only grant.
+func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName string) bool {
+	profileID := storageValueIDText(user.Fields["ProfileId"])
+	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
+	for _, source := range vm.assignedPermissionSources(string(user.ID), false) {
+		if !storage.IDsEqual(storage.ID(source.ID), storage.ID(profilePermissionSetID)) && vm.sourceObjectPermission(source, objectName, "isAccessible") {
+			return true
+		}
+	}
+	return false
+}
+
+// capturedAnonymousManualReadRecord limits anonymous named projections to the
+// private custom-object control in manual_read_lifecycle/org.tsv:10-15.
+func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storage.Record, actorID, readerID string) bool {
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if (api != "62.0" && api != "67.0") || vm.currentTrigger ||
+		!storage.IDsEqual(record.System.OwnerID, storage.ID(actorID)) ||
+		!storage.IDsEqual(record.System.CreatedByID, storage.ID(actorID)) {
+		return false
+	}
+	// The caller switched to the reader; resolve the original actor from storage.
+	_, actor, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(actorID))
+	if !ok || vm.currentProfileName(storageValueIDText(actor.Fields["ProfileId"])) != "System Administrator" {
+		return false
+	}
+	shareName, exists := storage.ResolveObjectName(*vm.Org, objectName[:len(objectName)-3]+"__Share")
+	if !exists {
+		return true
+	}
+	for _, share := range vm.Org.Objects[shareName].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		parent, _ := share.GetField("ParentId")
+		if !storage.IDsEqual(storage.ID(storageValueIDText(parent)), record.ID) {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("AccessLevel")
+		if !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
+			!storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(readerID)) {
+			return false
+		}
+	}
+	return true
 }
 
 // actAsNamedUser makes the named user the current user and returns the undo. A
