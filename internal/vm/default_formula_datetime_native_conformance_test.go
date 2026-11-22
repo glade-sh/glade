@@ -2,12 +2,14 @@ package vm_test
 
 import (
 	"encoding/csv"
+	"fmt"
 	"html"
 	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dml"
@@ -184,4 +186,39 @@ func equalDefaultFormulaObservation(got, want string) bool {
 		}
 	}
 	return true
+}
+
+// A non-null record type was not part of the native capture.
+func TestDefaultFormulaRecordTypeNeighborUnchanged(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 7, 0, 0, time.UTC) }
+	generator := storage.NewStandardIDGenerator()
+	recordTypeID, err := generator.Next("RecordType")
+	if err != nil {
+		t.Fatal(err)
+	}
+	definition := storage.ObjectDefinition{APIName: "DefaultProbe__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
+		"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
+		"Minute__c":    {APIName: "Minute__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+	}, RecordTypes: []storage.RecordTypeInfo{{ID: recordTypeID, Active: true, Available: true}}}
+	definition.RecordTypes[0].Default = true
+	org.Objects[definition.APIName] = storage.ObjectState{Definition: definition, Records: map[storage.ID]storage.Record{}}
+	for _, tc := range []struct{ name, argument string }{{"explicit", fmt.Sprintf("'%s'", recordTypeID)}, {"defaulted", "null"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			machine := vm.New(nil)
+			machine.SetOrg(&org)
+			source := fmt.Sprintf("SObject row=DefaultProbe__c.SObjectType.newSObject(%s,true); System.debug('recordTypePresent='+(row.get('RecordTypeId')!=null)); System.debug('minute='+String.valueOf(row.get('Minute__c')));", tc.argument)
+			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: "62.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := machine.Execute(program)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(result.Debug) != 2 || result.Debug[0] != "recordTypePresent=true" || result.Debug[1] != "minute=null" {
+				t.Fatalf("record type changed from baseline: %v", result.Debug)
+			}
+		})
+	}
 }
