@@ -246,6 +246,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 		t.Error("PR CLI route must run the tests delegated by the CLI shards")
 	}
 	job := workflow.Jobs["required-ci"]
+	requireScript := requiredAggregateShell(t, workflowJobBlocks(t, string(data))["required-ci"])
 	results := make(map[string]map[string]string)
 	var needs []string
 	if err := job.Needs.Decode(&needs); err != nil {
@@ -257,7 +258,7 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	run := func(event string, want bool) {
 		t.Helper()
 		encoded, _ := json.Marshal(results)
-		cmd := exec.Command("bash", "-c", job.Steps[0].Run)
+		cmd := exec.Command("bash", "-c", requireScript)
 		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME="+event)
 		out, err := cmd.CombinedOutput()
 		if (err == nil) != want {
