@@ -803,7 +803,13 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			}
 			// The host rows do not cover other record shapes; preserve the
 			// former permissive Case default for those records.
-			return nil, nil
+			profileID := vm.currentUserInfoField("ProfileId", "")
+			ownedID := vm.profileOwnedPermissionSetID(profileID)
+			_, ownedKnown := vm.explicitObjectPermission(ownedID, objectName, objectPermission)
+			_, profileKnown := vm.explicitObjectPermission(profileID, objectName, objectPermission)
+			if !ownedKnown && !profileKnown {
+				return nil, nil
+			}
 		}
 		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
