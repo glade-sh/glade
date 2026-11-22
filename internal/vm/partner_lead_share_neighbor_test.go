@@ -53,6 +53,7 @@ func TestPartnerLeadUncapturedSharesKeepPublicVisibility(t *testing.T) {
 				shares.PutRecord(id, storage.Record{ID: id, Object: "LeadShare", Fields: map[string]storage.Value{"LeadId": storage.IDValue(parent), "RowCause": storage.StringValue("Manual"), "UserOrGroupId": storage.IDValue("005000000000002"), "LeadAccessLevel": storage.StringValue("Read")}})
 			}
 			org.Objects["LeadShare"] = shares
+			addPartnerLeadReadPermission(&org)
 			machine := New(nil)
 			machine.SetOrg(&org)
 			machine.EnableTestContext()

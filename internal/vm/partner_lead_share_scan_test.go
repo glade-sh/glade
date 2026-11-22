@@ -29,6 +29,7 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	licenses := org.Objects["UserLicense"]
 	licenses.PutRecord("100000000000001", storage.Record{ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}})
 	org.Objects["UserLicense"] = licenses
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()

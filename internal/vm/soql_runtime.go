@@ -5248,6 +5248,10 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 	if (api != "62.0" && api != "67.0" && !(actorID != "" && vm.capturedPartnerVisualforce59())) || profile != "Partner Community User" || !vm.profileHasLicenseKey(profileID, "PID_Partner_Community") || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "PowerPartner") {
 		return false
 	}
+	_, reader, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(vm.currentUserID()))
+	if !found || !vm.hasAssignedReadOnlyPermission(reader, objectName) {
+		return false
+	}
 	definition := vm.Org.Objects["Lead"].Definition
 	model := strings.TrimSpace(definition.SharingModel)
 	transfer := strings.EqualFold(model, "ReadWriteTransfer")

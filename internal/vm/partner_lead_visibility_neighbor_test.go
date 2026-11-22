@@ -33,6 +33,7 @@ func TestPartnerLeadUncapturedCreatorKeepsPublicVisibility(t *testing.T) {
 	profiles.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}}}
 	profiles.Records["00e000000000001"] = storage.Record{ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Standard User")}}
 	org.Objects["Profile"] = profiles
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -68,6 +69,7 @@ func BenchmarkPartnerLeadVisibilityOwnerShares(b *testing.B) {
 	licenses := org.Objects["UserLicense"]
 	licenses.PutRecord("100000000000001", storage.Record{ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}})
 	org.Objects["UserLicense"] = licenses
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -115,6 +117,7 @@ func TestPartnerLeadUncapturedLicenseKeepsPublicVisibility(t *testing.T) {
 	users := org.Objects["User"]
 	users.Records = map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}}}
 	org.Objects["User"] = users
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -151,6 +154,7 @@ func TestPartnerLeadUncapturedReaderKeepsPublicVisibility(t *testing.T) {
 	users := org.Objects["User"]
 	users.Records = map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}}}
 	org.Objects["User"] = users
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -189,6 +193,7 @@ func TestPartnerLeadUncapturedProjectionCreator(t *testing.T) {
 	profiles.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}}}
 	profiles.Records["00e000000000001"] = storage.Record{ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Standard User")}}
 	org.Objects["Profile"] = profiles
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -225,6 +230,7 @@ func TestPartnerLeadUncapturedUserTypeKeepsPublicVisibility(t *testing.T) {
 	users := org.Objects["User"]
 	users.Records = map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}}}
 	org.Objects["User"] = users
+	addPartnerLeadReadPermission(&org)
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -260,6 +266,7 @@ func TestPartnerLeadUncapturedPermissionKeepsPublicVisibility(t *testing.T) {
 	org.Objects["UserLicense"] = licenses
 	users := org.Objects["User"]
 	users.Records = map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}}}
+	users.Records["005000000000002"] = storage.Record{ID: "005000000000002", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000002"), "UserType": storage.StringValue("PowerPartner")}}
 	org.Objects["User"] = users
 	machine := New(nil)
 	machine.SetOrg(&org)
@@ -270,5 +277,14 @@ func TestPartnerLeadUncapturedPermissionKeepsPublicVisibility(t *testing.T) {
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
 		t.Fatal("uncaptured permission shape lost public-model visibility")
+	}
+	addPartnerLeadReadPermission(&org)
+	permissions := org.Objects["ObjectPermissions"]
+	grant := permissions.Records["110000000000001"]
+	grant.Fields["PermissionsEdit"] = storage.BooleanValue(true)
+	permissions.PutRecord(grant.ID, grant)
+	org.Objects["ObjectPermissions"] = permissions
+	if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+		t.Fatal("uncaptured edit grant lost public-model visibility")
 	}
 }
