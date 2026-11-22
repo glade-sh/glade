@@ -294,6 +294,7 @@ func hybridPatternLiterals(pattern string, localDays int64, locale string) strin
 		return pattern
 	}
 	english := strings.HasPrefix(strings.ToLower(locale), "en")
+	observedLocale := locale == "fr_FR" || locale == "de_DE"
 	weekday := int(((localDays+4)%7 + 7) % 7) // Sunday = 0
 	firstOfMonth := hybridDays(year, month, 1)
 	monthDow := int(((firstOfMonth+4)%7 + 7) % 7)
@@ -350,14 +351,14 @@ func hybridPatternLiterals(pattern string, localDays int64, locale string) strin
 		case 'F':
 			literal = pad((index-1)/7+1, count)
 		case 'E':
-			if english {
+			if english || (observedLocale && (count == 3 || count == 4)) {
 				literal = englishWeekdays[weekday]
 				if count < 4 {
 					literal = literal[:3]
 				}
 			}
 		case 'u':
-			if english {
+			if english || (observedLocale && count == 1) {
 				n := weekday
 				if n == 0 {
 					n = 7
