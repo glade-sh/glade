@@ -2725,6 +2725,9 @@ func semaPairFixture(t *testing.T) apexHistoryFixture {
 				t.Fatal(err)
 			}
 			data = bytes.ReplaceAll(data, []byte(fixturePackage), []byte(semaFixturePackage))
+			if name == "events.json" {
+				data = append(data, []byte(`{"Action":"pass","Package":"`+semaFixturePackage+`"}`+"\n")...)
+			}
 			if err := os.WriteFile(path, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -3256,7 +3259,14 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		t.Run(lane, func(t *testing.T) {
 			dir := t.TempDir()
 			calls := filepath.Join(dir, "calls")
-			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >>\"$FIXTURE_CALLS\"\nexit 0\n"
+			goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FIXTURE_CALLS"
+for arg in "$@"; do
+  if [[ "$arg" == ./* ]]; then
+    printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s"}\n' "${arg#./}"
+  fi
+done
+`
 			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
 			for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
 				if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o700); err != nil {

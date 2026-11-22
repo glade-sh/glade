@@ -44,9 +44,6 @@ func TestCIPRAuthorityUnion(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if entry.Name() == "events.json" {
-						b = append(b, []byte(`{"Action":"pass","Package":"`+semaFixturePackage+`"}`+"\n")...)
-					}
 					if i == 1 {
 						if tc.mutation == "discovery" && entry.Name() == "discovery.txt" {
 							b = append(b, []byte("TestZExtra\n")...)

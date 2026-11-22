@@ -12,7 +12,8 @@ terminal evidence.
 | PR sharded packages | Each planned worker uploads discovery, plan, selected shard and raw events. `ci-pr-authority-union.py` requires every worker and invokes the existing history validator to compare discoveries, plans, assignments and terminal unions. It also runs the package summary validator on every shard, including nested skips. | Exact documented deferrals are reported separately. |
 | PR pool and service packages | Each worker records per-package test discovery and raw events. The worker and union validators compare the terminal union with discovery, validate package terminals and reject unexpected skips. The union records packages without test files separately. | A permitted deferred leaf is not evidence that it ran. |
 | PR CLI doctor route | The union derives the selected test names from the worker command, checks one passing terminal per name and validates nested skips. | The CLI shard discovery separately excludes the tests assigned to this route. |
-| Full sharded suite | The history refresh validators compare shard discoveries and plans, assignments and terminal results. The history job is a Required CI dependency. | Listed deferrals are recorded separately and are not proof of execution. |
+| Full sharded suite | The history refresh validators compare shard discoveries and plans, assignments and terminal results. Every shard family also checks nested skips against the exact package policy. The history job is a Required CI dependency. | Listed deferrals are recorded separately and are not proof of execution. |
+| Full ordinary and service lanes | The CI package lane and server process-builder route validate raw package terminals and reject unexpected skips, using the same exact-reason policy. | Explicit reroutes are checked by their own Node or browser authority. |
 | Node and browser authorities | The Node validator rejects missing, duplicate, skipped and failed selected results; browser evidence validates selected Go and Node output. | Browser evidence has its own required job. |
 | Reused push tree | Required CI requires successful tree reuse, leak scan, history and test jobs for the reuse route. | It relies on the tree attestation's selection and validity. |
 
@@ -22,7 +23,7 @@ the latest available artifact per worker when jobs are partially rerun, then
 checks the resulting evidence together. Artifacts are retained for seven days;
 repository policy may impose a shorter limit. Missing or incompatible artifacts
 fail the union and Required CI. Cancellation classifications appear in the
-Required CI job summary and its `classification` output; they do not change
+Required CI job summary, `classification` output and seven-day classification artifact; they do not change
 its fail-closed conclusion.
 
 ## Deferral and rerouting ownership

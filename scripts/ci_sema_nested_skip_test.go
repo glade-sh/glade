@@ -18,7 +18,6 @@ func TestCISemaHistoryRejectsNestedSkip(t *testing.T) {
 		if i == 0 {
 			data = append(data, []byte(`{"Action":"skip","Package":"`+semaFixturePackage+`","Test":"TestHistory000/unknown"}`+"\n")...)
 		}
-		data = append(data, []byte(`{"Action":"pass","Package":"`+semaFixturePackage+`"}`+"\n")...)
 		if err := os.WriteFile(path, data, 0600); err != nil {
 			t.Fatal(err)
 		}
