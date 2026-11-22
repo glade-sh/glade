@@ -73,3 +73,15 @@ func testHybridLocaleTokens(t *testing.T, locale string) {
 		})
 	}
 }
+
+func TestHybridLocaleTokensUncapturedNeighbor(t *testing.T) {
+	days := hybridDays(1500, 2, 28)
+	for _, tc := range []struct{ pattern, locale string }{
+		{"E|EE|EEEEE|uu", "fr_FR"},
+		{"EEE|EEEE|u", "es_ES"},
+	} {
+		if got := hybridPatternLiterals(tc.pattern, days, tc.locale); got != tc.pattern {
+			t.Errorf("locale %s: got %q, want unchanged %q", tc.locale, got, tc.pattern)
+		}
+	}
+}
