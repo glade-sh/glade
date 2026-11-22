@@ -47,7 +47,8 @@ func TestFlowProfileDecisionUncapturedNonASCII(t *testing.T) {
 	definition := storage.ObjectDefinition{Fields: map[string]storage.Field{"Title": {APIName: "Title", Type: storage.FieldString, DisplayType: "STRING"}}}
 	record := storage.Record{Fields: map[string]storage.Value{"Title": storage.StringValue("PRØFILE")}}
 	rule := storage.FlowRule{TriggerType: "RecordAfterSave", RecordTriggerType: "Create", Branches: []storage.FlowBranch{{Name: "Match", Criteria: []storage.WorkflowCriteriaItem{{Field: "$Profile.Name", Operation: "equals", Value: "{!$Record.Title}"}}}}}
-	_, _, err = NewEngine(&org).selectFlowBranch(rule, record, definition)
+	engine := NewEngine(&org)
+	_, _, err = engine.selectFlowBranch(rule, record, definition)
 	if err == nil || !strings.Contains(err.Error(), "unsupported criteria") {
 		t.Fatalf("uncaptured comparison changed: %v", err)
 	}
