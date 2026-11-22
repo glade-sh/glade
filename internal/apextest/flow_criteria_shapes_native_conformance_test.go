@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -56,7 +57,12 @@ func runFlowCriteriaFixture(t *testing.T, name string, wantRows int) {
 			root := filepath.Join(fixture, "api"+strings.TrimSuffix(row[1], ".0"))
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
-				t.Fatalf("fixture diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
+				for _, diag := range append(index.Diagnostics, analysis.Diagnostics...) {
+					if diag.Severity == diagnostic.Error {
+						t.Errorf("fixture diagnostic: %s %s", diag.Code, diag.Message)
+					}
+				}
+				t.FailNow()
 			}
 			var message string
 			switch row[2] {
