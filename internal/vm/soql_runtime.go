@@ -5199,11 +5199,12 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 		return false
 	}
 	api := vm.currentSourceExecutionPolicy().APIVersion
-	profile := vm.currentProfileName(vm.currentUserInfoField("ProfileId", ""))
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	profile := vm.currentProfileName(profileID)
 	if vm.testContext != nil {
 		profile = vm.currentUserProfileName(vm.testContext.CurrentUser)
 	}
-	if (api != "62.0" && api != "67.0" && !(actorID != "" && vm.capturedPartnerVisualforce59())) || profile != "Partner Community User" {
+	if (api != "62.0" && api != "67.0" && !(actorID != "" && vm.capturedPartnerVisualforce59())) || profile != "Partner Community User" || !vm.profileHasLicenseKey(profileID, "PID_Partner_Community") {
 		return false
 	}
 	definition := vm.Org.Objects["Lead"].Definition
