@@ -121,10 +121,19 @@ type Result struct {
 }
 type ExecutionCache struct {
 	mu                         sync.RWMutex
+	childIndex                 *sharedChildIndex
 	childRelationships         map[string]childRelationshipResolution
 	childFieldQualifierMatches map[string]bool
 	virtualSchema              *sharedVirtualSchema
 	virtualSchemaBuildMu       sync.Mutex
+}
+
+// One immutable entry bounds retention in the generation-wide execution cache.
+type sharedChildIndex struct {
+	key   string
+	token storage.RecordsToken
+	count int
+	index map[storage.ID][]string
 }
 type childRelationshipResolution struct {
 	childObjectName string

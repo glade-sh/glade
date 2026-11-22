@@ -94,6 +94,8 @@
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 
+- **SOQL child queries.** Repeated queries reuse a verified child relationship index.
+
 ### CI
 
 - **Declared resource contracts for the race routes.** The gladecli parallel-route test (`TestRunTestMemoryLimitsParallelMethodAndClassRoutes`) now states its requirement up front: two tests in flight needs two processors, because the runner caps simultaneous test execution owners at `GOMAXPROCS`, so the early race route (one processor) reports the shortfall as a declared, summary-accepted skip instead of failing its overlap assertion — normal lanes, which run with two processors, still run and enforce the overlap. The storage stub-reference allocation budget (`TestStandardStubReferenceFieldsAllocationBudget`) keeps its no-full-decode assertion under the race detector but enforces its one-third byte budget in normal builds only, since race instrumentation inflates the lookup's many small allocations far more than the full decode's buffers (the race lane measured 18,082,104 of 52,252,216 bytes, about 34.61%).
