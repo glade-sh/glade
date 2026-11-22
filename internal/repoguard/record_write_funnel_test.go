@@ -161,7 +161,9 @@ var recordsReadOnlyCallees = map[string]bool{
 	"LookupRecordByID": true, "cloneRecordMap": true, "sortedStorageRecords": true,
 	"sortedCustomDataRecords": true, "cartChildRecords": true, "canonicalSummaryParentIDs": true,
 	"next": true, "revokeChangedUsers": true,
-	"Sprintf": true, "Fprintf": true, "Printf": true, "Errorf": true, "Marshal": true,
+	// duplicateCandidateIndex.candidates ranges over the map and checks membership only.
+	"candidates": true,
+	"Sprintf":    true, "Fprintf": true, "Printf": true, "Errorf": true, "Marshal": true,
 }
 
 func calleeName(fun ast.Expr) string {
