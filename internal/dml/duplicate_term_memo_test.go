@@ -36,7 +36,7 @@ func TestDuplicateTermMemoMatchesPairwiseScan(t *testing.T) {
 		}, false},
 		{"exact", []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "NullNotAllowed"}}, func(i int) map[string]storage.Value {
 			return map[string]storage.Value{"Email": storage.StringValue(fmt.Sprintf("p%d@example.invalid", i%50))}
-		}, true},
+		}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
@@ -90,7 +90,11 @@ func TestDuplicateTermMemoMatchesPairwiseScan(t *testing.T) {
 				if count == 0 {
 					t.Fatal("no required term")
 				}
-				memo := newDuplicateTermVerdicts(&prepared, terms[0])
+				if prepared.items[terms[0]].exact {
+					// Exact terms are never memoized; the pairwise check above covers them.
+					continue
+				}
+				memo := newDuplicateTermVerdicts(terms[0])
 				for id, existing := range object.Records {
 					if !memo.mayMatch(&prepared, existing) {
 						if _, matched := want[id]; matched {
