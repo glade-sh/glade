@@ -25,6 +25,9 @@ for page in pages:
 for names in classes.values():
     names.sort()
 encoded = json.dumps(classes, ensure_ascii=True, separators=(",", ":"))
+if os.environ.get("CI_CLASSIFICATION_PATH"):
+    with open(os.environ["CI_CLASSIFICATION_PATH"], "w", encoding="utf-8") as artifact:
+        artifact.write(encoded + "\n")
 with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
     output.write("classification=" + encoded + "\n")
 with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:

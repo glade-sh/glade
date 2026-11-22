@@ -2346,6 +2346,7 @@ jobs:
         id: classify
         env:
           GH_TOKEN: ${{ github.token }}
+          CI_CLASSIFICATION_PATH: ${{ runner.temp }}/ci-worker-classification.json
         run: |
           gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?filter=latest&per_page=100" > "$RUNNER_TEMP/ci-jobs.json"
           python3 scripts/ci-worker-classification.py "$RUNNER_TEMP/ci-jobs.json"
@@ -2411,6 +2412,15 @@ jobs:
           if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
             printf 'coverage=%s\n' "$(jq -c . <<<"$REQUIRED_RESULTS")" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Upload CI worker classification
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ci-worker-classification-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          path: ${{ runner.temp }}/ci-worker-classification.json
+          if-no-files-found: error
 
   tree-receipt:
     name: Tree receipt
