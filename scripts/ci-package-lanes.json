@@ -209,12 +209,12 @@
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
-    "./internal/storage": 23,
+    "./internal/storage": 24,
     "./internal/testdaemon": 38,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 3,
     "./internal/visualforce": 7,
-    "./internal/vm": 73,
+    "./internal/vm": 74,
     "./internal/watch": 1,
     "./internal/dml": 3
   }
