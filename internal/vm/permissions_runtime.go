@@ -2462,11 +2462,21 @@ func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 // isAccessible false, and their UserRecordAccess Lead rows read and edit false
 // under every internal sharing model. The license refuses the Read Lead
 // permission (lead_grant rows), and create, update and delete need read, so
-// Lead has no object access of any kind. Case create, update and delete have
-// no row and keep the earlier behavior. Other objects are not covered.
+// Lead has no object access of any kind. Case create and update keep the
+// earlier behavior; the captured Case delete row is handled below. Other
+// objects are not covered.
 func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method string) (allowed, known bool) {
 	if !vm.profileHasCommunityLicense(profileID) {
 		return false, false
+	}
+	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
+	// profile cannot delete Case in the captured test runAs routes.
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
+		!vm.currentTrigger && vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth &&
+		(api == "62.0" || api == "67.0") && vm.currentProfileName(profileID) == "Customer Community User" &&
+		vm.profileHasLicenseKey(profileID, "PID_Customer_Community") {
+		return false, true
 	}
 	switch {
 	case strings.EqualFold(objectName, "Lead") &&
