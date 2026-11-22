@@ -161,3 +161,25 @@ func TestPartnerLeadControlledChildInheritsPublicRead(t *testing.T) {
 		t.Fatalf("inherited public read = %t, child visible = %t", parentRead, childRead)
 	}
 }
+
+func TestPartnerLeadChildQueryScansOnlyForRestrictedCandidates(t *testing.T) {
+	for _, mixed := range []bool{false, true} {
+		t.Run(fmt.Sprintf("mixed=%t", mixed), func(t *testing.T) {
+			machine, program := partnerLeadChildVisibilityMachine(t)
+			want := "200"
+			if mixed {
+				leads := machine.Org.Objects["Lead"]
+				row := leads.Records["00Q000000000001"]
+				row.System.CreatedByID = row.System.OwnerID
+				leads.PutRecord(row.ID, row)
+				machine.Org.Objects["Lead"] = leads
+				want = "199"
+			}
+			defer machine.beginPartnerLeadShareScan()()
+			result, err := machine.Execute(program)
+			if err != nil || len(result.Debug) != 1 || result.Debug[0] != want || machine.partnerLeadShares.ready != mixed {
+				t.Fatalf("visible %v, share scan %t, err %v; want %s, scan %t", result.Debug, machine.partnerLeadShares.ready, err, want, mixed)
+			}
+		})
+	}
+}
