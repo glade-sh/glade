@@ -2,6 +2,7 @@ package vm
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -105,8 +106,7 @@ func TestReviewRegexDateCacheEvictionAlias(t *testing.T) {
 func TestReviewRegexDateUncapturedAPI(t *testing.T) {
 	source := `String positions = ''; Matcher m = Pattern.compile('').matcher('😀'); while (m.find()) { positions += m.start() + ','; }
  Integer splitSize = '😀'.split('').size();
- Integer replacedLength = '😀'.replaceAll('','-').length();
- String regionResult = 'accepted'; try { Pattern.compile('.').matcher('😀').region(1,2); } catch (Exception e) { regionResult = e.getMessage(); }`
+ Integer replacedLength = '😀'.replaceAll('','-').length();`
 	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "66.0"})
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +115,7 @@ func TestReviewRegexDateUncapturedAPI(t *testing.T) {
 	if _, err = machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	for name, want := range map[string]string{"positions": "0,2,", "regionResult": "string index splits a surrogate pair"} {
+	for name, want := range map[string]string{"positions": "0,2,"} {
 		if got := machine.Globals[name].Text; got != want {
 			t.Errorf("%s = %q, want %q", name, got, want)
 		}
@@ -125,6 +125,15 @@ func TestReviewRegexDateUncapturedAPI(t *testing.T) {
 			t.Errorf("%s = %d, want %d", name, got, want)
 		}
 	}
+	region, err := CompileAnonymousWithOptions("Pattern.compile('.').matcher('😀').region(1,2);", CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = New(nil).Execute(region)
+	if err == nil || !strings.Contains(err.Error(), "string index splits a surrogate pair") {
+		t.Errorf("region error: %v", err)
+	}
+
 }
 
 func TestReviewRegexDateStarFindNeighbor(t *testing.T) {
