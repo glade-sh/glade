@@ -197,3 +197,39 @@ func TestPartnerLeadUncapturedProjectionCreator(t *testing.T) {
 		t.Fatal("uncaptured Lead with separate creator lost public-model edit access")
 	}
 }
+
+func TestPartnerLeadUncapturedUserTypeKeepsPublicVisibility(t *testing.T) {
+	org := storage.NewOrgState()
+	org.APIVersion = "67.0"
+	org.Features = []string{project.PlainDeveloperObjectShape}
+	for _, object := range []string{"Lead", "Profile", "User", "UserLicense"} {
+		storage.EnsureStandardObject(&org, object)
+	}
+	lead := org.Objects["Lead"]
+	lead.Definition.SharingModel = "ReadWrite"
+	record := storage.Record{ID: "00Q000000000001", Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000001"}}
+	lead.Records = map[storage.ID]storage.Record{record.ID: record}
+	org.Objects["Lead"] = lead
+	profiles := org.Objects["Profile"]
+	profiles.Records = map[storage.ID]storage.Record{
+		"00e000000000001": {ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("System Administrator")}},
+		"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}},
+	}
+	org.Objects["Profile"] = profiles
+	licenses := org.Objects["UserLicense"]
+	licenses.Records = map[storage.ID]storage.Record{"100000000000001": {ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}}}
+	org.Objects["UserLicense"] = licenses
+	users := org.Objects["User"]
+	users.Records = map[storage.ID]storage.Record{"005000000000001": {ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}}}
+	org.Objects["User"] = users
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.CurrentUser.Fields["UserType"] = String("Standard")
+	machine.testContext.RunAsDepth = 1
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+		t.Fatal("uncaptured user type lost public-model visibility")
+	}
+}
