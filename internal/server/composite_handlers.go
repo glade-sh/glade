@@ -269,7 +269,19 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	if s.Org != nil {
 		index.OrgShapeFeatures = append([]string(nil), s.Org.Features...)
 	}
-	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
+	currentUser := s.currentUser(r, "")
+	var next storage.OrgState
+	hasNext := false
+	communityCaseDeleteDenied := false
+	if userString(currentUser, "UserType", "") == "CspLitePortal" && (apiVersion == "62.0" || apiVersion == "67.0") && strings.Contains(strings.ToLower(source), "delete") {
+		next = s.Org.Clone()
+		hasNext = true
+		probe := vm.New(nil)
+		probe.Org = &next
+		probe.SetCurrentUser(currentUser)
+		communityCaseDeleteDenied = probe.AnonymousCommunityCaseDeleteCompileDenied(apiVersion)
+	}
+	analysis := sema.AnalyzeAnonymousWithCommunityCaseDeletePolicy(index, source, apiVersion, communityCaseDeleteDenied)
 	if len(analysis.Diagnostics) > 0 {
 		failure := executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil)
 		if analysis.ReceiverTriviaDiagnostic && analysis.Diagnostics[0].Range != nil {
@@ -285,7 +297,9 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return
 	}
-	next := s.Org.Clone()
+	if !hasNext {
+		next = s.Org.Clone()
+	}
 	if s.runtimeErr != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, "project runtime setup failed: "+s.runtimeErr.Error(), nil))
 		return
@@ -306,7 +320,7 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	machine.SetToolingExecuteAnonymous(true)
 	machine.SetOrg(&next)
 	machine.SetCurrentNamespace(next.Namespace)
-	machine.SetCurrentUser(s.currentUser(r, ""))
+	machine.SetCurrentUser(currentUser)
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
 	}

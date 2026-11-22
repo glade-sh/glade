@@ -64,6 +64,7 @@ func TestCommunityCaseCompileUncapturedNeighbors(t *testing.T) {
 		{"default-mode", strings.Replace(original, "delete as user cases[0]", "delete cases[0]", 1), true},
 		{"whole-list", strings.Replace(original, "delete as user cases[0]", "delete as user cases", 1), true},
 		{"other-object", strings.ReplaceAll(strings.ReplaceAll(original, "Case", "Account"), "cases", "accounts"), true},
+		{"other-diagnostic", "Integer unrelated = 'text'; " + original, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			want := AnalyzeAnonymous(typesys.Index{}, tc.body, "67.0")
@@ -72,6 +73,11 @@ func TestCommunityCaseCompileUncapturedNeighbors(t *testing.T) {
 				t.Fatalf("diagnostics=%v base=%v", got.Diagnostics, want.Diagnostics)
 			}
 		})
+	}
+	api68 := AnalyzeAnonymousWithCommunityCaseDeletePolicy(typesys.Index{}, original, "68.0", true)
+	base68 := AnalyzeAnonymous(typesys.Index{}, original, "68.0")
+	if !reflect.DeepEqual(api68.Diagnostics, base68.Diagnostics) {
+		t.Fatalf("uncaptured API 68: %v vs %v", api68.Diagnostics, base68.Diagnostics)
 	}
 	// The shared anonymous setup must not retain a prior request's policy.
 	_ = AnalyzeAnonymousWithCommunityCaseDeletePolicy(typesys.Index{}, original, "67.0", true)

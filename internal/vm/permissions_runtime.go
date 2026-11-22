@@ -2469,24 +2469,9 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 	if !vm.profileHasCommunityLicense(profileID) {
 		return false, false
 	}
-	// community_case_anonymous/org.tsv:2-3: the custom Community profile has
-	// API access and one explicit Case read/create/edit grant, with Subject and
-	// Origin field grants and no Case delete grant.
 	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
-		vm.testContext == nil && !vm.currentTrigger && (vm.currentSourceExecutionPolicy().APIVersion == "62.0" || vm.currentSourceExecutionPolicy().APIVersion == "67.0") &&
-		vm.profileHasLicenseKey(profileID, "PID_Customer_Community") && vm.currentUserInfoField("UserType", "") == "CspLitePortal" &&
-		vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsApiEnabled") {
-		for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
-			read := vm.sourceObjectPermission(source, "Case", "isAccessible")
-			create := vm.sourceObjectPermission(source, "Case", "isCreateable")
-			edit := vm.sourceObjectPermission(source, "Case", "isUpdateable")
-			deleteAllowed, deleteKnown := vm.explicitObjectPermission(source.ID, "Case", "isDeletable")
-			if read && create && edit && deleteKnown && !deleteAllowed && len(source.Mutes) == 0 &&
-				vm.sourceFieldPermission(source, "Case", "Subject", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Subject", "isUpdateable") &&
-				vm.sourceFieldPermission(source, "Case", "Origin", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Origin", "isUpdateable") {
-				return false, true
-			}
-		}
+		vm.capturedCommunityCaseAnonymousDelete(profileID, vm.currentSourceExecutionPolicy().APIVersion) {
+		return false, true
 	}
 	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
 	// profile cannot delete Case in the captured test runAs routes.
@@ -2505,6 +2490,53 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 		return true, true
 	}
 	return false, false
+}
+
+// capturedCommunityCaseAnonymousDelete is the permission shape in
+// community_case_anonymous/org.tsv:2-5, APIs 62.0 and 67.0.
+func (vm *VM) capturedCommunityCaseAnonymousDelete(profileID, api string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext != nil || vm.currentTrigger || (api != "62.0" && api != "67.0") ||
+		!vm.profileHasLicenseKey(profileID, "PID_Customer_Community") || vm.currentUserInfoField("UserType", "") != "CspLitePortal" ||
+		!vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsApiEnabled") {
+		return false
+	}
+	for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+		read := vm.sourceObjectPermission(source, "Case", "isAccessible")
+		create := vm.sourceObjectPermission(source, "Case", "isCreateable")
+		edit := vm.sourceObjectPermission(source, "Case", "isUpdateable")
+		deleteAllowed, deleteKnown := vm.explicitObjectPermission(source.ID, "Case", "isDeletable")
+		if read && create && edit && deleteKnown && !deleteAllowed && len(source.Mutes) == 0 &&
+			vm.sourceFieldPermission(source, "Case", "Subject", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Subject", "isUpdateable") &&
+			vm.sourceFieldPermission(source, "Case", "Origin", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Origin", "isUpdateable") {
+			return true
+		}
+	}
+	return false
+}
+
+// AnonymousCommunityCaseDeleteCompileDenied supplies a request-scoped semantic
+// policy; other assignments and profile grants retain their normal precedence.
+func (vm *VM) AnonymousCommunityCaseDeleteCompileDenied(api string) bool {
+	if vm == nil || vm.Org == nil {
+		return false
+	}
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	if !vm.capturedCommunityCaseAnonymousDelete(profileID, api) {
+		return false
+	}
+	for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+		if vm.sourceObjectPermission(source, "Case", "isDeletable") {
+			return false
+		}
+	}
+	ownedID := vm.profileOwnedPermissionSetID(profileID)
+	if allowed, known := vm.explicitObjectPermission(ownedID, "Case", "isDeletable"); known {
+		return !allowed
+	}
+	if allowed, known := vm.explicitObjectPermission(profileID, "Case", "isDeletable"); known {
+		return !allowed
+	}
+	return true
 }
 
 func (vm *VM) profileHasCommunityLicense(profileID string) bool {

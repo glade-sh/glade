@@ -156,3 +156,34 @@ func communityCaseCompileOrg(api string) storage.OrgState {
 	org.Objects["FieldPermissions"] = fields
 	return org
 }
+
+func TestCommunityCaseCompilePolicyTracksRequestPermission(t *testing.T) {
+	org := communityCaseCompileOrg("67.0")
+	handler := New(&org)
+	source, err := os.ReadFile(filepath.Join("..", "vm", "testdata", "community_case_anonymous", "delete.apex"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(map[string]string{"anonymousBody": strings.ReplaceAll(string(source), "__API__", "67")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, enabled := range []bool{true, false, true} {
+		profiles := org.Objects["Profile"]
+		profile := profiles.Records["00e000000000002"]
+		profile.Fields["PermissionsApiEnabled"] = storage.BooleanValue(enabled)
+		profiles.Records[profile.ID] = profile
+		org.Objects["Profile"] = profiles
+		req := httptest.NewRequest(http.MethodPost, "/services/data/v67.0/tooling/executeAnonymous", bytes.NewReader(body))
+		req.Header.Set("X-GLADE-User-Id", "005000000000002")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		var result map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
+			t.Fatal(err)
+		}
+		if result["compiled"] != !enabled {
+			t.Fatalf("API permission=%v compiled=%v", enabled, result["compiled"])
+		}
+	}
+}
