@@ -39,6 +39,11 @@ func TestStdlibMethodDepthTestLimitNativeConformance(t *testing.T) {
 	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_method_depth_test_limit", 4)
 }
 
+// NATIVE Comparable interface controls: testdata/conformance/stdlib_comparable_interface/org.tsv:2-13
+func TestStdlibComparableInterfaceNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_comparable_interface", 12)
+}
+
 func runStdlibTypeDepthNativeConformance(t *testing.T, fixture string, expectedRows int) {
 	t.Helper()
 	rows := readNativeTSV(t, filepath.Join(fixture, "org.tsv"))
