@@ -7,12 +7,14 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
-// Two recent Matcher identities per VM, cleared at transaction exit. The entry
-// contains immutable subject data. The visible cursor, groups and end flags
-// remain exclusively in the Apex Matcher object.
+// Prepared inputs and position tables have bounded per-transaction caches.
+// Visible cursors, groups and end flags remain in the Apex Matcher object.
 type preparedMatcherCache struct {
-	entries [2]preparedMatcherEntry
-	next    int
+	entries       [2]preparedMatcherEntry
+	next          int
+	positions     map[uint64]*matcherPositionEntry
+	positionOrder [8]uint64
+	positionNext  int
 }
 
 type preparedMatcherEntry struct {
@@ -22,6 +24,49 @@ type preparedMatcherEntry struct {
 	prepared  *preparedMatcherInput
 	hasRegion bool
 	region    matcherRegionBounds
+}
+
+type matcherPositionEntry struct {
+	input     string
+	positions matcherPositions
+	midPair   *matcherMidPairSubject
+}
+
+// matcherPositionsFor caches the immutable UTF-16 boundary table by matcher
+// identity and subject. Call it only after encountering a non-ASCII boundary.
+func matcherPositionsFor(c *preparedMatcherCache, ref uint64, input string) *matcherPositions {
+	if c == nil || ref == 0 {
+		positions := newMatcherPositions(input)
+		return &positions
+	}
+	entry := c.positions[ref]
+	if entry == nil || entry.input != input {
+		if entry == nil {
+			if c.positions == nil {
+				c.positions = make(map[uint64]*matcherPositionEntry)
+			}
+			delete(c.positions, c.positionOrder[c.positionNext])
+			c.positionOrder[c.positionNext] = ref
+			c.positionNext = (c.positionNext + 1) % len(c.positionOrder)
+		}
+		entry = &matcherPositionEntry{input: input, positions: newMatcherPositions(input)}
+		c.positions[ref] = entry
+	}
+	return &entry.positions
+}
+
+func matcherMidPairSubjectFor(c *preparedMatcherCache, ref uint64, input string) *matcherMidPairSubject {
+	if c == nil || ref == 0 {
+		return newMatcherMidPairSubject(input)
+	}
+	// The position table and the search view have the same identity and
+	// subject invalidation rules.
+	matcherPositionsFor(c, ref, input)
+	entry := c.positions[ref]
+	if entry.midPair == nil {
+		entry.midPair = newMatcherMidPairSubject(input)
+	}
+	return entry.midPair
 }
 
 type preparedMatcherInput struct {
@@ -36,11 +81,20 @@ func (c *preparedMatcherCache) reset() {
 
 func (c *preparedMatcherCache) release() {
 	c.entries = [2]preparedMatcherEntry{}
+	c.positions = nil
+	c.positionOrder = [8]uint64{}
+	c.positionNext = 0
 }
 
 func (c *preparedMatcherCache) forget(ref uint64) {
 	if c == nil {
 		return
+	}
+	delete(c.positions, ref)
+	for i, stored := range c.positionOrder {
+		if stored == ref {
+			c.positionOrder[i] = 0
+		}
 	}
 	for i := range c.entries {
 		if c.entries[i].ref == ref {
@@ -142,11 +196,14 @@ func preparedMatcherRegion(e *preparedMatcherEntry, m Value, input string) (matc
 func preparedMatcherGroupBounds(c *preparedMatcherCache, m Value, input string, group int) (int, int, error) {
 	e := c.lookup(m.Ref, input)
 	if e == nil || e.prepared == nil {
-		return matcherGroupBounds(m, input, group)
+		return matcherGroupBounds(m, input, group, c)
 	}
 	start, end, err := matcherGroupByteBounds(m, group)
 	if err != nil {
 		return 0, 0, err
+	}
+	if start <= -2 || end <= -2 {
+		return matcherGroupBounds(m, input, group, c)
 	}
 	if start < 0 || end < 0 {
 		return -1, -1, nil
@@ -154,7 +211,7 @@ func preparedMatcherGroupBounds(c *preparedMatcherCache, m Value, input string, 
 	i, okI := e.prepared.runeAtByte(start)
 	j, okJ := e.prepared.runeAtByte(end)
 	if !okI || !okJ {
-		return matcherGroupBounds(m, input, group)
+		return matcherGroupBounds(m, input, group, c)
 	}
 	return e.prepared.unitAtRune(i), e.prepared.unitAtRune(j), nil
 }

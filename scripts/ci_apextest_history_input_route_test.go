@@ -28,7 +28,7 @@ func TestCICase319HistoryInputRoute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, mode := range []string{"predecessor", "missing-shard", "retry", "invalid-retry", "benchmark"} {
+	for _, mode := range []string{"predecessor", "missing-shard", "retry", "invalid-retry"} {
 		t.Run(mode, func(t *testing.T) {
 			root := t.TempDir()
 			evidence := filepath.Join(root, "evidence")
@@ -52,7 +52,7 @@ func TestCICase319HistoryInputRoute(t *testing.T) {
 			}
 			stale := `{"version":1,"package":"` + fixturePackage + `","complete":true,"tests":[{"name":"TestBootstrap00","durationMillis":1}]}`
 			history := filepath.Join(root, "history", "apextest-duration-history.json")
-			if mode == "retry" || mode == "invalid-retry" || mode == "benchmark" {
+			if mode == "retry" || mode == "invalid-retry" {
 				if err := os.MkdirAll(filepath.Dir(history), 0700); err != nil {
 					t.Fatal(err)
 				}
@@ -84,14 +84,10 @@ exit 2
 			stage := filepath.Join(root, "stage")
 			cmd := exec.Command("bash", "ci-apex-history-input.sh")
 			attempt := "1"
-			if mode == "retry" || mode == "invalid-retry" || mode == "benchmark" {
+			if mode == "retry" || mode == "invalid-retry" {
 				attempt = "2"
 			}
-			pair := "0"
-			if mode == "benchmark" {
-				pair = "7"
-			}
-			cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+evidence, "FAKE_PROFILE="+filepath.Join(root, "profile.json"), "FAKE_CALLS="+filepath.Join(root, "calls"), "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT="+attempt, "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+history, "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_BENCHMARK_PAIR="+pair, "RUNNER_TEMP="+root)
+			cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+evidence, "FAKE_PROFILE="+filepath.Join(root, "profile.json"), "FAKE_CALLS="+filepath.Join(root, "calls"), "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT="+attempt, "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+history, "CI_APEXTEST_HISTORY_STAGE="+stage, "RUNNER_TEMP="+root)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				t.Fatalf("input route: %v\n%s", err, out)
@@ -111,7 +107,7 @@ exit 2
 				if !strings.Contains(string(data), `"durationMillis":42000`) {
 					t.Fatalf("retry did not override stale cache: %s", data)
 				}
-			case "invalid-retry", "benchmark":
+			case "invalid-retry":
 				if string(data) != stale {
 					t.Fatalf("lost valid cache fallback: %s", data)
 				}

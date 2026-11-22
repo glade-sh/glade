@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+replace	62.0	anonymous	True	True	OBS=9&#124;-a-H-L-b-&#124;5	n/a	n/a	0
+replace	67.0	anonymous	True	True	OBS=9&#124;-a-H-L-b-&#124;5	n/a	n/a	0
+replace_repeat	62.0	anonymous	True	True	OBS=9&#124;-a-H-L-b-&#124;5	n/a	n/a	0
+replace_repeat	67.0	anonymous	True	True	OBS=9&#124;-a-H-L-b-&#124;5	n/a	n/a	0
+replace_test	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: 9|-a-H-L-b-|5	62.0	n/a	n/a
+replace_test	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: 9|-a-H-L-b-|5	67.0	n/a	n/a
+replace_test_repeat	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: 9|-a-H-L-b-|5	62.0	n/a	n/a
+replace_test_repeat	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: Expected: ROW, Actual: 9|-a-H-L-b-|5	67.0	n/a	n/a
