@@ -148,7 +148,9 @@ var namesOnlyCallers = []namesOnlyCaller{
 	{"ownerSystem", "nsx", ""},
 }
 
-func runNamesOnlyProbe(t *testing.T, org *storage.OrgState, eager bool, api string, caller namesOnlyCaller, named, testContext bool, source string) string {
+var namesOnlyDescribeAPIs = []string{"62.0", "64.0", "65.0", "67.0", "68.0"}
+
+func runNamesOnlyProbe(t testing.TB, org *storage.OrgState, eager bool, api string, caller namesOnlyCaller, named, testContext bool, source string) string {
 	t.Helper()
 	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})
 	if err != nil {
@@ -179,7 +181,6 @@ func runNamesOnlyProbe(t *testing.T, org *storage.OrgState, eager bool, api stri
 // before and after the call. Every shape, both lazy routes, system, owner and
 // owner-org system callers, anonymous and named source, API 62 to 68.
 func TestNamesOnlyGlobalDescribeMatchesCompletedSpread(t *testing.T) {
-	apis := []string{"62.0", "64.0", "65.0", "67.0", "68.0"}
 	shapeNames := make([]string, 0, len(namesOnlyDescribeShapes))
 	for name := range namesOnlyDescribeShapes {
 		shapeNames = append(shapeNames, name)
@@ -191,14 +192,15 @@ func TestNamesOnlyGlobalDescribeMatchesCompletedSpread(t *testing.T) {
 			source := namesOnlyProbeSource(namesOnlyProbeNames(features))
 			for _, caller := range namesOnlyCallers {
 				t.Run(route+"/"+shape+"/"+caller.name, func(t *testing.T) {
-					for _, api := range apis {
+					base := namesOnlyDescribeOrg(route, features, caller.namespace)
+					for _, api := range namesOnlyDescribeAPIs {
 						for _, named := range []bool{false, true} {
 							for _, testContext := range []bool{false, true} {
 								if testContext && !named && shape != "plainDeveloper" {
 									continue
 								}
-								eagerOrg := namesOnlyDescribeOrg(route, features, caller.namespace)
-								lazyOrg := namesOnlyDescribeOrg(route, features, caller.namespace)
+								eagerOrg := base.Clone()
+								lazyOrg := base.Clone()
 								want := runNamesOnlyProbe(t, &eagerOrg, true, api, caller, named, testContext, source)
 								got := runNamesOnlyProbe(t, &lazyOrg, false, api, caller, named, testContext, source)
 								if strings.HasPrefix(want, "error: ") {
