@@ -485,12 +485,12 @@ func readFrontendRecords(payload []byte) (frontendPayload, error) {
 // owned source arena without invoking the parser or index builder. The caller
 // must supply freshly discovered project membership and a fresh schema.
 func RestoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte) (Index, BuildArtifacts, error) {
-	return restoreFrontendSnapshot(p, s, data, true, true, nil)
+	return restoreFrontendSnapshot(p, s, data, true, true, nil, false)
 }
 
 // footer selects a self-authenticated snapshot; otherwise data is a record
 // stream whose enclosing file was authenticated by the caller.
-func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, footer bool, validateContent bool, inputs *FrontendInputs) (Index, BuildArtifacts, error) {
+func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, footer bool, validateContent bool, inputs *FrontendInputs, allowSourceChanges bool) (Index, BuildArtifacts, error) {
 	for _, dep := range p.ManagedPackageDependencies {
 		if dep.Status == "loaded" && dep.Project == nil && dep.ArtifactPath != "" {
 			return Index{}, BuildArtifacts{}, errors.New("frontend snapshot requires captured artifact byte provenance")
@@ -595,7 +595,7 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		}
 		metadata := occurrence.Metadata
 		physical := ""
-		if inputs != nil {
+		if inputs != nil && !allowSourceChanges {
 			physical = inputs.physical[metadata.RequestedPath]
 		} else {
 			physical = sources.canonicalPhysicalPath(metadata.RequestedPath)
@@ -649,7 +649,8 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		for _, source := range sources.All() {
 			path := source.metadata.RequestedPath
 			input, ok := sources.apexMetadataForMetadata(source.metadata)
-			if !ok || inputs.digests[path] != source.digest || inputs.metadata[path] != input {
+			digest, present := inputs.digests[path]
+			if !ok || !present || (!allowSourceChanges && digest != source.digest) || inputs.metadata[path] != input {
 				return Index{}, BuildArtifacts{}, errors.New("frontend captured input changed")
 			}
 		}
@@ -686,14 +687,14 @@ type FrontendInputs struct {
 func (inputs *FrontendInputs) Identity() string { return inputs.identity }
 
 func CaptureFrontendInputs(p project.Project, s schema.Schema) (*FrontendInputs, error) {
-	return captureFrontendInputs(p, s, nil, nil)
+	return captureFrontendInputs(p, s, nil, nil, nil)
 }
 
 // FrontendInputsForBuild derives publication identity from already captured
 // bytes. A live edit after capture changes the next load's identity, so the
 // published generation is never accepted for different current content.
 func FrontendInputsForBuild(p project.Project, s schema.Schema, index Index, artifacts *BuildArtifacts) (*FrontendInputs, error) {
-	inputs, err := captureFrontendInputs(p, s, artifacts, nil)
+	inputs, err := captureFrontendInputs(p, s, artifacts, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -711,15 +712,22 @@ func FrontendInputIdentity(p project.Project, s schema.Schema) (string, error) {
 	return inputs.identity, nil
 }
 func frontendInputIdentity(p project.Project, s schema.Schema, previous *SourceDigestSet) (string, error) {
-	inputs, err := captureFrontendInputs(p, s, nil, previous)
+	inputs, err := captureFrontendInputs(p, s, nil, previous, nil)
 	if err != nil {
 		return "", err
 	}
 	return inputs.identity, nil
 }
 
-func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildArtifacts, previous *SourceDigestSet) (*FrontendInputs, error) {
+func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildArtifacts, previous *SourceDigestSet, captured *FrontendInputs) (*FrontendInputs, error) {
+	return captureFrontendInputsWithReader(p, s, artifacts, previous, captured, os.ReadFile)
+}
+
+func captureFrontendInputsWithReader(p project.Project, s schema.Schema, artifacts *BuildArtifacts, previous *SourceDigestSet, captured *FrontendInputs, readFile func(string) ([]byte, error)) (*FrontendInputs, error) {
 	inputs := &FrontendInputs{projects: map[string]string{}, physical: map[string]string{}, digests: map[string][sha256.Size]byte{}, metadata: map[string]ApexMetadataInput{}}
+	if captured != nil {
+		inputs.digests, inputs.physical, inputs.metadata = captured.digests, captured.physical, captured.metadata
+	}
 	if artifacts != nil {
 		if artifacts.Sources == nil {
 			return nil, errors.New("missing frontend sources")
@@ -756,10 +764,10 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 		for _, path := range current.SelectedApexFiles() {
 			digest, ok := inputs.digests[path]
 			if !ok {
-				if artifacts != nil {
+				if artifacts != nil || captured != nil {
 					return errors.New("frontend source inventory changed")
 				}
-				data, err := os.ReadFile(path)
+				data, err := readFile(path)
 				if err != nil {
 					return err
 				}
@@ -774,7 +782,7 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 					digest = sha256.Sum256(data)
 				}
 				inputs.digests[path], inputs.physical[path] = digest, arena.canonicalPhysicalPath(path)
-				sidecar, err := os.ReadFile(path + "-meta.xml")
+				sidecar, err := readFile(path + "-meta.xml")
 				if err != nil && !os.IsNotExist(err) {
 					return err
 				}
@@ -798,7 +806,7 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 			}
 		}
 		for _, path := range current.FlowFiles {
-			data, err := os.ReadFile(path)
+			data, err := readFile(path)
 			if err != nil {
 				return err
 			}
@@ -826,7 +834,7 @@ func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildA
 				}
 			}
 			if dep.ArtifactPath != "" {
-				data, err := os.ReadFile(dep.ArtifactPath)
+				data, err := readFile(dep.ArtifactPath)
 				if err != nil {
 					return err
 				}
@@ -858,7 +866,7 @@ func RestoreFrontendSnapshotWithInputs(p project.Project, s schema.Schema, data 
 	if inputs == nil {
 		return Index{}, BuildArtifacts{}, errors.New("missing frontend input proof")
 	}
-	return restoreFrontendSnapshot(p, s, data, true, false, inputs)
+	return restoreFrontendSnapshot(p, s, data, true, false, inputs, false)
 }
 
 // RestoreFrontendSnapshotRecordsWithInputs restores a footerless record stream
@@ -867,7 +875,7 @@ func RestoreFrontendSnapshotRecordsWithInputs(p project.Project, s schema.Schema
 	if inputs == nil {
 		return Index{}, BuildArtifacts{}, errors.New("missing frontend input proof")
 	}
-	return restoreFrontendSnapshot(p, s, records, false, false, inputs)
+	return restoreFrontendSnapshot(p, s, records, false, false, inputs, false)
 }
 
 func frontendSourceOwners(index Index, p project.Project, inputs *FrontendInputs) ([]incrementalSourceOwner, bool) {
@@ -982,20 +990,30 @@ func restoreFrontendEmptyCollections(root reflect.Value, paths [][]int) error {
 // complete current non-source input identity still matches the old generation.
 // Semantic results remain invalidated for every changed source digest.
 func UpdateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, expectedInput string) (Index, BuildArtifacts, error) {
-	return updateFrontendSnapshot(p, s, data, true, expectedInput)
+	return updateFrontendSnapshot(p, s, data, true, expectedInput, nil)
 }
 
 // UpdateFrontendSnapshotRecords is UpdateFrontendSnapshot for a footerless
 // record stream that its enclosing cache file already authenticated.
 func UpdateFrontendSnapshotRecords(p project.Project, s schema.Schema, records []byte, expectedInput string) (Index, BuildArtifacts, error) {
-	return updateFrontendSnapshot(p, s, records, false, expectedInput)
+	return updateFrontendSnapshot(p, s, records, false, expectedInput, nil)
 }
 
-func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, footer bool, expectedInput string) (Index, BuildArtifacts, error) {
+// UpdateFrontendSnapshotRecordsWithInputs reuses the current content proof
+// captured by the cache dispatcher. Final generation validation still checks
+// the resulting index against disk after applying the edit.
+func UpdateFrontendSnapshotRecordsWithInputs(p project.Project, s schema.Schema, records []byte, expectedInput string, inputs *FrontendInputs) (Index, BuildArtifacts, error) {
+	if inputs == nil {
+		return Index{}, BuildArtifacts{}, errors.New("missing frontend input proof")
+	}
+	return updateFrontendSnapshot(p, s, records, false, expectedInput, inputs)
+}
+
+func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, footer bool, expectedInput string, inputs *FrontendInputs) (Index, BuildArtifacts, error) {
 	if len(p.PackageDirectories) == 0 {
 		return Index{}, BuildArtifacts{}, errors.New("frontend incremental reuse requires a discovered project")
 	}
-	previous, artifacts, err := restoreFrontendSnapshot(p, s, data, footer, false, nil)
+	previous, artifacts, err := restoreFrontendSnapshot(p, s, data, footer, false, inputs, inputs != nil)
 	if err != nil {
 		return Index{}, BuildArtifacts{}, err
 	}
@@ -1017,8 +1035,8 @@ func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, foo
 			return Index{}, BuildArtifacts{}, errors.New("frontend incremental refresh requires every source occurrence")
 		}
 	}
-	proof, err := frontendInputIdentity(p, s, artifacts.SourceDigests)
-	if err != nil || proof != expectedInput {
+	proof, err := captureFrontendInputs(p, s, nil, artifacts.SourceDigests, inputs)
+	if err != nil || proof.identity != expectedInput {
 		return Index{}, BuildArtifacts{}, errors.New("frontend non-source inputs changed")
 	}
 	var changed []string
@@ -1029,12 +1047,22 @@ func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, foo
 			continue
 		}
 		seen[path] = true
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			return Index{}, BuildArtifacts{}, err
+		var digest [sha256.Size]byte
+		if inputs != nil {
+			var found bool
+			digest, found = inputs.digests[path]
+			if !found {
+				return Index{}, BuildArtifacts{}, errors.New("frontend source inventory changed")
+			}
+		} else {
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				return Index{}, BuildArtifacts{}, err
+			}
+			NoteApexSource(string(raw))
+			digest = sha256.Sum256(raw)
 		}
-		NoteApexSource(string(raw))
-		if sha256.Sum256(raw) != source.digest {
+		if digest != source.digest {
 			changed = append(changed, path)
 		}
 	}
@@ -1047,6 +1075,21 @@ func updateFrontendSnapshot(p project.Project, s schema.Schema, data []byte, foo
 	}
 	if !exact {
 		return Index{}, BuildArtifacts{}, errors.New("frontend edit requires authoritative rebuild")
+	}
+	if inputs != nil {
+		// A sidecar may change after capture, including for the edited file.
+		// Do not publish an update built with a different sidecar generation.
+		metadata, ok := inputs.metadata[changed[0]]
+		if !ok || validateApexMetadataGeneration(changed[0]+"-meta.xml", metadata) != nil {
+			return Index{}, BuildArtifacts{}, errors.New("frontend non-source inputs changed")
+		}
+		// A captured edit may have been reverted before the updater read it.
+		// The original discovery path rejects a generation with no edit.
+		oldDigest, oldOK := previous.SourceDigest(changed[0])
+		newDigest, newOK := updated.SourceDigest(changed[0])
+		if oldOK && newOK && oldDigest == newDigest {
+			return Index{}, BuildArtifacts{}, errors.New("frontend edit requires authoritative rebuild")
+		}
 	}
 	refreshed, err := RefreshBuildArtifacts(updated, &artifacts)
 	if err != nil {

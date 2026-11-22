@@ -80,6 +80,7 @@
 - **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
 - **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
 - **Repeated field scans and diagnostics.** Reuse literal matches within runtime field inference and compiled test bodies while selecting native diagnostic text. In focused synthetic benchmarks, the repeated diagnostic case used 143 allocations instead of about 2,171, and the large field scan used 34,315 instead of about 35,540.
+- **Incremental frontend edits.** Reuse captured source and sidecar digests for compatibility and edit discovery while retaining live generation checks. In a synthetic 1,500-class project with sidecars, allocations fell from about 266,000 to 230,000 per edit.
 
 ### CI
 
