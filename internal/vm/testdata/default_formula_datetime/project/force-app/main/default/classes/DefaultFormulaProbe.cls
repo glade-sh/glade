@@ -1,7 +1,13 @@
 public class DefaultFormulaProbe {
- public static String inspect(Boolean load, Boolean doInsert) {
-  DefaultProbe__c x = (DefaultProbe__c) DefaultProbe__c.SObjectType.newSObject(null, load);
-  if (doInsert) { x.Name = 'probe'; insert as system x; x = [SELECT Moment__c, Offset__c, Minute__c, Tomorrow__c, Number__c, Blank__c FROM DefaultProbe__c WHERE Id = :x.Id WITH SYSTEM_MODE]; }
+ public static String inspect(String mode) {
+  Id rt = DefaultProbe__c.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('RT_B').getRecordTypeId();
+  DefaultProbe__c x;
+  if (mode == 'rtLoaded') x = (DefaultProbe__c) DefaultProbe__c.SObjectType.newSObject(rt, true);
+  else if (mode == 'rtUnloaded') x = (DefaultProbe__c) DefaultProbe__c.SObjectType.newSObject(rt, false);
+  else if (mode == 'nullLoaded') x = (DefaultProbe__c) DefaultProbe__c.SObjectType.newSObject(null, true);
+  else if (mode == 'rtInsert') { x = new DefaultProbe__c(RecordTypeId = rt, Name = 'probe'); }
+  else { x = new DefaultProbe__c(Name = 'probe'); }
+  if (mode == 'rtInsert' || mode == 'plainInsert') { insert as system x; x = [SELECT Moment__c, Offset__c, Minute__c, Tomorrow__c, Number__c, Blank__c FROM DefaultProbe__c WHERE Id = :x.Id WITH SYSTEM_MODE]; }
   DateTime nowValue = System.now();
   Long momentDelta = x.Moment__c == null ? null : x.Moment__c.getTime() - nowValue.getTime();
   Long offsetDelta = x.Offset__c == null ? null : x.Offset__c.getTime() - nowValue.addSeconds(Math.mod(nowValue.minuteGmt(),15)*60).getTime();

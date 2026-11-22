@@ -1,3 +1,5 @@
-System.debug('loaded='+DefaultFormulaProbe.inspect(true,false));
-System.debug('unloaded='+DefaultFormulaProbe.inspect(false,false));
-System.debug('inserted='+DefaultFormulaProbe.inspect(false,true));
+System.debug('rtLoaded='+DefaultFormulaProbe.inspect('rtLoaded'));
+System.debug('rtUnloaded='+DefaultFormulaProbe.inspect('rtUnloaded'));
+System.debug('nullLoaded='+DefaultFormulaProbe.inspect('nullLoaded'));
+System.debug('rtInsert='+DefaultFormulaProbe.inspect('rtInsert'));
+System.debug('plainInsert='+DefaultFormulaProbe.inspect('plainInsert'));

@@ -1,5 +1,7 @@
 @IsTest private class DefaultFormulaProbeTest {
- @IsTest static void loaded() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect(true, false)); }
- @IsTest static void unloaded() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect(false, false)); }
- @IsTest static void inserted() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect(false, true)); }
+ @IsTest static void rtLoaded() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect('rtLoaded')); }
+ @IsTest static void rtUnloaded() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect('rtUnloaded')); }
+ @IsTest static void nullLoaded() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect('nullLoaded')); }
+ @IsTest static void rtInsert() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect('rtInsert')); }
+ @IsTest static void plainInsert() { System.assertEquals('CAPTURE', DefaultFormulaProbe.inspect('plainInsert')); }
 }

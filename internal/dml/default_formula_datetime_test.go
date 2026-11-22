@@ -32,7 +32,8 @@ func TestDefaultFormulaDatetimeInsert(t *testing.T) {
 		t.Fatalf("incomplete capture: %d rows", len(rows))
 	}
 	for _, row := range rows[1:] {
-		if !strings.Contains(html.UnescapeString(row[5]), "inserted=") || !strings.Contains(html.UnescapeString(row[5]), "offsetNear=true|minuteNow=true|tomorrow=true|number=7.00|blankNull=true") {
+		text := html.UnescapeString(row[5])
+		if !strings.Contains(text, "plainInsert=") || strings.Count(text, "offsetNear=true|minuteNow=true|tomorrow=true|number=7.00|blankNull=true") != 4 {
 			t.Fatalf("unexpected native row %v", row)
 		}
 	}

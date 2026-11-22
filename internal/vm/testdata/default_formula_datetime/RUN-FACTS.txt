@@ -1,11 +1,11 @@
-capture: request-precise
-started: 2026-11-22T16:13:52Z
-finished: 2026-11-22T16:17:46Z
+capture: req-rt
+started: 2026-11-22T20:59:44Z
+finished: 2026-11-22T21:01:44Z
 apis: 62.0 67.0
-routes: anonymous istest
+routes: anonymous istest 
 cases: 2
 sf: @salesforce/cli/2.159.7
-hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
 cases.tsv sha256: 9fb29dc17878ab4d
 mode: live
 script: capture-v7 (rename mode: every class ran as a per-version copy, 4 copies; phase mode: the original classes and triggers deployed per API; class_api = ApexClass.ApiVersion and trigger_api = ApexTrigger.ApiVersion as reported by the org)
