@@ -69,3 +69,29 @@ func TestWatcherChangesMatchSnapshotDiff(t *testing.T) {
 		})
 	}
 }
+
+func TestWatcherDetectsSameMetadataContentEdit(t *testing.T) {
+	root := t.TempDir()
+	class := filepath.Join(root, "Example.cls")
+	writeWatchFile(t, class, "before")
+	stamp := time.Unix(10000000, 0)
+	if err := os.Chtimes(class, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	initial, err := CaptureScope(Scope{Roots: []string{root}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: BackendNative, Debounce: 50 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer watcher.Close()
+	if err := os.WriteFile(class, []byte("after!"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(class, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	awaitScopedChange(t, watcher, class, ChangeModified)
+}
