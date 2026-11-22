@@ -5,6 +5,7 @@ import os
 import pathlib
 import sys
 
+sys.dont_write_bytecode = True
 root = pathlib.Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('race_select', root / 'scripts/ci-pr-race-select.py')
 selector = importlib.util.module_from_spec(spec)
