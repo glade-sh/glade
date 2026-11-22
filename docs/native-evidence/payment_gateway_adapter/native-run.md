@@ -1,0 +1,2 @@
+Salesforce Developer scratch org (30-day, deleted and verified after the run); capture 2026-11-22 at API 62.0 and 67.0, anonymous and @IsTest routes.
+A class implementing CommercePayments.PaymentGatewayAdapter with processRequest compiled and dispatched at both versions. `new CommercePayments.PaymentGatewayAdapter()` is rejected with "Type cannot be constructed". Missing and wrong-signature processRequest implementations and the adapter-in-test-context rows are in the sibling org.tsv files under internal/apextest/testdata/conformance/payment_gateway_adapter*.
