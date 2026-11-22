@@ -4290,6 +4290,9 @@ func (e *Engine) flowRecordLookupMatch(lookup storage.FlowRecordLookup, source s
 }
 
 func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
+	if item.Formula != "" {
+		return e.flowLookupFormulaCriterion(item, target, targetDefinition, frame)
+	}
 	if strings.TrimSpace(item.SourceField) == "" {
 		return evaluateFlowCoreLookupCriteria(item, target, targetDefinition, e.Org.Namespace)
 	}

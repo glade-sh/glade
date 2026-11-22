@@ -61,3 +61,30 @@ func flowFrameSObjectVariable(frame *flowFrame, key string) bool {
 	variable, declared := frame.variables[key]
 	return declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject")
 }
+
+// flowLookupFormulaCriterion compares a Text field of a custom metadata record
+// with a String formula value evaluated on the interview, case-insensitively
+// and null-safe: flow_metadata_formula_lookup/org.tsv (before-save create,
+// 62.0 and 67.0, both routes). Any other target or field type is unsupported.
+func (e *Engine) flowLookupFormulaCriterion(item storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
+	if frame == nil || e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") ||
+		!strings.HasSuffix(strings.ToLower(targetDefinition.APIName), "__mdt") {
+		return false, false
+	}
+	name, ok := storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
+	if !ok || targetDefinition.Fields[name].Type != storage.FieldString {
+		return false, false
+	}
+	value, ok := e.flowFrameFormulaValue(item.Formula, frame, false)
+	if !ok {
+		return false, false
+	}
+	stored, present := sourceRecordFieldValue(target, name)
+	if value.Kind == storage.ValueNull || !present || stored.Kind == storage.ValueNull {
+		return false, true
+	}
+	if value.Kind != storage.ValueString || stored.Kind != storage.ValueString {
+		return false, false
+	}
+	return strings.EqualFold(value.String, stored.String), true
+}

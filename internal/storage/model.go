@@ -796,6 +796,9 @@ type WorkflowCriteriaItem struct {
 	Operation   string `json:"operation,omitempty"`
 	Value       string `json:"value,omitempty"`
 	SourceField string `json:"sourceField,omitempty"`
+	// Formula is the expression of a text formula resource that supplies a
+	// captured Get Records filter value.
+	Formula string `json:"formula,omitempty"`
 }
 
 type WorkflowFieldUpdate struct {

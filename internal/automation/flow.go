@@ -1975,14 +1975,39 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 		if field == "" {
 			return storage.FlowRecordLookup{}, false
 		}
-		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
+		item := storage.WorkflowCriteriaItem{
 			Field:       field,
 			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
 			Value:       flowLiteralOrVariableOrConstantValue(filter.Value, variables, constants),
 			SourceField: flowLookupCriteriaSourceFieldValue(filter.Value, variables, constants, lookups),
-		})
+		}
+		if expression, ok := flowMetadataLookupFormulaValue(raw, lookup, filter); ok {
+			item.Value, item.SourceField, item.Formula = "", "", expression
+		}
+		out.Criteria = append(out.Criteria, item)
 	}
 	return out, true
+}
+
+// flowMetadataLookupFormulaValue reads a before-save create Get Records of
+// custom metadata whose EqualTo filter value is a String formula resource
+// (flow_metadata_formula_lookup/org.tsv, 62.0 and 67.0, both routes). Other
+// lookups keep their filter value shape.
+func flowMetadataLookupFormulaValue(raw flowXML, lookup flowRecordLookupXML, filter flowFilterXML) (string, bool) {
+	reference := strings.TrimSpace(filter.Value.ElementReference)
+	if reference == "" || !strings.EqualFold(strings.TrimSpace(filter.Operator), "EqualTo") ||
+		!strings.HasSuffix(strings.ToLower(strings.TrimSpace(lookup.Object)), "__mdt") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") {
+		return "", false
+	}
+	for _, formula := range raw.Formulas {
+		if strings.EqualFold(strings.TrimSpace(formula.Name), reference) {
+			expression := normalizeFlowFormula(formula.Expression)
+			return expression, strings.EqualFold(strings.TrimSpace(formula.DataType), "String") && expression != ""
+		}
+	}
+	return "", false
 }
 
 func flowCapturedTestReferenceLookup(raw flowXML, lookup flowRecordLookupXML) bool {
