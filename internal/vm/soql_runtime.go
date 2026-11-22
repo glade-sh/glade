@@ -2008,6 +2008,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		for _, objectName := range objectNames {
 			manualRead := anonymousManualShape && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
 				strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private") &&
+				!vm.userModeUnrestrictedObject(objectName, string(user.ID)) &&
 				vm.currentUserObjectPermission(objectName, "isAccessible") &&
 				!vm.currentUserObjectPermission(objectName, "isCreateable") &&
 				!vm.currentUserObjectPermission(objectName, "isUpdateable") &&
