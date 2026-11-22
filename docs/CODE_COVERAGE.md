@@ -243,33 +243,42 @@ the conformance test replays the captured run sequence through it.
 
 ## Known gaps
 
-These shapes are not captured yet, or Glade does not match them:
+The following differences remain outside the current coverage model. Native
+observations and uncaptured behavior are distinguished below; an uncaptured
+shape is not a claim about Salesforce behavior.
 
-- **CV5 edit invalidation.** A redeploy resets a changed class's stored
-  coverage natively. Glade keeps no coverage between runs, so there is
-  nothing to invalidate; the native reset shape is not captured.
-- **CV6** non-Apex deployment defaults and deployment test identifiers,
-  **CV7** package selection and package denominators, and **CV9** unit versus
-  integration-test coverage are not captured. Managed package classes are
-  excluded from every figure.
-- **Synchronous or asynchronous.** Salesforce picks the shape from the API
-  the run used; Glade picks it from `--synchronous`. Other differences
-  between the two APIs (such as the setup rows `testsRan` counts) are not
-  modeled.
-- **Empty classes.** An untouched class with no executable lines is not
-  listed; the Tooling `ApexCodeCoverageAggregate` lists every deployed class
-  with a row, including 0/0, and none for interfaces. A class with no lines
-  that a test reaches is listed at 0/0, as natively. No percentage changes.
-- **Partly executed statements.** A statement covers all of its non-lazy
-  lines when it starts. A multi-line statement that throws before reaching a
-  later operand line still counts that line. No row covers this shape.
-- **Field initializers** count all their lines when the class initializes;
-  a short-circuit operand inside an initializer is not tracked separately.
-- **RunSpecifiedTests and triggers.** The per-class rule is applied to
-  classes only; no row shows how Salesforce gates a trigger under
-  RunSpecifiedTests. A trigger with no executable lines is not gated.
-- **Store Only Aggregate Code Coverage** (an org setting) has no local
-  equivalent.
+- **CV5 edit invalidation.** Out of scope because `glade test` reports one run
+  and does not persist coverage to invalidate after an edit. A native reset on
+  redeploy has not been captured.
+- **CV6 deployment defaults and test identifiers.** Out of scope because the
+  coverage gate models a project test run, not non-Apex deployments or
+  Salesforce deployment test identifiers. These defaults are not captured.
+- **CV7 package selection and denominators.** Out of scope because the gate
+  treats the project as the deployment and excludes managed package dependencies;
+  package-specific selection and denominators are not captured.
+- **CV9 unit and integration coverage.** Out of scope because Glade does not
+  maintain separate unit and integration coverage totals; this distinction is
+  not captured.
+- **Synchronous and asynchronous APIs.** Differences beyond `--synchronous`,
+  such as setup-row `testsRan` counts, are out of scope because the flag selects
+  a coverage reporting shape rather than a Salesforce test API. Those differences
+  are not modeled.
+- **Empty classes.** Listing untouched 0/0 classes is out of scope for the
+  run report, which lists reached classes rather than reproducing all Tooling
+  aggregate rows. A reached empty class is listed at 0/0 in the captures at
+  both APIs; omitting an untouched empty class does not change percentages.
+- **Partly executed statements.** Operand-by-operand tracking before a throw
+  is out of scope for the current statement-level instrumentation. Glade counts
+  all non-lazy lines when the statement starts; this shape has no native row.
+- **Field initializer short-circuit operands.** Separate lazy-operand tracking
+  is out of scope for the current initializer instrumentation. Glade counts all
+  initializer lines when the class initializes; this shape has no native row.
+- **RunSpecifiedTests and triggers.** Trigger gating is out of scope for the
+  per-class gate because there is no captured row establishing its rule. Glade
+  applies that gate to classes only and does not gate an empty trigger.
+- **Store Only Aggregate Code Coverage.** Out of scope because Glade reports
+  per-test coverage and has no equivalent org setting; the setting's behavior
+  has not been captured.
 
 The conformance tests are `internal/gladecli/test_coverage_native_conformance_test.go`
 (the step-by-step replay, the 14-method carry-over run in
