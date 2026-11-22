@@ -1163,6 +1163,8 @@ type FlowActionOutput struct {
 
 type FlowRecordLookup struct {
 	Name                             string                 `json:"name"`
+	CapturedRelationshipFilterPath   string                 `json:"capturedRelationshipFilterPath,omitempty"`
+	CapturedTestReferenceLookup      bool                   `json:"capturedTestReferenceLookup,omitempty"`
 	ObjectName                       string                 `json:"objectName"`
 	SortField                        string                 `json:"sortField,omitempty"`
 	SortOrder                        string                 `json:"sortOrder,omitempty"`

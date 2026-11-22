@@ -753,7 +753,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 		}
 	}
 	for _, lookup := range raw.RecordLookups {
-		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups)
+		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups, raw)
 		if !ok {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record lookup node %q is not modeled", firstNonBlank(lookup.Name, lookup.Label))))
 			continue
@@ -1935,7 +1935,7 @@ func flowLiteralOrVariableOrConstantValue(value flowValueXML, variables map[stri
 	return flowLiteralOrConstantValue(value, constants)
 }
 
-func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordLookup, bool) {
+func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML, raw flowXML) (storage.FlowRecordLookup, bool) {
 	name := firstNonBlank(lookup.Name, lookup.Label)
 	objectName := strings.TrimSpace(lookup.Object)
 	if name == "" || objectName == "" {
@@ -1947,6 +1947,7 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	}
 	out := storage.FlowRecordLookup{
 		Name:                             name,
+		CapturedTestReferenceLookup:      flowCapturedTestReferenceLookup(raw, lookup),
 		ObjectName:                       objectName,
 		SortField:                        strings.TrimSpace(lookup.SortField),
 		SortOrder:                        strings.TrimSpace(lookup.SortOrder),
@@ -1966,8 +1967,11 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	if len(out.OutputAssignments) > 0 {
 		out.GetFirstRecordOnly = true
 	}
-	for _, filter := range lookup.Filters {
+	for index, filter := range lookup.Filters {
 		field := trimObjectPrefix(strings.TrimSpace(filter.Field))
+		if index == 0 && flowCapturedRelationshipFilterFault(raw, lookup) {
+			out.CapturedRelationshipFilterPath = strings.TrimSpace(filter.Field)
+		}
 		if field == "" {
 			return storage.FlowRecordLookup{}, false
 		}
@@ -1979,6 +1983,59 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 		})
 	}
 	return out, true
+}
+
+func flowCapturedTestReferenceLookup(raw flowXML, lookup flowRecordLookupXML) bool {
+	if !strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") ||
+		!lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Filters) != 1 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.FilterLogic), "and") ||
+		strings.TrimSpace(lookup.FaultConnector.TargetReference) != "" || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	filter := lookup.Filters[0]
+	const prefix = "$Record."
+	reference := strings.TrimSpace(filter.Value.ElementReference)
+	return strings.EqualFold(strings.TrimSpace(filter.Field), "Id") && strings.EqualFold(strings.TrimSpace(filter.Operator), "EqualTo") &&
+		len(reference) > len(prefix) && strings.EqualFold(reference[:len(prefix)], prefix) && !strings.Contains(reference[len(prefix):], ".") &&
+		strings.TrimSpace(filter.Value.StringValue) == "" && strings.TrimSpace(filter.Value.BooleanValue) == "" &&
+		strings.TrimSpace(filter.Value.NumberValue) == "" && strings.TrimSpace(filter.Value.DateValue) == "" &&
+		strings.TrimSpace(filter.Value.DateTimeValue) == "" && strings.TrimSpace(filter.Value.Formula) == "" &&
+		strings.TrimSpace(filter.Value.Expression) == "" && !filter.Value.EmptyStringValue
+}
+
+// Preserve the captured relationship filter so the runtime can report the
+// native fault without changing other lookup filter representations.
+func flowCapturedRelationshipFilterFault(raw flowXML, lookup flowRecordLookupXML) bool {
+	if !strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.Object), strings.TrimSpace(lookup.Object)) ||
+		!lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Filters) != 2 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.FilterLogic), "and") ||
+		strings.TrimSpace(lookup.FaultConnector.TargetReference) != "" || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	left, right := lookup.Filters[0], lookup.Filters[1]
+	path := strings.TrimSpace(left.Field)
+	const prefix = "$Record."
+	reference := strings.TrimSpace(left.Value.ElementReference)
+	return strings.Count(path, ".") == 1 && len(reference) > len(prefix) &&
+		strings.EqualFold(reference[:len(prefix)], prefix) && strings.EqualFold(path, reference[len(prefix):]) &&
+		strings.EqualFold(strings.TrimSpace(left.Operator), "EqualTo") &&
+		strings.TrimSpace(left.Value.StringValue) == "" && strings.TrimSpace(left.Value.BooleanValue) == "" &&
+		strings.TrimSpace(left.Value.NumberValue) == "" && strings.TrimSpace(left.Value.DateValue) == "" &&
+		strings.TrimSpace(left.Value.DateTimeValue) == "" && strings.TrimSpace(left.Value.Formula) == "" &&
+		strings.TrimSpace(left.Value.Expression) == "" && !left.Value.EmptyStringValue &&
+		strings.EqualFold(strings.TrimSpace(right.Operator), "EqualTo") &&
+		!strings.Contains(strings.TrimSpace(right.Field), ".") && strings.TrimSpace(right.Value.ElementReference) == "" &&
+		strings.TrimSpace(right.Value.BooleanValue) == "" && strings.TrimSpace(right.Value.NumberValue) == "" &&
+		strings.TrimSpace(right.Value.DateValue) == "" && strings.TrimSpace(right.Value.DateTimeValue) == "" &&
+		strings.TrimSpace(right.Value.Formula) == "" && strings.TrimSpace(right.Value.Expression) == "" &&
+		!right.Value.EmptyStringValue && strings.TrimSpace(right.Value.StringValue) != ""
 }
 
 // Carry the selected formula resource on each create input through the stored graph.
@@ -2275,7 +2332,16 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowLiteralValue(condition.RightValue),
 					}
-					if strings.EqualFold(field, "$User.Id") {
+					right := strings.TrimSpace(condition.RightValue.ElementReference)
+					const recordPrefix = "$Record."
+					profileRecordOperand := strings.EqualFold(field, "$Profile.Name") &&
+						strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") &&
+						strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") &&
+						strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") &&
+						strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") &&
+						len(right) > len(recordPrefix) && strings.EqualFold(right[:len(recordPrefix)], recordPrefix) &&
+						!strings.Contains(right[len(recordPrefix):], ".")
+					if strings.EqualFold(field, "$User.Id") || profileRecordOperand {
 						item.Value = flowDecisionRightValue(condition.RightValue)
 					}
 					flowVariableEmptyOperand(&item, condition, variables)
@@ -2503,7 +2569,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			}
 			modeled = true
 			fault := strings.TrimSpace(lookup.FaultConnector.TargetReference)
-			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
+			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups, raw); ok {
 				branch.RecordLookups = append(branch.RecordLookups, recordLookup)
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordLookup", FaultTarget: fault, RecordLookup: recordLookup})
 			} else {

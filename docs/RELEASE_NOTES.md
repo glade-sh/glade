@@ -115,6 +115,8 @@
 
 - **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
 
+- **Record-triggered Flow criteria.** After-save create decisions compare the current profile with direct record text fields, and Get Records follows captured test pricebook visibility and relationship-filter fault behavior at API 62.0 and 67.0.
+
 ## v0.3.12
 
 v0.3.12 adds captured behavior for feature-enabled scratch orgs, API 68.0 (Winter '27) Apex and the local LWC shell, test-runner surfaces, code coverage, `hashCode`, dates before 1583, typed flow merges, default query order, regular expressions, and standard and custom duplicate matching. Permission sets assigned to the running user inside a test now behave as in Salesforce, `@TestSetup` runs the async work it enqueues, and numeric results match on macOS arm64 and Linux amd64.

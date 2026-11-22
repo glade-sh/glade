@@ -708,14 +708,21 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 			}
 			continue
 		}
+		profileAfterCreate := false
 		if !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") || !strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate") {
 			for _, item := range branch.Criteria {
 				if flowGlobalDecisionReference(item.Field) {
+					if strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") && strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create") {
+						if _, _, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+							profileAfterCreate = true
+							continue
+						}
+					}
 					return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
 				}
 			}
 		}
-		matches, ok := e.evaluateFlowBranch(branch, record, definition, flowRuleHasSaveDecisions(rule))
+		matches, ok := e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, flowRuleHasSaveDecisions(rule), profileAfterCreate)
 		if !ok {
 			for _, item := range branch.Criteria {
 				reference := strings.TrimSpace(item.Field)
@@ -2533,6 +2540,14 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			continue
 		}
 		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
+			if frame != nil && frame.capturedAfterCreate {
+				if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, source, definition); handled {
+					if !supported || !matches {
+						return matches, supported
+					}
+					continue
+				}
+			}
 			return false, false
 		}
 		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
@@ -4065,6 +4080,11 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 			return nil, storage.ObjectDefinition{}, err
 		}
 	}
+	if len(lookup.Criteria) == 2 && frame != nil && frame.capturedAfterCreate && source.ID != "" && len(target.Records) != 0 &&
+		strings.EqualFold(source.Object, targetName) && flowCapturedRelationshipFilterRuntime(lookup) &&
+		flowCapturedRelationshipFilterFields(e.Org, sourceDefinition, lookup) {
+		return nil, storage.ObjectDefinition{}, &flowRelationshipLookupFilterError{}
+	}
 	var records []storage.Record
 	for _, candidate := range target.Records {
 		if candidate.System.IsDeleted {
@@ -4098,6 +4118,10 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		if !matches {
 			continue
 		}
+		if e.FlowLookupRecordVisible != nil && frame != nil && frame.capturedAfterCreate &&
+			flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) && !e.FlowLookupRecordVisible(candidate.ID) {
+			continue
+		}
 		records = append(records, candidate.Clone())
 		if lookup.GetFirstRecordOnly && lookup.SortField == "" {
 			break
@@ -4128,6 +4152,84 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		}
 	}
 	return records, target.Definition, nil
+}
+
+type flowRelationshipLookupFilterError struct{}
+
+func (*flowRelationshipLookupFilterError) Error() string {
+	return "dml: flow relationship filter fault"
+}
+
+func flowCapturedRelationshipFilterRuntime(lookup storage.FlowRecordLookup) bool {
+	if !lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Criteria) != 2 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.CriteriaLogic), "and") || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	left, right := lookup.Criteria[0], lookup.Criteria[1]
+	path := strings.TrimSpace(lookup.CapturedRelationshipFilterPath)
+	_, field, nested := strings.Cut(path, ".")
+	return nested && !strings.Contains(field, ".") &&
+		strings.EqualFold(field, strings.TrimSpace(left.Field)) && strings.EqualFold(path, strings.TrimSpace(left.SourceField)) &&
+		strings.EqualFold(strings.TrimSpace(left.Operation), "equals") &&
+		strings.EqualFold(strings.TrimSpace(right.Operation), "equals") &&
+		!strings.Contains(strings.TrimSpace(right.Field), ".") && strings.TrimSpace(right.SourceField) == "" && strings.TrimSpace(right.Value) != ""
+}
+
+// The native fault covers a single non-polymorphic relationship to a text
+// field and a second text-field filter. Other metadata retains its old route.
+func flowCapturedRelationshipFilterFields(org *storage.OrgState, definition storage.ObjectDefinition, lookup storage.FlowRecordLookup) bool {
+	if org == nil || len(lookup.Criteria) != 2 {
+		return false
+	}
+	relationship, name, nested := strings.Cut(strings.TrimSpace(lookup.CapturedRelationshipFilterPath), ".")
+	if !nested || relationship == "" || name == "" || strings.Contains(name, ".") {
+		return false
+	}
+	other, ok := storage.ResolveFieldName(definition, org.Namespace, lookup.Criteria[1].Field)
+	if !ok || definition.Fields[other].Type != storage.FieldString || !strings.EqualFold(definition.Fields[other].DisplayType, "STRING") {
+		return false
+	}
+	for _, field := range definition.Fields {
+		if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 ||
+			!dmlRelationshipNameMatches(org.Namespace, storage.ParentRelationshipName(field), relationship) {
+			continue
+		}
+		objectName, ok := storage.ResolveObjectName(*org, field.ReferenceTo[0])
+		if !ok {
+			return false
+		}
+		parent := org.Objects[objectName].Definition
+		fieldName, ok := storage.ResolveFieldName(parent, org.Namespace, name)
+		return ok && parent.Fields[fieldName].Type == storage.FieldString && strings.EqualFold(parent.Fields[fieldName].DisplayType, "STRING")
+	}
+	return false
+}
+
+// flowCapturedReferenceIDLookup limits test visibility to the captured
+// first-record lookup by the triggering record's direct reference field.
+func flowCapturedReferenceIDLookup(lookup storage.FlowRecordLookup, definition storage.ObjectDefinition, targetName, namespace string) bool {
+	if !lookup.CapturedTestReferenceLookup || !lookup.GetFirstRecordOnly || len(lookup.Criteria) != 1 {
+		return false
+	}
+	item := lookup.Criteria[0]
+	if !strings.EqualFold(strings.TrimSpace(item.Field), "Id") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+		return false
+	}
+	fieldName, ok := storage.ResolveFieldName(definition, namespace, item.SourceField)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[fieldName]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 {
+		return false
+	}
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, targetName) {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *Engine) flowRecordLookupMatch(lookup storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (storage.Record, storage.ObjectDefinition, bool, error) {
@@ -4352,6 +4454,10 @@ func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Rec
 }
 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
+	return e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, save, false)
+}
+
+func (e *Engine) evaluateFlowBranchWithProfileAfterCreate(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save, profileAfterCreate bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
 			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID(), e.PermissionUserFields)
@@ -4375,6 +4481,14 @@ func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Re
 	}
 	prior := e.flowPriorRecord(record.ID)
 	for _, item := range branch.Criteria {
+		if profileAfterCreate {
+			if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+				if !supported || !matches {
+					return matches, supported
+				}
+				continue
+			}
+		}
 		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
 			if !supported || !matches {
 				return matches, supported

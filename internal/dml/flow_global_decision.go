@@ -50,6 +50,60 @@ func (e *Engine) flowGlobalDecisionCriterion(item storage.WorkflowCriteriaItem) 
 	return false, false, false
 }
 
+// flowAfterCreateProfileRecordCriterion covers direct profile equality against
+// a triggering-record text field in an after-save create Flow. The two API
+// versions and both routes are captured in flow_direct_profile_decision/org.tsv.
+func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition) (bool, bool, bool) {
+	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+		return false, false, false
+	}
+	reference := flowCriteriaResourceReference(item)
+	const prefix = "$Record."
+	if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
+		return false, false, false
+	}
+	field := reference[len(prefix):]
+	if strings.Contains(field, ".") {
+		return false, false, false
+	}
+	name, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+	if !ok || definition.Fields[name].Type != storage.FieldString || !strings.EqualFold(definition.Fields[name].DisplayType, "STRING") {
+		return false, false, false
+	}
+	parser := formulaParser{org: e.Org, userID: e.systemUserID()}
+	profile := parser.profileNameValue()
+	if profile.kind == formulaNull {
+		return false, false, true
+	}
+	profileName := profile.asString()
+	if strings.TrimSpace(profileName) != profileName {
+		return false, false, false
+	}
+	for _, char := range profileName {
+		if char >= 128 {
+			return false, false, false
+		}
+	}
+	value, present := sourceRecordFieldValue(record, name)
+	if !present || value.Kind == storage.ValueNull {
+		return false, true, true
+	}
+	if value.Kind != storage.ValueString {
+		return false, false, true
+	}
+	for _, text := range []string{value.String} {
+		if strings.TrimSpace(text) != text {
+			return false, false, false
+		}
+		for _, char := range text {
+			if char >= 128 {
+				return false, false, false
+			}
+		}
+	}
+	return strings.EqualFold(profileName, value.String), true, true
+}
+
 func flowGlobalDecisionReference(reference string) bool {
 	reference = strings.TrimSpace(reference)
 	return strings.EqualFold(reference, "$Profile.Name") || strings.EqualFold(reference, "$User.Id") || len(reference) > len("$Permission.") && strings.EqualFold(reference[:len("$Permission.")], "$Permission.")
