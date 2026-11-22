@@ -206,6 +206,30 @@ func TestEnumCatalogUnregisteredSameCountWithOverlay(t *testing.T) {
 			checkEnumCatalog(t, base, "Phase", "State")
 		})
 	}
+	for _, mode := range []string{"cached root", "cached overlay"} {
+		t.Run(mode, func(t *testing.T) {
+			clone := base.CloneRuntimeFrozenShared(nil)
+			if mode == "cached overlay" {
+				if err := clone.RegisterClass(Class{Name: "Late.State", EnumValues: []string{"New"}}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			checkEnumCatalog(t, clone, "State")
+			if mode == "cached root" {
+				clone.prepareClassMapWrite()
+			}
+			class := clone.Classes["Outer.Phase"]
+			class.EnumValues = []string{"Open"}
+			clone.Classes["Outer.Phase"] = class
+			if got := clone.enumSuffixClassCandidates("Phase"); len(got) != 0 {
+				t.Fatalf("cached candidates after same-count write = %v, want none", got)
+			}
+			if err := clone.RegisterClass(Class{Name: "Next.State", EnumValues: []string{"New"}}); err != nil {
+				t.Fatal(err)
+			}
+			checkEnumCatalog(t, clone, "Phase", "State")
+		})
+	}
 }
 
 func TestEnumCatalogEmptySuffix(t *testing.T) {
