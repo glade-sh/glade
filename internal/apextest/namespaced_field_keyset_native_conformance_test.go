@@ -174,3 +174,22 @@ func runNamespacedDescribeConformance(t *testing.T, observations, caseTable stri
 		})
 	}
 }
+
+func TestNamespacedFieldMapSubscriberNeighbor(t *testing.T) {
+	root := filepath.Join("testdata", "conformance", "namespaced_field_keyset", "project")
+	index := loadTestIndex(t, root)
+	org := orgFromIndex(index)
+	org.Namespace = "outside"
+	assignCapturedPermissionSets(t, &org, configuredTestPermissionSets(t, root)...)
+	program, err := vm.CompileAnonymousWithOptions(`
+Map<String, Schema.SObjectField> fields = KOrdQ621__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(false, fields.containsKey('Alpha__c'));
+`, vm.CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	if _, err := runner.execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
