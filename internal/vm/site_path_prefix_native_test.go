@@ -11,13 +11,8 @@ import (
 
 // NATIVE Site.getPathPrefix without a Site request context
 // ../apextest/testdata/conformance/site_path_prefix/org.tsv anonymous+istest 62.0+67.0.
-// Native returns ” in a plain org and in an org with Communities declared and
-// no active Site. Rows that Glade still answers from its seeded Site record
-// are listed in siteSeedDivergence and keep their origin/main behavior.
-var siteSeedDivergence = map[string]bool{
-	"getSiteId": true, "getMasterLabel": true, "getAdminEmail": true,
-	"getOriginalUrl": true, "getAnalyticsTrackingCode": true,
-}
+// Native returns the empty string in a plain org and in an org with Communities declared and
+// no active Site. Glade has no Site request context, so the seeded Site record is not visible.
 
 func TestExecSitePathPrefixNativeConformance(t *testing.T) {
 	const fixture = "../apextest/testdata/conformance/site_path_prefix/"
@@ -44,7 +39,7 @@ func TestExecSitePathPrefixNativeConformance(t *testing.T) {
 	covered := 0
 	for _, row := range read("org.tsv")[1:] {
 		config, api, route, name, want := row[0], row[1], row[2], row[3], row[4]
-		if strings.HasPrefix(want, "COMPILE|") || siteSeedDivergence[name] {
+		if strings.HasPrefix(want, "COMPILE|") {
 			continue
 		}
 		covered++
@@ -74,7 +69,7 @@ System.assertEquals('` + strings.ReplaceAll(want, "'", "\\'") + `', observed);`
 			}
 		})
 	}
-	if covered != 64 {
-		t.Fatalf("native matrix: %d cells, want 64", covered)
+	if covered != 104 {
+		t.Fatalf("native matrix: %d cells, want 104", covered)
 	}
 }
