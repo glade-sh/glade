@@ -448,19 +448,44 @@ func (vm *VM) markCollectionRefsEscapedSince(previous, value Value) {
 		return
 	}
 	delete(vm.localOnlyCollectionRefs, value.Ref)
+	if value.Kind == ValueList {
+		// Non-container values without references and children retained at the same
+		// slot cannot add to the traversal set. Acquire one only when needed.
+		first := 0
+		for ; first < len(value.List); first++ {
+			child := &value.List[first]
+			if child.Ref == 0 {
+				if child.Kind != ValueObject && !mutableCollectionKind(child.Kind) {
+					continue
+				}
+			} else if first < len(previous.List) && previous.List[first].Ref == child.Ref && previous.List[first].Kind == child.Kind {
+				continue
+			}
+			break
+		}
+		if first == len(value.List) {
+			return
+		}
+		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+		seen := *seenPtr
+		clear(seen)
+		defer aliasRefSetPool.Put(seenPtr)
+		seen[value.Ref] = true
+		for i := first; i < len(value.List); i++ {
+			child := value.List[i]
+			if i < len(previous.List) && sameEscapedCollectionElement(previous.List[i], child) {
+				continue
+			}
+			vm.markCollectionRefsEscapedSeen(child, seen)
+		}
+		return
+	}
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
 	seen := *seenPtr
 	clear(seen)
 	defer aliasRefSetPool.Put(seenPtr)
 	seen[value.Ref] = true
 	switch value.Kind {
-	case ValueList:
-		for i, child := range value.List {
-			if i < len(previous.List) && sameEscapedCollectionElement(previous.List[i], child) {
-				continue
-			}
-			vm.markCollectionRefsEscapedSeen(child, seen)
-		}
 	case ValueSet:
 		for i, child := range value.Set {
 			if i < len(previous.Set) && sameEscapedCollectionElement(previous.Set[i], child) {

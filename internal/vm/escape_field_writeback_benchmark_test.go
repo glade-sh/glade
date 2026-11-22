@@ -2,7 +2,6 @@ package vm
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"os"
 	"testing"
 
@@ -44,8 +43,15 @@ func runEscapeFieldWriteback(tb testing.TB, program ir.Program) {
 		}
 		bytes[i] = byte(pixel.Int)
 	}
-	if got := fmt.Sprintf("%x", sha256.Sum256(bytes)); got != "c8f5d0341d54d951a71b136e6e2afcb14d11ed8489a7ae126a8fee0df6ecf193" {
-		tb.Fatalf("pixel digest = %s", got)
+	if len(pixels) != 20000 {
+		tb.Fatalf("pixel count = %d", len(pixels))
+	}
+	want := make([]byte, len(pixels))
+	for i := range want {
+		want[i] = byte(i % 256)
+	}
+	if got, exp := sha256.Sum256(bytes), sha256.Sum256(want); got != exp {
+		tb.Fatalf("pixel digest = %x, want %x", got, exp)
 	}
 }
 
