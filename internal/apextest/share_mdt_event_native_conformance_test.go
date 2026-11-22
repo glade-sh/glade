@@ -37,6 +37,7 @@ var shareMdtFixtures = []shareMdtFixture{
 	{dir: "share_mdt_basic_queries", classes: map[string]string{"t_share": "ShareProbeTest"}},
 	{dir: "share_mdt_runas_access", classes: map[string]string{"t_runas": "RunAsProbeTest"}},
 	{dir: "share_table_visibility", classes: map[string]string{"t_runas": "RunAsProbeTest"}},
+	{dir: "share_mdt_profile_grant", classes: map[string]string{"t_prof": "ProfProbeTest"}},
 	{dir: "share_mdt_event_runas", classes: map[string]string{"t_evt": "EvtProbeTest"}},
 }
 

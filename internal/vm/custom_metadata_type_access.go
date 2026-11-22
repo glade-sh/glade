@@ -7,8 +7,9 @@ import (
 )
 
 // A runAs user reaches a custom metadata type only through a Custom Metadata
-// Types grant of an assigned permission set, or through the administrator's
-// View All Data. Profile-carried grants are not captured or loaded. The grant covers every field of the type,
+// Types grant of an assigned permission set or of the profile, or through the
+// administrator's View All Data (native rows share_mdt_profile_grant for a
+// custom profile). The grant covers every field of the type,
 // MasterLabel, DeveloperName and custom fields alike; field permissions play
 // no part. Without the grant the type is not accessible, the describe reports
 // false for the type and every field, and a USER_MODE query raises
