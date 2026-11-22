@@ -79,6 +79,7 @@
 - **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
 - **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
 - **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
+- **Nested enum lookup in test runtimes.** Cloned runtimes reuse a frozen class index while keeping later registrations local. On a synthetic 5,001-class workload with 100 clones and seven late registrations per clone, allocation fell from 267 MB to 203 MB per run with identical candidate results.
 
 ### CI
 
