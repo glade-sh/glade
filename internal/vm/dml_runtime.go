@@ -7017,7 +7017,20 @@ func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
 		vm.currentSourceExecutionPolicy().APIVersion != "67.0" || vm.currentUserProfileName(vm.testContext.CurrentUser) != "Standard User" {
 		return false
 	}
-	return vm.capturedReadLeadUpdate(op, value, false)
+	if !vm.capturedReadLeadUpdate(op, value, false) {
+		return false
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !storage.IDsEqual(stored.System.OwnerID, stored.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, stored.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
 }
 
 // defaultAnonymousReadLeadUpdate is the separately authenticated Standard User
