@@ -5234,9 +5234,11 @@ type partnerLeadShareIndex struct {
 // beginPartnerLeadShareScan scopes the index to a read-only record pass.
 // No index survives a pass, including when records share mutable field maps.
 func (vm *VM) beginPartnerLeadShareScan() func() {
-	previous := vm.partnerLeadShares
+	if vm.partnerLeadShares != nil {
+		return func() {}
+	}
 	vm.partnerLeadShares = &partnerLeadShareIndex{}
-	return func() { vm.partnerLeadShares = previous }
+	return func() { vm.partnerLeadShares = nil }
 }
 
 func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
