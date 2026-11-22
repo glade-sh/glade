@@ -114,3 +114,40 @@ func TestPartnerLeadTransferDefaultUncapturedShare(t *testing.T) {
 		})
 	}
 }
+
+// Multiple Manual shares are outside the captured transfer-model controls.
+func TestPartnerLeadTransferMultipleUncapturedShares(t *testing.T) {
+	org := storage.NewOrgState()
+	org.APIVersion = "67.0"
+	storage.EnsureStandardObject(&org, "Lead")
+	storage.EnsureStandardObject(&org, "LeadShare")
+	storage.EnsureStandardObject(&org, "Profile")
+	lead := org.Objects["Lead"]
+	lead.Definition.SharingModel = "ReadWriteTransfer"
+	lead.Records = map[storage.ID]storage.Record{}
+	for _, id := range []storage.ID{"00Q000000000001", "00Q000000000002", "00Q000000000003"} {
+		lead.Records[id] = storage.Record{ID: id, Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000001"}}
+	}
+	org.Objects["Lead"] = lead
+	shares := org.Objects["LeadShare"]
+	shares.Records = map[storage.ID]storage.Record{}
+	for id, leadID := range map[storage.ID]storage.ID{"00T000000000001": "00Q000000000001", "00T000000000002": "00Q000000000002"} {
+		shares.Records[id] = storage.Record{Fields: map[string]storage.Value{
+			"LeadId": storage.StringValue(string(leadID)), "UserOrGroupId": storage.StringValue("005000000000002"),
+			"LeadAccessLevel": storage.StringValue("Read"), "RowCause": storage.StringValue("Manual"),
+		}}
+	}
+	org.Objects["LeadShare"] = shares
+	profiles := org.Objects["Profile"]
+	profiles.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User")}}}
+	org.Objects["Profile"] = profiles
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.RunAsDepth = 1
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	if !machine.userModeRecordVisible("Lead", lead.Records["00Q000000000003"], machine.currentUserID()) {
+		t.Fatal("uncaptured multiple shares changed unshared Lead visibility")
+	}
+}
