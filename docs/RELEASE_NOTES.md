@@ -22,7 +22,7 @@
 - Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
 
-- `Type.isAssignableFrom` now throws the captured null-pointer exception when its argument is null at Apex API 62.0 and 67.0.
+- At Apex API 62.0 and 67.0, `Type.isAssignableFrom` throws the captured null-pointer exception for a null argument, and direct static integer recursion observes the captured anonymous and test-entry stack limits.
 
 ### Changes
 
