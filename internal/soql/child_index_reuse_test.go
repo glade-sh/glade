@@ -292,3 +292,27 @@ func TestChildRelationshipIndexNeighborDigests(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkChildRelationshipColdQuery(b *testing.B) {
+	org := childIndexBenchOrg(200, 3)
+	child := org.Objects["Contact"]
+	var versioned storage.ObjectState
+	versioned.Definition = child.Definition
+	versioned.SetRecords(child.Records)
+	org.Objects["Contact"] = versioned
+	query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account WHERE Id = '001000000000001'")
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		result, err := ExecuteWithCache(org, query, NewExecutionCache())
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(result.Records) != 1 || len(result.Records[0].Children["Contacts"]) != 3 {
+			b.Fatalf("unexpected result: %#v", result)
+		}
+	}
+}
