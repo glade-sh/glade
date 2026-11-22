@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -307,5 +308,79 @@ func TestReviewRegexDateVersionSwitchNeighbor(t *testing.T) {
 	start, _, _, _, err := callMatcherMemberWithPolicy(matcher, "start", nil, &cache, false)
 	if err != nil || start.Int != 2 {
 		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
+
+func TestReviewRegexDateFindStartNeighbor(t *testing.T) {
+	pattern, err := patternCompile([]Value{String("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, _, _, _, err := callMatcherMember(matcher, "find", []Value{Int(0)})
+	if err != nil || !found.Bool {
+		t.Fatalf("find(0): %v, %v", found, err)
+	}
+	found, _, _, _, err = callMatcherMember(matcher, "find", nil)
+	if err != nil || !found.Bool {
+		t.Fatalf("find: %v, %v", found, err)
+	}
+	start, _, _, _, err := callMatcherMember(matcher, "start", nil)
+	if err != nil || start.Int != 2 {
+		t.Fatalf("start %v, %v; want 2", start, err)
+	}
+}
+
+func TestReviewRegexDateMutatorNeighbors(t *testing.T) {
+	for _, method := range []string{"usePattern", "useAnchoringBounds", "useTransparentBounds"} {
+		for _, before := range []bool{false, true} {
+			if method == "usePattern" && before {
+				continue
+			}
+			t.Run(fmt.Sprintf("%s/before=%v", method, before), func(t *testing.T) {
+				pattern, err := patternCompile([]Value{String("")})
+				if err != nil {
+					t.Fatal(err)
+				}
+				matcher, _, _, _, err := callPatternMember(pattern, "matcher", []Value{String("😀")})
+				if err != nil {
+					t.Fatal(err)
+				}
+				mutate := func() {
+					t.Helper()
+					args := []Value{pattern}
+					if method == "useAnchoringBounds" {
+						args = []Value{Bool(false)}
+					}
+					if method == "useTransparentBounds" {
+						args = []Value{Bool(true)}
+					}
+					if _, _, _, _, err = callMatcherMember(matcher, method, args); err != nil {
+						t.Fatal(err)
+					}
+				}
+				if before {
+					mutate()
+				}
+				found, _, _, _, err := callMatcherMember(matcher, "find", nil)
+				if err != nil || !found.Bool {
+					t.Fatalf("first find %v, %v", found, err)
+				}
+				if !before {
+					mutate()
+				}
+				found, _, _, _, err = callMatcherMember(matcher, "find", nil)
+				if err != nil || !found.Bool {
+					t.Fatalf("second find %v, %v", found, err)
+				}
+				start, _, _, _, err := callMatcherMember(matcher, "start", nil)
+				if err != nil || start.Int != 2 {
+					t.Fatalf("start %v, %v; want 2", start, err)
+				}
+			})
+		}
 	}
 }
