@@ -102,3 +102,54 @@ func TestCommunityCaseExplicitDeleteDenialNeighbor(t *testing.T) {
 		t.Fatalf("expected explicit profile denial, got %q", got)
 	}
 }
+
+func TestCommunityCaseExplicitDeleteDenialCapturedShape(t *testing.T) {
+	root := t.TempDir()
+	fixture := "testdata/community_case_rest/project"
+	if err := filepath.WalkDir(fixture, func(path string, e fs.DirEntry, err error) error {
+		if err != nil || e.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(fixture, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(root, rel)
+		if err = os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0644)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sch, err := schema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx := typesys.Build(p, sch)
+	org := explicitCaseDenialOrg("67.0")
+	objects := org.Objects["ObjectPermissions"]
+	objects.Records["110000000000002"] = storage.Record{ID: "110000000000002", Object: "ObjectPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue("00e000000000002"), "SObjectType": storage.StringValue("Case"), "PermissionsDelete": storage.BooleanValue(false)}}
+	org.Objects["ObjectPermissions"] = objects
+	host := New(&org)
+	host.SetProjectIndex(idx)
+	req := httptest.NewRequest(http.MethodPost, "/services/apexrest/RouteCaseRest67/", strings.NewReader("{}"))
+	req.Header.Set("X-GLADE-User-Id", "005000000000002")
+	rec := httptest.NewRecorder()
+	host.ServeHTTP(rec, req)
+	var got string
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("HTTP=%d body=%s err=%v", rec.Code, rec.Body.String(), err)
+	}
+	if !strings.Contains(got, "delete=System.SecurityException") {
+		t.Fatalf("expected explicit profile denial, got %q", got)
+	}
+}
