@@ -1,0 +1,196 @@
+//go:build darwin
+
+package watch
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func largeWatcherProject(tb testing.TB) (string, Snapshot) {
+	tb.Helper()
+	root := tb.TempDir()
+	for i := 0; i < 1500; i++ {
+		for _, ext := range []string{".cls", ".cls-meta.xml"} {
+			path := filepath.Join(root, fmt.Sprintf("Class%04d%s", i, ext))
+			if err := os.WriteFile(path, []byte("initial content\n"), 0600); err != nil {
+				tb.Fatal(err)
+			}
+		}
+	}
+	initial, err := CaptureScope(NormalizeScope(Scope{Roots: []string{root}}))
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return root, initial
+}
+
+func TestWatcherLargeProjectLifecycle(t *testing.T) {
+	root, initial := largeWatcherProject(t)
+	w, selected, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: BackendNative, Debounce: 25 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	if selected != BackendNative {
+		t.Fatalf("backend = %s", selected)
+	}
+	path := filepath.Join(root, "Class0750.cls")
+	replaceWatchFile(t, path, "edited content")
+	awaitScopedChange(t, w, path, ChangeModified)
+	renamed := filepath.Join(root, "Renamed.cls")
+	if err := os.Rename(path, renamed); err != nil {
+		t.Fatal(err)
+	}
+	awaitScopedChanges(t, w, map[string]ChangeOp{path: ChangeDeleted, renamed: ChangeAdded})
+	if err := os.Remove(renamed); err != nil {
+		t.Fatal(err)
+	}
+	awaitScopedChange(t, w, renamed, ChangeDeleted)
+}
+
+func TestWatcherReconcilesDirectoryChangesAndScope(t *testing.T) {
+	workspace := t.TempDir()
+	root := filepath.Join(workspace, "project")
+	oldDir := filepath.Join(root, "old")
+	newDir := filepath.Join(root, "new")
+	first := filepath.Join(oldDir, "First.cls")
+	second := filepath.Join(oldDir, "Second.cls")
+	writeWatchFile(t, first, "first")
+	writeWatchFile(t, second, "second")
+	external := filepath.Join(workspace, "config", "glade.yml")
+	scope := Scope{Roots: []string{root}, Files: []string{external}}
+	initial, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Scope: scope, Backend: BackendNative, Debounce: 100 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	if err := os.Rename(oldDir, newDir); err != nil {
+		t.Fatal(err)
+	}
+	awaitScopedChanges(t, w, map[string]ChangeOp{
+		first: ChangeDeleted, second: ChangeDeleted,
+		filepath.Join(newDir, "First.cls"):  ChangeAdded,
+		filepath.Join(newDir, "Second.cls"): ChangeAdded,
+	})
+	writeWatchFile(t, external, "project: {}")
+	awaitScopedChange(t, w, external, ChangeAdded)
+	writeWatchFile(t, filepath.Join(workspace, "neighbor", "Ignored.cls"), "neighbor")
+	select {
+	case changes := <-w.Changes():
+		t.Fatalf("unrelated neighbor produced changes: %#v", changes)
+	case err := <-w.Errors():
+		t.Fatal(err)
+	case <-time.After(600 * time.Millisecond):
+	}
+}
+
+func BenchmarkWatcherLargeProjectIdle(b *testing.B) {
+	benchmarkWatcherLargeProjectIdle(b, BackendNative)
+}
+
+func BenchmarkWatcherLargeProjectPollingIdle(b *testing.B) {
+	benchmarkWatcherLargeProjectIdle(b, BackendPoll)
+}
+
+func benchmarkWatcherLargeProjectIdle(b *testing.B, backend Backend) {
+	root, initial := largeWatcherProject(b)
+	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: backend, Debounce: 200 * time.Millisecond}, initial)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer w.Close()
+	output, err := exec.Command("lsof", "-Fn", "-p", fmt.Sprint(os.Getpid())).Output()
+	if err != nil {
+		b.Fatal(err)
+	}
+	fds := 0
+	for _, line := range strings.Split(string(output), "\n") {
+		if strings.HasPrefix(line, "f") {
+			if _, err := strconv.Atoi(line[1:]); err == nil {
+				fds++
+			}
+		}
+	}
+	// Exclude startup event delivery from the idle interval. Startup work is
+	// measured separately from the steady-state resource use here.
+	time.Sleep(time.Second)
+	var before, after syscall.Rusage
+	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &before); err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		time.Sleep(12 * time.Second)
+	}
+	b.StopTimer()
+	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &after); err != nil {
+		b.Fatal(err)
+	}
+	cpu := func(r syscall.Rusage) int64 {
+		return r.Utime.Sec*1000000 + int64(r.Utime.Usec) + r.Stime.Sec*1000000 + int64(r.Stime.Usec)
+	}
+	b.ReportMetric(float64(cpu(after)-cpu(before))/float64(b.N), "cpu-us/op")
+	b.ReportMetric(float64(fds), "open-fds")
+}
+
+func TestWatcherExcludedNoiseDoesNotDelayTrackedEdit(t *testing.T) {
+	root := t.TempDir()
+	excluded := filepath.Join(root, "ignored")
+	tracked := filepath.Join(root, "Tracked.cls")
+	noise := filepath.Join(excluded, "Ignored.cls")
+	writeWatchFile(t, tracked, "before")
+	writeWatchFile(t, noise, "before")
+	scope := Scope{Roots: []string{root}, ExcludedRoots: []string{excluded}}
+	initial, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Scope: scope, Backend: BackendNative, Debounce: 150 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer watcher.Close()
+	stop, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(15 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				_ = os.WriteFile(noise, []byte(time.Now().String()), 0600)
+			}
+		}
+	}()
+	defer func() { close(stop); <-done }()
+	time.Sleep(250 * time.Millisecond)
+	if err := os.WriteFile(tracked, []byte("after"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case changes := <-watcher.Changes():
+		assertChange(t, changes, tracked, ChangeModified, FileKindApexClass)
+		if len(changes) != 1 {
+			t.Fatalf("excluded noise produced changes: %+v", changes)
+		}
+	case err := <-watcher.Errors():
+		t.Fatal(err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("tracked edit delayed by excluded subtree activity")
+	}
+}

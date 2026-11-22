@@ -23,6 +23,9 @@ func NewBackendWatcher(ctx context.Context, cfg Config, initial Snapshot) (Backe
 	case BackendPoll:
 		return NewPollingWatcher(ctx, cfg, initial), BackendPoll, nil
 	case BackendNative, BackendAuto:
+		if watcher, ok := newRecursiveWatcher(ctx, cfg, initial); ok {
+			return watcher, BackendNative, nil
+		}
 		watcher, err := NewNativeWatcher(ctx, cfg, initial)
 		if err == nil {
 			return watcher, BackendNative, nil

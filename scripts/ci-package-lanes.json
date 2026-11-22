@@ -215,7 +215,7 @@
     "./internal/typesys": 3,
     "./internal/visualforce": 7,
     "./internal/vm": 74,
-    "./internal/watch": 1,
+    "./internal/watch": 2,
     "./internal/dml": 3
   }
 }

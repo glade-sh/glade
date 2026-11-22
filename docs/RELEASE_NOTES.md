@@ -87,6 +87,7 @@
 - **Built-in calls.** Repeated calls avoid redundant normalization for canonical built-in names while retaining runtime precedence checks.
 - **Scalar object describes.** Direct scalar reads from object type describes avoid copying the describe root when it cannot escape. On a synthetic object with 64 generated fields, a warm read used 272 bytes and 17 allocations instead of 14,112 bytes and 90 allocations.
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
+- **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 
 ### CI
 
