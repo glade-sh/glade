@@ -1,0 +1,4 @@
+id	route	file
+query	anonymous	query.apex
+metadata	anonymous	metadata.apex
+routes	istest	ProbeRoutes
