@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -63,6 +64,22 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	lead.PutRecord(changedLead.ID, changedLead)
 	org.Objects["Lead"] = lead
 	check(true)
+	for _, mutation := range []struct {
+		field string
+		value storage.Value
+	}{
+		{"LeadId", storage.IDValue("00Q000000000002")},
+		{"LeadAccessLevel", storage.StringValue("Edit")},
+	} {
+		original := share.Fields
+		share.Fields = maps.Clone(original)
+		share.Fields[mutation.field] = mutation.value
+		put()
+		check(false)
+		share.Fields = original
+		put()
+		check(true)
+	}
 	share.Fields = map[string]storage.Value{"LeadId": storage.IDValue("00Q000000000001"), "RowCause": storage.StringValue("Manual"), "UserOrGroupId": storage.IDValue("005000000000003"), "LeadAccessLevel": storage.StringValue("Read")}
 	put()
 	check(false)
