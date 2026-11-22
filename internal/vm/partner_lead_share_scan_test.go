@@ -244,3 +244,19 @@ func TestPartnerLeadNestedShareScanReusesIndex(t *testing.T) {
 		t.Fatal("nested scan did not preserve the enclosing index")
 	}
 }
+
+func TestPartnerLeadUncapturedCreatorAvoidsShareScan(t *testing.T) {
+	machine, _ := partnerLeadChildVisibilityMachine(t)
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	end := machine.beginPartnerLeadShareScan()
+	defer end()
+	for _, record := range machine.Org.Objects["Lead"].Records {
+		if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+			t.Fatal("uncaptured creator lost visibility")
+		}
+		if machine.partnerLeadShares.ready {
+			t.Fatal("uncaptured creator scanned share rows")
+		}
+		break
+	}
+}
