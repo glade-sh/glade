@@ -371,23 +371,26 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	}
 	var childVisible func(string, storage.Record) bool
 	var childFieldReadable func(string, string) bool
-	var endChildLeadScan func()
-	endChildScan := func() {
-		if endChildLeadScan != nil {
-			endChildLeadScan()
-			endChildLeadScan = nil
+	var endLeadReadScan func()
+	startLeadReadScan := func(objectName string) {
+		if endLeadReadScan == nil && strings.EqualFold(objectName, "Lead") {
+			endLeadReadScan = vm.beginPartnerLeadShareScan()
 		}
 	}
+	endLeadScan := func() {
+		if endLeadReadScan != nil {
+			endLeadReadScan()
+			endLeadReadScan = nil
+		}
+	}
+	defer endLeadScan()
 	if accounting == soqlOrdinaryAccounting && explicitUserMode && (apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentSourceExecutionPolicy().APIVersion) {
-		defer endChildScan()
 		// The unconditional-visibility test depends only on the object and
 		// the actor, which are fixed for the life of one query. Decide it once
 		// per object instead of once per row.
 		unrestricted := map[string]bool{}
 		childVisible = func(objectName string, record storage.Record) bool {
-			if endChildLeadScan == nil && strings.EqualFold(objectName, "Lead") {
-				endChildLeadScan = vm.beginPartnerLeadShareScan()
-			}
+			startLeadReadScan(objectName)
 			all, ok := unrestricted[objectName]
 			if !ok {
 				all = vm.userModeUnrestrictedObject(objectName, vm.currentUserID())
@@ -403,6 +406,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		}
 	}
 	executeContext := soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), Locale: vm.currentUserInfoField("LocaleSidKey", "en_US"), FormatDatetime: vm.soqlFormatDatetime, UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields(), ChildRecordVisible: childVisible, ChildFieldReadable: childFieldReadable, WindowRecordVisible: childVisible, UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+		startLeadReadScan(objectName)
 		accessSequence := 0
 		if accessProjection {
 			key := actorKey + ":" + canonicalIDMapKey(string(record.ID))
@@ -413,9 +417,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			}
 		}
 		return vm.userRecordAccessForRelationship(objectName, record, query.SecurityMode, explicitMode, accessSequence, permissionSetID != "")
-	}, NestedUserRecordAccess: vm.userRecordAccessForRecord}
+	}, NestedUserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+		startLeadReadScan(objectName)
+		return vm.userRecordAccessForRecord(objectName, record)
+	}}
 	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
-	endChildScan()
+	endLeadScan()
 	if err != nil && executeOrg == vm.Org && vm.lazySpreadCompletesMissingObject(err) {
 		// The executor met a catalog object the lazy spread had not added
 		// (a relationship target, a TYPEOF type, a nested subquery). The
@@ -429,7 +436,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			}
 		}
 		result, err = soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
-		endChildScan()
+		endLeadScan()
 	}
 	if err != nil {
 		var queryErr *soql.QueryError
