@@ -12,7 +12,7 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	org := storage.NewOrgState()
 	org.APIVersion = "67.0"
 	org.Features = []string{project.PlainDeveloperObjectShape}
-	for _, object := range []string{"Lead", "LeadShare", "Profile", "UserLicense"} {
+	for _, object := range []string{"Lead", "LeadShare", "User", "Profile", "UserLicense"} {
 		storage.EnsureStandardObject(&org, object)
 	}
 	lead := org.Objects["Lead"]
@@ -20,8 +20,12 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	lead.PutRecord("00Q000000000001", storage.Record{ID: "00Q000000000001", Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000001"}})
 	org.Objects["Lead"] = lead
 	profiles := org.Objects["Profile"]
+	profiles.PutRecord("00e000000000001", storage.Record{ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("System Administrator")}})
 	profiles.PutRecord("00e000000000002", storage.Record{ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}})
 	org.Objects["Profile"] = profiles
+	users := org.Objects["User"]
+	users.PutRecord("005000000000001", storage.Record{ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue("00e000000000001")}})
+	org.Objects["User"] = users
 	licenses := org.Objects["UserLicense"]
 	licenses.PutRecord("100000000000001", storage.Record{ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}})
 	org.Objects["UserLicense"] = licenses

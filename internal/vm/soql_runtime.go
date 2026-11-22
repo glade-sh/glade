@@ -5257,15 +5257,23 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 	nonOwnerShares := 0
 	for _, share := range vm.partnerLeadNonOwnerShares() {
 		cause, _ := share.GetField("RowCause")
-		if transfer {
-			nonOwnerShares++
-			if nonOwnerShares > 1 {
+		nonOwnerShares++
+		if nonOwnerShares > 1 {
+			return false
+		}
+		parent, _ := share.GetField("LeadId")
+		_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
+		if !found {
+			return false
+		}
+		if actorID == "" {
+			if !vm.capturedPartnerLeadTestOwner(lead) {
 				return false
 			}
-			parent, _ := share.GetField("LeadId")
-			_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
-			if !found || !strings.HasPrefix(string(lead.System.OwnerID), "005") ||
-				(actorID == "" && !storage.IDsEqual(lead.System.OwnerID, lead.System.CreatedByID) || actorID != "" && !storage.IDsEqual(lead.System.CreatedByID, storage.ID(actorID))) {
+		} else {
+			_, owner, ownerFound := storage.LookupRecordByID(vm.Org.Objects["User"].Records, lead.System.OwnerID)
+			profile, _ := owner.GetField("ProfileId")
+			if !ownerFound || vm.currentProfileName(storageValueIDText(profile)) != "System Administrator" || !storage.IDsEqual(lead.System.CreatedByID, storage.ID(actorID)) {
 				return false
 			}
 		}
