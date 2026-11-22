@@ -225,3 +225,22 @@ func TestPartnerLeadShareScanTracksAliasedRecordMutation(t *testing.T) {
 		t.Fatalf("aliased non-owner shares = %d, want 1", len(got))
 	}
 }
+
+func TestPartnerLeadNestedShareScanReusesIndex(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "LeadShare")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	endOuter := machine.beginPartnerLeadShareScan()
+	defer endOuter()
+	machine.partnerLeadNonOwnerShares()
+	outer := machine.partnerLeadShares
+	endInner := machine.beginPartnerLeadShareScan()
+	if machine.partnerLeadShares != outer {
+		t.Fatal("nested read-only scan discarded the enclosing index")
+	}
+	endInner()
+	if machine.partnerLeadShares != outer {
+		t.Fatal("nested scan did not preserve the enclosing index")
+	}
+}
