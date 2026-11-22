@@ -1,7 +1,6 @@
 package testreport
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -281,9 +280,7 @@ func writeStyledConsoleProblem(out *strings.Builder, suiteName string, testCase 
 }
 
 func WriteJSON(w io.Writer, run Run) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(NativePerTestRows(run))
+	return writeReportJSON(w, NativePerTestRows(run))
 }
 
 func WriteJUnitXML(w io.Writer, run Run) error {
