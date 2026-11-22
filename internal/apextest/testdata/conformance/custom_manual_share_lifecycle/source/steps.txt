@@ -1,0 +1,30 @@
+Synthetic capture request. Each numbered step executes as a separate anonymous
+Apex request, and observations occur in separate requests after the prior step
+commits. Repeat the numbered record steps at each API using a distinct record
+name. The setup username is a fresh unique value. The without_read control omits
+the read permission set and its assignment. The metadata files here are the
+deployed object and permission set.
+
+Setup user:
+Profile p=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1]; User u=new User(Alias='probeusr', Email='probe@example.invalid', EmailEncodingKey='UTF-8', LastName='Probe', LanguageLocaleKey='en_US', LocaleSidKey='en_US', TimeZoneSidKey='America/Los_Angeles', ProfileId=p.Id, Username='<unique>@example.invalid'); insert u;
+
+Setup object-read permission (with_read only):
+User u=[SELECT Id FROM User WHERE Alias='probeusr' LIMIT 1]; PermissionSet p=[SELECT Id FROM PermissionSet WHERE Name='ProbeRead' LIMIT 1]; insert new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetId=p.Id);
+
+1. insert new ProbeAccess__c(Name='<record-name>');
+2. Observe.
+3. insert new ProbeAccess__Share(ParentId=rec.Id,UserOrGroupId=u.Id,AccessLevel='Read',RowCause='Manual');
+4. Observe.
+5. delete [SELECT Id FROM ProbeAccess__Share WHERE ParentId=:rec.Id AND UserOrGroupId=:u.Id AND RowCause='Manual'];
+6. Observe.
+7. delete rec;
+8. Observe.
+
+For steps 3, 5, 7 and each observation, prefix:
+User u=[SELECT Id FROM User WHERE Alias='probeusr' LIMIT 1]; ProbeAccess__c rec=[SELECT Id FROM ProbeAccess__c WHERE Name='<record-name>' LIMIT 1 ALL ROWS];
+
+Observe:
+List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess,HasEditAccess,MaxAccessLevel FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:rec.Id]; String s=a.isEmpty()?'none':String.valueOf(a[0].HasReadAccess)+','+String.valueOf(a[0].HasEditAccess)+','+String.valueOf(a[0].MaxAccessLevel); System.debug(LoggingLevel.ERROR,'OBS|'+String.valueOf(a.size())+':'+s);
+
+Each outcome is <row count>:<read flag>,<edit flag>,<maximum access level>,
+or 0:none when no access row exists.
