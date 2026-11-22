@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Site.getPathPrefix without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` still answer from the seeded Site and differ from the captured null.
+- **Site methods without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` return null, as captured, instead of answering from the seeded Site.
 
 - **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
 

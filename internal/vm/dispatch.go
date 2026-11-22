@@ -3752,10 +3752,8 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("Id"), nil
-		}
-		return String(vm.firstOrgRecordID("Site", "local-site")), nil
+		// Native: null without a Site request context, whatever Site records exist.
+		return typedNull("Id"), nil
 	case "Site.getBaseUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
@@ -3773,7 +3771,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		if (strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl")) && !vm.hasOrgRecords("Site") {
+		if strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl") {
 			return typedNull("String"), nil
 		}
 		return String(""), nil
@@ -3817,10 +3815,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("String"), nil
-		}
-		return String(vm.siteAdminEmail()), nil
+		return typedNull("String"), nil
 	case "Site.getAdminId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
@@ -3833,10 +3828,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("String"), nil
-		}
-		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
+		return typedNull("String"), nil
 	case "Site.isRegistrationEnabled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isRegistrationEnabled expects 0 arguments")

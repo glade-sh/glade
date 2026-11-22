@@ -264,3 +264,17 @@ func TestCB68PreservesNeighboringValidPlatformSurfaces(t *testing.T) {
 		})
 	}
 }
+
+// NATIVE ../apextest/testdata/conformance/site_path_prefix/org.tsv getPrefix anonymous 62.0:
+// "Method was removed after version 29.0". getCurrentSiteUrl: same error in a deployed
+// class at 62.0 (capture deploy log, not a fixture row).
+func TestAPI62RejectsRemovedSiteURLHelpers(t *testing.T) {
+	for _, method := range []string{"getCurrentSiteUrl", "getPrefix"} {
+		t.Run(method, func(t *testing.T) {
+			result := AnalyzeAnonymous(typesys.Index{}, "Site."+method+"();", "62.0")
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA028") {
+				t.Fatalf("accepted removed Site.%s at 62.0: %#v", method, result.Diagnostics)
+			}
+		})
+	}
+}
