@@ -11,6 +11,7 @@ func TestRegexReplaceUncapturedNeighbors(t *testing.T) {
 		{"ascii", "abc", "", "-", "-a-b-c-", true},
 		{"bmp", "aéb", "x*", "-", "-a-é-b-", true},
 		{"assertion", "😀a", "(?=.)", "!", "!😀!a", true},
+		{"assertionAlternative", "😀a", "(?=.)|$", "!", "!😀!a!", true},
 		{"first", "a😀b", "", "-", "-a😀b", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
