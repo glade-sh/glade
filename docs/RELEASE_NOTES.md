@@ -20,7 +20,7 @@
 - **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
 
-- In Apex tests, a Standard User’s denied Lead text update under Read sharing reports the captured DML exception at API 67.0. A Customer Community user’s Case delete permission and user-mode delete follow the captured API 62.0 and 67.0 results.
+- A Standard User’s denied Lead text update under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. A Customer Community user’s Case delete permission and user-mode delete follow the captured API 62.0 and 67.0 results.
 
 - A Partner Community user’s Lead visibility, Manual Read share and named anonymous access rows follow the captured private external default at API 62.0 and 67.0.
 

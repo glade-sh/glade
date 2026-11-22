@@ -7013,10 +7013,56 @@ func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
 		methodHasModifier(class.Modifiers, "without sharing") || methodHasModifier(class.Modifiers, "inherited sharing") {
 		return false
 	}
-	if op != "update" || value.Kind != ValueObject || vm.Org == nil || vm.currentTrigger || vm.testContext == nil ||
-		vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
-		vm.currentSourceExecutionPolicy().APIVersion != "67.0" ||
-		vm.currentUserProfileName(vm.testContext.CurrentUser) != "Standard User" ||
+	if vm.testContext == nil || vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
+		vm.currentSourceExecutionPolicy().APIVersion != "67.0" || vm.currentUserProfileName(vm.testContext.CurrentUser) != "Standard User" {
+		return false
+	}
+	return vm.capturedReadLeadUpdate(op, value, false)
+}
+
+// defaultAnonymousReadLeadUpdate is the separately authenticated Standard User
+// observation in lead_read_anonymous_update/org.tsv:2-3.
+func (vm *VM) defaultAnonymousReadLeadUpdate(op string, value Value) bool {
+	if op != "update" || value.Kind != ValueObject || vm.testContext != nil || vm.currentTrigger || vm.Org == nil || vm.currentUserProfileName(vm.executionUser) != "Standard User" {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if api != "62.0" && api != "67.0" {
+		return false
+	}
+	permissionSetFound := false
+	for _, id := range vm.assignedPermissionSetIDs(vm.currentUserID()) {
+		match := true
+		for _, field := range []string{"PermissionsApiEnabled", "PermissionsAuthorApex", "PermissionsViewSetup", "PermissionsModifyMetadata", "PermissionsViewRoles"} {
+			if !vm.recordHasAnyBooleanPermission("PermissionSet", id, field) {
+				match = false
+				break
+			}
+		}
+		if match {
+			permissionSetFound = true
+			break
+		}
+	}
+	selected, queried := value.Fields[sobjectQueriedFieldsField]
+	if !permissionSetFound || !queried || selected.Kind != ValueMap || len(selected.Map) != 3 || !vm.capturedReadLeadUpdate(op, value, true) {
+		return false
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !storage.IDsEqual(stored.System.OwnerID, stored.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, stored.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
+}
+
+func (vm *VM) capturedReadLeadUpdate(op string, value Value, queried bool) bool {
+	if op != "update" || value.Kind != ValueObject || vm.Org == nil || vm.currentTrigger ||
 		!strings.EqualFold(vm.Org.Objects["Lead"].Definition.SharingModel, "Read") {
 		return false
 	}
@@ -7035,7 +7081,7 @@ func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
 		if isInternalSObjectField(name) || strings.EqualFold(name, "Id") {
 			continue
 		}
-		if dmlAccessibleSObject(value) && isSObjectSystemField(name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
+		if (queried || dmlAccessibleSObject(value)) && isSObjectSystemField(name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
 			continue
 		}
 		if isDefaultedSObjectField(value, name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
@@ -7237,7 +7283,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	if op == "update" {
 		dmlOptions.ApexRecordTypeUpdateMode = vm.recordTypeDMLMode(dmlMode)
 	}
-	if mode == ir.DMLModeDefault && (vm.defaultRunAsPrivateTextUpdate(op, value) || vm.defaultRunAsReadLeadUpdate(op, value)) {
+	if mode == ir.DMLModeDefault && (vm.defaultRunAsPrivateTextUpdate(op, value) || vm.defaultRunAsReadLeadUpdate(op, value) || vm.defaultAnonymousReadLeadUpdate(op, value)) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, true, true, dmlMode)
 	} else if mode == ir.DMLModeDefault && dmlMode == "SYSTEM_MODE" && op == "delete" &&
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
