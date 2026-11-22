@@ -2469,6 +2469,25 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 	if !vm.profileHasCommunityLicense(profileID) {
 		return false, false
 	}
+	// community_case_anonymous/org.tsv:2-3: the custom Community profile has
+	// API access and one explicit Case read/create/edit grant, with Subject and
+	// Origin field grants and no Case delete grant.
+	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
+		vm.testContext == nil && !vm.currentTrigger && (vm.currentSourceExecutionPolicy().APIVersion == "62.0" || vm.currentSourceExecutionPolicy().APIVersion == "67.0") &&
+		vm.profileHasLicenseKey(profileID, "PID_Customer_Community") && vm.currentUserInfoField("UserType", "") == "CspLitePortal" &&
+		vm.recordHasAnyBooleanPermission("Profile", profileID, "PermissionsApiEnabled") {
+		for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+			read := vm.sourceObjectPermission(source, "Case", "isAccessible")
+			create := vm.sourceObjectPermission(source, "Case", "isCreateable")
+			edit := vm.sourceObjectPermission(source, "Case", "isUpdateable")
+			deleteAllowed, deleteKnown := vm.explicitObjectPermission(source.ID, "Case", "isDeletable")
+			if read && create && edit && deleteKnown && !deleteAllowed && len(source.Mutes) == 0 &&
+				vm.sourceFieldPermission(source, "Case", "Subject", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Subject", "isUpdateable") &&
+				vm.sourceFieldPermission(source, "Case", "Origin", "isAccessible") && vm.sourceFieldPermission(source, "Case", "Origin", "isUpdateable") {
+				return false, true
+			}
+		}
+	}
 	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
 	// profile cannot delete Case in the captured test runAs routes.
 	api := vm.currentSourceExecutionPolicy().APIVersion
