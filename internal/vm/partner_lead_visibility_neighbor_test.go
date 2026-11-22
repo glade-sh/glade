@@ -49,25 +49,25 @@ func BenchmarkPartnerLeadVisibilityOwnerShares(b *testing.B) {
 	org := storage.NewOrgState()
 	org.APIVersion = "67.0"
 	org.Features = []string{project.PlainDeveloperObjectShape}
-	for _, o := range []string{"Lead", "LeadShare", "Profile"} {
-		storage.EnsureStandardObject(&org, o)
+	for _, object := range []string{"Lead", "LeadShare", "Profile", "UserLicense"} {
+		storage.EnsureStandardObject(&org, object)
 	}
 	lead := org.Objects["Lead"]
 	lead.Definition.SharingModel = "ReadWriteTransfer"
-	lead.Records = map[storage.ID]storage.Record{}
 	shares := org.Objects["LeadShare"]
-	shares.Records = map[storage.ID]storage.Record{}
 	for i := 0; i < 200; i++ {
 		id := storage.ID(fmt.Sprintf("00Q%012d", i+1))
-		lead.Records[id] = storage.Record{ID: id, Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000001", CreatedByID: "005000000000001"}}
+		lead.PutRecord(id, storage.Record{ID: id, Object: "Lead", System: storage.SystemFields{OwnerID: "005000000000002", CreatedByID: "005000000000002"}})
 		sid := storage.ID(fmt.Sprintf("00T%012d", i+1))
-		shares.Records[sid] = storage.Record{ID: sid, Fields: map[string]storage.Value{"LeadId": storage.IDValue(id), "RowCause": storage.StringValue("Owner")}}
+		shares.PutRecord(sid, storage.Record{ID: sid, Fields: map[string]storage.Value{"LeadId": storage.IDValue(id), "RowCause": storage.StringValue("Owner")}})
 	}
-	org.Objects["Lead"] = lead
-	org.Objects["LeadShare"] = shares
+	org.Objects["Lead"], org.Objects["LeadShare"] = lead, shares
 	profiles := org.Objects["Profile"]
-	profiles.Records = map[storage.ID]storage.Record{"00e000000000002": {ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User")}}}
+	profiles.PutRecord("00e000000000002", storage.Record{ID: "00e000000000002", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("Partner Community User"), "UserLicenseId": storage.IDValue("100000000000001")}})
 	org.Objects["Profile"] = profiles
+	licenses := org.Objects["UserLicense"]
+	licenses.PutRecord("100000000000001", storage.Record{ID: "100000000000001", Object: "UserLicense", Fields: map[string]storage.Value{"LicenseDefinitionKey": storage.StringValue("PID_Partner_Community")}})
+	org.Objects["UserLicense"] = licenses
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
@@ -76,8 +76,14 @@ func BenchmarkPartnerLeadVisibilityOwnerShares(b *testing.B) {
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		visible := 0
 		for _, record := range lead.Records {
-			machine.userModeRecordVisible("Lead", record, machine.currentUserID())
+			if machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
+				visible++
+			}
+		}
+		if visible != 200 {
+			b.Fatalf("visible = %d, want 200", visible)
 		}
 	}
 }
