@@ -28,7 +28,7 @@ const SemanticABI = "sema-v99"
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v77"
+const PlatformABI = "salesforce-platform-v78"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
