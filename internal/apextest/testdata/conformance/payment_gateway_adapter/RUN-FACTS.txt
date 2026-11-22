@@ -2,7 +2,7 @@ capture: request
 started: 2026-11-22T16:17:29Z
 finished: 2026-11-22T16:19:49Z
 apis: 62.0 67.0
-routes: anonymous istest 
+routes: anonymous istest
 cases: 3
 sf: @salesforce/cli/2.159.7
 hub: campaign Dev Hub (scratch org, --duration-days 30 requested, deleted and verified after the run)

@@ -48,7 +48,7 @@ func TestPaymentGatewayAdapterNativeConformance(t *testing.T) {
 		}
 		seen[key] = true
 		t.Run(key, func(t *testing.T) {
-			files := map[string]string{"AdapterProbe.cls": read("AdapterProbe.cls"), "AdapterProbeTest.cls": read("AdapterProbeTest.cls")}
+			files := map[string]string{"AdapterProbe": read("AdapterProbe.cls"), "AdapterProbeTest": read("AdapterProbeTest.cls")}
 			if id == "INTERFACE_CONSTRUCTION" {
 				files = nil
 			}
