@@ -1,0 +1,4 @@
+Captured 2026-11-22 in a fresh 30-day Developer scratch org; deleted and deletion verified.
+Lead internal sharing model ReadWriteTransfer; external model omitted. Administrator created two Leads owned by another administrator. A Partner Community user had an assigned Lead-read permission set and a direct Manual Read share on the first Lead.
+The setup and grant used separate committed anonymous requests as recorded in partner_lead_anonymous_access/setup-user.apex, setup-records.apex, setup-reader.apex and grant.apex.
+Both controllers and pages were deployed in one source-format project with class and page metadata versions 59.0 and 67.0. API 67.0 anonymous requests fetched each page using PageReference.getContent; each controller queried the named user access rows after the grant. One rendered observation per host version.

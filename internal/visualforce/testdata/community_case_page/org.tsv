@@ -1,0 +1,3 @@
+id	api	route	outcome
+case_vf	62.0	visualforce	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException:DML operation DELETE not allowed on Case
+case_vf	67.0	visualforce	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException:DML operation DELETE not allowed on Case
