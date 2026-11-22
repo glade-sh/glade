@@ -3,6 +3,7 @@ package soql
 import (
 	"encoding/csv"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -47,5 +48,20 @@ func TestChildSemiJoinSiblingUncapturedNeighborRejected(t *testing.T) {
 	_, err := Parse(query)
 	if err == nil || err.Error() != "soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause" {
 		t.Fatalf("uncaptured ordered child: %v", err)
+	}
+}
+
+func TestChildSemiJoinSiblingUncapturedModifiersRejected(t *testing.T) {
+	const base = "SELECT Id, (SELECT Id FROM Contacts WHERE Email != null), (SELECT Id, Name FROM Opportunities WHERE StageName = 'Prospecting' AND Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE Role = 'Decision Maker') LIMIT 1), (SELECT Id FROM Cases LIMIT 1) FROM Account"
+	for _, tc := range []struct{ name, query string }{
+		{"parent_limit", base + " LIMIT 1"},
+		{"anti_join", strings.Replace(base, "Id IN (SELECT OpportunityId", "Id NOT IN (SELECT OpportunityId", 1)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := Parse(tc.query)
+			if err == nil || err.Error() != "soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause" {
+				t.Fatalf("uncaptured modifier: %v", err)
+			}
+		})
 	}
 }
