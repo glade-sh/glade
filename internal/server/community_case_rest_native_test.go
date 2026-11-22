@@ -32,7 +32,7 @@ func TestCommunityCaseRESTNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 7 {
+	if len(rows) != 9 {
 		t.Fatalf("got %d rows", len(rows)-1)
 	}
 	for _, row := range rows[1:] {
@@ -46,6 +46,9 @@ func TestCommunityCaseRESTNativeConformance(t *testing.T) {
 			t.Run(row[0]+"/"+row[1]+"/"+variant, func(t *testing.T) {
 				root := t.TempDir()
 				source := filepath.Join(fixture, "project")
+				if row[0] == "case_message" {
+					source = filepath.Join(fixture, "project-message")
+				}
 				if err := filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
 					if err != nil || entry.IsDir() {
 						return err
@@ -94,7 +97,7 @@ func TestCommunityCaseRESTNativeConformance(t *testing.T) {
 				host := New(&org)
 				host.SetProjectIndex(idx)
 				version := strings.TrimSuffix(row[1], ".0")
-				suffix := map[string]string{"case_rest": "", "case_constructed": "Constructed", "case_sharing": "Sharing"}[row[0]]
+				suffix := map[string]string{"case_rest": "", "case_constructed": "Constructed", "case_sharing": "Sharing", "case_message": ""}[row[0]]
 				req := httptest.NewRequest(http.MethodPost, "/services/apexrest/RouteCaseRest"+version+suffix+"/", strings.NewReader("{}"))
 				req.Header.Set("X-GLADE-User-Id", "005000000000002")
 				rec := httptest.NewRecorder()
