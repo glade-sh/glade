@@ -55,6 +55,15 @@ func (o *OrgState) EnableStandardSpreadSource() {
 			continue
 		}
 		if _, exists := o.Objects[name]; !exists {
+			// A template is already prepared. Keep the ordinary ensure for
+			// definitions that need repair or record-type seeding.
+			if canonical, installed := installSpreadObject(o, name); installed {
+				definition := o.Objects[canonical].Definition
+				signature := canonicalFeatureSignature(strings.Split(definition.Metadata[standardFieldsOverlayMarker], ","))
+				if len(definition.RecordTypes) == 0 && !standardObjectFieldsNeedWrite(definition, signature) && !standardObjectDefinitionNeedsWrite(definition, canonical, signature) {
+					continue
+				}
+			}
 			ensureStandardObjectWithProfile(o, name, nil)
 		}
 	}

@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -337,7 +338,14 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	}
 	result, err := machine.Execute(program)
 	if err != nil {
-		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
+		failure := executeAnonymousFailure(true, err.Error(), result.Debug)
+		var runtimeErr *vm.RuntimeError
+		if errors.As(err, &runtimeErr) {
+			if stack, ok := runtimeErr.CapturedAnonymousStackTrace(); ok {
+				failure["exceptionStackTrace"] = stack
+			}
+		}
+		writeJSON(w, http.StatusOK, failure)
 		return
 	}
 	if err := machine.DrainAsync(&result); err != nil {

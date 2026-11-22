@@ -488,6 +488,19 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		// Only an exception reads the frames; capturing them qualifies every
 		// frame's symbol, which every other `new` would pay for nothing.
 		if isExceptionType(typeName) {
+			// The uncaught anonymous rows in exception_rhs_call_frames/org.tsv
+			// cover an empty nested exception owned by the throwing class.
+			if len(vm.callStack) == 1 && vm.callStack[0].anonymousDirectCandidate {
+				entry := &vm.callStack[0]
+				owner := classNameFromMethod(entry.Symbol)
+				member, nested := strings.CutPrefix(strings.ToLower(class.Name), strings.ToLower(owner)+".")
+				entry.anonymousDirectThrow = owner != "" && nested && !strings.Contains(member, ".") &&
+					class.Nested && !class.Dependency && !class.PlatformType && class.Namespace == "" &&
+					class.APIVersion == entry.APIVersion && strings.EqualFold(class.SuperClass, "Exception") &&
+					len(class.Fields) == 0 && len(class.StaticFields) == 0 && len(class.Methods) == 0 &&
+					len(class.Constructors) == 0 && len(class.Interfaces) == 0 &&
+					len(class.StaticInitializers) == 0 && len(class.InstanceInitializers) == 0
+			}
 			object = annotateConstructedException(object, vm.rawStackFrames())
 		}
 		if !passiveDTO {
