@@ -33,6 +33,7 @@ func TestPartnerLeadShareScanTracksMutations(t *testing.T) {
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
 	machine.testContext.RunAsDepth = 1
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	check := func(want bool) {

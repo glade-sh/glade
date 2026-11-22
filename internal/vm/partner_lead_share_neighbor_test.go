@@ -57,6 +57,7 @@ func TestPartnerLeadUncapturedSharesKeepPublicVisibility(t *testing.T) {
 			machine.SetOrg(&org)
 			machine.EnableTestContext()
 			machine.testContext.CurrentUser = stripInaccessibleTestUser()
+			machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
 			machine.testContext.RunAsDepth = 1
 			machine.currentMethod = Method{APIVersion: "67.0"}
 			if !machine.userModeRecordVisible("Lead", lead.Records["00Q000000000001"], machine.currentUserID()) {

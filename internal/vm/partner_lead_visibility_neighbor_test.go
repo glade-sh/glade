@@ -72,6 +72,7 @@ func BenchmarkPartnerLeadVisibilityOwnerShares(b *testing.B) {
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
 	machine.testContext.RunAsDepth = 1
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	b.ResetTimer()
@@ -118,6 +119,7 @@ func TestPartnerLeadUncapturedLicenseKeepsPublicVisibility(t *testing.T) {
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
 	machine.testContext.RunAsDepth = 1
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	if !machine.userModeRecordVisible("Lead", record, machine.currentUserID()) {
@@ -153,6 +155,7 @@ func TestPartnerLeadUncapturedReaderKeepsPublicVisibility(t *testing.T) {
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.testContext.CurrentUser = stripInaccessibleTestUser()
+	machine.testContext.CurrentUser.Fields["UserType"] = String("PowerPartner")
 	machine.testContext.RunAsDepth = 1
 	machine.currentMethod = Method{APIVersion: "67.0"}
 	if !machine.userModeRecordVisible("Lead", record, "005000000000003") {
