@@ -78,6 +78,25 @@ func TestExplicitAliasLookupMatchesBaselineNeighbors(t *testing.T) {
 	}
 }
 
+func TestExplicitAliasLookupWithoutMarker(t *testing.T) {
+	row := aliasFieldLookupFixture()
+	row.Fields["pkg__Target__c"] = Int(12)
+	for _, marker := range []Value{Null, String("invalid"), Map()} {
+		row.Fields[sobjectExplicitFieldsField] = marker
+		if name, _, ok := explicitAliasObjectFieldValue(row, "Target__c"); ok {
+			t.Fatalf("unexpected alias %q with marker %#v", name, marker)
+		}
+	}
+	delete(row.Fields, sobjectExplicitFieldsField)
+	if name, _, ok := explicitAliasObjectFieldValue(row, "Target__c"); ok {
+		t.Fatalf("unexpected alias %q without a marker", name)
+	}
+	markExplicitSObjectField(&row, "pkg__Target__c")
+	if name, value, ok := explicitAliasObjectFieldValue(row, "Target__c"); !ok || name != "pkg__Target__c" || value.Int != 12 {
+		t.Fatalf("alias after marking = %q %#v %v", name, value, ok)
+	}
+}
+
 // This is the lookup at origin/main, retained as a differential oracle.
 func baselineExplicitAliasObjectFieldValue(object Value, name string) (string, Value, bool) {
 	stripped := storage.StripAnyNamespaceToken(name)
@@ -94,6 +113,18 @@ func baselineExplicitAliasObjectFieldValue(object Value, name string) (string, V
 
 func BenchmarkAliasFieldLookupWideRecord(b *testing.B) {
 	row := aliasFieldLookupFixture()
+	b.ReportAllocs()
+	for range b.N {
+		name, value, ok := objectFieldValue(row, "Target__c")
+		if !ok || name != "Target__c" || value.Kind != ValueInt || value.Int != 7 {
+			b.Fatalf("lookup = %q %#v %v", name, value, ok)
+		}
+	}
+}
+
+func BenchmarkAliasFieldLookupWithoutMarker(b *testing.B) {
+	row := aliasFieldLookupFixture()
+	delete(row.Fields, sobjectExplicitFieldsField)
 	b.ReportAllocs()
 	for range b.N {
 		name, value, ok := objectFieldValue(row, "Target__c")
