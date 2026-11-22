@@ -43,3 +43,37 @@ func TestWatcherCaseInsensitiveRoot(t *testing.T) {
 	replaceWatchFile(t, class, "after")
 	awaitScopedChange(t, watcher, filepath.Join(alias, "Example.cls"), ChangeModified)
 }
+
+func TestWatcherUnicodeEquivalentRoot(t *testing.T) {
+	workspace := t.TempDir()
+	root := filepath.Join(workspace, "Café")
+	alias := filepath.Join(workspace, "Cafe\u0301")
+	class := filepath.Join(root, "Example.cls")
+	writeWatchFile(t, class, "before")
+	actual, err := os.Stat(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := os.Stat(alias)
+	if os.IsNotExist(err) {
+		t.Skip("filesystem distinguishes Unicode normalization")
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !os.SameFile(actual, other) {
+		t.Skip("Unicode variant identifies a different directory")
+	}
+	initial, err := CaptureScope(Scope{Roots: []string{alias}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher, _, err := NewBackendWatcher(context.Background(), Config{Root: alias, Backend: BackendNative, Debounce: 20 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer watcher.Close()
+	time.Sleep(300 * time.Millisecond)
+	replaceWatchFile(t, class, "after")
+	awaitScopedChange(t, watcher, filepath.Join(alias, "Example.cls"), ChangeModified)
+}
