@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -65,5 +66,33 @@ func TestLeadReadModelUpdateUncapturedAPI(t *testing.T) {
 	got := run.Suites[0].Cases[0].Problem.Message
 	if !strings.Contains(got, "uraLead=10|") || !strings.Contains(got, "updLead=System.SecurityException:") {
 		t.Fatalf("uncaptured API 68 local observation changed: %s", got)
+	}
+}
+
+// An explicit class sharing declaration is outside the captured test entry.
+func TestLeadReadModelUpdateExplicitSharingScope(t *testing.T) {
+	const base = "testdata/conformance/lead_read_model_recalculation"
+	const api = "67.0"
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+	copyTree(t, filepath.Join(base, "project"), filepath.Join(root, "force-app/main/default"), api)
+	copyTree(t, filepath.Join(base, "project-scratch-def.json"), filepath.Join(root, "config/project-scratch-def.json"), api)
+	classPath := filepath.Join(root, "force-app/main/default/classes/PclEditTest.cls")
+	source, err := os.ReadFile(classPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changed := strings.Replace(string(source), "@isTest private class PclEditTest", "@isTest without sharing private class PclEditTest", 1)
+	if changed == string(source) {
+		t.Fatal("missing class declaration")
+	}
+	writeFile(t, classPath, changed)
+	run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{"PclEditTest"}, SelectedMethod: "run", NoDiskCache: true, Parallelism: 1})
+	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+		t.Fatalf("expected observation: %+v", run.Summary())
+	}
+	got := run.Suites[0].Cases[0].Problem.Message
+	if !strings.Contains(got, "updLead=System.SecurityException:") {
+		t.Fatalf("uncaptured explicit-sharing result changed: %s", got)
 	}
 }
