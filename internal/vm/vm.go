@@ -5340,6 +5340,19 @@ func runtimeError(thrown Value, stack []callFrame) error {
 	err := &RuntimeError{Type: errorType, Message: message, exceptionMessage: exceptionMessage}
 	if len(stack) != 0 {
 		err.Stack = stackFrames(dropActiveEntryFrame(stack))
+		if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 &&
+			thrown.exceptionAnonymousCallerLine == stack[0].anonymousCallerLine {
+			triggerBoundary := false
+			for _, frame := range stack {
+				if hasSuffixFold(frame.File, ".trigger") {
+					triggerBoundary = true
+					break
+				}
+			}
+			if !triggerBoundary {
+				err.Stack = append(err.Stack, StackFrame{Symbol: "AnonymousBlock", Line: stack[0].anonymousCallerLine, Column: 1})
+			}
+		}
 	}
 	return err
 }
