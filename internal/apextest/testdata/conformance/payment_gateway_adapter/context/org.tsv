@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+CONTEXT_ANON	62.0	anonymous	True	False	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	62.0	n/a	0
+CONTEXT_ANON	67.0	anonymous	True	False	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	67.0	n/a	0
+CONTEXT_TEST	62.0	istest	true	Passed	dispatch=Pass	62.0	n/a	n/a
+CONTEXT_TEST	67.0	istest	true	Passed	dispatch=Pass	67.0	n/a	n/a
