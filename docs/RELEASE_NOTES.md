@@ -85,6 +85,7 @@
 - **Platform symbol memory.** Excluded platform types reserve a full symbol only when first accessed, reducing retained startup heap.
 - **Nested enum lookup in test runtimes.** Cloned runtimes reuse an unchanged frozen class index. Runtimes with later registrations or other class-map writes use a full index.
 - **Built-in calls.** Repeated calls avoid redundant normalization for canonical built-in names while retaining runtime precedence checks.
+- **Scalar object describes.** Direct scalar reads from object type describes avoid copying the describe root when it cannot escape. On a synthetic object with 64 generated fields, a warm read used 272 bytes and 17 allocations instead of 14,112 bytes and 90 allocations.
 
 ### CI
 
