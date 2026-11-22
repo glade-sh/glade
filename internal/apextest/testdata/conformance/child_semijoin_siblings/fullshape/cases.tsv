@@ -1,0 +1,3 @@
+id	route	file
+fullshape	anonymous	fullshape.apex
+fullshape_test	istest	FullShapeQueryTest

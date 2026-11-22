@@ -94,7 +94,7 @@ func TestCustomMetadataTriggerLookupNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	if len(seen) != 4 {
+	if len(seen) != 4 || !seen["62.0/anonymous"] || !seen["67.0/anonymous"] || !seen["62.0/istest"] || !seen["67.0/istest"] {
 		t.Fatalf("missing native rows: %v", seen)
 	}
 }

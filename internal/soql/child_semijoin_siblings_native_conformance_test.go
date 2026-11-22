@@ -22,7 +22,7 @@ func TestChildSemiJoinSiblingNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	seen := 0
+	seen := make(map[string]bool)
 	for _, row := range rows[1:] {
 		if row[0] != "query" {
 			continue
@@ -30,7 +30,10 @@ func TestChildSemiJoinSiblingNativeConformance(t *testing.T) {
 		if row[2] != "anonymous" || row[3] != "True" || row[4] != "True" || row[5] != "QUERY=accepted" {
 			t.Fatalf("unexpected native row: %q", row)
 		}
-		seen++
+		if seen[row[1]] {
+			t.Fatalf("duplicate native version: %q", row[1])
+		}
+		seen[row[1]] = true
 		t.Run(row[1], func(t *testing.T) {
 			_, err := Parse("SELECT Id, (SELECT Id FROM Contacts WHERE Email != null), (SELECT Id, Name FROM Opportunities WHERE StageName = 'Prospecting' AND Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE Role = 'Decision Maker') LIMIT 1), (SELECT Id FROM Cases LIMIT 1) FROM Account")
 			if err != nil {
@@ -38,8 +41,8 @@ func TestChildSemiJoinSiblingNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	if seen != 2 {
-		t.Fatalf("got %d native rows, want 2", seen)
+	if len(seen) != 2 || !seen["62.0"] || !seen["67.0"] {
+		t.Fatalf("missing native versions: %v", seen)
 	}
 }
 

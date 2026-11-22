@@ -13,7 +13,8 @@ import (
 
 // NATIVE: testdata/conformance/child_semijoin_siblings/org.tsv:2-5,
 // exact/org.tsv:2-5, relationship/initial/org.tsv:2, and
-// relationship/repeat/org.tsv:2-4. Tainted rows are not used.
+// relationship/repeat/org.tsv:2-4, and fullshape/org.tsv:2-5.
+// Tainted rows are not used.
 func TestChildSemiJoinSiblingRoutesNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/child_semijoin_siblings"
 	for _, tc := range []struct {
@@ -23,6 +24,7 @@ func TestChildSemiJoinSiblingRoutesNativeConformance(t *testing.T) {
 		{"seeded", "seeded.apex", "SeededQueryTest", []string{"org.tsv"}},
 		{"exact", "exact.apex", "ExactQueryTest", []string{"exact/org.tsv"}},
 		{"relationship", "relationship.apex", "RelationshipQueryTest", []string{"relationship/initial/org.tsv", "relationship/repeat/org.tsv"}},
+		{"fullshape", "fullshape.apex", "FullShapeQueryTest", []string{"fullshape/org.tsv"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fixture := base
@@ -100,7 +102,7 @@ func TestChildSemiJoinSiblingRoutesNativeConformance(t *testing.T) {
 					})
 				}
 			}
-			if len(seen) != 4 {
+			if len(seen) != 4 || !seen["62.0/anonymous"] || !seen["67.0/anonymous"] || !seen["62.0/istest"] || !seen["67.0/istest"] {
 				t.Fatalf("missing clean native rows: %v", seen)
 			}
 		})

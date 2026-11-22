@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+fullshape	62.0	anonymous	True	True	SEEDED=pass	n/a	n/a	cleaned:5
+fullshape	67.0	anonymous	True	True	SEEDED=pass	n/a	n/a	cleaned:5
+fullshape_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+fullshape_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
