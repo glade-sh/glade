@@ -15,7 +15,7 @@ func TestPartnerLeadAccessModesNativeConformance(t *testing.T) {
 	rows := readNativeTSV(t, filepath.Join(base, "org.tsv"))
 	for _, api := range []string{"62.0", "67.0"} {
 		api := api
-		runConformanceAPIVersion(t, api, func(t *testing.T) {
+		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 			copyTree(t, filepath.Join(base, "project"), filepath.Join(root, "force-app/main/default"), api)
