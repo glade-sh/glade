@@ -718,6 +718,9 @@ listed here; they do not establish a safe general rule for the missing shapes.
 Counts in the earlier fit table describe that measured version, not a new
 measurement of the current scorer.
 
+The remaining gaps below do not yet have a verified parked-ticket disposition.
+The historical divergence table alone does not complete that disposition.
+
 | Area | Native observation and Glade divergence | Reason to retain the limitation |
 |---|---|---|
 | Custom Last Name | The two holdouts in the fit table each have two native matches the port misses. | The rows do not establish a general key or phonetic rule for their different shapes. |
