@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/startupcache"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestDAPStaleSnapshotDoesNotReadPayload(t *testing.T) {
@@ -140,6 +142,18 @@ func TestDAPStaleSnapshotOutcome(t *testing.T) {
 	if err != nil || index == nil {
 		t.Fatalf("index=%v err=%v", index != nil, err)
 	}
+	stale := dapOutcomeDigest(t, root, org, runtime, api)
+	// Rejecting the stale snapshot must leave the same outcome as starting
+	// with no snapshot at all, on the same host and project.
+	if got, want := stale, dapFreshOutcomeDigest(t, root); got != want {
+		t.Fatalf("stale outcome SHA-256 = %s, fresh load = %s", got, want)
+	}
+}
+
+// dapOutcomeDigest hashes the loaded DAP startup state with the project root
+// normalized, so outcomes can be compared within one run.
+func dapOutcomeDigest(t testing.TB, root string, org storage.OrgState, runtime apextest.CompiledProjectRuntime, api string) string {
+	t.Helper()
 	body, err := json.Marshal(struct {
 		Org     any
 		Runtime any
@@ -149,11 +163,21 @@ func TestDAPStaleSnapshotOutcome(t *testing.T) {
 		t.Fatal(err)
 	}
 	body = bytes.ReplaceAll(body, []byte(root), []byte("<ROOT>"))
-	// Captured from origin/main using this fixture and normalized project root.
-	const baseline = "77099426e01feb2e5bd5b2c6ba0e1629efc4565ad1e5dfe2d21ce3c8121815c0"
-	if got := fmt.Sprintf("%x", sha256.Sum256(body)); got != baseline {
-		t.Fatalf("stale outcome SHA-256 = %s, origin/main = %s", got, baseline)
+	return fmt.Sprintf("%x", sha256.Sum256(body))
+}
+
+// dapFreshOutcomeDigest removes every DAP startup cache file and loads the
+// project from source.
+func dapFreshOutcomeDigest(t testing.TB, root string) string {
+	t.Helper()
+	if err := os.RemoveAll(filepath.Join(root, ".glade", "dap")); err != nil {
+		t.Fatal(err)
 	}
+	org, runtime, api, _, err := loadDAPStartupStateWithIndex(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dapOutcomeDigest(t, root, org, runtime, api)
 }
 
 func BenchmarkDAPStaleSnapshot(b *testing.B) {
@@ -310,18 +334,9 @@ func TestDAPWarmSnapshotOutcome(t *testing.T) {
 	if err != nil || index != nil {
 		t.Fatalf("index=%v err=%v", index != nil, err)
 	}
-	body, err := json.Marshal(struct {
-		Org     any
-		Runtime any
-		API     string
-	}{org, compiledRuntimeToCache(runtime), api})
-	if err != nil {
-		t.Fatal(err)
-	}
-	body = bytes.ReplaceAll(body, []byte(root), []byte("<ROOT>"))
-	// Captured from origin/main using this fixture and normalized project root.
-	const baseline = "77099426e01feb2e5bd5b2c6ba0e1629efc4565ad1e5dfe2d21ce3c8121815c0"
-	if got := fmt.Sprintf("%x", sha256.Sum256(body)); got != baseline {
-		t.Fatalf("warm outcome SHA-256 = %s, origin/main = %s", got, baseline)
+	warm := dapOutcomeDigest(t, root, org, runtime, api)
+	// A warm snapshot hit must give the same outcome as a load from source.
+	if got, want := warm, dapFreshOutcomeDigest(t, root); got != want {
+		t.Fatalf("warm outcome SHA-256 = %s, fresh load = %s", got, want)
 	}
 }
