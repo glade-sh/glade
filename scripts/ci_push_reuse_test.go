@@ -104,6 +104,7 @@ func TestCIRequiredCIPushReuseRequiresMaintenance(t *testing.T) {
 		Jobs map[string]struct {
 			Needs yaml.Node `yaml:"needs"`
 			Steps []struct {
+				ID  string `yaml:"id"`
 				Run string `yaml:"run"`
 			} `yaml:"steps"`
 		} `yaml:"jobs"`
@@ -112,6 +113,18 @@ func TestCIRequiredCIPushReuseRequiresMaintenance(t *testing.T) {
 		t.Fatal(err)
 	}
 	job := workflow.Jobs["required-ci"]
+	requireScript := ""
+	for _, step := range job.Steps {
+		if step.ID == "require" {
+			if requireScript != "" {
+				t.Fatal("duplicate required CI step")
+			}
+			requireScript = step.Run
+		}
+	}
+	if requireScript == "" {
+		t.Fatal("missing required CI script")
+	}
 	var needs []string
 	if err := job.Needs.Decode(&needs); err != nil {
 		t.Fatal(err)
@@ -122,7 +135,7 @@ func TestCIRequiredCIPushReuseRequiresMaintenance(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cmd := exec.Command("bash", "-c", job.Steps[0].Run)
+		cmd := exec.Command("bash", "-c", requireScript)
 		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME=push", "HEAD_REF=", "TREE_REUSE="+reuse)
 		out, err := cmd.CombinedOutput()
 		if (err == nil) != want {

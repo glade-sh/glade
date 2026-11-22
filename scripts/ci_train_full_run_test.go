@@ -336,6 +336,7 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 		Jobs map[string]struct {
 			Needs yaml.Node `yaml:"needs"`
 			Steps []struct {
+				ID  string `yaml:"id"`
 				Run string `yaml:"run"`
 			} `yaml:"steps"`
 		} `yaml:"jobs"`
@@ -344,6 +345,18 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 		t.Fatal(err)
 	}
 	job := workflow.Jobs["required-ci"]
+	requireScript := ""
+	for _, step := range job.Steps {
+		if step.ID == "require" {
+			if requireScript != "" {
+				t.Fatal("duplicate required CI step")
+			}
+			requireScript = step.Run
+		}
+	}
+	if requireScript == "" {
+		t.Fatal("missing required CI script")
+	}
 	var needs []string
 	if err := job.Needs.Decode(&needs); err != nil {
 		t.Fatal(err)
@@ -355,7 +368,7 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 	run := func(headRef string, want bool) {
 		t.Helper()
 		encoded, _ := json.Marshal(results)
-		cmd := exec.Command("bash", "-c", job.Steps[0].Run)
+		cmd := exec.Command("bash", "-c", requireScript)
 		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME=pull_request", "HEAD_REF="+headRef, "SMOKE_REQUIRED=false", "PR_BROWSER=false", `PR_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, `PR_VALIDATED_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, "PR_SELECTION=[]")
 		out, err := cmd.CombinedOutput()
 		if (err == nil) != want {
