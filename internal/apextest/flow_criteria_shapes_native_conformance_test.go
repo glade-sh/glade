@@ -141,3 +141,11 @@ func TestFlowCriteriaShapesNativeConformance(t *testing.T) {
 func TestFlowRecordTypeDecisionNativeConformance(t *testing.T) {
 	runFlowCriteriaFixture(t, "flow_record_type_decision", 4, nil)
 }
+
+// NATIVE before-save Get Records of custom metadata filtered by a text formula
+// resource built from $Record fields:
+// testdata/conformance/flow_metadata_formula_lookup/org.tsv, anonymous and
+// @IsTest at 62.0 and 67.0.
+func TestFlowMetadataFormulaLookupNativeConformance(t *testing.T) {
+	runFlowCriteriaFixture(t, "flow_metadata_formula_lookup", 4, nil)
+}
