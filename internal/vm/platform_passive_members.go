@@ -2450,7 +2450,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Pattern":
 		return callPatternMember(receiver, method, args)
 	case "Matcher":
-		return callMatcherMemberWithCache(receiver, method, args, &vm.matcherInputCache)
+		return callMatcherMemberWithPolicy(receiver, method, args, &vm.matcherInputCache, vm.regexDateCapturedAPI())
 	case "Date":
 		if out, ok := vm.dateHybridMember(receiver, method, args); ok {
 			return out, receiver, false, true, nil
@@ -2677,7 +2677,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				if seconds%86400 < 0 {
 					localDays--
 				}
-				pattern = hybridPatternLiterals(pattern, localDays, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+				pattern = hybridPatternLiterals(pattern, localDays, vm.currentUserInfoField("LocaleSidKey", "en_US"), vm.regexDateCapturedAPI())
 				if _, ok := julianOnlyLeapDay(rawInstant, offset); ok {
 					// 1500-02-29 has no Gregorian twin: month and day read 2000-02-29.
 					t = time.Date(2000, time.February, 29, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())

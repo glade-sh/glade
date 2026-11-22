@@ -21,6 +21,8 @@
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
 - Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
+- French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
+- Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
 - Datetime and numeric default formulas using `MINUTE(TIMEVALUE(NOW()))` now evaluate for `newSObject(null, true)` and insert, matching captured Salesforce results at API 62.0 and 67.0.
 

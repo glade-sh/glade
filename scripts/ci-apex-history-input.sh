@@ -5,7 +5,6 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 : "${CI_APEXTEST_HISTORY_PATH:?}" "${CI_DURATION_HISTORY_CACHE_REF:?}" "${GITHUB_RUN_ID:?}" "${GITHUB_RUN_ATTEMPT:?}" "${GITHUB_REPOSITORY:?}"
 stage=${CI_APEXTEST_HISTORY_STAGE:-ci-artifacts/apextest-history-input}
-pair=${CI_APEXTEST_BENCHMARK_PAIR:-0}
 tmp=$(mktemp -d "${RUNNER_TEMP:-/tmp}/apex-history-input.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 
@@ -49,7 +48,7 @@ PY
 
 # A rerun of all jobs can reuse the profile from the previous attempt. The
 # attempt-scoped cache is independent of the old artifact's availability.
-if [[ "$pair" == 0 && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" -gt 1 && "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]; then
+if [[ "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" -gt 1 && "$GITHUB_RUN_ID" =~ ^[0-9]+$ ]]; then
   previous=$((GITHUB_RUN_ATTEMPT - 1))
   retry_profile=${CI_APEXTEST_RETRY_PROFILE_PATH:-/tmp/apextest-scheduling-profile/profile.json}
   if valid_profile "$retry_profile"; then
@@ -67,11 +66,10 @@ if [[ "$pair" == 0 && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT"
   fi
 fi
 
-# Benchmark-paired runs are isolated from predecessor artifact lookups.
 # Try a bounded, newest-first set of completed runs for the predecessor SHA. An
 # unusable run (failed before every shard uploaded, expired artifacts, invalid
 # evidence) must not hide an older run with a complete validated set.
-if [[ "$pair" == 0 && ! -s "$CI_APEXTEST_HISTORY_PATH" ]]; then
+if [[ ! -s "$CI_APEXTEST_HISTORY_PATH" ]]; then
   # Seed the history from the first usable run in the given candidate list.
   seed_from_runs() {
     local run_id shards profile
