@@ -109,6 +109,51 @@ func TestDuplicateIndexedAccessAndMutation(t *testing.T) {
 	check("rule field changed", true, true, nil)
 }
 
+func TestDuplicateIndexedObjectAndOrgReplacement(t *testing.T) {
+	makeOrg := func(objectName, match string, missing bool) storage.OrgState {
+		org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
+		storage.EnsureStandardObject(&org, objectName)
+		object := org.Objects[objectName]
+		for i := 0; i < 300; i++ {
+			id := storage.ID(fmt.Sprintf("00Q%012d", i+1))
+			fields := map[string]storage.Value{"LastName": storage.StringValue(fmt.Sprintf("name%d", i))}
+			if i == 0 {
+				fields["LastName"] = storage.StringValue(match)
+			}
+			if i == 1 && missing {
+				delete(fields, "LastName")
+			}
+			object.PutRecord(id, storage.Record{ID: id, Object: objectName, Fields: fields})
+		}
+		org.Objects[objectName] = object
+		return org
+	}
+	lead := makeOrg("Lead", "Smith", false)
+	contact := makeOrg("Contact", "Jones", true)
+	replacement := makeOrg("Lead", "Jones", true)
+	var scan DuplicateMatchScan
+	check := func(label string, org *storage.OrgState, objectName, name string) {
+		t.Helper()
+		rule := storage.DuplicateRule{Object: objectName, Name: "Name", MatchRules: []storage.MatchingRule{{Object: objectName, Name: "Name", Status: "Active", Items: []storage.MatchingRuleItem{{Field: "LastName", Method: "LastName", BlankBehavior: "NullNotAllowed"}}}}}
+		candidate := storage.Record{Object: objectName, Fields: map[string]storage.Value{"LastName": storage.StringValue(name)}}
+		want, wantOK := FindDuplicateMatches(org, rule, candidate, nil)
+		got, gotOK := scan.Find(org, rule, candidate, nil, nil, nil)
+		if !wantOK || !want.HasRecords() || gotOK != wantOK || !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s: got %+v, %t; want %+v, %t", label, got, gotOK, want, wantOK)
+		}
+	}
+	check("lead first", &lead, "Lead", "Smith")
+	check("lead warmed", &lead, "Lead", "Smith")
+	check("contact same IDs", &contact, "Contact", "Jones")
+	check("replacement org same IDs", &replacement, "Lead", "Jones")
+	check("return to original org", &lead, "Lead", "Smith")
+	for _, objectName := range []string{"Lead", "Contact"} {
+		if scan.index.fields[duplicateIndexFieldKey{object: objectName, field: "LastName", nameKey: true}] == nil {
+			t.Fatalf("%s index was not built", objectName)
+		}
+	}
+}
+
 func TestDuplicateIndexedReentrantAccess(t *testing.T) {
 	org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
 	storage.EnsureStandardObject(&org, "Lead")
