@@ -1516,6 +1516,11 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 		}
 		record.Fields[fieldName] = value
 		delete(record.ExplicitNulls, fieldName)
+		if id := idFromStorageValue(value); strings.EqualFold(fieldName, "Id") && value.Kind == storage.ValueID && id != "" && !lookupTarget && flowFrameSObjectVariable(frame, recordName) {
+			// An Id assigned to an SObject variable is its record Id; a later
+			// {!Var.Id} reads it (flow_criteria_shapes/org.tsv pb rows).
+			record.ID = id
+		}
 		frame.records[recordName] = record
 		if lookupTarget {
 			output.record = record
@@ -3117,9 +3122,12 @@ func isNoOpFlowSideEffectActionName(name string) bool {
 }
 
 func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) error {
-	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs, frame)
+	inputs, ok := e.flowEmailActionInputs(action, source, sourceDefinition, lookupOutputs, frame)
 	if !ok {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s has unsupported email input", action.Name)
+	}
+	if err := e.flowEmailOrgWideSenderFault(action, inputs); err != nil {
+		return err
 	}
 	if handled, err := e.flowEmailToRecipientID(flowName, action, inputs, frame); handled {
 		return err
@@ -4138,8 +4146,9 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		if !matches {
 			continue
 		}
-		if e.FlowLookupRecordVisible != nil && frame != nil && frame.capturedAfterCreate &&
-			flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) && !e.FlowLookupRecordVisible(candidate.ID) {
+		if e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
+			flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
+			strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName)) && !e.FlowLookupRecordVisible(candidate.ID) {
 			continue
 		}
 		records = append(records, candidate.Clone())
@@ -4224,6 +4233,23 @@ func flowCapturedRelationshipFilterFields(org *storage.OrgState, definition stor
 		return ok && parent.Fields[fieldName].Type == storage.FieldString && strings.EqualFold(parent.Fields[fieldName].DisplayType, "STRING")
 	}
 	return false
+}
+
+// flowCapturedPricebookNameLookup is the captured Get Records of Pricebook2 by
+// Name literals in an after-save create Flow: inside a test without
+// SeeAllData the org's standard price book is not returned
+// (flow_criteria_shapes/org.tsv pb rows, 62.0 and 67.0).
+func flowCapturedPricebookNameLookup(lookup storage.FlowRecordLookup, targetName string) bool {
+	if !strings.EqualFold(targetName, "Pricebook2") || len(lookup.Criteria) == 0 {
+		return false
+	}
+	for _, item := range lookup.Criteria {
+		if !strings.EqualFold(strings.TrimSpace(item.Field), "Name") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") ||
+			strings.TrimSpace(item.SourceField) != "" || strings.TrimSpace(item.Value) == "" {
+			return false
+		}
+	}
+	return true
 }
 
 // flowCapturedReferenceIDLookup limits test visibility to the captured

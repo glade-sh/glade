@@ -52,3 +52,12 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 	}
 	return storage.Value{}, false
 }
+
+// flowFrameSObjectVariable reports a declared single SObject variable.
+func flowFrameSObjectVariable(frame *flowFrame, key string) bool {
+	if frame == nil {
+		return false
+	}
+	variable, declared := frame.variables[key]
+	return declared && !variable.IsCollection && strings.EqualFold(variable.DataType, "SObject")
+}
