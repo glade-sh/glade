@@ -24,6 +24,21 @@ func TestStdlibTypeDepthNeighborsNativeConformance(t *testing.T) {
 	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_type_depth_neighbors", 10)
 }
 
+// NATIVE anonymous depth boundary and test control: testdata/conformance/stdlib_method_depth_boundary/org.tsv:2-15
+func TestStdlibMethodDepthBoundaryNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_method_depth_boundary", 14)
+}
+
+// NATIVE test depth boundary: testdata/conformance/stdlib_method_depth_test_boundary/org.tsv:2-9
+func TestStdlibMethodDepthTestBoundaryNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_method_depth_test_boundary", 8)
+}
+
+// NATIVE test depth limit: testdata/conformance/stdlib_method_depth_test_limit/org.tsv:2-5
+func TestStdlibMethodDepthTestLimitNativeConformance(t *testing.T) {
+	runStdlibTypeDepthNativeConformance(t, "testdata/conformance/stdlib_method_depth_test_limit", 4)
+}
+
 func runStdlibTypeDepthNativeConformance(t *testing.T, fixture string, expectedRows int) {
 	t.Helper()
 	rows := readNativeTSV(t, filepath.Join(fixture, "org.tsv"))
