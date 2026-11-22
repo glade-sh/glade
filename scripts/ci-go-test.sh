@@ -747,6 +747,42 @@ try:
                 if action == "fail":
                     failed_tests.append(f"{package}/{test}")
                 if action == "skip":
+                    # These are individual Linux PR-lane prerequisites, not
+                    # successful tests. Keep the emitting site, identity and
+                    # condition narrow so other skips still reject the result.
+                    pr_reason = None
+                    pr_explanation = None
+                    if lane == "remaining-go" and os.environ.get("RUNNER_OS") == "Linux":
+                        home_readers = r"(?:EnsureRoot|Root|LWCToolchainDir|ShimsDir|RuntimeAssetDir|ToolchainStatus)"
+                        home_case = r"GLADE_(?:HOME|ROOT)_case"
+                        home_completed = r"TestHomeReadersCompletedReadOnlyHome/(?:absent|inaccessible|read-only)/" + home_readers + "/" + home_case
+                        home_pending = r"TestHomeReadersTwoProcessesPendingInstall/install_then_" + home_readers + "/" + home_case
+                        if package == module + "/internal/gladehome":
+                            if re.fullmatch(home_completed, test):
+                                pr_reason = r"readonly\.go:\d+: case alias requires a case-insensitive filesystem"
+                            elif re.fullmatch(home_pending, test):
+                                pr_reason = r"process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive"
+                            elif test == "TestReadLeaseFilesystemIdentity/case":
+                                pr_reason = r"lease_identity_review_test\.go:\d+: filesystem is case-sensitive"
+                            if pr_reason:
+                                pr_explanation = "case-insensitive filesystem required; owner: gladehome maintainers"
+                        elif identity == (module + "/internal/dml", "TestFuzzyConfidenceDump") and not os.environ.get("GLADE_FUZZY_DUMP"):
+                            pr_reason = r"fuzzy_arch_identity_test\.go:\d+: GLADE_FUZZY_DUMP is not set"
+                            pr_explanation = "diagnostic dump requires GLADE_FUZZY_DUMP destination; owner: dml maintainers"
+                        elif identity == (module + "/internal/soql", "TestLocaleCollationColdQuery") and not os.environ.get("GLADE_COLD_LOCALE"):
+                            pr_reason = r"locale_collation_cold_test\.go:\d+: per-process locale required"
+                            pr_explanation = "cold-query diagnostic requires GLADE_COLD_LOCALE; owner: soql maintainers"
+                        elif (identity == (module + "/internal/soql", "TestLocaleCollationGeneratorReproducesTables")
+                              and not os.path.exists("/usr/lib/libicucore.dylib")):
+                            pr_reason = r"locale_collation_state_test\.go:\d+: not run: pinned ICU 78\.1 / CLDR 48 generation dependency unavailable: exit status 1"
+                            pr_explanation = "pinned macOS ICU generator library unavailable; owner: soql maintainers"
+                    if pr_reason:
+                        observed = next((line.strip() for output in test_output.get(identity, ()) for line in output.splitlines()
+                                         if re.fullmatch(r"\s+" + pr_reason + r"\s*", line)), None)
+                        if observed:
+                            summary["deferred"].append({"package": package, "test": test,
+                                "skipReason": observed, "reason": pr_explanation})
+                            continue
                     boundary_cause = native_boundaries.get(identity)
                     boundary_pattern = (r"\s+\S+_test.go:\d+: " + re.escape(boundary_cause) + r"\s*$"
                                         if boundary_cause else "")
