@@ -140,3 +140,24 @@ func BenchmarkPartnerLeadRelationshipProjectionOwnerShares(b *testing.B) {
 		}
 	}
 }
+
+func TestPartnerLeadControlledChildInheritsPublicRead(t *testing.T) {
+	machine, _ := partnerLeadChildVisibilityMachine(t)
+	machine.currentMethod = Method{APIVersion: "67.0"}
+	child := storage.Record{
+		ID: "a00000000000001", Object: "Detail__c",
+		System: storage.SystemFields{OwnerID: "005000000000001"},
+		Fields: map[string]storage.Value{"Master__c": storage.IDValue("00Q000000000001")},
+	}
+	machine.Org.Objects[child.Object] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: child.Object, SharingModel: "ControlledByParent",
+			Fields: map[string]storage.Field{"Master__c": {APIName: "Master__c", Type: storage.FieldReference, MasterDetail: true, ReferenceTo: []string{"Lead"}}}},
+		Records: map[storage.ID]storage.Record{child.ID: child},
+	}
+	user := machine.currentUserID()
+	parentRead := machine.controlledParentHasSupportedReadSharing(child.Object, child, user)
+	childRead := machine.userModeRecordVisible(child.Object, child, user)
+	if !parentRead || !childRead {
+		t.Fatalf("inherited public read = %t, child visible = %t", parentRead, childRead)
+	}
+}

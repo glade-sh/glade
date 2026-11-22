@@ -35,6 +35,7 @@ func TestLeadReadAnonymousUpdateNativeConformance(t *testing.T) {
 			queried, permission, ownerAdmin bool
 		}{
 			{"native", true, true, true}, {"uncaptured-constructed", false, true, true},
+			{"uncaptured-unchanged-company", true, true, true},
 			{"uncaptured-permission", true, false, true}, {"uncaptured-owner", true, true, false},
 		} {
 			t.Run(row[1]+"/"+tc.name, func(t *testing.T) {
@@ -88,6 +89,9 @@ func TestLeadReadAnonymousUpdateNativeConformance(t *testing.T) {
 				machine.SetOrg(&org)
 				machine.SetCurrentUser(storage.Record{ID: "005000000000002", Object: "User", Fields: map[string]storage.Value{"ProfileId": storage.IDValue(reader.ID), "UserType": storage.StringValue("Standard")}})
 				body := string(source)
+				if tc.name == "uncaptured-unchanged-company" {
+					body = strings.Replace(body, "l.Company='Changed'", "l.Company='Original'", 1)
+				}
 				if !tc.queried {
 					body = strings.Replace(body, "[SELECT Id,Company FROM Lead WHERE LastName='Route Lead' LIMIT 1]", "new Lead(Id='00Q000000000001')", 1)
 				}
