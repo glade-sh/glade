@@ -14,3 +14,18 @@ func TestComparableSortUncapturedSingletonNeighbor(t *testing.T) {
 		t.Fatalf("singleton sort error = %v, want %s", err, want)
 	}
 }
+
+// Distinct unmeasured types keep the existing unsupported-call outcome.
+func TestComparableSortUncapturedMixedNeighbor(t *testing.T) {
+	machine := New(nil)
+	for _, name := range []string{"PlainOne", "PlainTwo"} {
+		if err := machine.RegisterClass(Class{Name: name}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	err := machine.sortComparableValues([]Value{Object("PlainOne"), Object("PlainTwo")}, &Result{})
+	const want = `unsupported call "List.sort for non-primitive comparable values"`
+	if err == nil || err.Error() != want {
+		t.Fatalf("mixed sort error = %v, want %s", err, want)
+	}
+}
