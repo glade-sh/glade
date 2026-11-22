@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1]; ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1]; insert new ShareProbe__Share(ParentId=r.Id,UserOrGroupId=u.Id,AccessLevel='Read',RowCause='Manual');

@@ -24,6 +24,12 @@
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
+- A Standard User’s denied change to Lead.Company under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. Customer Community Case delete describe, test-context delete denial, anonymous compile denial, Visualforce and Apex REST exceptions follow the observed API 62.0 and 67.0 results.
+
+- A Partner Community user’s Lead visibility, Manual Read share and named access rows in anonymous Apex and Visualforce follow the captured private external default.
+
+- In anonymous Apex, the captured administrator-to-Standard-User access queries return read rows for private custom records, including the observed denied projections and Manual Read grant and revoke.
+
 ### Changes
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
@@ -93,6 +99,8 @@
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
+
+- **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
 
 ### CI
 
