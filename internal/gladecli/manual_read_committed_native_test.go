@@ -134,3 +134,59 @@ System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valu
 		})
 	}
 }
+
+// Anonymous API 68 and public-sharing custom objects have no matching native
+// rows. Preserve the pre-existing empty named projection in both shapes.
+func TestManualReadUncapturedProjection(t *testing.T) {
+	for _, tc := range []struct{ name, api, model string }{
+		{"api68", "68.0", "Private"},
+		{"public", "67.0", "ReadWrite"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			base := filepath.Join(criteriaSharingFixtures, "manual_read_lifecycle")
+			root := t.TempDir()
+			source := filepath.Join(base, "project")
+			if err := filepath.WalkDir(source, func(path string, entry fs.DirEntry, err error) error {
+				if err != nil || entry.IsDir() {
+					return err
+				}
+				b, err := os.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				rel, err := filepath.Rel(source, path)
+				if err != nil {
+					return err
+				}
+				content := strings.ReplaceAll(string(b), "67.0", tc.api)
+				content = strings.ReplaceAll(content, "<sharingModel>Private</sharingModel>", "<sharingModel>"+tc.model+"</sharingModel>")
+				writeTestFile(t, filepath.Join(root, "force-app/main/default", rel), content)
+				return nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+			b, err := os.ReadFile(filepath.Join(base, "project-scratch-def.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeTestFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(b))
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+tc.api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			db := filepath.Join(root, "state.sqlite")
+			for _, name := range []string{"setup", "insert"} {
+				script, err := os.ReadFile(filepath.Join(base, name+".apex"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				runCriteriaExec(t, root, db, string(script)+"\nSystem.debug('OBS|done');")
+			}
+			got := runCriteriaExec(t, root, db, `
+User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1];
+ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1];
+List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:r.Id];
+System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`)
+			if got != "row=0:read=missing" {
+				t.Fatalf("uncaptured projection changed: %s", got)
+			}
+		})
+	}
+}
