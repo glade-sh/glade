@@ -29,3 +29,26 @@ func TestComparableSortUncapturedMixedNeighbor(t *testing.T) {
 		t.Fatalf("mixed sort error = %v, want %s", err, want)
 	}
 }
+
+// An indirect implementation mixed with null was not captured; preserve it.
+func TestComparableSortUncapturedIndirectNullNeighbor(t *testing.T) {
+	program, err := CompileAnonymous(`return 0;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "ChildComparable", IsInterface: true, Interfaces: []string{"Comparable"}}); err != nil {
+		t.Fatal(err)
+	}
+	method := Method{Name: "Rank.compareTo", ClassName: "Rank", ReturnType: "Integer", Params: []Param{{Name: "other", Type: "Object"}}, Program: program}
+	if err := machine.RegisterClass(Class{Name: "Rank", Interfaces: []string{"ChildComparable"}, Methods: map[string]Method{"compareTo": method}}); err != nil {
+		t.Fatal(err)
+	}
+	values := []Value{Object("Rank"), Null}
+	if err := machine.sortComparableValues(values, &Result{}); err != nil {
+		t.Fatalf("indirect and null sort: %v", err)
+	}
+	if values[0].Kind != ValueNull {
+		t.Fatalf("first sorted value = %v, want null", values[0])
+	}
+}
