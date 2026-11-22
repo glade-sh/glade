@@ -14,7 +14,23 @@ import (
 // NATIVE testdata/exception_rhs_call_frames/org.tsv:2-17 captures direct,
 // one-line, split, and blank-line nested calls on both routes and APIs.
 func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Cleanup(EnableDiskCacheForTesting())
+	t.Cleanup(InvalidateRuntimeCaches)
+	t.Cleanup(ResetPerfCounters)
 	dir := filepath.Join("testdata", "exception_rhs_call_frames")
+	caseData, err := os.ReadFile(filepath.Join(dir, "cases.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	caseFiles := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(string(caseData)), "\n")[1:] {
+		parts := strings.Split(line, "\t")
+		if len(parts) != 3 {
+			t.Fatal("invalid case")
+		}
+		caseFiles[parts[0]] = parts[2]
+	}
 	data, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -83,11 +99,23 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 						got = append(got, fmt.Sprintf("%s: line %d, column 1", symbol, frame.Line))
 					}
 				} else {
-					id := strings.TrimSuffix(row[0], "_test")
-					names := map[string]string{"direct": "Direct", "one_line": "OneLine", "split": "Split", "blank_nested": "BlankNested"}
-					result := Run(index, Options{SelectedClasses: []string{"Frame" + names[id] + "Test_" + suffix}, NoDiskCache: true, Parallelism: 1})
+					className := caseFiles[row[0]] + "_" + suffix
+					InvalidateRuntimeCaches()
+					result := Run(index, Options{SelectedClasses: []string{className}, Parallelism: 1})
 					if len(result.Suites) != 1 || len(result.Suites[0].Cases) != 1 || result.Suites[0].Cases[0].Problem == nil {
 						t.Fatalf("missing failure: %#v", result)
+					}
+					InvalidateRuntimeCaches()
+					if _, ok := tryLoadDiskRuntime(index); !ok {
+						t.Fatal("runtime was not restored from disk")
+					}
+					ResetPerfCounters()
+					cached := Run(index, Options{SelectedClasses: []string{className}, Parallelism: 1, PerfCounters: true})
+					if SnapshotPerfCounters().Phases.DiskCacheHits != 1 || len(cached.Suites) != 1 || len(cached.Suites[0].Cases) != 1 || cached.Suites[0].Cases[0].Problem == nil {
+						t.Fatal("cached execution did not restore the failure")
+					}
+					if fmt.Sprint(cached.Suites[0].Cases[0].Problem.Stack) != fmt.Sprint(result.Suites[0].Cases[0].Problem.Stack) {
+						t.Fatal("cached stack differs")
 					}
 					for _, frame := range result.Suites[0].Cases[0].Problem.Stack {
 						symbol := frame.Symbol
