@@ -237,3 +237,89 @@ func TestDuplicateScanRefreshesValues(t *testing.T) {
 		t.Fatalf("changed candidate: %+v", result)
 	}
 }
+
+// A statement's later duplicate checks must observe changes to stored rows,
+// including field-map writes that do not advance the storage record token.
+func TestDuplicateBulkObservesStoredChanges(t *testing.T) {
+	for _, mutation := range []string{"field-map", "put", "delete", "replace-map"} {
+		t.Run(mutation, func(t *testing.T) {
+			base, _ := duplicateIndexFixture(400)
+			targetID := storage.ID("00Q000000000001")
+			matching := benchLeadFields(900, false)
+			if mutation == "delete" {
+				object := base.Objects["Lead"]
+				target := object.Records[targetID].Clone()
+				target.Fields = matching
+				object.PutRecord(targetID, target)
+				base.Objects["Lead"] = object
+			}
+			rows := []storage.Record{
+				{Object: "Lead", Fields: benchLeadFields(901, false)},
+				{Object: "Lead", Fields: matching},
+			}
+			var expectedResults []dml.Result
+			var expectedReports []dml.DuplicateReport
+			for _, fullScan := range []bool{true, false} {
+				org := storage.SnapshotRuntimeOrg(&base)
+				engine := dml.NewEngine(&org)
+				engine.Options.EnforceDuplicateRules = true
+				engine.Now = func() time.Time { return time.Date(2023, 10, 8, 0, 0, 0, 0, time.UTC) }
+				if fullScan {
+					engine.DuplicateMatcher = func(rule storage.DuplicateRule, row storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+						return dml.FindDuplicateMatches(&org, rule, row, exclude)
+					}
+				}
+				created := 0
+				engine.ChangeObserver = func(operation string, _, _ storage.Record) {
+					if operation != "CREATE" {
+						return
+					}
+					created++
+					if created != 1 {
+						return
+					}
+					object := org.Objects["Lead"]
+					target := object.Records[targetID]
+					switch mutation {
+					case "field-map":
+						for key, value := range matching {
+							target.Fields[key] = value
+						}
+					case "put":
+						target = target.Clone()
+						target.Fields = matching
+						object.PutRecord(targetID, target)
+					case "delete":
+						object.DeleteRecord(targetID)
+					case "replace-map":
+						target = target.Clone()
+						target.Fields = matching
+						records := make(map[storage.ID]storage.Record, len(object.Records))
+						for id, record := range object.Records {
+							records[id] = record
+						}
+						records[targetID] = target
+						object.SetRecords(records)
+					}
+					org.Objects["Lead"] = object
+				}
+				batch := []storage.Record{rows[0].Clone(), rows[1].Clone()}
+				results := engine.Insert(batch)
+				reports := engine.TakeDuplicateReports()
+				for _, result := range results {
+					if !result.Success {
+						t.Fatalf("insert: %+v", result)
+					}
+				}
+				if fullScan {
+					if mutation == "delete" && len(reports) != 0 || mutation != "delete" && len(reports) != 1 {
+						t.Fatalf("reference reports: %+v", reports)
+					}
+					expectedResults, expectedReports = results, reports
+				} else if !reflect.DeepEqual(results, expectedResults) || !reflect.DeepEqual(reports, expectedReports) {
+					t.Fatalf("results or reports differ from full scan: %+v", reports)
+				}
+			}
+		})
+	}
+}
