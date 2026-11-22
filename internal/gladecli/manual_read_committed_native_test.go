@@ -122,11 +122,12 @@ System.debug('row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(
 				if anonymousWant == "" {
 					t.Fatalf("missing anonymous native row for %s %s", api, phase)
 				}
-				got := runCriteriaExec(t, root, db, `
+				query := `
 User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1];
 ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1];
 List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:r.Id];
-System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`)
+System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`
+				got := runCriteriaExec(t, root, db, query)
 				if got != anonymousWant {
 					t.Errorf("anonymous %s: Glade=%q native=%q", phase, got, anonymousWant)
 				}
@@ -141,6 +142,7 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 	for _, tc := range []struct{ name, api, model string }{
 		{"api68", "68.0", "Private"},
 		{"public", "67.0", "ReadWrite"},
+		{"extra-field", "67.0", "Private"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			base := filepath.Join(criteriaSharingFixtures, "manual_read_lifecycle")
@@ -179,11 +181,15 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 				}
 				runCriteriaExec(t, root, db, string(script)+"\nSystem.debug('OBS|done');")
 			}
-			got := runCriteriaExec(t, root, db, `
+			query := `
 User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1];
 ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1];
 List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:r.Id];
-System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`)
+System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`
+			if tc.name == "extra-field" {
+				query = strings.Replace(query, "RecordId,HasReadAccess FROM", "RecordId,HasReadAccess,HasEditAccess FROM", 1)
+			}
+			got := runCriteriaExec(t, root, db, query)
 			if got != "row=0:read=missing" {
 				t.Fatalf("uncaptured projection changed: %s", got)
 			}
