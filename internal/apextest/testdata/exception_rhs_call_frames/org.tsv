@@ -1,0 +1,17 @@
+id	api	route	stack_decoded
+direct_anonymous	62.0	anonymous	Class.FrameProbe_62.fail: line 2, column 1\nAnonymousBlock: line 1, column 1
+direct_anonymous	67.0	anonymous	Class.FrameProbe_67.fail: line 2, column 1\nAnonymousBlock: line 1, column 1
+direct_test	62.0	istest	Class.FrameProbe_62.fail: line 2, column 1\nClass.FrameDirectTest_62.runCase: line 4, column 1
+direct_test	67.0	istest	Class.FrameProbe_67.fail: line 2, column 1\nClass.FrameDirectTest_67.runCase: line 4, column 1
+one_line_anonymous	62.0	anonymous	Class.FrameProbe_62.fail: line 2, column 1\nAnonymousBlock: line 1, column 1
+one_line_anonymous	67.0	anonymous	Class.FrameProbe_67.fail: line 2, column 1\nAnonymousBlock: line 1, column 1
+one_line_test	62.0	istest	Class.FrameProbe_62.fail: line 2, column 1\nClass.FrameOneLineTest_62.runCase: line 4, column 1
+one_line_test	67.0	istest	Class.FrameProbe_67.fail: line 2, column 1\nClass.FrameOneLineTest_67.runCase: line 4, column 1
+split_anonymous	62.0	anonymous	Class.FrameProbe_62.fail: line 2, column 1\nAnonymousBlock: line 2, column 1
+split_anonymous	67.0	anonymous	Class.FrameProbe_67.fail: line 2, column 1\nAnonymousBlock: line 2, column 1
+split_test	62.0	istest	Class.FrameProbe_62.fail: line 2, column 1\nClass.FrameSplitTest_62.runCase: line 5, column 1
+split_test	67.0	istest	Class.FrameProbe_67.fail: line 2, column 1\nClass.FrameSplitTest_67.runCase: line 5, column 1
+blank_nested_anonymous	62.0	anonymous	Class.FrameProbe_62.fail: line 2, column 1\nAnonymousBlock: line 3, column 1
+blank_nested_anonymous	67.0	anonymous	Class.FrameProbe_67.fail: line 2, column 1\nAnonymousBlock: line 3, column 1
+blank_nested_test	62.0	istest	Class.FrameProbe_62.fail: line 2, column 1\nClass.FrameBlankNestedTest_62.runCase: line 6, column 1
+blank_nested_test	67.0	istest	Class.FrameProbe_67.fail: line 2, column 1\nClass.FrameBlankNestedTest_67.runCase: line 6, column 1
