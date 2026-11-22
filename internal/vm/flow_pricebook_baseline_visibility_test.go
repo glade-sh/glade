@@ -51,4 +51,8 @@ func TestFlowPricebookBaselineVisibilityContext(t *testing.T) {
 	if engine.FlowLookupRecordVisible(standard) || !engine.FlowLookupRecordVisible(custom) {
 		t.Fatal("existing engine baseline changed")
 	}
+	machine.SetTestStandardPricebookBaseline(nil)
+	if machine.newDMLEngine(nil).FlowLookupRecordVisible != nil {
+		t.Fatal("empty baseline installed a visibility filter")
+	}
 }
