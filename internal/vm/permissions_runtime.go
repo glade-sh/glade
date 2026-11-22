@@ -797,6 +797,14 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		}
 	}
 	if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
+		if vm.communityCaseRESTPermissionShape(op, objectName, scopedPermissionSetID) {
+			if vm.capturedCommunityCaseRESTDelete(record) {
+				return nil, newExceptionError("TypeException", "DML operation DELETE not allowed on Case")
+			}
+			// The REST rows do not cover other record shapes; preserve the
+			// former permissive Case default for those records.
+			return nil, nil
+		}
 		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
 	var policyFields []string
@@ -2470,7 +2478,8 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 		return false, false
 	}
 	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
-		vm.capturedCommunityCaseAnonymousDelete(profileID, vm.currentSourceExecutionPolicy().APIVersion) {
+		vm.capturedCommunityCaseAnonymousDelete(profileID, vm.currentSourceExecutionPolicy().APIVersion) &&
+		(vm.currentClass == "" || vm.capturedCommunityCaseRESTRequest()) {
 		return false, true
 	}
 	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
@@ -2512,6 +2521,52 @@ func (vm *VM) capturedCommunityCaseAnonymousDelete(profileID, api string) bool {
 		}
 	}
 	return false
+}
+
+// capturedCommunityCaseRESTRequest identifies the authenticated REST route in
+// community_case_rest/org.tsv:2-9, independent of its sharing declaration.
+func (vm *VM) capturedCommunityCaseRESTRequest() bool {
+	if vm.restRequest.Kind != ValueObject || !strings.EqualFold(stringField(vm.restRequest, "httpMethod"), "POST") || vm.currentClass == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	if !ok {
+		return false
+	}
+	for _, modifier := range class.Modifiers {
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(modifier)), "@restresource(") {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) communityCaseRESTPermissionShape(op, objectName, scope string) bool {
+	return op == "delete" && strings.EqualFold(objectName, "Case") && scope == "" && vm.explicitUserModeAccess && vm.userModeSingleRecord &&
+		vm.capturedCommunityCaseRESTRequest() && vm.AnonymousCommunityCaseDeleteCompileDenied(vm.currentSourceExecutionPolicy().APIVersion)
+}
+
+// capturedCommunityCaseRESTDelete limits the exception to the two record
+// shapes in community_case_rest/org.tsv:2-9.
+func (vm *VM) capturedCommunityCaseRESTDelete(record Value) bool {
+	fields := explicitSObjectFieldNamesInInsertionOrder(record)
+	switch len(fields) {
+	case 1:
+		if !strings.EqualFold(fields[0], "Id") {
+			return false
+		}
+	case 3:
+		for _, name := range fields {
+			if !strings.EqualFold(name, "Subject") && !strings.EqualFold(name, "Status") && !strings.EqualFold(name, "Origin") {
+				return false
+			}
+		}
+	default:
+		return false
+	}
+	id := stringField(record, "Id")
+	_, stored, found := storage.LookupRecordByID(vm.Org.Objects["Case"].Records, storage.ID(id))
+	return found && storage.IDsEqual(stored.System.OwnerID, storage.ID(vm.currentUserID()))
 }
 
 // AnonymousCommunityCaseDeleteCompileDenied supplies a request-scoped semantic
