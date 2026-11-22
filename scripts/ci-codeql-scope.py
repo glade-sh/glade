@@ -14,4 +14,9 @@ data = sys.stdin.buffer.read()
 if data and not data.endswith(b'\0'):
     raise ValueError('incomplete NUL-delimited diff')
 paths = [os.fsdecode(path) for path in data.split(b'\0') if path]
-print(str(not selector.docs_only(paths, root)).lower())
+docs_only = bool(paths) and all(
+    (path.endswith('.md') and 'testdata' not in path.split('/')[:-1])
+    or selector.docs_only([path], root)
+    for path in paths
+)
+print(str(not docs_only).lower())
