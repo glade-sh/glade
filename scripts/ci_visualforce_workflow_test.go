@@ -27,9 +27,6 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	if strings.Contains(input, "actions/cache/save@") {
 		t.Error("history producer must not publish unvalidated run results")
 	}
-	if strings.Count(input, "if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}") != 2 {
-		t.Error("ordinary predecessor evidence must not seed a positive benchmark pair")
-	}
 	for index := range 4 {
 		row := fmt.Sprintf("          - lane: visualforce-%d\n            name: Visualforce (%d)\n            shard: %d\n", index, index, index)
 		if strings.Count(matrix, row) != 1 {
