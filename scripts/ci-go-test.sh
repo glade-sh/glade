@@ -758,6 +758,9 @@ try:
                         elif re.fullmatch(pending, test):
                             reason = r"\s+process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive\s*$"
                     if reason and any(re.fullmatch(reason, line) for output in test_output.get(identity, ()) for line in output.splitlines()):
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": "case alias requires a case-insensitive filesystem",
+                            "reason": "case-sensitive runner cannot exercise this case-alias leaf"})
                         continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]

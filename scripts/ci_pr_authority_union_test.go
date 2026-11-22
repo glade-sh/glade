@@ -18,7 +18,7 @@ func TestCIPRAuthorityUnion(t *testing.T) {
 	}{
 		{"complete", "", true}, {"missing worker", "missing", false},
 		{"divergent discovery", "discovery", false}, {"divergent plan", "plan", false},
-		{"duplicate terminal", "duplicate", false}, {"skipped terminal", "skip", false},
+		{"duplicate terminal", "duplicate", false}, {"skipped terminal", "skip", false}, {"nested skip", "nested", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := semaPairFixture(t)
@@ -44,6 +44,9 @@ func TestCIPRAuthorityUnion(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					if entry.Name() == "events.json" {
+						b = append(b, []byte(`{"Action":"pass","Package":"`+semaFixturePackage+`"}`+"\n")...)
+					}
 					if i == 1 {
 						if tc.mutation == "discovery" && entry.Name() == "discovery.txt" {
 							b = append(b, []byte("TestZExtra\n")...)
@@ -53,6 +56,9 @@ func TestCIPRAuthorityUnion(t *testing.T) {
 						}
 						if tc.mutation == "duplicate" && entry.Name() == "events.json" {
 							b = append(b, b...)
+						}
+						if tc.mutation == "nested" && entry.Name() == "events.json" {
+							b = append(b, []byte(`{"Action":"skip","Package":"`+semaFixturePackage+`","Test":"TestHistory000/unknown"}`+"\n")...)
 						}
 						if tc.mutation == "skip" && entry.Name() == "events.json" {
 							b = []byte(strings.Replace(string(b), `"Action":"pass"`, `"Action":"skip"`, 1))
@@ -91,5 +97,32 @@ func TestCIPRAuthorityWorkflow(t *testing.T) {
 	}
 	if !strings.Contains(jobs["pr-authority-union"], "ci-pr-authority-union.py") || !strings.Contains(jobs["required-ci"], "      - pr-authority-union\n") {
 		t.Fatal("PR authority union must gate Required CI")
+	}
+}
+
+func TestCIPRPackageAudit(t *testing.T) {
+	for _, tc := range []struct {
+		name, action string
+		ok           bool
+	}{
+		{"passed", "pass", true}, {"unexpected skip", "skip", false}, {"failed", "fail", false}, {"missing terminal", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			bin := filepath.Join(dir, "go")
+			program := "#!/bin/bash\nif [[ $1 == list ]]; then printf '%s\\thas-tests\\n' github.com/glade-sh/glade/internal/example; exit; fi\nif [[ $* == *-list* ]]; then printf 'TestExample\\nok  \\tgithub.com/glade-sh/glade/internal/example\\t0.001s\\n'; exit; fi\nprintf '%s\\n' '{\"Action\":\"" + tc.action + "\",\"Package\":\"github.com/glade-sh/glade/internal/example\",\"Test\":\"TestExample\"}' '{\"Action\":\"pass\",\"Package\":\"github.com/glade-sh/glade/internal/example\"}'\n"
+			if err := os.WriteFile(bin, []byte(program), 0700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "ci-pr-packages.sh", filepath.Join(dir, "evidence"), "github.com/glade-sh/glade/internal/example")
+			cmd.Dir = ".."
+			// The wrapper resolves scripts from the repository root.
+			cmd.Args[1] = "scripts/ci-pr-packages.sh"
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"))
+			out, err := cmd.CombinedOutput()
+			if (err == nil) != tc.ok {
+				t.Fatalf("audit error=%v output=%s", err, out)
+			}
+		})
 	}
 }

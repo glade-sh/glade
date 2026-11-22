@@ -1753,6 +1753,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - reused-tree-ci
       - workflow-lint
       - pr-tests
+      - pr-authority-union
       - pr-guards
       - early-guards
       - pr-select
@@ -1802,6 +1803,9 @@ func ciRequiredAggregateProblem(workflow string) string {
 			return "required-ci must not define " + forbidden.name
 		}
 	}
+	if strings.Count(job, "\n        if:") != 2 || strings.Count(job, "\n        if: ${{ always() }}") != 2 {
+		return "required-ci only permits always conditions on aggregate and upload steps"
+	}
 	checks := []struct {
 		name string
 		want string
@@ -1815,8 +1819,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
-		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-authority-union" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
+		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-authority-union" and .key != "pr-guards" and .key != "pr-select")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -3300,6 +3304,9 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
 		"remove pr guards":        strings.Replace(workflow, "      - pr-guards\n", "", 1),
+		"remove PR union":         strings.Replace(workflow, "      - pr-authority-union\n", "", 1),
+		"skip classification":     strings.Replace(workflow, "      - name: Classify individual CI workers\n        id: classify", "      - name: Classify individual CI workers\n        if: false\n        id: classify", 1),
+		"skip upload":             strings.Replace(workflow, "      - name: Upload CI worker classification\n        if: ${{ always() }}", "      - name: Upload CI worker classification\n        if: false", 1),
 		"success-only condition":  strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),

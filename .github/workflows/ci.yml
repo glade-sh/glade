@@ -2233,9 +2233,20 @@ jobs:
           SHARD: ${{ matrix.shard }}
           BROWSER_EVIDENCE: ${{ steps.browser.outputs.selected }}
         run: |
+          mkdir -p ci-artifacts/pr-authority
+          jq -n --argjson shard "$SHARD" '{shard: $shard}' > ci-artifacts/pr-authority/identity.json
+          export CI_APEXTEST_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
+          export CI_VM_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
+          export CI_GLADECLI_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
+          export CI_SEMA_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
+          export CI_LWC_COMPILE_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
+          export CI_VISUALFORCE_ARTIFACT_DIR=ci-artifacts/pr-authority/shard
           # The full CLI shard route delegates these four tests to the Node lane.
           if [[ "$SHARD" == 22 ]] && jq -e 'index("github.com/glade-sh/glade/internal/gladecli") != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
-            go test -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli
+            mkdir -p ci-artifacts/pr-authority/doctor
+            go test -json -count=1 -timeout=0 -run '^(TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$' ./internal/gladecli | tee ci-artifacts/pr-authority/doctor/events.json
+            printf 'github.com/glade-sh/glade/internal/gladecli\thas-tests\n' > ci-artifacts/pr-authority/doctor/metadata.tsv
+            bash scripts/ci-go-test.sh package-summary gladecli-ci 'PR doctor' ci-artifacts/pr-authority/doctor/events.json ci-artifacts/pr-authority/doctor/summary.json ci-artifacts/pr-authority/doctor/metadata.tsv ./internal/gladecli
           fi
           # Large packages use the same discovery, planning and validation routes
           # as the full suite, one shard per worker: 0-11 Apex, 12-15 VM,
@@ -2251,11 +2262,8 @@ jobs:
           if (( SHARD == 44 )); then
             mapfile -t packages < <(jq -r '.[] | select(. == "github.com/glade-sh/glade/internal/server" or . == "github.com/glade-sh/glade/internal/playground")' "$RUNNER_TEMP/selected.json")
             if (( ${#packages[@]} )); then
-              if [[ "$BROWSER_EVIDENCE" == true ]]; then
-                bash scripts/ci-pr-browser-go-test.sh "$RUNNER_TEMP/pr-browser/events.jsonl" "${packages[@]}"
-              else
-                go test -count=1 -timeout=0 "${packages[@]}"
-              fi
+              bash scripts/ci-pr-packages.sh ci-artifacts/pr-authority/service "${packages[@]}"
+              if [[ "$BROWSER_EVIDENCE" == true ]]; then cp ci-artifacts/pr-authority/service/events.json "$RUNNER_TEMP/pr-browser/events.jsonl"; fi
             fi
           fi
           # Workers 12-23 split the remaining packages by the measured
@@ -2265,12 +2273,17 @@ jobs:
             mapfile -t packages < <(jq -r '.[]' "$RUNNER_TEMP/pool.json")
           fi
           if (( ${#packages[@]} )); then
-            if [[ "$BROWSER_EVIDENCE" == true ]]; then
-              bash scripts/ci-pr-browser-go-test.sh "$RUNNER_TEMP/pr-browser/events.jsonl" "${packages[@]}"
-            else
-              go test -count=1 -timeout=0 "${packages[@]}"
-            fi
+            bash scripts/ci-pr-packages.sh ci-artifacts/pr-authority/pool "${packages[@]}"
+            if [[ "$BROWSER_EVIDENCE" == true ]]; then cp ci-artifacts/pr-authority/pool/events.json "$RUNNER_TEMP/pr-browser/events.jsonl"; fi
           fi
+      - name: Upload PR authority evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: pr-authority-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          retention-days: 7
+          path: ci-artifacts/pr-authority/
+          if-no-files-found: error
       - name: Upload PR browser evidence
         if: ${{ steps.browser.outputs.selected == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -2278,6 +2291,34 @@ jobs:
           name: pr-browser-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           retention-days: 7
           path: ${{ runner.temp }}/pr-browser/
+          if-no-files-found: error
+
+  pr-authority-union:
+    needs: [pr-select, pr-tests]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.pr-select.result == 'success' && needs.pr-tests.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: pr-authority-${{ github.run_id }}-*
+          path: ${{ runner.temp }}/pr-authority-input
+      - name: Validate worker evidence union
+        env:
+          PR_PLAN: ${{ needs.pr-select.outputs.validated }}
+        run: |
+          printf '%s\n' "$PR_PLAN" > "$RUNNER_TEMP/pr-authority-plan.json"
+          python3 scripts/ci-pr-authority-union.py "$RUNNER_TEMP/pr-authority-plan.json" "$RUNNER_TEMP/pr-authority-input" "$RUNNER_TEMP/pr-authority-output"
+      - name: Upload PR authority union
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: pr-authority-union-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          path: ${{ runner.temp }}/pr-authority-output/
           if-no-files-found: error
 
   pr-browser-evidence:
@@ -2312,6 +2353,7 @@ jobs:
       - reused-tree-ci
       - workflow-lint
       - pr-tests
+      - pr-authority-union
       - pr-guards
       - early-guards
       - pr-select
@@ -2374,6 +2416,9 @@ jobs:
           if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-tests".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
             planner_failure="PR planned workers did not all succeed"
           fi
+          if [[ "$event" == pull_request ]] && [[ "$(jq -r '."pr-authority-union".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
+            planner_failure="PR worker evidence union did not pass"
+          fi
           if [[ "$event" == pull_request && "${PR_BROWSER:-}" == true ]] && [[ "$(jq -r '."pr-browser-evidence".result // "missing"' <<<"$REQUIRED_RESULTS")" != success ]]; then
             planner_failure="PR browser evidence did not pass"
           fi
@@ -2402,7 +2447,7 @@ jobs:
           if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then
             failures="$(jq -r '["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"][] as $job | select(.[$job].result != "success") | "\($job)=\(.[$job].result // "missing")"' <<<"$REQUIRED_RESULTS")"
           else
-            failures="$(jq -r --arg event "$event" --arg original "$EVENT_NAME" --arg smoke "${SMOKE_REQUIRED:-false}" --arg browser "${PR_BROWSER:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(.key != "early-guards" or $original == "pull_request") | select(.key != "pr-browser-full" or ($original == "pull_request" and $event == "full")) | select(.key != "pr-browser-evidence" or ($event == "pull_request" and $browser == "true")) | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) or ($browser == "true" and .key == "pr-browser-evidence") else (.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+            failures="$(jq -r --arg event "$event" --arg original "$EVENT_NAME" --arg smoke "${SMOKE_REQUIRED:-false}" --arg browser "${PR_BROWSER:-false}" 'to_entries[] | select(.key != "reused-tree-ci" and .key != "tree-reuse-gate") | select(.key != "early-guards" or $original == "pull_request") | select(.key != "pr-browser-full" or ($original == "pull_request" and $event == "full")) | select(.key != "pr-browser-evidence" or ($event == "pull_request" and $browser == "true")) | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-authority-union" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site") or ($smoke == "true" and (.key == "smoke-runtime" or .key == "smoke-distribution")) or ($browser == "true" and .key == "pr-browser-evidence") else (.key != "pr-tests" and .key != "pr-authority-union" and .key != "pr-guards" and .key != "pr-select") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           fi
           if [[ -n "$planner_failure" ]]; then failures="${failures:+$failures$'\n'}$planner_failure"; fi
           if [[ -n "$failures" ]]; then
