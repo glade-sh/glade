@@ -82,3 +82,17 @@ func TestSetAndMapWritebackMarkNewNestedObjects(t *testing.T) {
 		t.Fatal("nested set or map element remained local-only")
 	}
 }
+
+func TestListWritebackSharedBackingScansOnlyTail(t *testing.T) {
+	machine := New(nil)
+	child := Object("Child")
+	machine.rememberLocalOnlyObject(child)
+	previous := List(Int(1), Int(2))
+	previous.List = append(make([]Value, 0, 8), previous.List...)
+	updated := previous
+	updated.List = append(updated.List, Value{Kind: ValueList, List: []Value{child}})
+	machine.markCollectionRefsEscapedSince(previous, updated)
+	if machine.localOnlyAlias(snapshotAlias(child)) {
+		t.Fatal("nested child in appended tail remained local-only")
+	}
+}

@@ -452,6 +452,11 @@ func (vm *VM) markCollectionRefsEscapedSince(previous, value Value) {
 		// Non-container values without references and children retained at the same
 		// slot cannot add to the traversal set. Acquire one only when needed.
 		first := 0
+		if n := len(previous.List); n > 0 && n <= len(value.List) && &previous.List[0] == &value.List[0] {
+			// One backing array: an append kept every earlier slot, and List.add and
+			// List.set mark each stored element when they store it. Only the tail is new.
+			first = n
+		}
 		for ; first < len(value.List); first++ {
 			child := &value.List[first]
 			if child.Ref == 0 {
