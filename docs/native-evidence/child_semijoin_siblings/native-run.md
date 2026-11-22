@@ -1,0 +1,2 @@
+Salesforce Developer scratch orgs on the campaign Dev Hub, capture date 2026-11-22 (30-day orgs, deleted after the runs).
+Ran child relationship queries holding an ID semi-join with scalar conjuncts and a single-row child window beside sibling child queries, at API 62.0 and 67.0, through anonymous Apex and an @IsTest method. Salesforce accepted every captured shape on both routes and returned the rows recorded in org.tsv under internal/apextest/testdata/conformance/child_semijoin_siblings (exact, relationship, fullshape). Uncaptured neighbors keep their prior behavior.
