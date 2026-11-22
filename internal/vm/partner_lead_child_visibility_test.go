@@ -104,3 +104,39 @@ func BenchmarkPartnerLeadChildVisibilityOwnerShares(b *testing.B) {
 		}
 	}
 }
+
+func partnerLeadRelationshipProjection(t testing.TB) (*VM, ir.Program) {
+	t.Helper()
+	machine, _ := partnerLeadChildVisibilityMachine(t)
+	source := `List<Lead> rows=[SELECT Id, UserRecordAccess.HasReadAccess FROM Lead WITH USER_MODE]; Integer visible=0; for (Lead row : rows) { if (row.UserRecordAccess.HasReadAccess) visible++; } System.debug(visible);`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return machine, program
+}
+
+func TestPartnerLeadRelationshipProjectionPublicNeighbor(t *testing.T) {
+	machine, program := partnerLeadRelationshipProjection(t)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Debug) != 1 || result.Debug[0] != "200" {
+		t.Fatalf("readable projected records = %v, want 200", result.Debug)
+	}
+}
+
+func BenchmarkPartnerLeadRelationshipProjectionOwnerShares(b *testing.B) {
+	machine, program := partnerLeadRelationshipProjection(b)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result, err := machine.Execute(program)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(result.Debug) != 1 || result.Debug[0] != "200" {
+			b.Fatalf("readable projected records = %v, want 200", result.Debug)
+		}
+	}
+}
