@@ -9,3 +9,6 @@ normalization=namespace replaced consistently with garden, preserving its observ
 repeats=two runs in the same org with separately named synthetic components but the same object and field shape; all four route and API outputs match
 cleanup=each permission assignment deleted; both sets of deployed permission sets, objects, and test classes deleted; queries returned zero remaining for each and assignment
 limits=namespace owner context only; no global-describe or subscriber capture
+capture_timestamps=not recorded in the available capture provenance
+coverage=field key-set text and retained-key mutation only; API 68, global describe, broader field maps, and ownership variants are unprobed
+replay=parity pin; the captured-row test passes with the unchanged origin/main runtime and does not demonstrate a product regression

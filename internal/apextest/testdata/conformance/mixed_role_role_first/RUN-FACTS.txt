@@ -18,3 +18,4 @@ residue: before every anonymous run the state is settled; records found there ta
 residue rows: cleaned=4, n/a=4
 anonymous probes roll back their role and account work, assert the role count is restored, and create a tracked cleanup record.
 org.tsv contains the selected normalized rows from the eight-row capture.
+Replay: parity pin; the captured-row test passes with the unchanged origin/main runtime and does not demonstrate a product regression.
