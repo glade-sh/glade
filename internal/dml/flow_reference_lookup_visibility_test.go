@@ -18,12 +18,13 @@ func TestFlowReferenceIDLookupVisibilityScope(t *testing.T) {
 		target string
 		want   bool
 	}{
-		{"reference", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Account", true},
-		{"other_target", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Contact", false},
-		{"multiple", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion, criterion}}, "Account", false},
-		{"collection", storage.FlowRecordLookup{Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Account", false},
-		{"non_reference", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Text__c"}}}, "Account", false},
-		{"other_operator", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "notequal", SourceField: "Parent__c"}}}, "Account", false},
+		{"reference", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Account", true},
+		{"missing_provenance", storage.FlowRecordLookup{GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Account", false},
+		{"other_target", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Contact", false},
+		{"multiple", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{criterion, criterion}}, "Account", false},
+		{"collection", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, Criteria: []storage.WorkflowCriteriaItem{criterion}}, "Account", false},
+		{"non_reference", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Text__c"}}}, "Account", false},
+		{"other_operator", storage.FlowRecordLookup{CapturedTestReferenceLookup: true, GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "notequal", SourceField: "Parent__c"}}}, "Account", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := flowCapturedReferenceIDLookup(tc.lookup, definition, tc.target, ""); got != tc.want {

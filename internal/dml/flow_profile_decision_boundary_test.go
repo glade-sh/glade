@@ -52,4 +52,9 @@ func TestFlowProfileDecisionUncapturedNonASCII(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "unsupported criteria") {
 		t.Fatalf("uncaptured comparison changed: %v", err)
 	}
+	record.Fields["Title"] = storage.NullValue()
+	_, _, err = engine.selectFlowBranch(rule, record, definition)
+	if err == nil || !strings.Contains(err.Error(), "unsupported criteria") {
+		t.Fatalf("uncaptured null comparison changed: %v", err)
+	}
 }
