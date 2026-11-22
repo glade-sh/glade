@@ -145,3 +145,52 @@ func benchmarkWatcherLargeProjectIdle(b *testing.B, backend Backend) {
 	b.ReportMetric(float64(cpu(after)-cpu(before))/float64(b.N), "cpu-us/op")
 	b.ReportMetric(float64(fds), "open-fds")
 }
+
+func TestWatcherExcludedNoiseDoesNotDelayTrackedEdit(t *testing.T) {
+	root := t.TempDir()
+	excluded := filepath.Join(root, "ignored")
+	tracked := filepath.Join(root, "Tracked.cls")
+	noise := filepath.Join(excluded, "Ignored.cls")
+	writeWatchFile(t, tracked, "before")
+	writeWatchFile(t, noise, "before")
+	scope := Scope{Roots: []string{root}, ExcludedRoots: []string{excluded}}
+	initial, err := CaptureScope(scope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Scope: scope, Backend: BackendNative, Debounce: 150 * time.Millisecond}, initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer watcher.Close()
+	stop, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(15 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				_ = os.WriteFile(noise, []byte(time.Now().String()), 0600)
+			}
+		}
+	}()
+	defer func() { close(stop); <-done }()
+	time.Sleep(250 * time.Millisecond)
+	if err := os.WriteFile(tracked, []byte("after"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case changes := <-watcher.Changes():
+		assertChange(t, changes, tracked, ChangeModified, FileKindApexClass)
+		if len(changes) != 1 {
+			t.Fatalf("excluded noise produced changes: %+v", changes)
+		}
+	case err := <-watcher.Errors():
+		t.Fatal(err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("tracked edit delayed by excluded subtree activity")
+	}
+}
