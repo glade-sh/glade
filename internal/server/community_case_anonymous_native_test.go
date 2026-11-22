@@ -29,56 +29,96 @@ func TestCommunityCaseAnonymousCompileNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	source, err := os.ReadFile(filepath.Join(base, "delete.apex"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	for _, row := range rows[1:] {
 		// The server advertises 67.0; Apex 62.0 has no matching REST route.
-		if row[0] != "case_delete" || row[1] != "67.0" {
+		if row[2] != "anonymous" || row[3] != "false" || row[1] != "67.0" {
 			continue
 		}
 		row := row
 		for _, route := range []string{"rest", "soap"} {
-			t.Run(row[1]+"/"+route, func(t *testing.T) {
-				org := communityCaseCompileOrg(row[1])
-				handler := New(&org)
-				code := strings.ReplaceAll(string(source), "__API__", strings.TrimSuffix(row[1], ".0"))
-				var req *http.Request
-				if route == "rest" {
-					body, err := json.Marshal(map[string]string{"anonymousBody": code})
+			for _, variant := range []string{"native", "uncaptured-no-api", "uncaptured-no-origin", "uncaptured-delete-grant"} {
+				if row[0] != "case_delete" && variant != "native" {
+					continue
+				}
+				t.Run(row[0]+"/"+row[1]+"/"+route+"/"+variant, func(t *testing.T) {
+					org := communityCaseCompileOrg(row[1])
+					if variant == "uncaptured-no-api" {
+						profiles := org.Objects["Profile"]
+						profile := profiles.Records["00e000000000002"]
+						profile.Fields["PermissionsApiEnabled"] = storage.BooleanValue(false)
+						profiles.Records[profile.ID] = profile
+						org.Objects["Profile"] = profiles
+					}
+					if variant == "uncaptured-no-origin" {
+						fields := org.Objects["FieldPermissions"]
+						delete(fields.Records, "0FP000000000002")
+						org.Objects["FieldPermissions"] = fields
+					}
+					if variant == "uncaptured-delete-grant" {
+						objects := org.Objects["ObjectPermissions"]
+						permission := objects.Records["110000000000001"]
+						permission.Fields["PermissionsDelete"] = storage.BooleanValue(true)
+						objects.Records[permission.ID] = permission
+						org.Objects["ObjectPermissions"] = objects
+					}
+					handler := New(&org)
+					name := row[0]
+					if name == "case_delete" {
+						name = "delete"
+					}
+					source, err := os.ReadFile(filepath.Join(base, name+".apex"))
 					if err != nil {
 						t.Fatal(err)
 					}
-					req = httptest.NewRequest(http.MethodPost, "/services/data/v"+row[1]+"/tooling/executeAnonymous", bytes.NewReader(body))
-				} else {
-					var escaped bytes.Buffer
-					if err := xml.EscapeText(&escaped, []byte(code)); err != nil {
+					code := strings.ReplaceAll(string(source), "__API__", strings.TrimSuffix(row[1], ".0"))
+					var req *http.Request
+					if route == "rest" {
+						body, err := json.Marshal(map[string]string{"anonymousBody": code})
+						if err != nil {
+							t.Fatal(err)
+						}
+						req = httptest.NewRequest(http.MethodPost, "/services/data/v"+row[1]+"/tooling/executeAnonymous", bytes.NewReader(body))
+					} else {
+						var escaped bytes.Buffer
+						if err := xml.EscapeText(&escaped, []byte(code)); err != nil {
+							t.Fatal(err)
+						}
+						req = httptest.NewRequest(http.MethodPost, "/services/Soap/s/"+row[1]+"/local", strings.NewReader(soapEnvelope("<apex:executeAnonymous><apex:String>"+escaped.String()+"</apex:String></apex:executeAnonymous>")))
+					}
+					req.Header.Set("X-GLADE-User-Id", "005000000000002")
+					rec := httptest.NewRecorder()
+					handler.ServeHTTP(rec, req)
+					if rec.Code != http.StatusOK {
+						t.Fatalf("status=%d", rec.Code)
+					}
+					if route == "soap" {
+						result := decodeSOAPResult(t, rec.Body.String())
+						if variant != "native" {
+							if result["compiled"] != "true" {
+								t.Fatalf("uncaptured compiled=%s", result["compiled"])
+							}
+							return
+						}
+						if result["compiled"] != row[3] || result["success"] != row[4] || result["compileProblem"] != row[5] {
+							t.Fatalf("compiled=%s success=%s problem=%q; native=%s,%s,%q", result["compiled"], result["success"], result["compileProblem"], row[3], row[4], row[5])
+						}
+						return
+					}
+					var result map[string]any
+					if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
 						t.Fatal(err)
 					}
-					req = httptest.NewRequest(http.MethodPost, "/services/Soap/s/"+row[1]+"/local", strings.NewReader(soapEnvelope("<apex:executeAnonymous><apex:String>"+escaped.String()+"</apex:String></apex:executeAnonymous>")))
-				}
-				req.Header.Set("X-GLADE-User-Id", "005000000000002")
-				rec := httptest.NewRecorder()
-				handler.ServeHTTP(rec, req)
-				if rec.Code != http.StatusOK {
-					t.Fatalf("status=%d", rec.Code)
-				}
-				if route == "soap" {
-					result := decodeSOAPResult(t, rec.Body.String())
-					if result["compiled"] != row[3] || result["success"] != row[4] || result["compileProblem"] != row[5] {
-						t.Fatalf("compiled=%s success=%s problem=%q; native=%s,%s,%q", result["compiled"], result["success"], result["compileProblem"], row[3], row[4], row[5])
+					if variant != "native" {
+						if result["compiled"] != true {
+							t.Fatalf("uncaptured compiled=%v", result["compiled"])
+						}
+						return
 					}
-					return
-				}
-				var result map[string]any
-				if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
-					t.Fatal(err)
-				}
-				if result["compiled"] != false || result["success"] != false || result["compileProblem"] != row[5] {
-					t.Fatalf("compiled=%v success=%v problem=%q; native=%s,%s,%q", result["compiled"], result["success"], result["compileProblem"], row[3], row[4], row[5])
-				}
-			})
+					if result["compiled"] != false || result["success"] != false || result["compileProblem"] != row[5] {
+						t.Fatalf("compiled=%v success=%v problem=%q; native=%s,%s,%q", result["compiled"], result["success"], result["compileProblem"], row[3], row[4], row[5])
+					}
+				})
+			}
 		}
 	}
 }
