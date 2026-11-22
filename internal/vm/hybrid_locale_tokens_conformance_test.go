@@ -59,7 +59,7 @@ func testHybridLocaleTokens(t *testing.T, locale string) {
 				localeKey, language = "de_DE", "de"
 			}
 			machine := New(nil)
-			machine.SetCurrentUser(storage.Record{ID: "005-synthetic-locale", Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue(localeKey), "LanguageLocaleKey": storage.StringValue(language), "TimeZoneSidKey": storage.StringValue("GMT")}})
+			machine.SetCurrentUser(storage.Record{Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue(localeKey), "LanguageLocaleKey": storage.StringValue(language), "TimeZoneSidKey": storage.StringValue("GMT")}})
 			if row[2] == "istest" {
 				machine.EnableTestContext()
 				machine.testContext.CurrentUser = machine.executionUser
