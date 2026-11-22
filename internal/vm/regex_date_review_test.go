@@ -100,3 +100,58 @@ func TestReviewRegexDateCacheEvictionAlias(t *testing.T) {
 		t.Errorf("alias start %v %v", start, err)
 	}
 }
+
+// API 66 has no rows for the new UTF-16 paths. These values are from origin/main.
+func TestReviewRegexDateUncapturedAPI(t *testing.T) {
+	source := `String positions = ''; Matcher m = Pattern.compile('').matcher('😀'); while (m.find()) { positions += m.start() + ','; }
+ Integer splitSize = '😀'.split('').size();
+ Integer replacedLength = '😀'.replaceAll('','-').length();
+ String regionResult = 'accepted'; try { Pattern.compile('.').matcher('😀').region(1,2); } catch (Exception e) { regionResult = e.getMessage(); }`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "66.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range map[string]string{"positions": "0,2,", "regionResult": "string index splits a surrogate pair"} {
+		if got := machine.Globals[name].Text; got != want {
+			t.Errorf("%s = %q, want %q", name, got, want)
+		}
+	}
+	for name, want := range map[string]int64{"splitSize": 1, "replacedLength": 4} {
+		if got := machine.Globals[name].Int; got != want {
+			t.Errorf("%s = %d, want %d", name, got, want)
+		}
+	}
+}
+
+func TestReviewRegexDateStarFindNeighbor(t *testing.T) {
+	p, err := patternCompile([]Value{String("x*")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _, _, _, err := callPatternMember(p, "matcher", []Value{String("😀")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var starts []int64
+	for {
+		found, _, _, _, e := callMatcherMember(m, "find", nil)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if !found.Bool {
+			break
+		}
+		start, _, _, _, e := callMatcherMember(m, "start", nil)
+		if e != nil {
+			t.Fatal(e)
+		}
+		starts = append(starts, start.Int)
+	}
+	if !reflect.DeepEqual(starts, []int64{0, 2}) {
+		t.Errorf("star find = %v", starts)
+	}
+}
