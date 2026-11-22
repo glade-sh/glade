@@ -65,8 +65,16 @@ func TestStdlibTypeDepthNativeConformance(t *testing.T) {
 					t.Fatalf("native failed: %s; Glade passed", row["outcome"])
 				}
 				want := strings.TrimPrefix(row["outcome"], "probe=Fail ")
-				if !strings.Contains(firstRunProblem(run), want) {
-					t.Fatalf("native %q; Glade %q", want, firstRunProblem(run))
+				got := ""
+				for _, suite := range run.Suites {
+					for _, testCase := range suite.Cases {
+						if testCase.Problem != nil {
+							got = testCase.Problem.Type + ": " + testCase.Problem.Message
+						}
+					}
+				}
+				if !strings.Contains(got, want) {
+					t.Fatalf("native %q; Glade %q", want, got)
 				}
 				return
 			}
