@@ -19,4 +19,4 @@ residue: before every anonymous run the state is settled; records found there ta
 residue rows: 0=16, n/a=18
 lifetime correction: the capture helper was invoked through a wrapper that changed --duration-days from 1 to 30; create results reported DurationDays=30.
 flow API: the org-per-api run deployed the flow at the API of its scratch org.
-excluded: the rt_* rows of this run (record types unavailable to the user in the 67.0 org) are replaced by flow_record_type_decision.
+excluded: the rt_* rows of this run (record types unavailable to the user in the 67.0 org) are not used here; the deployed sources are kept whole.
