@@ -294,7 +294,7 @@ type gatedPlatformStubEntry struct {
 	bit       uint8
 	specs     []int
 	once      sync.Once
-	symbol    TypeSymbol
+	symbol    *TypeSymbol
 }
 
 var gatedPlatformStubDirectoryState struct {
@@ -370,9 +370,10 @@ func (dir *gatedPlatformStubDirectory) symbol(i int) *TypeSymbol {
 		for _, at := range entry.specs {
 			specs = append(specs, dir.specs[at])
 		}
-		entry.symbol = standardSymbolsFromSpecs(specs, nil)[0]
+		symbols := standardSymbolsFromSpecs(specs, nil)
+		entry.symbol = &symbols[0]
 	})
-	return &entry.symbol
+	return entry.symbol
 }
 
 // fieldNameIndex maps each field or property name (lower case) of a gated
