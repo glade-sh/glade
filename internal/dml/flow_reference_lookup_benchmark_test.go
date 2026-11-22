@@ -27,7 +27,10 @@ func BenchmarkFlowTriggeredReferenceLookup(b *testing.B) {
 	org.Objects["Pricebook2"] = books
 	definition := org.Objects["Opportunity"].Definition
 	source := storage.Record{Object: "Opportunity", Fields: map[string]storage.Value{"Pricebook2Id": storage.IDValue(chosen)}}
-	lookup := storage.FlowRecordLookup{ObjectName: "Pricebook2", GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Pricebook2Id"}}}
+	lookup := storage.FlowRecordLookup{ObjectName: "Pricebook2", GetFirstRecordOnly: true, StoreOutputAutomatically: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Pricebook2Id"}}}
+	if field := reflect.ValueOf(&lookup).Elem().FieldByName("CapturedTestReferenceLookup"); field.IsValid() {
+		field.SetBool(true)
+	}
 	frame := &flowFrame{capturedAfterCreate: true}
 	engine := NewEngine(&org)
 	// The baseline has no visibility hook; the candidate hook admits this
