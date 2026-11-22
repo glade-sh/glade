@@ -11,7 +11,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// NATIVE testdata/exception_rhs_call_frames/org.tsv:2-17 captures direct,
+// NATIVE testdata/exception_rhs_call_frames/org.tsv:2-25 captures direct,
 // one-line, split, and blank-line nested calls on both routes and APIs.
 func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
@@ -36,10 +36,10 @@ func TestExceptionRHSCallFramesNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 17 || lines[0] != "id\tapi\troute\tstack_decoded" {
+	if len(lines) != 25 || lines[0] != "id\tapi\troute\tstack_decoded" {
 		t.Fatal("invalid native table")
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		suffix := strings.TrimSuffix(api, ".0")
 		entries, err := os.ReadDir(filepath.Join(dir, "classes"))
 		if err != nil {
