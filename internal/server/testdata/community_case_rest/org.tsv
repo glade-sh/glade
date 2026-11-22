@@ -1,0 +1,9 @@
+id	api	route	outcome
+case_rest	62.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_rest	67.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_constructed	62.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_constructed	67.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_sharing	62.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_sharing	67.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException
+case_message	62.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException:DML operation DELETE not allowed on Case
+case_message	67.0	apex-rest	describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException:DML operation DELETE not allowed on Case

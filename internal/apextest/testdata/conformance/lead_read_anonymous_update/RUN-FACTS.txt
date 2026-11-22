@@ -1,0 +1,4 @@
+Captured 2026-11-22 in a fresh 30-day Developer scratch org; deleted and deletion verified.
+Lead internal sharing model Read; no external model. The Lead belongs to the scratch administrator.
+A scratch Standard User was created and authenticated using the Salesforce CLI. A permission set granted API Enabled, Author Apex, View Setup, Modify Metadata and View Roles so that user could execute anonymous Apex.
+The same user ran the observation at APIs 62.0 and 67.0 in separate requests. Both caught the exception shown in org.tsv.

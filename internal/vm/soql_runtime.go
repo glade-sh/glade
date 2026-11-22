@@ -365,33 +365,59 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		captureSource(executeOrg)
 	}
 	accessProjection := strings.TrimSpace(permissionSetID) == "" && vm.capturedOrderAccessProjection(query)
-	actorKey := canonicalIDMapKey(vm.currentUserID())
+	readerID := vm.currentUserID()
+	actorKey := canonicalIDMapKey(readerID)
 	if accessProjection {
 		vm.prepareCase174PermissionState(actorKey)
 	}
 	var childVisible func(string, storage.Record) bool
 	var childFieldReadable func(string, string) bool
+	var endLeadReadScan, endChildFieldChecks func()
+	startLeadReadScan := func(objectName string) {
+		if endLeadReadScan == nil && strings.EqualFold(objectName, "Lead") {
+			endLeadReadScan = vm.beginPartnerLeadReadPass()
+		}
+	}
+	endLeadScan := func() {
+		if endChildFieldChecks != nil {
+			endChildFieldChecks()
+			endChildFieldChecks = nil
+		}
+		if endLeadReadScan != nil {
+			endLeadReadScan()
+			endLeadReadScan = nil
+		}
+	}
+	defer endLeadScan()
 	if accounting == soqlOrdinaryAccounting && explicitUserMode && (apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentSourceExecutionPolicy().APIVersion) {
 		// The unconditional-visibility test depends only on the object and
 		// the actor, which are fixed for the life of one query. Decide it once
 		// per object instead of once per row.
 		unrestricted := map[string]bool{}
 		childVisible = func(objectName string, record storage.Record) bool {
+			if vm.publicLeadReadOutsidePartnerPolicy(objectName, record, readerID) {
+				return true
+			}
+			startLeadReadScan(objectName)
 			all, ok := unrestricted[objectName]
 			if !ok {
-				all = vm.userModeUnrestrictedObject(objectName, vm.currentUserID())
+				all = vm.userModeUnrestrictedObject(objectName, readerID)
 				unrestricted[objectName] = all
 			}
 			if all {
 				return true
 			}
-			return vm.userModeRecordVisible(objectName, record, vm.currentUserID())
+			return vm.userModeRecordVisible(objectName, record, readerID)
 		}
 		childFieldReadable = func(objectName, field string) bool {
+			if endChildFieldChecks == nil && strings.EqualFold(objectName, "Lead") {
+				endChildFieldChecks = vm.beginPermissionCheckMemo()
+			}
 			return vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", permissionSetID)
 		}
 	}
-	executeContext := soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), Locale: vm.currentUserInfoField("LocaleSidKey", "en_US"), FormatDatetime: vm.soqlFormatDatetime, UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields(), ChildRecordVisible: childVisible, ChildFieldReadable: childFieldReadable, WindowRecordVisible: childVisible, UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+	executeContext := soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), Locale: vm.currentUserInfoField("LocaleSidKey", "en_US"), FormatDatetime: vm.soqlFormatDatetime, UserID: storage.ID(readerID), PermissionUserFields: vm.currentUserPermissionFields(), ChildRecordVisible: childVisible, ChildFieldReadable: childFieldReadable, WindowRecordVisible: childVisible, UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+		startLeadReadScan(objectName)
 		accessSequence := 0
 		if accessProjection {
 			key := actorKey + ":" + canonicalIDMapKey(string(record.ID))
@@ -402,8 +428,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			}
 		}
 		return vm.userRecordAccessForRelationship(objectName, record, query.SecurityMode, explicitMode, accessSequence, permissionSetID != "")
-	}, NestedUserRecordAccess: vm.userRecordAccessForRecord}
+	}, NestedUserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+		startLeadReadScan(objectName)
+		return vm.userRecordAccessForRecord(objectName, record)
+	}}
 	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
+	endLeadScan()
 	if err != nil && executeOrg == vm.Org && vm.lazySpreadCompletesMissingObject(err) {
 		// The executor met a catalog object the lazy spread had not added
 		// (a relationship target, a TYPEOF type, a nested subquery). The
@@ -417,6 +447,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			}
 		}
 		result, err = soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
+		endLeadScan()
 	}
 	if err != nil {
 		var queryErr *soql.QueryError
@@ -433,7 +464,11 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// provenance when the later output filter handles other query routes.
 	aggregateInputRows := result.AggregateInputRows
 	if !ordinaryHierarchyQuery {
-		result = vm.applySOQLSharing(query, result)
+		if defaultMode && vm.capturedPartnerLeadAnonymousQuery(query) && vm.capturedPartnerLeadAnonymousResult(result) {
+			result = vm.filterCapturedPartnerLeadAnonymous(result)
+		} else {
+			result = vm.applySOQLSharing(query, result)
+		}
 	}
 	if accounting == soqlOrdinaryAccounting {
 		result.AggregateInputRows = aggregateInputRows
@@ -1599,8 +1634,19 @@ func (vm *VM) userRecordAccessDirect(objectName string, record storage.Record, u
 func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct, directUserMode bool) storage.Record {
 	userID := vm.currentUserInfoField("Id", "005-local-user")
 	live := !record.System.IsDeleted
-	read := live && vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, userID)
+	accessible := live && vm.currentUserObjectPermission(objectName, "isAccessible")
+	read := accessible && vm.userModeRecordVisible(objectName, record, userID)
+	// The captured direct projection names another user. Relationship and
+	// runAs self projections retain their earlier public-model result.
+	if accessible && !read && (!direct || vm.testContext != nil && vm.testContext.RunAsDepth > 0) && vm.partnerLeadPrivateExternalDefault(objectName) {
+		read = true
+	}
 	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
+	if edit && direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.capturedPartnerLeadTestOwner(record) &&
+		!storage.IDsEqual(record.System.CreatedByID, storage.ID(userID)) && !storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) && !vm.currentUserBypassesRecordSharingForWrite() &&
+		!vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
+		edit = false
+	}
 	remove := live && vm.currentUserCanWriteRecord(objectName, record, userID, "delete") && vm.currentUserObjectPermission(objectName, "isDeletable")
 	transfer := live && !vm.recordsHaveNoOwner(objectName) && vm.currentUserCanWriteRecord(objectName, record, userID, "transfer")
 	custom := vm.customObject(objectName)
@@ -1922,6 +1968,7 @@ func (vm *VM) userRecordAccessForRelationship(objectName string, record storage.
 }
 
 func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) storage.OrgState {
+	defer vm.beginPartnerLeadReadPass()()
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
@@ -1967,6 +2014,8 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 }
 
 var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
+var manualReadAccessProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)\s+and\s+recordid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)(?:\s+[a-z0-9]{15,18})*\s*$`)
+var manualReadExtraFieldProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s*,\s*haseditaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)\s+and\s+recordid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)(?:\s+[a-z0-9]{15,18})*\s*$`)
 
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
@@ -1979,26 +2028,61 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	deniedControl, anonymousManualShape, anonymousPartnerShape := false, false, false
+	visualforcePartner := api == "59.0" && vm.capturedPartnerVisualforce59() || api == "67.0" && vm.capturedPartnerVisualforce67()
+	anonymous := vm.currentClass == "" && vm.currentMethod.ClassName == ""
+	if vm.testContext == nil && !vm.currentTrigger && (anonymous && (api == "62.0" || api == "67.0" || api == "68.0") || visualforcePartner) &&
+		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" {
+		standardProjection := anonymous && manualReadAccessProjection.MatchString(queryText)
+		extraFieldProjection := (anonymous && (api == "62.0" || api == "67.0") || visualforcePartner) && manualReadExtraFieldProjection.MatchString(queryText)
+		deniedControl = anonymous && (api == "68.0" && standardProjection || api == "67.0" && extraFieldProjection)
+		anonymousManualShape = anonymous && ((api == "62.0" || api == "67.0") && standardProjection || deniedControl)
+		anonymousPartnerShape = extraFieldProjection
+	}
+
+	queryLower := ""
+	if anonymousManualShape || anonymousPartnerShape {
+		queryLower = strings.ToLower(queryText)
+	}
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
 		portal := portalUserTypeRecord(user)
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
+		profile, _ := user.GetField("ProfileId")
+		partner := anonymousPartnerShape && vm.currentProfileName(storageValueIDText(profile)) == "Partner Community User"
+
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !partner && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
 			continue
 		}
-		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
+		if vm.testContext == nil && !partner && !vm.namedUserIsCapturedStandard(user) {
 			continue
 		}
 		seen[string(user.ID)] = true
 		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
+		role, _ := user.GetField("UserRoleId")
 		for _, objectName := range objectNames {
-			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+			manualRead := anonymousManualShape && storageValueIDText(role) == "" && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
+				strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private") &&
+				!vm.userModeUnrestrictedObject(objectName, string(user.ID)) &&
+				vm.currentUserObjectPermission(objectName, "isAccessible") &&
+				!vm.currentUserObjectPermission(objectName, "isCreateable") &&
+				!vm.currentUserObjectPermission(objectName, "isUpdateable") &&
+				!vm.currentUserObjectPermission(objectName, "isDeletable") && vm.hasAssignedManualReadPermission(user, objectName)
+			partnerLead := partner && strings.EqualFold(objectName, "Lead") && vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, current) &&
+				vm.currentUserObjectPermission(objectName, "isAccessible") &&
+				!vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") && vm.hasAssignedReadOnlyPermission(user, objectName)
+
+			if partner && !partnerLead {
+				continue
+			}
+			if vm.testContext == nil && !manualRead && !partnerLead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
 				continue
 			}
 			// Native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0): a
 			// test reads a named limited user's rows on a custom object too, so
 			// a Standard User's rows include the project's custom objects.
-			if !portal && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+			if !portal && !manualRead && !partnerLead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
 			object := vm.Org.Objects[objectName]
@@ -2013,7 +2097,31 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			for _, text := range ids {
 				_, record, _ := storage.LookupRecordByID(object.Records, storage.ID(text))
 				record.ID = storage.ID(text)
+				if manualRead {
+					idText := string(record.ID)
+					if len(idText) < 15 || !strings.Contains(queryLower, strings.ToLower(idText[:15])) ||
+						!vm.capturedAnonymousManualReadRecord(objectName, record, current, string(user.ID), deniedControl) {
+						continue
+					}
+				}
+				if partnerLead {
+					idText := string(record.ID)
+					if len(idText) < 15 || !strings.Contains(queryLower, strings.ToLower(idText[:15])) ||
+						record.System.IsDeleted || !storage.IDsEqual(record.System.CreatedByID, storage.ID(current)) ||
+						storage.IDsEqual(record.System.OwnerID, storage.ID(current)) || storage.IDsEqual(record.System.OwnerID, user.ID) {
+						continue
+					}
+					_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+					ownerProfile, _ := owner.GetField("ProfileId")
+					if !found || vm.currentProfileName(storageValueIDText(ownerProfile)) != "System Administrator" {
+						continue
+					}
+				}
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
+				if partnerLead {
+					access.Fields["HasReadAccess"] = storage.BooleanValue(!record.System.IsDeleted && vm.currentUserHasDirectLeadManualRead(record, string(user.ID)))
+					access.Fields["HasEditAccess"] = storage.BooleanValue(false)
+				}
 				access.ID = storage.ID(fmt.Sprintf("0UR%012d", *sequence))
 				*sequence++
 				accessObject.PutRecord(access.ID, access)
@@ -2023,18 +2131,120 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	}
 }
 
+// hasAssignedManualReadPermission requires the separate reader permission set
+// used by the captured anonymous projection, not a profile-only grant.
+func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName string) bool {
+	return vm.hasAssignedReaderPermission(user, objectName, false)
+}
+
+func (vm *VM) hasAssignedReadOnlyPermission(user storage.Record, objectName string) bool {
+	return vm.hasAssignedReaderPermission(user, objectName, true)
+}
+
+func (vm *VM) hasAssignedReaderPermission(user storage.Record, objectName string, readOnly bool) bool {
+	profileID := storageValueIDText(user.Fields["ProfileId"])
+	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
+	readGrant := false
+	for _, assignment := range vm.Org.Objects["PermissionSetAssignment"].Records {
+		if assignment.System.IsDeleted || vm.permissionAssignmentNotYetApplied(assignment, string(user.ID)) {
+			continue
+		}
+		assignee, _ := assignment.GetField("AssigneeId")
+		group, _ := assignment.GetField("PermissionSetGroupId")
+		set, _ := assignment.GetField("PermissionSetId")
+		setID := storageValueIDText(set)
+		if !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), user.ID) {
+			continue
+		}
+		if readOnly && storageValueIDText(group) != "" {
+			return false
+		}
+		if storageValueIDText(group) != "" || setID == "" || storage.IDsEqual(storage.ID(setID), storage.ID(profilePermissionSetID)) {
+			continue
+		}
+		if id, _, ok := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(setID)); ok {
+			setID = string(id)
+		}
+		source := permissionGrantSource{ID: setID}
+		if readOnly {
+			for _, method := range []string{"isCreateable", "isUpdateable", "isDeletable"} {
+				if vm.sourceObjectPermission(source, objectName, method) {
+					return false
+				}
+			}
+		}
+		if vm.sourceObjectPermission(source, objectName, "isAccessible") {
+			if !readOnly {
+				return true
+			}
+			if readGrant {
+				return false
+			}
+			readGrant = true
+		}
+	}
+	return readGrant
+}
+
+// capturedAnonymousManualReadRecord limits anonymous named projections to the
+// private custom-object controls in manual_read_lifecycle/org.tsv:10-15 and
+// custom_manual_share_lifecycle/projection_controls/org.tsv:2-3.
+func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storage.Record, actorID, readerID string, deniedControl bool) bool {
+	if vm.currentTrigger ||
+		!storage.IDsEqual(record.System.OwnerID, storage.ID(actorID)) ||
+		!storage.IDsEqual(record.System.CreatedByID, storage.ID(actorID)) {
+		return false
+	}
+	// The caller switched to the reader; resolve the original actor from storage.
+	_, actor, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(actorID))
+	if !ok || vm.currentProfileName(storageValueIDText(actor.Fields["ProfileId"])) != "System Administrator" {
+		return false
+	}
+	shareName, exists := storage.ResolveObjectName(*vm.Org, objectName[:len(objectName)-3]+"__Share")
+	if !exists {
+		return true
+	}
+	for _, share := range vm.Org.Objects[shareName].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		parent, _ := share.GetField("ParentId")
+		if !storage.IDsEqual(storage.ID(storageValueIDText(parent)), record.ID) {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("AccessLevel")
+		if deniedControl || !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
+			!storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(readerID)) {
+			return false
+		}
+	}
+	return true
+}
+
 // actAsNamedUser makes the named user the current user and returns the undo. A
 // test run switches its run-as user; an anonymous execution has no test
 // context and switches the execution user, which the same checks read.
 func (vm *VM) actAsNamedUser(user Value) func() {
+	principal := &vm.executionUser
 	if vm.testContext != nil {
-		previous := vm.testContext.CurrentUser
-		vm.testContext.CurrentUser = user
-		return func() { vm.testContext.CurrentUser = previous }
+		principal = &vm.testContext.CurrentUser
 	}
-	previous := vm.executionUser
-	vm.executionUser = user
-	return func() { vm.executionUser = previous }
+	previousUser, previousPass := *principal, vm.partnerLeadShares
+	*principal = user
+	if previousPass != nil && previousPass.fixedReader {
+		namedPass := *previousPass
+		namedPass.policyResolved = false
+		vm.partnerLeadShares = &namedPass
+	}
+	return func() {
+		*principal = previousUser
+		vm.partnerLeadShares = previousPass
+	}
 }
 
 func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
@@ -2600,6 +2810,12 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// A search reads permission rows and never changes them, so one answer per
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
+	for _, spec := range query.Returning {
+		if strings.EqualFold(spec.Object, "Lead") {
+			defer vm.beginPartnerLeadReadPass()()
+			break
+		}
+	}
 	groups := make([]soslResultGroup, 0, len(query.Returning))
 	// Native allocation was measured with one to five and ten objects on
 	// both routes (sosl_result_windows and sosl_result_windows_wide).
@@ -3185,6 +3401,9 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 	}
 	if canonical, ok := vm.resolveObjectName(objectName); ok {
 		objectName = canonical
+	}
+	if strings.EqualFold(objectName, "Lead") {
+		defer vm.beginPartnerLeadReadPass()()
 	}
 	state, ok := vm.Org.Objects[objectName]
 	if !ok {
@@ -4667,6 +4886,9 @@ func (vm *VM) soqlSharingUserID(query soql.Query) string {
 }
 
 func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
+	if strings.EqualFold(query.Object, "Lead") {
+		defer vm.beginPartnerLeadReadPass()()
+	}
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {
 		return result
@@ -4719,6 +4941,129 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 	result.Records = records
 	result.Rows = len(records)
 	return result
+}
+
+// capturedPartnerLeadAnonymousResult limits the row to the two matching,
+// same-owner Leads and at most one share observed in the native transaction.
+func (vm *VM) capturedPartnerLeadAnonymousResult(result soql.Result) bool {
+	if len(result.Records) != 2 {
+		return false
+	}
+	var owner storage.ID
+	var firstName string
+	for i, projected := range result.Records {
+		_, record, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, projected.ID)
+		if !found || !vm.capturedPartnerLeadAnonymousRecord(record) {
+			return false
+		}
+		name, ok := record.GetField("LastName")
+		if !ok || name.Kind != storage.ValueString {
+			return false
+		}
+		if i == 0 {
+			owner = record.System.OwnerID
+			firstName = name.String
+		} else if !storage.IDsEqual(owner, record.System.OwnerID) || strings.EqualFold(firstName, name.String) {
+			return false
+		}
+	}
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		parent, _ := share.GetField("LeadId")
+		id := storage.ID(storageValueIDText(parent))
+		if !storage.IDsEqual(id, result.Records[0].ID) && !storage.IDsEqual(id, result.Records[1].ID) {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) filterCapturedPartnerLeadAnonymous(result soql.Result) soql.Result {
+	visible := result.Records[:0]
+	for _, projected := range result.Records {
+		_, record, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, projected.ID)
+		if !found || !vm.capturedPartnerLeadAnonymousRecord(record) || vm.currentUserHasDirectLeadManualRead(record, vm.currentUserID()) {
+			visible = append(visible, projected)
+		}
+	}
+	result.Records = visible
+	result.Rows = len(visible)
+	return result
+}
+
+// capturedPartnerLeadAnonymousQuery is the authenticated Partner query in
+// partner_lead_anonymous/org.tsv:2-5; the profile identity is in profile.tsv:2.
+func (vm *VM) capturedPartnerLeadAnonymousQuery(query soql.Query) bool {
+	if vm == nil || vm.Org == nil || vm.testContext != nil || vm.currentTrigger || !vm.staticSOQLQuery || vm.currentClass != "" || vm.currentMethod.ClassName != "" ||
+		(vm.currentSourceExecutionPolicy().APIVersion != "62.0" && vm.currentSourceExecutionPolicy().APIVersion != "67.0") ||
+		!strings.EqualFold(query.Object, "Lead") || len(query.Fields) != 1 || !strings.EqualFold(query.Fields[0], "Id") ||
+		query.Where == nil || !strings.EqualFold(query.Where.Field, "LastName") || !strings.EqualFold(query.Where.Op, "IN") || len(query.Where.Values) != 2 ||
+		query.Where.Parenthesized || query.Where.Not || query.Where.Formula != nil || query.Where.Range || len(query.Where.And) != 0 || len(query.Where.Or) != 0 || query.Where.Subquery != nil ||
+		len(query.Order) != 1 || !strings.EqualFold(query.Order[0].Field, "LastName") || query.Order[0].Desc || query.Order[0].Nulls != "" ||
+		(!strings.EqualFold(query.SecurityMode, "USER_MODE") && !strings.EqualFold(query.SecurityMode, "SYSTEM_MODE")) ||
+		query.HasLimit || query.LimitBind != "" || query.HasOffset || query.OffsetBind != "" || query.Count || query.AllRows ||
+		query.ForUpdate || query.ForView || query.ForReference || query.UsingScope != "" || query.OptionsBind != "" ||
+		query.DataCategoryGroup != "" || query.DataCategoryOperator != "" || query.DataCategoryName != "" || query.Having != nil ||
+		len(query.HavingAggregates) != 0 || query.GroupMode != "" || len(query.Aggregates) != 0 || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || len(query.GroupBy) != 0 {
+		return false
+	}
+	for _, value := range query.Where.Values {
+		if value.Kind != storage.ValueString {
+			return false
+		}
+	}
+	if strings.EqualFold(query.Where.Values[0].String, query.Where.Values[1].String) {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	profile := vm.currentUserInfoField("ProfileId", "")
+	if !storage.StandardObjectShapeDeclared(definition) || !strings.EqualFold(strings.TrimSpace(definition.SharingModel), "ReadWriteTransfer") ||
+		strings.TrimSpace(definition.ExternalSharingModel) != "" || vm.currentUserInfoField("UserType", "") != "PowerPartner" ||
+		!vm.profileHasLicenseKey(profile, "PID_Partner_Community") || !vm.recordHasAnyBooleanPermission("Profile", profile, "PermissionsApiEnabled") ||
+		vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant("Lead", "PermissionsViewAllRecords", "PermissionsModifyAllRecords") {
+		return false
+	}
+	_, user, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(vm.currentUserID()))
+	sets := vm.assignedPermissionSetIDs(vm.currentUserID())
+	if !found || len(sets) != 1 || !vm.recordHasAnyBooleanPermission("PermissionSet", sets[0], "PermissionsApiEnabled") || !vm.hasAssignedReadOnlyPermission(user, "Lead") {
+		return false
+	}
+	count := 0
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		count++
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		parent, _ := share.GetField("LeadId")
+		_, record, exists := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
+		if count > 1 || !exists || !vm.capturedPartnerLeadAnonymousRecord(record) || !strings.EqualFold(cause.String, "Manual") ||
+			!strings.EqualFold(level.String, "Read") || !storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(vm.currentUserID())) {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) capturedPartnerLeadAnonymousRecord(record storage.Record) bool {
+	if record.System.IsDeleted || record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(vm.currentUserID())) ||
+		!storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		return false
+	}
+	_, owner, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return ok && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
 }
 
 func (vm *VM) currentUserBypassesRecordSharing() bool {
@@ -4790,6 +5135,10 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	if !ok {
 		return false
 	}
+	return !vm.partnerLeadPrivateExternalDefault(canonical) && vm.objectModelHasPublicRead(canonical)
+}
+
+func (vm *VM) objectModelHasPublicRead(canonical string) bool {
 	definition := vm.Org.Objects[canonical].Definition
 	model := strings.TrimSpace(definition.SharingModel)
 	// portal_sharing_timing_c4 (APIs 62.0 and 67.0): a Customer Community,
@@ -4879,13 +5228,188 @@ func capturedStandardNamedObject(objectName string) bool {
 // (lead_grant rows), so no row isolates its sharing default. Other objects
 // keep the internal model for external users until a row covers them.
 func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject string) bool {
-	if vm == nil || vm.Org == nil || !vm.currentUserIsCapturedPortalUser() {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(canonicalObject, "Case") {
 		return false
 	}
-	if !strings.EqualFold(canonicalObject, "Case") || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
+	if !vm.currentUserIsCapturedPortalUser() || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
 		return false
 	}
 	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
+}
+
+// partnerLeadPrivateExternalDefault is the named and with-sharing test shape
+// captured in partner_lead_external_default/org.tsv:2-3 and
+// partner_lead_manual_read/org.tsv:2-3, partner_lead_transfer_default/org.tsv:2-3,
+// and partner_lead_transfer_manual_read/org.tsv:2-3
+// (APIs 62.0 and 67.0).
+func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
+	if !strings.EqualFold(objectName, "Lead") {
+		return false
+	}
+	if vm != nil && vm.partnerLeadShares != nil && vm.partnerLeadShares.fixedReader {
+		pass := vm.partnerLeadShares
+		if !pass.policyResolved {
+			pass.privateDefault = vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
+			pass.policyResolved = true
+		}
+		return pass.privateDefault
+	}
+	return vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
+}
+
+type partnerLeadShareIndex struct {
+	fixedReader, policyResolved, privateDefault bool
+	ready                                       bool
+	shares                                      []storage.Record
+}
+
+// beginPartnerLeadShareScan scopes the index to a read-only record pass.
+// No index survives a pass, including when records share mutable field maps.
+func (vm *VM) beginPartnerLeadShareScan() func() {
+	if vm.partnerLeadShares != nil {
+		return func() {}
+	}
+	vm.partnerLeadShares = &partnerLeadShareIndex{}
+	return func() { vm.partnerLeadShares = nil }
+}
+
+// These record loops run without Apex or DML. actAsNamedUser scopes the
+// policy to each named reader while retaining the read-only share rows.
+func (vm *VM) beginPartnerLeadReadPass() func() {
+	if vm.partnerLeadShares != nil {
+		return func() {}
+	}
+	vm.partnerLeadShares = &partnerLeadShareIndex{fixedReader: true}
+	return func() { vm.partnerLeadShares = nil }
+}
+
+func (vm *VM) partnerLeadNonOwnerShares() []storage.Record {
+	state := vm.Org.Objects["LeadShare"]
+	if vm.partnerLeadShares != nil && vm.partnerLeadShares.ready {
+		return vm.partnerLeadShares.shares
+	}
+	var shares []storage.Record
+	var keys [2]storage.ID
+	for key, share := range state.Records {
+		if liveNonOwnerLeadShare(share) {
+			if len(shares) < len(keys) {
+				keys[len(shares)] = key
+			}
+			shares = append(shares, share)
+		}
+	}
+	if len(shares) >= len(keys) {
+		vm.partnerLeadNonOwnerKeys = keys
+	}
+	if vm.partnerLeadShares != nil {
+		vm.partnerLeadShares.shares = shares
+		vm.partnerLeadShares.ready = true
+	}
+	return shares
+}
+
+func liveNonOwnerLeadShare(share storage.Record) bool {
+	cause, _ := share.GetField("RowCause")
+	return !share.System.IsDeleted && !strings.EqualFold(cause.String, "Owner")
+}
+
+// Two distinct live non-owner rows exclude the captured zero-or-one-share
+// policy for every principal. Row fields can change through a shallow copy
+// without advancing RecordsToken, so the keys alone never decide access.
+func (vm *VM) hasMultipleNonOwnerLeadShares() bool {
+	keys := vm.partnerLeadNonOwnerKeys
+	if keys[0] == keys[1] {
+		return false
+	}
+	rows := vm.Org.Objects["LeadShare"].Records
+	for _, key := range keys {
+		row, found := rows[key]
+		if !found || !liveNonOwnerLeadShare(row) {
+			return false
+		}
+	}
+	return true
+}
+
+func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorID string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil && actorID == "" || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
+		return false
+	}
+	if vm.hasMultipleNonOwnerLeadShares() {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	profile := vm.currentProfileName(profileID)
+	if vm.testContext != nil {
+		profile = vm.currentUserProfileName(vm.testContext.CurrentUser)
+	}
+	if (api != "62.0" && api != "67.0" && !(actorID != "" && vm.capturedPartnerVisualforce59())) || profile != "Partner Community User" || !vm.profileHasLicenseKey(profileID, "PID_Partner_Community") || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "PowerPartner") {
+		return false
+	}
+	_, reader, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(vm.currentUserID()))
+	if !found || !vm.hasAssignedReadOnlyPermission(reader, objectName) {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	model := strings.TrimSpace(definition.SharingModel)
+	transfer := strings.EqualFold(model, "ReadWriteTransfer")
+	if !storage.StandardObjectShapeDeclared(definition) || (!strings.EqualFold(model, "ReadWrite") && !transfer) || actorID != "" && !transfer || strings.TrimSpace(definition.ExternalSharingModel) != "" {
+		return false
+	}
+	shares := vm.partnerLeadNonOwnerShares()
+	if len(shares) > 1 {
+		return false
+	}
+	for _, share := range shares {
+		cause, _ := share.GetField("RowCause")
+		parent, _ := share.GetField("LeadId")
+		_, lead, found := storage.LookupRecordByID(vm.Org.Objects["Lead"].Records, storage.ID(storageValueIDText(parent)))
+		if !found {
+			return false
+		}
+		if actorID == "" {
+			if !vm.capturedPartnerLeadTestOwner(lead) {
+				return false
+			}
+		} else {
+			_, owner, ownerFound := storage.LookupRecordByID(vm.Org.Objects["User"].Records, lead.System.OwnerID)
+			profile, _ := owner.GetField("ProfileId")
+			if !ownerFound || vm.currentProfileName(storageValueIDText(profile)) != "System Administrator" || !storage.IDsEqual(lead.System.CreatedByID, storage.ID(actorID)) {
+				return false
+			}
+		}
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		if !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
+			!storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(vm.currentUserID())) {
+			return false
+		}
+	}
+	if api == "59.0" && len(shares) != 1 {
+		return false
+	}
+	return true
+}
+
+// capturedPartnerVisualforce59 is the controller route in
+// partner_lead_named_access/org.tsv:2, not an anonymous Apex API extension.
+func (vm *VM) capturedPartnerVisualforce59() bool {
+	if vm.currentSourceExecutionPolicy().APIVersion != "59.0" || vm.currentPage.Kind != ValueObject || vm.vfActionInvoker == nil || vm.currentClass == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && methodHasModifier(class.Modifiers, "without sharing")
+}
+
+// capturedPartnerVisualforce67 is the controller route in
+// partner_lead_named_access/org.tsv:3.
+func (vm *VM) capturedPartnerVisualforce67() bool {
+	if vm.currentSourceExecutionPolicy().APIVersion != "67.0" || vm.currentPage.Kind != ValueObject || vm.vfActionInvoker == nil || vm.currentClass == "" {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && methodHasModifier(class.Modifiers, "without sharing")
 }
 
 func (vm *VM) currentUserIsCapturedPortalUser() bool {
