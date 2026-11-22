@@ -30,6 +30,7 @@
 - Test daemon watchers now detect restored files whose size and modification time are unchanged, keeping test selection current.
 
 - Test daemon requests immediately after a save retry when their source snapshot has drifted, avoiding a spurious compile error. Compile progress remains paired if a save happens after compilation starts.
+- **Duplicate matching limitations.** The duplicate matching guide now summarizes known divergences and why unmeasured shapes remain limitations.
 
 ### Performance
 
@@ -88,6 +89,7 @@
 - **Scalar object describes.** Direct scalar reads from object type describes avoid copying the describe root when it cannot escape. On a synthetic object with 64 generated fields, a warm read used 272 bytes and 17 allocations instead of 14,112 bytes and 90 allocations.
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
+- **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 
 ### CI
 

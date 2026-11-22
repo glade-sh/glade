@@ -450,8 +450,9 @@ func (vm *VM) newDuplicateMatcher() duplicateMatcher {
 func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (dml.DuplicateResult, bool)) {
 	type fieldKey struct{ principal, object, field string }
 	access := make(map[fieldKey]bool)
+	var candidateScan dml.DuplicateMatchScan
 	scan := func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record) (dml.DuplicateResult, bool) {
-		return vm.findDuplicateMatches(rule, record, exclude, among, func(object, field string) bool {
+		return vm.findDuplicateMatches(rule, record, exclude, among, &candidateScan, func(object, field string) bool {
 			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
 			allowed, ok := access[key]
 			if !ok {
@@ -471,7 +472,7 @@ func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRu
 // Both Find and DML use the same record access policy. Enforce rules search
 // visible members; Bypass rules can detect hidden members without disclosing
 // them. The legacy explicit without-sharing route discloses Bypass members.
-func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record, scan *dml.DuplicateMatchScan, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
 	policy := vm.currentSourceExecutionPolicy()
 	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
 		for _, matching := range rule.MatchRules {
@@ -502,7 +503,7 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 	userID := ""
 	principalResolved := false
 	var unrestricted map[string]bool
-	return dml.FindDuplicateMatchesAmong(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+	return scan.Find(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
 		if !principalResolved {
 			userID = vm.currentUserID()
 			principalResolved = true
