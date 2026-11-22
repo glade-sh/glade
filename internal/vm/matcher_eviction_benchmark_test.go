@@ -7,7 +7,7 @@ import (
 
 // The same uncaptured optional-pattern outcome is required on both trees.
 func BenchmarkMatcherShortLivedLargeSubject(b *testing.B) {
-	input := strings.Repeat("é", 4096) + "😀"
+	input := "😀" + strings.Repeat("é", 4096)
 	pattern, err := patternCompile([]Value{String("z?")})
 	if err != nil {
 		b.Fatal(err)
@@ -27,7 +27,7 @@ func BenchmarkMatcherShortLivedLargeSubject(b *testing.B) {
 				}
 			}
 			start, _, _, _, err := callMatcherMemberWithCache(matcher, "start", nil, &cache)
-			if err != nil || start.Int != 1 {
+			if err != nil || start.Int != 2 {
 				b.Fatalf("start %v %v", start, err)
 			}
 		}
