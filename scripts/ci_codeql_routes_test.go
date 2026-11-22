@@ -27,7 +27,7 @@ func TestCICodeQLFastAndFullWorkflowRoutes(t *testing.T) {
 	if _, ok := ci["codeql"]; ok || strings.Contains(ci["required-ci"], "      - codeql\n") {
 		t.Error("Required CI must not own CodeQL")
 	}
-	if !strings.Contains(security["codeql-fast"], "if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')") {
+	if !strings.Contains(security["codeql-fast"], "if: needs.codeql-scope.outputs.run == 'true'") {
 		t.Error("fast scan must run for pull requests and branch pushes in Security")
 	}
 	if !strings.Contains(security["codeql"], "if: github.ref_type != 'tag' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')") {

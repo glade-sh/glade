@@ -12,7 +12,7 @@ func TestCICodeQLSecurityOwnershipAndReleaseGate(t *testing.T) {
 	if _, ok := ci["codeql"]; ok || strings.Contains(ci["required-ci"], "      - codeql\n") {
 		t.Error("CI still owns CodeQL")
 	}
-	for _, marker := range []string{"profile: fast", "github.event_name == 'pull_request'", "github.ref_type != 'tag'"} {
+	for _, marker := range []string{"profile: fast", "needs.codeql-scope.outputs.run == 'true'"} {
 		if !strings.Contains(security["codeql-fast"], marker) {
 			t.Errorf("fast Security route missing %s", marker)
 		}

@@ -79,9 +79,36 @@ jobs:
       - name: Run Go vulnerability reachability scan
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0
 
+  codeql-scope:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.scope.outputs.run }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select fast CodeQL scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != pull_request ]]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          else
+            [[ -n "$BASE_SHA" && -n "$HEAD_SHA" ]]
+            git diff --no-renames --name-only -z "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/codeql-paths"
+            echo "run=$(python3 scripts/ci-codeql-scope.py < "$RUNNER_TEMP/codeql-paths")" >> "$GITHUB_OUTPUT"
+          fi
+
   codeql-fast:
     name: CodeQL
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')
+    needs: [codeql-scope]
+    if: needs.codeql-scope.outputs.run == 'true'
     uses: ./.github/workflows/codeql.yml
     with:
       profile: fast
