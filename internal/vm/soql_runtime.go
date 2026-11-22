@@ -365,7 +365,8 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		captureSource(executeOrg)
 	}
 	accessProjection := strings.TrimSpace(permissionSetID) == "" && vm.capturedOrderAccessProjection(query)
-	actorKey := canonicalIDMapKey(vm.currentUserID())
+	readerID := vm.currentUserID()
+	actorKey := canonicalIDMapKey(readerID)
 	if accessProjection {
 		vm.prepareCase174PermissionState(actorKey)
 	}
@@ -390,22 +391,25 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		// per object instead of once per row.
 		unrestricted := map[string]bool{}
 		childVisible = func(objectName string, record storage.Record) bool {
+			if vm.publicLeadReadOutsidePartnerPolicy(objectName, record, readerID) {
+				return true
+			}
 			startLeadReadScan(objectName)
 			all, ok := unrestricted[objectName]
 			if !ok {
-				all = vm.userModeUnrestrictedObject(objectName, vm.currentUserID())
+				all = vm.userModeUnrestrictedObject(objectName, readerID)
 				unrestricted[objectName] = all
 			}
 			if all {
 				return true
 			}
-			return vm.userModeRecordVisible(objectName, record, vm.currentUserID())
+			return vm.userModeRecordVisible(objectName, record, readerID)
 		}
 		childFieldReadable = func(objectName, field string) bool {
 			return vm.currentUserFieldPermissionWithScope(objectName, field, "isAccessible", permissionSetID)
 		}
 	}
-	executeContext := soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), Locale: vm.currentUserInfoField("LocaleSidKey", "en_US"), FormatDatetime: vm.soqlFormatDatetime, UserID: storage.ID(vm.currentUserID()), PermissionUserFields: vm.currentUserPermissionFields(), ChildRecordVisible: childVisible, ChildFieldReadable: childFieldReadable, WindowRecordVisible: childVisible, UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
+	executeContext := soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, Language: vm.currentUserInfoField("LanguageLocaleKey", "en_US"), Locale: vm.currentUserInfoField("LocaleSidKey", "en_US"), FormatDatetime: vm.soqlFormatDatetime, UserID: storage.ID(readerID), PermissionUserFields: vm.currentUserPermissionFields(), ChildRecordVisible: childVisible, ChildFieldReadable: childFieldReadable, WindowRecordVisible: childVisible, UserRecordAccess: func(objectName string, record storage.Record) storage.Record {
 		startLeadReadScan(objectName)
 		accessSequence := 0
 		if accessProjection {
