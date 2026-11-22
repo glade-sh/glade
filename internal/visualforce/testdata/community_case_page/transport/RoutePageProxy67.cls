@@ -1,0 +1,1 @@
+@RestResource(urlMapping='/RoutePageProxy67/*') global without sharing class RoutePageProxy67 { @HttpGet global static String observe() { try {return Page.RouteCasePage67.getContent().toString();} catch(Exception e) {return 'ERROR|'+e.getTypeName()+':'+e.getMessage();} } }
