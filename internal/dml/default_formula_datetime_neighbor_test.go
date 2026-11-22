@@ -54,6 +54,7 @@ func TestDefaultFormulaRecordTypeInsertNeighborUnchanged(t *testing.T) {
 		"Name":         {APIName: "Name", Type: storage.FieldString},
 		"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
 		"Minute__c":    {APIName: "Minute__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Offset__c":    {APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+MOD(MINUTE(TIMEVALUE(NOW())),15)/1440"},
 	}, RecordTypes: []storage.RecordTypeInfo{{ID: recordTypeID, Active: true, Available: true}}}
 	org.Objects[definition.APIName] = storage.ObjectState{Definition: definition, Records: map[storage.ID]storage.Record{}}
 	org.Objects["RecordType"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "RecordType", KeyPrefix: storage.StandardKeyPrefix("RecordType"), Fields: map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}}}, Records: map[storage.ID]storage.Record{recordTypeID: {ID: recordTypeID, Object: "RecordType"}}}
@@ -90,9 +91,11 @@ func TestDefaultFormulaRecordTypeInsertNeighborUnchanged(t *testing.T) {
 					t.Fatalf("default record type missing: %+v", value)
 				}
 			}
-			value, ok := record.Fields["Minute__c"]
-			if ok && value.Kind != storage.ValueNull {
-				t.Errorf("record type changed from baseline: %+v", value)
+			for _, name := range []string{"Minute__c", "Offset__c"} {
+				value, ok := record.Fields[name]
+				if ok && value.Kind != storage.ValueNull {
+					t.Errorf("%s with record type changed from baseline: %+v", name, value)
+				}
 			}
 		})
 	}

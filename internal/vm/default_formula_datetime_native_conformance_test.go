@@ -200,6 +200,7 @@ func TestDefaultFormulaRecordTypeNeighborUnchanged(t *testing.T) {
 	definition := storage.ObjectDefinition{APIName: "DefaultProbe__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
 		"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}},
 		"Minute__c":    {APIName: "Minute__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE", DefaultValue: "MINUTE(TIMEVALUE(NOW()))"},
+		"Offset__c":    {APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+MOD(MINUTE(TIMEVALUE(NOW())),15)/1440"},
 	}, RecordTypes: []storage.RecordTypeInfo{{ID: recordTypeID, Active: true, Available: true}}}
 	definition.RecordTypes[0].Default = true
 	org.Objects[definition.APIName] = storage.ObjectState{Definition: definition, Records: map[storage.ID]storage.Record{}}
@@ -207,7 +208,7 @@ func TestDefaultFormulaRecordTypeNeighborUnchanged(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			machine := vm.New(nil)
 			machine.SetOrg(&org)
-			source := fmt.Sprintf("SObject row=DefaultProbe__c.SObjectType.newSObject(%s,true); System.debug('recordTypePresent='+(row.get('RecordTypeId')!=null)); System.debug('minute='+String.valueOf(row.get('Minute__c')));", tc.argument)
+			source := fmt.Sprintf("SObject row=DefaultProbe__c.SObjectType.newSObject(%s,true); System.debug('recordTypePresent='+(row.get('RecordTypeId')!=null)); System.debug('minute='+String.valueOf(row.get('Minute__c'))); System.debug('offset='+String.valueOf(row.get('Offset__c')));", tc.argument)
 			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: "62.0"})
 			if err != nil {
 				t.Fatal(err)
@@ -216,7 +217,7 @@ func TestDefaultFormulaRecordTypeNeighborUnchanged(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(result.Debug) != 2 || result.Debug[0] != "recordTypePresent=true" || result.Debug[1] != "minute=null" {
+			if len(result.Debug) != 3 || result.Debug[0] != "recordTypePresent=true" || result.Debug[1] != "minute=null" || result.Debug[2] != "offset="+definition.Fields["Offset__c"].DefaultValue {
 				t.Fatalf("record type changed from baseline: %v", result.Debug)
 			}
 		})
