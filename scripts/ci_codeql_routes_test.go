@@ -14,7 +14,7 @@ func TestCICodeQLFastAndFullWorkflowRoutes(t *testing.T) {
 	security := workflowJobBlocks(t, readWorkflowFile(t, "security.yml"))
 	for _, route := range []struct{ name, job, profile string }{
 		{"pull_request_any_size_and_main_push", security["codeql-fast"], "fast"},
-		{"weekly_release_tag_and_manual", security["codeql"], "full"},
+		{"weekly_and_manual_non_tag", security["codeql"], "full"},
 	} {
 		t.Run(route.name, func(t *testing.T) {
 			for _, marker := range []string{"uses: ./.github/workflows/codeql.yml", "profile: " + route.profile, "security-events: write"} {
@@ -30,7 +30,7 @@ func TestCICodeQLFastAndFullWorkflowRoutes(t *testing.T) {
 	if !strings.Contains(security["codeql-fast"], "if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type != 'tag')") {
 		t.Error("fast scan must run for pull requests and branch pushes in Security")
 	}
-	if !strings.Contains(security["codeql"], "if: github.event_name == 'schedule' || github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'") {
+	if !strings.Contains(security["codeql"], "if: github.ref_type != 'tag' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')") {
 		t.Error("full CodeQL must stay outside pull-request and main-push gates")
 	}
 	text := readWorkflowFile(t, "codeql.yml")

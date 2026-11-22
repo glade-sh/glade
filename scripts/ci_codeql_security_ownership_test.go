@@ -17,7 +17,7 @@ func TestCICodeQLSecurityOwnershipAndReleaseGate(t *testing.T) {
 			t.Errorf("fast Security route missing %s", marker)
 		}
 	}
-	for _, marker := range []string{"profile: full", "github.ref_type == 'tag'", "github.event_name == 'schedule'"} {
+	for _, marker := range []string{"profile: full", "github.ref_type != 'tag'", "github.event_name == 'schedule'"} {
 		if !strings.Contains(security["codeql"], marker) {
 			t.Errorf("full Security route missing %s", marker)
 		}
