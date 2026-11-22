@@ -97,6 +97,16 @@ const upsertHostController = `public class AjaxController {
   @RemoteAction public static String remote(String email) { return run(email); }
   @AuraEnabled public static String lightningList(String email) { return runList(email); }
   @RemoteAction public static String remoteList(String email) { return runList(email); }
+  private static String indexedBulk() {
+    List<Contact> rows = new List<Contact>{
+      new Contact(LastName='44'), new Contact(LastName='45'), new Contact(LastName='99999')
+    };
+    List<Datacloud.FindDuplicatesResult> found = Datacloud.FindDuplicates.findDuplicates(rows);
+    List<Database.SaveResult> saved = Database.insert(rows, false);
+    return JSON.serialize(new List<Object>{found, saved});
+  }
+  @AuraEnabled public static String lightningIndexedBulk() { return indexedBulk(); }
+  @RemoteAction public static String remoteIndexedBulk() { return indexedBulk(); }
 }`
 
 func upsertHostServer(t *testing.T, api string) *Server {
