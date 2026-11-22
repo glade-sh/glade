@@ -988,6 +988,9 @@ var knownStandardObjectMemo struct {
 	count int
 }
 
+// Published after catalog initialization; entries refer only to embedded names.
+var knownStandardObjectExactNames atomic.Pointer[map[string]string]
+
 const knownStandardObjectMemoLimit = 4096
 
 type knownStandardObjectResult struct {
@@ -997,6 +1000,11 @@ type knownStandardObjectResult struct {
 
 func ResolveKnownStandardObjectName(objectName string) (string, bool) {
 	objectName = strings.TrimSpace(objectName)
+	if exact := knownStandardObjectExactNames.Load(); exact != nil {
+		if canonical, ok := (*exact)[objectName]; ok {
+			return canonical, true
+		}
+	}
 	if cached, ok := knownStandardObjectMemo.names.Load(objectName); ok {
 		result := cached.(knownStandardObjectResult)
 		return result.canonical, result.ok
@@ -1056,6 +1064,13 @@ func initKnownStandardObjectCache() {
 		}
 		knownStandardObjectCache.names = out
 		knownStandardObjectCache.canonicalByLC = canonicalByLC
+		exact := make(map[string]string, len(out))
+		for _, name := range out {
+			if name != "" && canonicalByLC[standardObjectLookupKey(name)] == name {
+				exact[name] = name
+			}
+		}
+		knownStandardObjectExactNames.Store(&exact)
 	})
 }
 

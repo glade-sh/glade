@@ -210,6 +210,11 @@ func TestCIPRSelectionRejectsMalformedInputs(t *testing.T) {
 }
 
 func TestCIPRWorkflowSelection(t *testing.T) {
+	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("PR_BROWSER", "false")
+	t.Setenv("PR_PLAN", `{"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`)
+	t.Setenv("PR_SELECTION", `[]`)
+	t.Setenv("PR_VALIDATED_PLAN", os.Getenv("PR_PLAN"))
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -281,7 +286,44 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	}
 	results["pr-guards"]["result"] = "success"
 	results["pr-tests"]["result"] = "success"
+	results["early-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	run("push", true)
+	results["early-guards"]["result"] = "success"
 	run("pull_request", true)
+	results["pr-select"]["result"] = "failure"
+	run("pull_request", false)
+	results["pr-select"]["result"] = "success"
+	t.Setenv("SMOKE_REQUIRED", "true")
+	results["smoke-runtime"]["result"] = "skipped"
+	run("pull_request", false)
+	results["smoke-runtime"]["result"] = "success"
+	results["smoke-distribution"]["result"] = "skipped"
+	run("pull_request", false)
+	results["smoke-distribution"]["result"] = "success"
+	run("pull_request", true)
+	t.Setenv("SMOKE_REQUIRED", "invalid")
+	run("pull_request", false)
+	t.Setenv("SMOKE_REQUIRED", "false")
+	t.Setenv("PR_BROWSER", "true")
+	results["pr-browser-evidence"]["result"] = "skipped"
+	run("pull_request", false)
+	delete(results, "pr-browser-evidence")
+	run("pull_request", false)
+	results["pr-browser-evidence"] = map[string]string{"result": "success"}
+	run("pull_request", true)
+	t.Setenv("PR_BROWSER", "false")
+	t.Setenv("HEAD_REF", "train/example")
+	results["early-guards"]["result"] = "skipped"
+	run("pull_request", false)
+	results["early-guards"]["result"] = "success"
+	results["pr-browser-full"]["result"] = "skipped"
+	run("pull_request", false)
+	delete(results, "pr-browser-full")
+	run("pull_request", false)
+	results["pr-browser-full"] = map[string]string{"result": "success"}
+	run("pull_request", true)
+	t.Setenv("HEAD_REF", "")
 	results["vet"]["result"] = "failure"
 	run("pull_request", false)
 	run("merge_group", false)

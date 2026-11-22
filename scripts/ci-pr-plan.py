@@ -9,6 +9,9 @@ import sys
 
 ROOT = 'github.com/glade-sh/glade/'
 BROWSER = re.compile(r'/internal/(server|playground|visualforce|lwc|lwcbrowser|lwcruntime)(/|$)')
+SERVICE_PACKAGES = tuple(ROOT + 'internal/' + p for p in ('server', 'playground'))
+GUARD_PACKAGES = {ROOT + 'internal/repoguard', ROOT + 'scripts'}
+CLI_PACKAGE = ROOT + 'internal/gladecli'
 
 
 def main():
@@ -35,7 +38,7 @@ def main():
     with open(args.manifest, encoding='utf-8') as source:
         manifest = json.load(source)
     dedicated = set(manifest['prDedicatedPackages'])
-    non_sharded = {ROOT + 'internal/' + p for p in ('server', 'playground', 'repoguard')} | {ROOT + 'scripts'}
+    non_sharded = set(SERVICE_PACKAGES) | GUARD_PACKAGES
     routed = {ROOT + 'internal/' + package for package, _, _ in routes}
     if routed != dedicated - non_sharded:
         raise ValueError('PR shard routes do not match dedicated packages')
@@ -48,10 +51,10 @@ def main():
         if pkg in selected:
             for shard in range(base, base + count):
                 workers[shard]['packages'].append(pkg)
-    cli = ROOT + 'internal/gladecli'
+    cli = CLI_PACKAGE
     if cli in selected:
         workers[22]['packages'].append(cli)
-    for pkg in (ROOT + 'internal/server', ROOT + 'internal/playground'):
+    for pkg in SERVICE_PACKAGES:
         if pkg in selected:
             workers[44]['packages'].append(pkg)
     assign = os.path.join(os.path.dirname(__file__), 'ci-pr-assign.py')

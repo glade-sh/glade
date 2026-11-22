@@ -1,0 +1,21 @@
+{
+  "default": {"testMinutes": 9, "jobMinutes": 11},
+  "samples": [
+    {
+      "package": "github.com/glade-sh/glade/internal/apextest",
+      "testSeconds": 362.777,
+      "multiplier": 3,
+      "setupSeconds": 200,
+      "marginSeconds": 60,
+      "basis": "Nightly race run 44796271423: 46 selected tests; the later pilot selected one additional test."
+    },
+    {
+      "package": "github.com/glade-sh/glade/internal/gladecli",
+      "testSeconds": 540.437,
+      "multiplier": 1.75,
+      "setupSeconds": 200,
+      "marginSeconds": 60,
+      "basis": "Local pilot selection; the earlier hosted nightly superset completed in 461.517 seconds."
+    }
+  ]
+}

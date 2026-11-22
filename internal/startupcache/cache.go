@@ -348,7 +348,12 @@ func writeJSON(entry *Entry, subdir string) error {
 	writeErr := func() error {
 		defer os.Remove(tmpPath)
 		defer tmp.Close()
-		enc := json.NewEncoder(tmp)
+		hasher := sha256.New()
+		var output io.Writer = tmp
+		if subdir == SubdirDAP {
+			output = io.MultiWriter(tmp, hasher)
+		}
+		enc := json.NewEncoder(output)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(entry); err != nil {
 			return err
@@ -356,7 +361,13 @@ func writeJSON(entry *Entry, subdir string) error {
 		if err := tmp.Close(); err != nil {
 			return err
 		}
-		return os.Rename(tmpPath, path)
+		if err := os.Rename(tmpPath, path); err != nil {
+			return err
+		}
+		if subdir == SubdirDAP {
+			return writeDAPManifest(entry, cacheDir, hex.EncodeToString(hasher.Sum(nil)))
+		}
+		return nil
 	}()
 	if writeErr != nil {
 		_ = os.Remove(tmpPath)

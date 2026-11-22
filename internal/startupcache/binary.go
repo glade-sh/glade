@@ -77,6 +77,11 @@ func Clear(projectRoot, subdir string) error {
 		return err
 	}
 	if subdir != SubdirTest {
+		if subdir == SubdirDAP {
+			if err := removeFile(dapManifestFile); err != nil {
+				return err
+			}
+		}
 		return removeFile(stateFile)
 	}
 	if err := removeFile(stateHeaderFile); err != nil {

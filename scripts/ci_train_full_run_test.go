@@ -55,6 +55,9 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		return "F"
 	})
 	expr = ciIfInputs.ReplaceAllString(expr, "T")
+	// Exercise the maximum selected PR routes when checking the job budget.
+	expr = strings.ReplaceAll(expr, "needs.pr-select.outputs.smoke == 'true'", "T")
+	expr = strings.ReplaceAll(expr, "needs.pr-select.outputs.browser == 'true'", "T")
 	// These scenarios exercise the normal full/fast paths: the receipt gate
 	// succeeds without reuse, and each ordinary prerequisite succeeds.
 	expr = strings.ReplaceAll(expr, "needs.tree-reuse-gate.result != 'success'", "F")
@@ -252,7 +255,7 @@ func TestCITrainPullRequestRunsFullSuiteInPlaceOfFastLane(t *testing.T) {
 			if !strings.Contains(expr, "github.event_name != 'pull_request'") {
 				continue
 			}
-			want := sc.headRef != "feature/example"
+			want := ciTrainJobAllowedOnPR(name, expr, sc)
 			if got := ciIfApplies(t, expr, sc); got != want {
 				t.Errorf("%s: job %s runs=%v, want %v", sc.name, name, got, want)
 			}
@@ -274,14 +277,42 @@ func TestCITrainPullRequestStaysInsideJobBudget(t *testing.T) {
 	if _, ok := ifs["pr-tests"]; !ok {
 		t.Fatal("pr-tests job missing")
 	}
+	data, err := os.ReadFile("../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Needs    yaml.Node `yaml:"needs"`
+			Strategy struct {
+				Matrix yaml.Node `yaml:"matrix"`
+			} `yaml:"strategy"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	needs := make(map[string][]string)
+	for name, job := range workflow.Jobs {
+		widths[name] = ciJobWidth(t, name, job.Strategy.Matrix)
+		if job.Needs.Kind == yaml.ScalarNode {
+			needs[name] = []string{job.Needs.Value}
+		} else if job.Needs.Kind != 0 {
+			var dependencies []string
+			if err := job.Needs.Decode(&dependencies); err != nil {
+				t.Fatal(err)
+			}
+			needs[name] = dependencies
+		}
+	}
 	count := func(sc ciScenario) int {
-		total := 0
+		active := make(map[string]int)
 		for name, expr := range ifs {
 			if ciIfApplies(t, expr, sc) {
-				total += widths[name]
+				active[name] = widths[name]
 			}
 		}
-		return total
+		return ciConcurrentPeak(active, needs)
 	}
 	pushTotal := count(ciScenarios[0])
 	for _, sc := range ciScenarios {
@@ -327,7 +358,7 @@ func TestCIRequiredCITrainPullRequestRequiresFullSuite(t *testing.T) {
 		t.Helper()
 		encoded, _ := json.Marshal(results)
 		cmd := exec.Command("bash", "-c", job.Steps[0].Run)
-		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME=pull_request", "HEAD_REF="+headRef)
+		cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+string(encoded), "EVENT_NAME=pull_request", "HEAD_REF="+headRef, "SMOKE_REQUIRED=false", "PR_BROWSER=false", `PR_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, `PR_VALIDATED_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`, "PR_SELECTION=[]")
 		out, err := cmd.CombinedOutput()
 		if (err == nil) != want {
 			t.Fatalf("head %q results %s: err=%v want pass=%v\n%s", headRef, encoded, err, want, out)
@@ -366,4 +397,43 @@ func TestCIPlannedMatrixHasBoundedBudget(t *testing.T) {
 	if widths["pr-tests"] >= ciPushJobBudget {
 		t.Fatalf("planned PR matrix alone exhausts budget: %d", widths["pr-tests"])
 	}
+}
+
+func TestCIIfScenariosEvaluatePRDecisions(t *testing.T) {
+	for _, expr := range []string{
+		"github.event_name == 'pull_request' && needs.pr-select.outputs.smoke == 'true'",
+		"github.event_name == 'pull_request' && needs.pr-select.outputs.browser == 'true'",
+	} {
+		if ciIfApplies(t, expr, ciScenarios[0]) {
+			t.Errorf("push unexpectedly matches %s", expr)
+		}
+		if !ciIfApplies(t, expr, ciScenarios[1]) {
+			t.Errorf("PR with selection unexpectedly excludes %s", expr)
+		}
+	}
+}
+
+func TestCITrainScopeOnlyPermitsSelectedSmokeJobs(t *testing.T) {
+	ordinaryPR := ciScenarios[1]
+	expr := "github.event_name != 'pull_request' || needs.pr-select.outputs.smoke == 'true'"
+	for _, tc := range []struct {
+		name string
+		want bool
+	}{
+		{"smoke-runtime", true},
+		{"smoke-distribution", true},
+		{"apextest", false},
+	} {
+		if got := ciTrainJobAllowedOnPR(tc.name, expr, ordinaryPR); got != tc.want {
+			t.Errorf("%s: allowed=%v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// Only packaging smoke may join the fast PR route when selected.
+func ciTrainJobAllowedOnPR(name, expr string, sc ciScenario) bool {
+	if sc.headRef != "feature/example" {
+		return true
+	}
+	return (name == "smoke-runtime" || name == "smoke-distribution") && strings.Contains(expr, "needs.pr-select.outputs.smoke == 'true'")
 }

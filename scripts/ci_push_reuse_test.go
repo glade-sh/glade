@@ -273,6 +273,10 @@ func TestCIReuseCoversFullValidationJobs(t *testing.T) {
 		}
 		seen[name] = true
 		job := workflow.Jobs[name]
+		// PR-only jobs cannot execute on a push that reuses a receipt.
+		if !ciIfApplies(t, job.If, ciScenarios[0]) {
+			return true
+		}
 		for _, dependency := range dependencies(name) {
 			if dependency == "tree-reuse-gate" && strings.Contains(job.If, "needs.tree-reuse-gate.outputs.reuse != 'true'") && strings.Contains(job.If, "needs.tree-reuse-gate.result != 'success'") {
 				return true

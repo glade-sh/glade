@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -486,5 +487,210 @@ func TestReferenceCandidateGenerationFiles(t *testing.T) {
 	h.refreshMu.Unlock()
 	if got, want := h.snapshot().referenceCandidates("K"), []string{paths[2], paths[3]}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("second generation = %#v, want %#v", got, want)
+	}
+}
+
+func TestReferenceGenerationMatchesFullScan(t *testing.T) {
+	dir := t.TempDir()
+	paths := []string{filepath.Join(dir, "Needle.cls"), filepath.Join(dir, "Other.cls"), filepath.Join(dir, "Link.cls")}
+	if err := os.WriteFile(paths[0], []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(paths[1], []byte("class Otherx {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(paths[1], paths[2]); err != nil {
+		t.Fatal(err)
+	}
+	idx := typesys.Index{Types: []typesys.TypeSymbol{{Name: "Needle", File: paths[0]}, {Name: "Otherx", File: paths[1]}, {Name: "Alias", File: paths[2]}}}
+	h := NewHandler(idx)
+	uri := uriFromPath(paths[0])
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 8}, Context: ReferenceContext{IncludeDeclaration: true}}
+	rename := RenameParams{TextDocument: params.TextDocument, Position: params.Position, NewName: "Replacement"}
+	check := func(label string) {
+		t.Helper()
+		var want []Location
+		for _, path := range h.snapshot().sourceFiles() {
+			text, ok := h.documentText(path)
+			if !ok {
+				continue
+			}
+			for _, r := range wordRanges(text, "Needle") {
+				want = append(want, Location{URI: uriFromPath(path), Range: r})
+			}
+		}
+		sort.Slice(want, func(i, j int) bool {
+			if want[i].URI != want[j].URI {
+				return want[i].URI < want[j].URI
+			}
+			if want[i].Range.Start.Line != want[j].Range.Start.Line {
+				return want[i].Range.Start.Line < want[j].Range.Start.Line
+			}
+			return want[i].Range.Start.Character < want[j].Range.Start.Character
+		})
+		wantEdit := &WorkspaceEdit{Changes: map[DocumentURI][]TextEdit{}}
+		for _, loc := range want {
+			wantEdit.Changes[loc.URI] = append(wantEdit.Changes[loc.URI], TextEdit{Range: loc.Range, NewText: rename.NewName})
+		}
+		got, _ := json.Marshal(h.References(params))
+		expected, _ := json.Marshal(want)
+		if string(got) != string(expected) {
+			t.Fatalf("%s references: %s != %s", label, got, expected)
+		}
+		got, _ = json.Marshal(h.Rename(rename))
+		expected, _ = json.Marshal(wantEdit)
+		if string(got) != string(expected) {
+			t.Fatalf("%s rename: %s != %s", label, got, expected)
+		}
+	}
+	install := func(index typesys.Index) {
+		h.refreshMu.Lock()
+		defer h.refreshMu.Unlock()
+		h.installBaseLocked(Base{Index: index}, func(g *generation) { h.gen.Store(g) })
+	}
+	check("initial")
+	info, err := os.Stat(paths[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(paths[1], []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(paths[1], info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("replacement")
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uriFromPath(paths[1]), Text: "class Otherx {}"}})
+	install(idx)
+	check("overlay")
+	h.applyClose(uriFromPath(paths[1]))
+	check("closed")
+	if err := os.Remove(paths[2]); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(paths[0], paths[2]); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("retargeted alias")
+	if err := os.Remove(paths[1]); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("missing")
+	if err := os.WriteFile(paths[1], []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	install(idx)
+	check("recreated")
+	idx.Types = idx.Types[:2]
+	install(idx)
+	check("removed alias")
+}
+
+func BenchmarkReferenceAfterUnrelatedSave(b *testing.B) {
+	dir := b.TempDir()
+	idx := typesys.Index{}
+	for i := 0; i < 1500; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("%04d.cls", i))
+		text := fmt.Sprintf("class File%d {\n", i) + strings.Repeat(" Integer value; String text;\n", 40) + "}\n"
+		if i == 0 {
+			text = "class Needle {}"
+		}
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			b.Fatal(err)
+		}
+		idx.Types = append(idx.Types, typesys.TypeSymbol{Name: fmt.Sprintf("File%d", i), File: path})
+	}
+	idx.Types[0].Name = "Needle"
+	h := NewHandler(idx)
+	uri := uriFromPath(idx.Types[0].File)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 8}, Context: ReferenceContext{IncludeDeclaration: true}}
+	if len(h.References(params)) != 1 {
+		b.Fatal("initial references")
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		if err := os.WriteFile(idx.Types[1].File, []byte(fmt.Sprintf("class File1 { Integer value%d; }", i)), 0600); err != nil {
+			b.Fatal(err)
+		}
+		h.refreshMu.Lock()
+		h.installBaseLocked(Base{Index: idx}, func(g *generation) { h.gen.Store(g) })
+		h.refreshMu.Unlock()
+		b.StartTimer()
+		if len(h.References(params)) != 1 {
+			b.Fatal("changed references")
+		}
+	}
+}
+
+func TestReferencePostingsConcurrentGenerations(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "Needle.cls")
+	if err := os.WriteFile(path, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	idx := typesys.Index{Types: []typesys.TypeSymbol{{Name: "Needle", File: path}}}
+	h := NewHandler(idx)
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 30; j++ {
+				if got := h.snapshot().referenceLocations("Needle"); len(got) != 1 {
+					t.Errorf("references = %#v", got)
+					return
+				}
+			}
+		}()
+	}
+	for i := 0; i < 30; i++ {
+		h.refreshMu.Lock()
+		h.installBaseLocked(Base{Index: idx}, func(g *generation) { h.gen.Store(g) })
+		h.refreshMu.Unlock()
+	}
+	wg.Wait()
+}
+
+func BenchmarkReferenceWarmAfterUnrelatedSave(b *testing.B) {
+	dir := b.TempDir()
+	idx := typesys.Index{}
+	for i := 0; i < 1500; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("%04d.cls", i))
+		text := fmt.Sprintf("class File%d {\n", i) + strings.Repeat(" Integer value; String text;\n", 40) + "}\n"
+		if i == 0 {
+			text = "class Needle {}"
+		}
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			b.Fatal(err)
+		}
+		idx.Types = append(idx.Types, typesys.TypeSymbol{Name: fmt.Sprintf("File%d", i), File: path})
+	}
+	idx.Types[0].Name = "Needle"
+	h := NewHandler(idx)
+	uri := uriFromPath(idx.Types[0].File)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 8}, Context: ReferenceContext{IncludeDeclaration: true}}
+	if len(h.References(params)) != 1 {
+		b.Fatal("initial references")
+	}
+	if err := os.WriteFile(idx.Types[1].File, []byte("class File1 { Integer changed; }"), 0600); err != nil {
+		b.Fatal(err)
+	}
+	h.refreshMu.Lock()
+	h.installBaseLocked(Base{Index: idx}, func(g *generation) { h.gen.Store(g) })
+	h.refreshMu.Unlock()
+	if len(h.References(params)) != 1 {
+		b.Fatal("references after save")
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if len(h.References(params)) != 1 {
+			b.Fatal("warm references")
+		}
 	}
 }

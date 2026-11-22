@@ -191,7 +191,8 @@
     ]
   },
   "concurrentTestCounts": {
-    "./internal/lsp": 20,
+    "./internal/apexast": 2,
+    "./internal/lsp": 22,
     "./internal/apextest": 552,
     "./internal/dap": 13,
     "./internal/frontendcache": 1,
@@ -208,7 +209,7 @@
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
-    "./internal/storage": 20,
+    "./internal/storage": 23,
     "./internal/testdaemon": 38,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 2,

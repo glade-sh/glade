@@ -70,6 +70,16 @@
 
 - **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
+- **Incremental semantic checks.** After a body edit, identifier boundaries avoid rechecking unrelated classes whose names or source contain the edited type name as part of a longer identifier. Semantic results remain unchanged.
+- **Read-only persistent execution.** `glade exec --db` avoids rewriting the database when the reconciled state is unchanged.
+- **Language server edits.** The language server reuses an edited syntax tree for open documents and falls back to a fresh parse when the document snapshot cannot be reused. On a synthetic 2,048-method file, the measured diagnostics parse path fell from 41–44 ms to 34–35 ms per edit, with identical results.
+- **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
+- **Duplicate matching.** Scans can reuse match decisions for repeated values of required matching terms, reducing work on large sets while retaining the existing match results.
+- **Debugger startup cache.** Stale snapshots are rejected using a small manifest before reading the cached runtime.
+- **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
+- **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
+- **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
+
 ### CI
 
 - **Declared resource contracts for the race routes.** The gladecli parallel-route test (`TestRunTestMemoryLimitsParallelMethodAndClassRoutes`) now states its requirement up front: two tests in flight needs two processors, because the runner caps simultaneous test execution owners at `GOMAXPROCS`, so the early race route (one processor) reports the shortfall as a declared, summary-accepted skip instead of failing its overlap assertion — normal lanes, which run with two processors, still run and enforce the overlap. The storage stub-reference allocation budget (`TestStandardStubReferenceFieldsAllocationBudget`) keeps its no-full-decode assertion under the race detector but enforces its one-third byte budget in normal builds only, since race instrumentation inflates the lookup's many small allocations far more than the full decode's buffers (the race lane measured 18,082,104 of 52,252,216 bytes, about 34.61%).

@@ -425,6 +425,15 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		if among != nil {
 			records = duplicateAmongObject(among, objectName)
 		}
+		var termVerdicts [2]duplicateTermVerdicts
+		termCount := 0
+		if usePrepared && len(records) >= 256 {
+			terms, count := requiredDuplicateTerms(&prepared)
+			termCount = count
+			for i := 0; i < termCount; i++ {
+				termVerdicts[i] = duplicateTermVerdicts{term: terms[i], values: make(map[string]bool)}
+			}
+		}
 		for _, existing := range records {
 			if !scan {
 				break
@@ -433,6 +442,16 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				continue
 			}
 			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
+				continue
+			}
+			possible := true
+			for i := 0; i < termCount; i++ {
+				if !termVerdicts[i].mayMatch(&prepared, existing) {
+					possible = false
+					break
+				}
+			}
+			if !possible {
 				continue
 			}
 			var matched bool

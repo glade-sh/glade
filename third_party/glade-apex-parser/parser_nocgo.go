@@ -6,6 +6,14 @@ import "os"
 
 type Parser struct{}
 
+type IncrementalTree struct{}
+
+func (t *IncrementalTree) Close() {}
+
+func (p *Parser) ParseSourceIncremental(path, source string, previous *IncrementalTree) (File, *IncrementalTree) {
+	return p.ParseSource(path, source), nil
+}
+
 func NewParser() *Parser {
 	return &Parser{}
 }
