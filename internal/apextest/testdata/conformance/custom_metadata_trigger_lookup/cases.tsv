@@ -1,0 +1,3 @@
+id	route	file
+trigger	anonymous	trigger.apex
+trigger_test	istest	MetadataTriggerTest

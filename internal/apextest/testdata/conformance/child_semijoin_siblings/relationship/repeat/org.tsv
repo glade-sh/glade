@@ -1,0 +1,4 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+relationship	67.0	anonymous	True	True	SEEDED=pass	n/a	n/a	cleaned:5
+relationship_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+relationship_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
