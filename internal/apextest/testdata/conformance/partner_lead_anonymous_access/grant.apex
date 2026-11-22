@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE Alias='rtprt' LIMIT 1]; Lead a=[SELECT Id FROM Lead WHERE LastName='Route First' LIMIT 1]; insert new LeadShare(LeadId=a.Id,UserOrGroupId=u.Id,LeadAccessLevel='Read',RowCause='Manual');
