@@ -19,9 +19,58 @@ import (
 // NATIVE repeat testdata/conformance/namespaced_field_keyset/org.tsv:7 isTest 62.0
 // NATIVE repeat testdata/conformance/namespaced_field_keyset/org.tsv:8 anonymous 67.0
 // NATIVE repeat testdata/conformance/namespaced_field_keyset/org.tsv:9 isTest 67.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:10 anonymous 62.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:11 isTest 62.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:12 anonymous 67.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:13 isTest 67.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:14 anonymous 68.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:15 isTest 68.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:16 anonymous 62.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:17 isTest 62.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:18 anonymous 67.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:19 isTest 67.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:20 anonymous 68.0
+// NATIVE recapture testdata/conformance/namespaced_field_keyset/org.tsv:21 isTest 68.0
 func TestNamespacedFieldKeySetNativeConformance(t *testing.T) {
+	runNamespacedDescribeConformance(t, "org.tsv", "cases.tsv", 21)
+}
+
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:2 anonymous 62.0
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:3 isTest 62.0
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:4 anonymous 67.0
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:5 isTest 67.0
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:6 anonymous 68.0
+// NATIVE global describe, field maps, and map ownership testdata/conformance/namespaced_field_keyset/describe/org.tsv:7 isTest 68.0
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:8
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:9
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:10
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:11
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:12
+// NATIVE repeated observations testdata/conformance/namespaced_field_keyset/describe/org.tsv:13
+func TestNamespacedDescribeMapNativeConformance(t *testing.T) {
+	runNamespacedDescribeConformance(t, "describe/org.tsv", "describe/cases.tsv", 13)
+}
+
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:2 anonymous 62.0
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:3 isTest 62.0
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:4 anonymous 67.0
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:5 isTest 67.0
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:6 anonymous 68.0
+// NATIVE map and key-set ownership testdata/conformance/namespaced_field_keyset/ownership/org.tsv:7 isTest 68.0
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:8
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:9
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:10
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:11
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:12
+// NATIVE repeat testdata/conformance/namespaced_field_keyset/ownership/org.tsv:13
+func TestNamespacedDescribeOwnershipNativeConformance(t *testing.T) {
+	runNamespacedDescribeConformance(t, "ownership/org.tsv", "ownership/cases.tsv", 13)
+}
+
+func runNamespacedDescribeConformance(t *testing.T, observations, caseTable string, wantRows int) {
+	t.Helper()
 	dir := filepath.Join("testdata", "conformance", "namespaced_field_keyset")
-	f, err := os.Open(filepath.Join(dir, "org.tsv"))
+	f, err := os.Open(filepath.Join(dir, observations))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,10 +81,10 @@ func TestNamespacedFieldKeySetNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 9 || strings.Join(rows[0], ",") != "sample,source_api,route,observation" {
+	if len(rows) != wantRows || strings.Join(rows[0], ",") != "sample,source_api,route,observation" {
 		t.Fatal("incomplete native matrix")
 	}
-	caseFile, err := os.Open(filepath.Join(dir, "cases.tsv"))
+	caseFile, err := os.Open(filepath.Join(dir, caseTable))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +95,7 @@ func TestNamespacedFieldKeySetNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) != 5 || strings.Join(cases[0], ",") != "source_api,route,source,class" {
+	if len(cases) != 7 || strings.Join(cases[0], ",") != "source_api,route,source,class" {
 		t.Fatal("incomplete case matrix")
 	}
 	caseByRoute := make(map[string][]string)
@@ -67,7 +116,7 @@ func TestNamespacedFieldKeySetNativeConformance(t *testing.T) {
 		}
 		sample, api, route, want := row[0], row[1], row[2], row[3]
 		key := sample + "/" + api + "/" + route
-		if seen[key] || (sample != "first" && sample != "repeat") || (api != "62.0" && api != "67.0") || (route != "anonymous" && route != "isTest") {
+		if seen[key] || (sample != "first" && sample != "repeat" && sample != "recapture_first" && sample != "recapture_repeat") || (api != "62.0" && api != "67.0" && api != "68.0") || (route != "anonymous" && route != "isTest") {
 			t.Fatalf("invalid cell %s", key)
 		}
 		seen[key] = true
