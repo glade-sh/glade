@@ -687,10 +687,23 @@ func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result 
 	})
 	return sortErr
 }
-func (vm *VM) typeImplementsComparable(typeName string) bool {
+func (vm *VM) typeImplementsComparable(typeName string) (bool, bool) {
 	class, ok := vm.lookupClass(typeName)
 	if !ok {
-		return true
+		return true, false
+	}
+	if strings.TrimSpace(class.SuperClass) == "" && len(class.Interfaces) == 1 {
+		direct := vm.resolvedInterfaceName(class, class.Interfaces[0])
+		base := strings.TrimSpace(direct)
+		if unqualified, ok := stripLeadingSystemNamespace(base); ok {
+			base = unqualified
+		}
+		if strings.EqualFold(base, "Comparable") {
+			return true, false
+		}
+		if vm.comparableOnlyViaDirectChildInterface(class) {
+			return true, true
+		}
 	}
 	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
 		base, generic := genericBaseName(iface)
@@ -701,11 +714,36 @@ func (vm *VM) typeImplementsComparable(typeName string) bool {
 			}
 		}
 		if strings.EqualFold(base, "Comparable") {
-			return true
+			return true, false
 		}
 	}
-	return false
+	return false, false
 }
+func (vm *VM) comparableOnlyViaDirectChildInterface(class Class) bool {
+	if class.PlatformType || strings.TrimSpace(class.SuperClass) != "" || len(class.Interfaces) != 1 {
+		return false
+	}
+	direct := vm.resolvedInterfaceName(class, class.Interfaces[0])
+	iface, ok := vm.lookupClass(direct)
+	if !ok || !iface.IsInterface || len(iface.Interfaces) != 1 {
+		return false
+	}
+	parent := vm.resolvedInterfaceName(iface, iface.Interfaces[0])
+	if unqualified, ok := stripLeadingSystemNamespace(parent); ok {
+		parent = unqualified
+	}
+	return strings.EqualFold(strings.TrimSpace(parent), "Comparable")
+}
+
+func sameComparableObjectTypes(values []Value, typeName string) bool {
+	for _, value := range values {
+		if value.Kind != ValueObject || !value.classInstance || !strings.EqualFold(runtimeObjectType(value), typeName) {
+			return false
+		}
+	}
+	return true
+}
+
 func (vm *VM) comparatorTypeImplementsInterface(typeName string) bool {
 	class, ok := vm.lookupClass(typeName)
 	if !ok {
@@ -764,6 +802,8 @@ func (vm *VM) sortApexComparableValues(values []Value, result *Result) error {
 	hasSObject := false
 	hasComparable := false
 	hasPlatformComparable := false
+	// Once the list is heterogeneous it cannot become homogeneous later in this pass.
+	preserveIndirectComparable := false
 	for _, value := range values {
 		if value.Kind == ValueNull {
 			continue
@@ -783,11 +823,27 @@ func (vm *VM) sortApexComparableValues(values []Value, result *Result) error {
 		if _, ok, ambiguous := vm.resolveInstanceMethodForArgs(runtimeType, "compareTo", []Value{value}); ambiguous {
 			return vm.ambiguousOverloadError(runtimeType+".compareTo", []Value{value})
 		} else if !ok {
+			if len(values) > 1 {
+				class, known := vm.lookupClass(runtimeType)
+				if known && !class.PlatformType && len(class.Interfaces) == 0 &&
+					strings.TrimSpace(class.SuperClass) == "" && sameComparableObjectTypes(values, runtimeType) {
+					return newExceptionError("System.ListException", "One or more of the items in this list is not Comparable.")
+				}
+			}
 			return unsupportedCallError("List.sort for non-primitive comparable values")
 		}
-		if len(values) > 1 && !vm.typeImplementsComparable(runtimeType) {
-			// A compareTo method alone does not make a class Comparable.
-			return newExceptionError("System.ListException", "One or more of the items in this list is not Comparable.")
+		if len(values) > 1 {
+			comparable, indirect := vm.typeImplementsComparable(runtimeType)
+			if !comparable {
+				// A compareTo method alone does not make a class Comparable.
+				return newExceptionError("System.ListException", "One or more of the items in this list is not Comparable.")
+			}
+			if indirect && !preserveIndirectComparable {
+				if sameComparableObjectTypes(values, runtimeType) {
+					return newExceptionError("System.ListException", "One or more of the items in this list is not Comparable.")
+				}
+				preserveIndirectComparable = true
+			}
 		}
 		hasComparable = true
 	}

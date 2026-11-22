@@ -20,7 +20,7 @@ import (
 // Replays captured anonymous rows through the Tooling API host.
 func TestStdlibTypeDepthToolingRoute(t *testing.T) {
 	const api = "67.0"
-	fixtures := []string{"stdlib_type_depth", "stdlib_type_depth_neighbors"}
+	fixtures := []string{"stdlib_type_depth", "stdlib_type_depth_neighbors", "stdlib_comparable_interface", "stdlib_comparable_inheritance"}
 	root := t.TempDir()
 	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 	for _, fixture := range fixtures {
@@ -108,7 +108,7 @@ func TestStdlibTypeDepthToolingRoute(t *testing.T) {
 			})
 		}
 	}
-	if seen != 7 {
-		t.Fatalf("selected %d native rows, want 7", seen)
+	if seen != 14 {
+		t.Fatalf("selected %d native rows, want 14", seen)
 	}
 }

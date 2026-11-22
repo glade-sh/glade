@@ -24,7 +24,7 @@
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
-- At Apex API 62.0 and 67.0, `Type.isAssignableFrom` throws the captured null-pointer exception for a null argument, and direct static integer recursion observes the captured anonymous and test-entry stack limits.
+- At Apex API 62.0 and 67.0, object sorting follows captured `Comparable` declaration and rejection rules, `Type.isAssignableFrom` throws the captured null-pointer exception for a null argument, and direct static integer recursion observes the captured anonymous and test-entry stack limits.
 
 ### Changes
 
