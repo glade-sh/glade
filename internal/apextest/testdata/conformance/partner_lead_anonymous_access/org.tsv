@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome
+before	62.0	anonymous	true	true	first=1:false:false|second=1:false:false
+before	67.0	anonymous	true	true	first=1:false:false|second=1:false:false
+after	62.0	anonymous	true	true	first=1:true:false|second=1:false:false
+after	67.0	anonymous	true	true	first=1:true:false|second=1:false:false
