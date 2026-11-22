@@ -136,8 +136,8 @@ System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valu
 	}
 }
 
-// Anonymous API 68 and public-sharing custom objects have no matching native
-// rows. Preserve the pre-existing empty named projection in both shapes.
+// These anonymous projections have no matching native row. Preserve their
+// pre-existing empty named projection.
 func TestManualReadUncapturedProjection(t *testing.T) {
 	for _, tc := range []struct{ name, api, model string }{
 		{"api68", "68.0", "Private"},
