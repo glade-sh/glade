@@ -124,7 +124,29 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 // version matrix also covers standard catalog objects that no profile owns.
 func standardFeatureVersionedObjectName(object string) (string, bool) {
 	loadStandardFeatureDescribes()
-	name, ok := standardFeatureDescribeCache.versionedNames[strings.ToLower(object)]
+	names := standardFeatureDescribeCache.versionedNames
+	// Field access checks call this per record write; fold short ASCII names
+	// on the stack so the lookup does not allocate.
+	var buf [64]byte
+	if len(object) <= len(buf) {
+		ascii := true
+		for i := 0; i < len(object); i++ {
+			c := object[i]
+			if c >= 0x80 {
+				ascii = false
+				break
+			}
+			if 'A' <= c && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+			buf[i] = c
+		}
+		if ascii {
+			name, ok := names[string(buf[:len(object)])]
+			return name, ok
+		}
+	}
+	name, ok := names[strings.ToLower(object)]
 	return name, ok
 }
 
