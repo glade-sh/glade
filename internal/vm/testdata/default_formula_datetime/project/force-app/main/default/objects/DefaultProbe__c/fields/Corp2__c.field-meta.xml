@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Corp2__c</fullName><defaultValue>NOW()+(30 - MOD(MINUTE(TIMEVALUE(NOW())),30))/1440</defaultValue><label>Corp2__c</label><type>DateTime</type></CustomField>

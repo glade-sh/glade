@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Floor__c</fullName><defaultValue>FLOOR(MINUTE(TIMEVALUE(NOW()))/15)*15</defaultValue><label>Floor__c</label><precision>12</precision><scale>2</scale><type>Number</type></CustomField>

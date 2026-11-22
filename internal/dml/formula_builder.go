@@ -476,9 +476,10 @@ func (p *formulaParser) evaluateExtendedFormulaFunction(name string, args []form
 		if len(args) != 1 {
 			return formulaValue{}, true, false
 		}
-		if p.defaultMinuteArgument && args[0].defaultNow {
+		// Default-value formulas take the time of day of a date-time value.
+		if p.defaultValueFormula && args[0].kind == formulaDate && args[0].fieldType != storage.FieldDate && len(args[0].text) > len("2006-01-02") {
 			if value, ok := parseFormulaDateTime(args[0].text); ok {
-				return formulaValue{kind: formulaString, fieldType: storage.FieldTime, text: value.UTC().Format("15:04:05.000Z"), defaultNow: true}, true, true
+				return formulaValue{kind: formulaString, fieldType: storage.FieldTime, text: value.UTC().Format("15:04:05.000Z")}, true, true
 			}
 			return formulaValue{}, true, false
 		}

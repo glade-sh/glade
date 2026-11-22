@@ -7,9 +7,9 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// These neighboring shapes were not captured. The same check runs on the
-// origin/main baseline and on the candidate; it is not a Salesforce claim.
-func TestDefaultFormulaDatetimeNeighborUnchanged(t *testing.T) {
+// These neighboring shapes were not captured natively. They pin the general
+// evaluator's arithmetic; it is not a Salesforce claim.
+func TestDefaultFormulaDatetimeNeighbors(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 7, 0, 0, time.UTC) }
 	def := storage.ObjectDefinition{APIName: "DefaultProbe__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
@@ -30,9 +30,14 @@ func TestDefaultFormulaDatetimeNeighborUnchanged(t *testing.T) {
 		t.Fatalf("insert: %+v", result)
 	}
 	record := org.Objects[def.APIName].Records[result[0].ID]
-	for _, name := range []string{"TimeOnly__c", "TextTime__c", "Shifted__c", "Extra__c", "DirectOffset__c", "Currency__c", "Percent__c", "Unknown__c"} {
-		if value, ok := record.Fields[name]; ok && value.Kind != storage.ValueNull {
-			t.Errorf("%s changed from baseline: %+v", name, value)
+	for name, want := range map[string]string{"TimeOnly__c": "10:07:00.000Z", "TextTime__c": "34", "Shifted__c": "7", "Extra__c": "8", "DirectOffset__c": "2026-05-15T10:14:00Z", "Currency__c": "7", "Percent__c": "7", "Unknown__c": "7"} {
+		value := record.Fields[name]
+		got := value.String
+		if value.Kind == storage.ValueDecimal {
+			got = value.Decimal
+		}
+		if got != want {
+			t.Errorf("%s: got %+v; want %s", name, value, want)
 		}
 	}
 	_, _, ok := EvaluateRecordFormulaValueInOrg("MINUTE(TIMEVALUE(NOW()))", storage.Field{Type: storage.FieldDecimal}, &org, def, storage.Record{})

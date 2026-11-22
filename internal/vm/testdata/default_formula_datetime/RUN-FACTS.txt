@@ -1,6 +1,6 @@
 capture: req-rt
-started: 2026-11-22T20:59:44Z
-finished: 2026-11-22T21:01:44Z
+started: 2026-11-22T23:41:43Z
+finished: 2026-11-22T23:42:27Z
 apis: 62.0 67.0
 routes: anonymous istest 
 cases: 2
