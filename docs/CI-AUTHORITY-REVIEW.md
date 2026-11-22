@@ -21,6 +21,24 @@ still be valid with documented deferrals. That is a qualified result, not
 proof that every selected test passed. No inventory in this review establishes
 that every exception still has an active owner.
 
+## Deferral and rerouting inventory
+
+The following are source inventories, not claims that a corresponding hosted
+job ran. The listed files remain the source of individual test identities and
+reasons; duplicating those names here would let this inventory drift.
+
+| Category | Source of identities and condition | Authority or remaining owner decision |
+| --- | --- | --- |
+| Node and browser rerouting | `node_integration_run_regex` and `run_ci_package_lane` in `scripts/ci-go-test.sh` exclude provisioned tests from ordinary full-suite lanes. | The Node integration validator and Browser workflow are their execution authorities. Verify their selection and terminal evidence together when changing either list. |
+| DataWeave prerequisites | `deferred_dataweave` in `scripts/ci-go-test.sh` names the tests, required inputs and accepted reasons. When all required inputs are configured, a skip is rejected. | The feature remains outside the stated offline surface; a future owner must provision and run these tests before claiming their coverage. |
+| Captured Apex gaps | `scripts/ci-apex-native-gaps.json` names exact subtests; the summary validator accepts the matching recorded boundary reason only. | Each gap needs a product owner and a removal condition. Its captured observation is evidence, not an executed replay. |
+| SOQL bind boundary | The `native_boundaries` entries in `scripts/ci-go-test.sh` name the API-specific leaf and exact skip reason. | The native case table identifies the unreplayed boundary; a matching implementation and replay remove the deferral. |
+| Platform-specific leaves | The package summary validator permits its explicitly checked filesystem case-variant boundary in the `gladecli-ci` lane when its exact filesystem reason matches. | Other skipped leaves still fail that validator. This does not repair the ordinary PR pool's missing skip audit. |
+
+No individual person or team ownership has been established for the listed
+product gaps. Assigning names without an authoritative source would disguise
+that remaining decision.
+
 ## Simplification measurement
 
 The cache-pair experiment removal in this branch deletes the manual dispatch
