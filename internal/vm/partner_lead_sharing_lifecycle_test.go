@@ -160,3 +160,20 @@ func TestPartnerLeadSharingAcrossTestMethods(t *testing.T) {
 		})
 	}
 }
+
+func TestPartnerLeadPassSwitchesNamedReaders(t *testing.T) {
+	machine := partnerLeadLifecycleMachine(t)
+	defer machine.beginPartnerLeadReadPass()()
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("Partner policy did not match the first reader")
+	}
+	standard := machine.Org.Objects["User"].Records["005000000000003"]
+	restore := machine.actAsNamedUser(machine.vmValueFromRecord(standard))
+	if machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("named Standard user inherited the Partner policy")
+	}
+	restore()
+	if !machine.partnerLeadPrivateExternalDefault("Lead") {
+		t.Fatal("name switch lost the original reader's policy")
+	}
+}
