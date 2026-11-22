@@ -68,7 +68,7 @@ func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.
 	// Queue owners and a reader who created another user's Lead have no
 	// captured Partner row. Preserve their prior public-model visibility.
 	if vm.partnerLeadPrivateExternalDefault(objectName) && record.System.OwnerID != "" {
-		if !strings.HasPrefix(string(record.System.OwnerID), "005") || !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
+		if !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) || !strings.HasPrefix(string(record.System.OwnerID), "005") || !storage.IDsEqual(record.System.OwnerID, record.System.CreatedByID) {
 			return true
 		}
 		_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, record.System.OwnerID)
