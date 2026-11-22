@@ -2005,8 +2005,9 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		}
 		seen[string(user.ID)] = true
 		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
+		role, _ := user.GetField("UserRoleId")
 		for _, objectName := range objectNames {
-			manualRead := anonymousManualShape && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
+			manualRead := anonymousManualShape && storageValueIDText(role) == "" && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
 				strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private") &&
 				!vm.userModeUnrestrictedObject(objectName, string(user.ID)) &&
 				vm.currentUserObjectPermission(objectName, "isAccessible") &&
