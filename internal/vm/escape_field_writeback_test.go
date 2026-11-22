@@ -11,14 +11,17 @@ func TestScalarListWritebackWithoutTraversalAllocation(t *testing.T) {
 	previous := List(Int(1), Int(2), Int(3))
 	updated := previous
 	updated.List = append(updated.List, Int(4))
-	allocs := testing.AllocsPerRun(3, func() {
-		// Empty the traversal pool to measure the cold path as well.
+	for range 3 {
+		// Empty the traversal pool before counting only the writeback itself.
 		runtime.GC()
 		runtime.GC()
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
 		machine.markCollectionRefsEscapedSince(previous, updated)
-	})
-	if allocs != 0 {
-		t.Fatalf("scalar list writeback allocated %v objects; want none", allocs)
+		runtime.ReadMemStats(&after)
+		if allocs := after.Mallocs - before.Mallocs; allocs != 0 {
+			t.Fatalf("scalar list writeback allocated %d objects; want none", allocs)
+		}
 	}
 }
 
