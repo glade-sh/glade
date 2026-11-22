@@ -2677,6 +2677,20 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 }
 
 func splitStringCharacters(text string, limit int64) []string {
+	// Native empty-pattern splitting with the default limit visits each UTF-16
+	// boundary, including the boundary between the halves of a pair.
+	if limit == 0 && utf8.ValidString(text) {
+		for _, r := range text {
+			if r > 0xffff {
+				units := apexStringUTF16Units(text)
+				parts := make([]string, len(units))
+				for i := range parts {
+					parts[i] = apexStringFromUTF16Units(units[i : i+1])
+				}
+				return parts
+			}
+		}
+	}
 	// The only empty match in "" is at index 0 and never splits, so no trailing empty part exists.
 	if limit == 1 || text == "" {
 		return []string{text}

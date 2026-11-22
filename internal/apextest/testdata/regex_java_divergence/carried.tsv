@@ -1,7 +1,5 @@
 id	context	glade	reason
 d5_backref	*	"true"	(?i) with a back reference keeps regexp2's own folding; Java compares non-ASCII captures exactly
-d10_split_empty	*	"1"	after an empty match Java steps one UTF-16 unit and its Start node tries the index between the halves of a pair; Glade's find, split and replace loops step by code point and keep byte offsets, which have no position between the halves
-d10_split_empty_list	*	"1|6"	after an empty match Java steps one UTF-16 unit and its Start node tries the index between the halves of a pair; Glade's find, split and replace loops step by code point and keep byte offsets, which have no position between the halves
 d10_find_count	*	"2"	after an empty match Java steps one UTF-16 unit and its Start node tries the index between the halves of a pair; Glade's find, split and replace loops step by code point and keep byte offsets, which have no position between the halves
 d10_find_starts	*	"0,1,3,4,"	after an empty match Java steps one UTF-16 unit and its Start node tries the index between the halves of a pair; Glade's find, split and replace loops step by code point and keep byte offsets, which have no position between the halves
 d10_replace_empty	*	"8"	after an empty match Java steps one UTF-16 unit and its Start node tries the index between the halves of a pair; Glade's find, split and replace loops step by code point and keep byte offsets, which have no position between the halves
