@@ -223,6 +223,13 @@ Node, Playwright and a browser, so an "environmental" result does not exist
 in CI. Locally such a test is "not run", never "passed". `scripts/ci-local-all`
 mirrors the full suite when hosted CI is unavailable.
 
+CI artifacts support partial reruns for seven days from each artifact's upload:
+shared binaries, frozen history inputs, shard plans and results, browser evidence,
+and other run diagnostics all retain for seven days. Duration-history outputs and
+tree receipts retain for 90 days for predecessor selection and tree attestation.
+After the seven-day window, start a new full run rather than relying on expired
+producer artifacts. Repository retention limits may shorten these periods.
+
 ### 3.8 Review
 
 One reviewer per PR, assigned by the coordinator, following appendix B.
