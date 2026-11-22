@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"html"
 	"net/http"
@@ -734,7 +735,18 @@ func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
-	setDevNoStore(w)
+	tag := fmt.Sprintf("\"%x\"", sha256.Sum256(content))
+	w.Header().Set("ETag", tag)
+	w.Header().Set("Cache-Control", "private, no-cache")
+	for _, header := range r.Header.Values("If-None-Match") {
+		for _, candidate := range strings.Split(header, ",") {
+			candidate = strings.TrimSpace(candidate)
+			if candidate == "*" || strings.TrimPrefix(candidate, "W/") == tag {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+		}
+	}
 	_, _ = w.Write(content)
 }
 
