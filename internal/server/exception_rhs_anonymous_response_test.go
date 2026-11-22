@@ -25,7 +25,7 @@ func TestExceptionRHSAnonymousResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, api := range []string{"67.0", "68.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			suffix := strings.TrimSuffix(api, ".0")
 			root := t.TempDir()
@@ -76,22 +76,28 @@ func TestExceptionRHSAnonymousResponse(t *testing.T) {
 					}
 					rec := httptest.NewRecorder()
 					srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", strings.NewReader(string(body))))
-					var got struct {
-						Compiled            bool    `json:"compiled"`
-						Success             bool    `json:"success"`
-						CompileProblem      *string `json:"compileProblem"`
-						ExceptionMessage    *string `json:"exceptionMessage"`
-						ExceptionStackTrace *string `json:"exceptionStackTrace"`
-						Line                int     `json:"line"`
-						Column              int     `json:"column"`
-					}
-					if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
-						t.Fatalf("body %q: %v", rec.Body.String(), err)
-					}
 					want := strings.ReplaceAll(row[3], `\n`, "\n")
 					wantMessage := fmt.Sprintf("%s.FrameException: %s.FrameException:[__lineNumber=2, __stackTrace=Class.%s.fail: line 2, column 1, __thrown=true]", name, name, name)
-					if rec.Code != http.StatusOK || !got.Compiled || got.Success || got.CompileProblem != nil || got.ExceptionMessage == nil || *got.ExceptionMessage != wantMessage || got.ExceptionStackTrace == nil || *got.ExceptionStackTrace != want || got.Line != 1 || got.Column != 1 {
-						t.Errorf("response: %s, want stack %q", rec.Body.String(), want)
+					if api == "62.0" {
+						if rec.Code != http.StatusNotFound {
+							t.Errorf("unsupported tooling endpoint: %d %s", rec.Code, rec.Body.String())
+						}
+					} else {
+						var got struct {
+							Compiled            bool    `json:"compiled"`
+							Success             bool    `json:"success"`
+							CompileProblem      *string `json:"compileProblem"`
+							ExceptionMessage    *string `json:"exceptionMessage"`
+							ExceptionStackTrace *string `json:"exceptionStackTrace"`
+							Line                int     `json:"line"`
+							Column              int     `json:"column"`
+						}
+						if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+							t.Fatalf("body %q: %v", rec.Body.String(), err)
+						}
+						if rec.Code != http.StatusOK || !got.Compiled || got.Success || got.CompileProblem != nil || got.ExceptionMessage == nil || *got.ExceptionMessage != wantMessage || got.ExceptionStackTrace == nil || *got.ExceptionStackTrace != want || got.Line != 1 || got.Column != 1 {
+							t.Errorf("response: %s, want stack %q", rec.Body.String(), want)
+						}
 					}
 					var escaped bytes.Buffer
 					if err := xml.EscapeText(&escaped, []byte(strings.ReplaceAll(string(code), "FrameProbe", name))); err != nil {
@@ -100,9 +106,15 @@ func TestExceptionRHSAnonymousResponse(t *testing.T) {
 					soapBody := soapEnvelope("<apex:executeAnonymous><apex:String>" + escaped.String() + "</apex:String></apex:executeAnonymous>")
 					soap := httptest.NewRecorder()
 					srv.ServeHTTP(soap, httptest.NewRequest(http.MethodPost, "/services/Soap/s/"+api+"/example", strings.NewReader(soapBody)))
-					soapResult := decodeSOAPResult(t, soap.Body.String())
-					if soap.Code != http.StatusOK || soapResult["compiled"] != "true" || soapResult["success"] != "false" || soapResult["compileProblem"] != "" || soapResult["exceptionMessage"] != wantMessage || soapResult["exceptionStackTrace"] != want || soapResult["line"] != "1" || soapResult["column"] != "1" {
-						t.Errorf("SOAP response: %s, want stack %q", soap.Body.String(), want)
+					if api == "62.0" {
+						if soap.Code != http.StatusInternalServerError || !strings.Contains(soap.Body.String(), "<faultcode>sf:INVALID_VERSION</faultcode>") || !strings.Contains(soap.Body.String(), "<faultstring>unsupported API version 62.0</faultstring>") {
+							t.Errorf("unsupported SOAP endpoint: %d %s", soap.Code, soap.Body.String())
+						}
+					} else {
+						soapResult := decodeSOAPResult(t, soap.Body.String())
+						if soap.Code != http.StatusOK || soapResult["compiled"] != "true" || soapResult["success"] != "false" || soapResult["compileProblem"] != "" || soapResult["exceptionMessage"] != wantMessage || soapResult["exceptionStackTrace"] != want || soapResult["line"] != "1" || soapResult["column"] != "1" {
+							t.Errorf("SOAP response: %s, want stack %q", soap.Body.String(), want)
+						}
 					}
 				})
 			}
