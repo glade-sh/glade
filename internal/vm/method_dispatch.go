@@ -2043,6 +2043,45 @@ func (vm *VM) invalidSObjectFieldMapNamespaceKey(receiver, key Value) bool {
 
 const copiedSObjectFieldMapRuntime = "sobjectfieldmap-copy"
 
+// NATIVE owner field-map lookups: namespaced_field_keyset/describe/org.tsv:2-13.
+func (vm *VM) ownedFieldMapBareTextKey(receiver, key Value) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" || key.Kind != ValueString ||
+		!strings.HasSuffix(key.Text, "__c") || strings.Contains(key.Text[:len(key.Text)-3], "__") {
+		return false
+	}
+	switch vm.currentSourceExecutionPolicy().APIVersion {
+	case "62.0", "67.0", "68.0":
+	default:
+		return false
+	}
+	object, ok := sObjectFieldMapObjectName(receiver)
+	if !ok {
+		return false
+	}
+	canonical, definition, ok := vm.describeObjectDefinition(object)
+	if !ok || !vm.ownedNamespacedCustomGlobalDescribe(canonical) {
+		return false
+	}
+	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, key.Text)
+	if !ok {
+		return false
+	}
+	if !strings.EqualFold(fieldName, key.Text) {
+		for candidate, local := range definition.Fields {
+			if strings.EqualFold(candidate, key.Text) && strings.EqualFold(local.APIName, key.Text) {
+				return false
+			}
+		}
+	}
+	field := definition.Fields[fieldName]
+	if field.Type != storage.FieldString || (field.DisplayType != "" && !strings.EqualFold(field.DisplayType, "STRING")) || field.LongTextArea || field.AutoNumber || field.Encrypted || field.Formula != "" {
+		return false
+	}
+	described := vm.describeFieldName(field.APIName)
+	prefix, qualified := namespaceTokenPrefix(described)
+	return qualified && strings.EqualFold(prefix, vm.Org.Namespace) && storage.StripNamespaceToken(vm.Org.Namespace, described) == key.Text
+}
+
 func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return Null, false
@@ -3874,6 +3913,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 		}
 		if vm.invalidSObjectFieldMapNamespaceKey(receiver, args[0]) {
+			return Bool(false), true, nil
+		}
+		if method == "containsKey" && vm.ownedFieldMapBareTextKey(receiver, args[0]) {
 			return Bool(false), true, nil
 		}
 		// Salesforce's SObject field map accepts object-qualified aliases for

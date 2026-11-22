@@ -175,6 +175,7 @@ func runNamespacedDescribeConformance(t *testing.T, observations, caseTable stri
 	}
 }
 
+// This synthetic other-namespace neighbor pins the origin/main result; it is not a native subscriber capture.
 func TestNamespacedFieldMapSubscriberNeighbor(t *testing.T) {
 	root := filepath.Join("testdata", "conformance", "namespaced_field_keyset", "project")
 	index := loadTestIndex(t, root)
