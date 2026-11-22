@@ -40,6 +40,13 @@ func TestDuplicateIndexedProjectRunnerBulk(t *testing.T) {
 			if result.Problem.Type != "System.AssertException" || !strings.Contains(result.Problem.Message, "DUPLICATES_DETECTED") || !strings.Contains(result.Problem.Message, `"matchConfidence":100.0`) {
 				t.Fatalf("runner report: %+v", result.Problem)
 			}
+			if result.Problem.Detail != "" || len(result.Problem.Stack) != 1 {
+				t.Fatalf("runner problem details: %+v", result.Problem)
+			}
+			frame := result.Problem.Stack[0]
+			if frame.Symbol != "DuplicateBulkTest.observe" || filepath.Base(frame.File) != "DuplicateBulkTest.cls" || frame.Line != 9 || frame.Column != 8 {
+				t.Fatalf("runner stack: %+v", frame)
+			}
 			// The complete assertion payload, including reports and save errors,
 			// is compared with the same runner workload on origin/main.
 			if got := fmt.Sprintf("%x", sha256.Sum256([]byte(result.Problem.Message))); got != "b75db72660ee823331eec5a47cb3ef2feee5c5ff489dcda9b5ca189f42d9e124" {
