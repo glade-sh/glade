@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Record and check the exact top-level test union of assigned packages."""
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -13,14 +14,17 @@ if not packages or len(packages) != len(set(packages)):
 path = directory / 'discovery.json'
 if mode == 'collect':
     discovery = {}
+    selection = os.environ.get('CI_TEST_RUN_REGEX', '^Test')
     for package in packages:
-        result = subprocess.run(['go', 'test', '-vet=off', '-list', '^Test', package],
+        result = subprocess.run(['go', 'test', '-vet=off', '-list', selection, package],
                                 text=True, capture_output=True, check=True)
         lines = result.stdout.splitlines()
         if not lines or not (re.fullmatch(r'ok\s+' + re.escape(package) + r'(?:\s+.*)?', lines[-1])
                              or re.fullmatch(r'\?\s+' + re.escape(package) + r'\s+\[no test files\]', lines[-1])):
             raise ValueError('invalid package discovery trailer: ' + package)
         names = lines[:-1]
+        if 'CI_TEST_RUN_REGEX' in os.environ and not names:
+            raise ValueError('selected authority discovery is empty: ' + package)
         if any(not re.fullmatch(r'Test[A-Za-z0-9_]*', name) for name in names) or len(names) != len(set(names)):
             raise ValueError('invalid or duplicate test discovery: ' + package)
         discovery[package] = sorted(names)

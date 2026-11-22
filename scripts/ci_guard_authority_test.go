@@ -59,3 +59,38 @@ func TestCIGuardWorkflowUsesAuditedExecution(t *testing.T) {
 		}
 	}
 }
+
+func TestCIGuardSelectedDiscovery(t *testing.T) {
+	for _, empty := range []bool{false, true} {
+		t.Run(map[bool]string{false: "selected", true: "empty"}[empty], func(t *testing.T) {
+			dir := t.TempDir()
+			program := `#!/bin/bash
+printf '%s\n' "$*" >>"$CALLS"
+if [[ $1 == list ]]; then printf 'github.com/glade-sh/glade/internal/example\thas-tests\n'; exit; fi
+if [[ $* == *-list* ]]; then
+  [[ "$EMPTY" == true ]] || printf 'TestExample\n'
+  printf 'ok  \tgithub.com/glade-sh/glade/internal/example\t0.001s\n'; exit
+fi
+printf '%s\n' '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/example","Test":"TestExample"}' '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/example"}'
+`
+			if err := os.WriteFile(filepath.Join(dir, "go"), []byte(program), 0700); err != nil {
+				t.Fatal(err)
+			}
+			calls := filepath.Join(dir, "calls")
+			cmd := exec.Command("bash", "scripts/ci-pr-packages.sh", filepath.Join(dir, "evidence"), "github.com/glade-sh/glade/internal/example")
+			cmd.Dir = ".."
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "CALLS="+calls, "CI_TEST_RUN_REGEX=^TestExample$", "EMPTY="+map[bool]string{false: "false", true: "true"}[empty])
+			out, err := cmd.CombinedOutput()
+			if (err == nil) == empty {
+				t.Fatalf("selection err=%v output=%s", err, out)
+			}
+			data, err := os.ReadFile(calls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(data), "-list ^TestExample$") || (!empty && !strings.Contains(string(data), "-run ^TestExample$")) {
+				t.Fatalf("selection lost: %s", data)
+			}
+		})
+	}
+}

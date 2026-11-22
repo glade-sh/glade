@@ -1951,9 +1951,18 @@ jobs:
           cache: false
       - name: Run early guard checks
         run: |
-          go test -count=1 -timeout=5m ./scripts -run '^(TestCIApexSkipSitesMatchResultPolicy|TestCIRaceNightlySelectionRegexesSelectGoConcurrencyOnly|TestCIRaceSampleSelectionRule)$'
-          go test -count=1 -timeout=5m ./scripts/internal/cishard -run '^TestCIPackageManifestConcurrencyCounts$'
-          go test -count=1 -timeout=5m ./internal/repoguard -run '^TestObjectStateRecordsWritesUseFunnel$'
+          CI_TEST_RUN_REGEX='^(TestCIApexSkipSitesMatchResultPolicy|TestCIRaceNightlySelectionRegexesSelectGoConcurrencyOnly|TestCIRaceSampleSelectionRule)$' bash scripts/ci-pr-packages.sh "$RUNNER_TEMP/early-guards/scripts" ./scripts
+          CI_TEST_RUN_REGEX='^TestCIPackageManifestConcurrencyCounts$' bash scripts/ci-pr-packages.sh "$RUNNER_TEMP/early-guards/cishard" ./scripts/internal/cishard
+          CI_TEST_RUN_REGEX='^TestObjectStateRecordsWritesUseFunnel$' bash scripts/ci-pr-packages.sh "$RUNNER_TEMP/early-guards/repoguard" ./internal/repoguard
+
+      - name: Upload early guard evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: early-guard-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          path: ${{ runner.temp }}/early-guards/
+          if-no-files-found: error
 
   pr-guards:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
@@ -2007,10 +2016,19 @@ jobs:
       - name: Run repository guards and scripts tests
         run: |
           go build -o "$RUNNER_TEMP/glade" ./cmd/glade
-          go test -count=1 -timeout=0 ./internal/repoguard ./scripts
+          bash scripts/ci-pr-packages.sh "$RUNNER_TEMP/pr-guards" ./internal/repoguard ./scripts
           if git diff --no-renames --name-only HEAD^1 HEAD | grep -q "^third_party/glade-apex-parser/"; then
             (cd third_party/glade-apex-parser && go test -count=1 ./...)
           fi
+
+      - name: Upload PR guard evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: pr-guard-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          path: ${{ runner.temp }}/pr-guards/
+          if-no-files-found: error
 
   pr-select:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}

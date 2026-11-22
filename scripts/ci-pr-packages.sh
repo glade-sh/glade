@@ -8,7 +8,9 @@ mkdir -p "$dir"
 go list -f '{{.ImportPath}}{{"\t"}}{{if or .TestGoFiles .XTestGoFiles}}has-tests{{else}}no-tests{{end}}' "$@" > "$dir/metadata.tsv"
 python3 scripts/ci-pr-package-discovery.py collect "$dir" "$@"
 rc=0
-bash scripts/ci-pr-browser-go-test.sh "$dir/events.json" "$@" || rc=$?
+test_selection=()
+if [[ -n "${CI_TEST_RUN_REGEX:-}" ]]; then test_selection=(-run "$CI_TEST_RUN_REGEX"); fi
+bash scripts/ci-pr-browser-go-test.sh "$dir/events.json" "${test_selection[@]}" "$@" || rc=$?
 validation=0
 python3 scripts/ci-pr-package-discovery.py validate "$dir" "$@" || validation=$?
 bash scripts/ci-go-test.sh package-summary remaining-go 'PR packages' "$dir/events.json" "$dir/summary.json" "$dir/metadata.tsv" "$@" || validation=$?

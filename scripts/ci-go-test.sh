@@ -775,6 +775,22 @@ try:
                             "skipReason": "case alias requires a case-insensitive filesystem",
                             "reason": "case-sensitive runner cannot exercise this case-alias leaf"})
                         continue
+                    # The source declares this exact test macOS-only. Keep its
+                    # Linux result visible as a deferral, never a passing test.
+                    mac_test = "TestCILocalReleaseLaneMetricsIncludeApexShards"
+                    mac_reason = "local-release resource metrics use macOS /usr/bin/time -l"
+                    mac_source = os.path.join(repo_root, "scripts", "ci_local_release_lane_test.go")
+                    if (identity == (module + "/scripts", mac_test) and os.environ.get("RUNNER_OS") == "Linux"
+                            and any(re.fullmatch(r"\s+ci_local_release_lane_test\.go:\d+: " + re.escape(mac_reason) + r"\s*$", line)
+                                    for output in test_output.get(identity, ()) for line in output.splitlines())):
+                        with open(mac_source, encoding="utf-8") as source:
+                            text = source.read()
+                        declaration = r'func ' + mac_test + r'\(t \*testing\.T\) \{\s*if runtime\.GOOS != "darwin" \{\s*t\.Skip\(' + re.escape('"' + mac_reason + '"') + r'\)\s*\}'
+                        if not re.search(declaration, text):
+                            raise ValueError("macOS metrics deferral source changed")
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": mac_reason, "reason": "macOS-only test on a Linux runner"})
+                        continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
                     reason_pattern = r"\s+\S+_test.go:\d+: " + re.escape(cause) + r"\s*$"

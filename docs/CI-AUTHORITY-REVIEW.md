@@ -8,6 +8,7 @@ terminal evidence.
 
 | Stage | Evidence and checks | Qualification |
 | --- | --- | --- |
+| PR guards | Early selected tests and the full PR guard packages record discovery and raw terminals and reject unexplained skips; their evidence is retained for seven days. | The macOS-only metrics test is reported as deferred on Linux. |
 | PR selection and assignment | `ci-pr-select.py` selects packages; `ci-pr-validate-plan.py` rejects missing, duplicate and misrouted assignments. | Guard packages have their own required jobs. |
 | PR sharded packages | Each planned worker uploads discovery, plan, selected shard and raw events. `ci-pr-authority-union.py` requires every worker and invokes the existing history validator to compare discoveries, plans, assignments and terminal unions. It also runs the package summary validator on every shard, including nested skips. | Exact documented deferrals are reported separately. |
 | PR pool and service packages | Each worker records per-package test discovery and raw events. The worker and union validators compare the terminal union with discovery, validate package terminals and reject unexpected skips. The union records packages without test files separately. | A permitted deferred leaf is not evidence that it ran. |
@@ -39,6 +40,7 @@ entry as deferred rather than as an executed test.
 | DataWeave prerequisites | DataWeave and runtime maintainers: `deferred_dataweave` in `scripts/ci-go-test.sh`. | Provision each entry's explicit engine and Java inputs in its authority and execute the test; configured inputs already turn a skip into a failure. |
 | Captured Apex gaps | Apex runtime maintainers: `scripts/ci-apex-native-gaps.json` and the corresponding fixture case tables. | Implement the captured behavior and replay each exact leaf; remove that identity when its test passes. |
 | SOQL bind boundary | SOQL and VM maintainers: `native_boundaries` in `scripts/ci-go-test.sh` and `internal/soql/testdata/soql_safe_navigation_bind/case-table.tsv`. | Implement and replay each captured excluded bind leaf, then remove its exact boundary. |
+| macOS-only CI metrics test | CI maintainers: the platform check in `scripts/ci_local_release_lane_test.go` and its matching source-verified skip reason. | Execute the test in a macOS authority or replace its platform-specific measurement with an equivalent portable check. |
 | Case-variant filesystem leaves | CLI and toolchain maintainers: the exact `gladecli-ci` case patterns and reasons in `scripts/ci-go-test.sh`. | Execute those leaves on a case-insensitive filesystem with an authoritative terminal result, or replace them with an equivalent portable test. |
 
 ## Simplification measurement
