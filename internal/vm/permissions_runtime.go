@@ -797,11 +797,11 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		}
 	}
 	if !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
-		if vm.communityCaseRESTPermissionShape(op, objectName, scopedPermissionSetID) {
-			if vm.capturedCommunityCaseRESTDelete(record) {
+		if vm.communityCaseHostPermissionShape(op, objectName, scopedPermissionSetID) {
+			if vm.capturedCommunityCaseHostDelete(record) {
 				return nil, newExceptionError("TypeException", "DML operation DELETE not allowed on Case")
 			}
-			// The REST rows do not cover other record shapes; preserve the
+			// The host rows do not cover other record shapes; preserve the
 			// former permissive Case default for those records.
 			return nil, nil
 		}
@@ -2479,7 +2479,7 @@ func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method 
 	}
 	if strings.EqualFold(objectName, "Case") && method == "isDeletable" &&
 		vm.capturedCommunityCaseAnonymousDelete(profileID, vm.currentSourceExecutionPolicy().APIVersion) &&
-		(vm.currentClass == "" || vm.capturedCommunityCaseRESTRequest()) {
+		(vm.currentClass == "" || vm.capturedCommunityCaseRESTRequest() || vm.capturedCommunityCasePageAction()) {
 		return false, true
 	}
 	// community_case_dml/org.tsv:2-3: the unmodified Customer Community
@@ -2541,18 +2541,29 @@ func (vm *VM) capturedCommunityCaseRESTRequest() bool {
 	return false
 }
 
-func (vm *VM) communityCaseRESTPermissionShape(op, objectName, scope string) bool {
-	return op == "delete" && strings.EqualFold(objectName, "Case") && scope == "" && vm.explicitUserModeAccess && vm.userModeSingleRecord &&
-		vm.capturedCommunityCaseRESTRequest() && vm.AnonymousCommunityCaseDeleteCompileDenied(vm.currentSourceExecutionPolicy().APIVersion)
+// capturedCommunityCasePageAction covers the rendered controller action in
+// community_case_page/org.tsv:2-3, not a direct method invocation.
+func (vm *VM) capturedCommunityCasePageAction() bool {
+	if vm.currentPage.Kind != ValueObject || vm.vfActionInvoker == nil || vm.currentClass == "" ||
+		!strings.EqualFold(vm.currentMethod.ReturnType, "PageReference") {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	return ok && methodHasModifier(class.Modifiers, "without sharing")
 }
 
-// capturedCommunityCaseRESTDelete limits the exception to the two record
-// shapes in community_case_rest/org.tsv:2-9.
-func (vm *VM) capturedCommunityCaseRESTDelete(record Value) bool {
+func (vm *VM) communityCaseHostPermissionShape(op, objectName, scope string) bool {
+	return op == "delete" && strings.EqualFold(objectName, "Case") && scope == "" && vm.explicitUserModeAccess && vm.userModeSingleRecord &&
+		(vm.capturedCommunityCaseRESTRequest() || vm.capturedCommunityCasePageAction()) && vm.AnonymousCommunityCaseDeleteCompileDenied(vm.currentSourceExecutionPolicy().APIVersion)
+}
+
+// capturedCommunityCaseHostDelete limits the exception to the record shapes
+// in community_case_rest/org.tsv:2-9 and community_case_page/org.tsv:2-3.
+func (vm *VM) capturedCommunityCaseHostDelete(record Value) bool {
 	fields := explicitSObjectFieldNamesInInsertionOrder(record)
 	switch len(fields) {
 	case 1:
-		if !strings.EqualFold(fields[0], "Id") {
+		if !vm.capturedCommunityCaseRESTRequest() || !strings.EqualFold(fields[0], "Id") {
 			return false
 		}
 	case 3:
