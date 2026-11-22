@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+MISSING_METHOD	62.0	istest	false	false	MissingAdapterTest: Class MissingAdapterTest must implement the method: commercepayments.GatewayResponse commercepayments.PaymentGatewayAdapter.processRequest(commercepayments.PaymentGatewayContext)	62.0	n/a	n/a
+MISSING_METHOD	67.0	istest	false	false	MissingAdapterTest: Class MissingAdapterTest must implement the method: commercepayments.GatewayResponse commercepayments.PaymentGatewayAdapter.processRequest(commercepayments.PaymentGatewayContext)	67.0	n/a	n/a
+WRONG_PARAMETER	62.0	istest	false	false	WrongAdapterTest: Class WrongAdapterTest must implement the method: commercepayments.GatewayResponse commercepayments.PaymentGatewayAdapter.processRequest(commercepayments.PaymentGatewayContext)	62.0	n/a	n/a
+WRONG_PARAMETER	67.0	istest	false	false	WrongAdapterTest: Class WrongAdapterTest must implement the method: commercepayments.GatewayResponse commercepayments.PaymentGatewayAdapter.processRequest(commercepayments.PaymentGatewayContext)	67.0	n/a	n/a
