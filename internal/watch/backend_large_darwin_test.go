@@ -98,8 +98,16 @@ func TestWatcherReconcilesDirectoryChangesAndScope(t *testing.T) {
 }
 
 func BenchmarkWatcherLargeProjectIdle(b *testing.B) {
+	benchmarkWatcherLargeProjectIdle(b, BackendNative)
+}
+
+func BenchmarkWatcherLargeProjectPollingIdle(b *testing.B) {
+	benchmarkWatcherLargeProjectIdle(b, BackendPoll)
+}
+
+func benchmarkWatcherLargeProjectIdle(b *testing.B, backend Backend) {
 	root, initial := largeWatcherProject(b)
-	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: BackendNative, Debounce: 200 * time.Millisecond}, initial)
+	w, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Backend: backend, Debounce: 200 * time.Millisecond}, initial)
 	if err != nil {
 		b.Fatal(err)
 	}
