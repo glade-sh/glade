@@ -79,7 +79,7 @@
 - **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
 - **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
 - **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
-- **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Complex scopes and linked files retain a fallback that continues to detect changes.
+- **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 
 ### CI
 

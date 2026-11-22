@@ -86,6 +86,27 @@ static int glade_needs_poll(glade_stream *s) {
     return atomic_exchange(&s->needs_poll, 0);
 }
 
+// Invoke the same callback for deterministic coverage of flags that are hard
+// to induce from the kernel. A null stream uses an isolated synthetic stream.
+static int glade_inject_event(glade_stream *s, int fd, const char *path,
+                              FSEventStreamEventFlags flag) {
+    glade_stream synthetic = {0};
+    if (!s) {
+        synthetic.root = "/root";
+        synthetic.fd = fd;
+        synthetic.accepting = 1;
+        atomic_init(&synthetic.needs_poll, 0);
+        s = &synthetic;
+    }
+    char *paths[] = {(char *)path};
+    glade_events(NULL, s, 1, paths, &flag, NULL);
+    if (s == &synthetic) {
+        int first = glade_needs_poll(s);
+        return first | (glade_needs_poll(s) << 1);
+    }
+    return 0;
+}
+
 static void glade_stop(void *info) { CFRunLoopStop((CFRunLoopRef)info); }
 
 static void *glade_stream_thread(void *arg) {
@@ -191,6 +212,19 @@ type recursiveWatcher struct {
 	changes     chan []Change
 	errors      chan error
 	done        chan struct{}
+}
+
+const (
+	recursiveMustScan      = uint32(C.kFSEventStreamEventFlagMustScanSubDirs)
+	recursiveUserDropped   = uint32(C.kFSEventStreamEventFlagUserDropped)
+	recursiveKernelDropped = uint32(C.kFSEventStreamEventFlagKernelDropped)
+	recursiveRootChanged   = uint32(C.kFSEventStreamEventFlagRootChanged)
+)
+
+func recursiveInjectEvent(stream *C.glade_stream, fd int, path string, flag uint32) int {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+	return int(C.glade_inject_event(stream, C.int(fd), cpath, C.FSEventStreamEventFlags(flag)))
 }
 
 func newRecursiveWatcher(ctx context.Context, cfg Config, initial Snapshot) (BackendWatcher, bool) {
@@ -397,8 +431,10 @@ func (w *recursiveWatcher) run(ctx context.Context, cfg Config, previous Snapsho
 			if signal == 'R' || C.glade_needs_poll(w.stream) != 0 {
 				streamLost = true
 			}
-			pending = true
-			resetTimer(timer, cfg.Debounce)
+			if !pending {
+				pending = true
+				resetTimer(timer, cfg.Debounce)
+			}
 		case <-timer.C:
 			if !pending {
 				continue
@@ -436,8 +472,10 @@ func (w *recursiveWatcher) run(ctx context.Context, cfg Config, previous Snapsho
 			// Poll the whole scope after the stream can no longer cover it.
 			// Otherwise only exact external files need periodic checks.
 			if streamLost {
-				pending = true
-				resetTimer(timer, cfg.Debounce)
+				if !pending {
+					pending = true
+					resetTimer(timer, cfg.Debounce)
+				}
 				continue
 			}
 			current, err := captureScopeAuxiliary(cfg.Scope)

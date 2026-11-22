@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -37,6 +38,105 @@ func TestRecursiveWatcherParentRecreation(t *testing.T) {
 	awaitScopedChange(t, watcher, class, ChangeAdded)
 	replaceWatchFile(t, class, "another edit")
 	awaitScopedChange(t, watcher, class, ChangeModified)
+}
+
+func TestRecursiveWatcherCallbackRecovery(t *testing.T) {
+	flags := []struct {
+		name string
+		flag uint32
+	}{
+		{"must-scan", recursiveMustScan},
+		{"user-dropped", recursiveUserDropped},
+		{"kernel-dropped", recursiveKernelDropped},
+	}
+	for _, tc := range flags {
+		t.Run(tc.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			root := filepath.Join(workspace, "parent", "project")
+			external := filepath.Join(workspace, "outside", "glade.yml")
+			writeWatchFile(t, filepath.Join(root, "Example.cls"), "class")
+			writeWatchFile(t, external, "before")
+			scope := Scope{Roots: []string{root}, Files: []string{external}}
+			initial, err := CaptureScope(scope)
+			if err != nil {
+				t.Fatal(err)
+			}
+			watcher, _, err := NewBackendWatcher(context.Background(), Config{Root: root, Scope: scope, Backend: BackendNative, Debounce: 10 * time.Millisecond}, initial)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer watcher.Close()
+			w, ok := watcher.(*recursiveWatcher)
+			if !ok {
+				t.Fatalf("recursive backend not selected: %T", watcher)
+			}
+			replaceWatchFile(t, external, "after")
+			recursiveInjectEvent(w.stream, -1, external, tc.flag)
+			select {
+			case changes := <-watcher.Changes():
+				assertChange(t, changes, external, ChangeModified, FileKindIgnored)
+			case err := <-watcher.Errors():
+				t.Fatal(err)
+			case <-time.After(400 * time.Millisecond):
+				t.Fatal("callback did not trigger reconciliation before auxiliary polling")
+			}
+		})
+	}
+	t.Run("unrelated-event", func(t *testing.T) {
+		read, write, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer read.Close()
+		defer write.Close()
+		readFD := int(read.Fd())
+		if err := syscall.SetNonblock(readFD, true); err != nil {
+			t.Fatal(err)
+		}
+		if got := recursiveInjectEvent(nil, int(write.Fd()), "/unrelated", 0); got != 0 {
+			t.Fatalf("unrelated event requested polling: %d", got)
+		}
+		var buf [1]byte
+		if n, err := syscall.Read(readFD, buf[:]); n != -1 || err != syscall.EAGAIN {
+			t.Fatalf("unrelated event produced pipe data: n=%d, err=%v", n, err)
+		}
+	})
+	t.Run("full-pipe-root-loss", func(t *testing.T) {
+		read, write, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer read.Close()
+		defer write.Close()
+		fd := int(write.Fd())
+		if err := syscall.SetNonblock(fd, true); err != nil {
+			t.Fatal(err)
+		}
+		buf := make([]byte, 4096)
+		for i := range buf {
+			buf[i] = 'E'
+		}
+		for {
+			_, err := syscall.Write(fd, buf)
+			if err == syscall.EAGAIN {
+				break
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, tc := range flags {
+			if got := recursiveInjectEvent(nil, fd, "/unrelated", tc.flag); got != 0 {
+				t.Fatalf("full pipe %s requested polling: %d", tc.name, got)
+			}
+		}
+		if got := recursiveInjectEvent(nil, fd, "/root", recursiveRootChanged); got != 1 {
+			t.Fatalf("full pipe root loss: first and second poll checks = %d, want 1", got)
+		}
+		if n, err := read.Read(buf[:1]); n != 1 || err != nil || buf[0] != 'E' {
+			t.Fatalf("full pipe must retain a wakeup: n=%d, byte=%q, err=%v", n, buf[0], err)
+		}
+	})
 }
 
 func TestRecursiveWatcherRootRecreation(t *testing.T) {
