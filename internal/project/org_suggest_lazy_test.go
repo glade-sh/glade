@@ -51,10 +51,10 @@ func TestSetupPatternsStartUninitialized(t *testing.T) {
 		}
 		return
 	}
-	if setupStringRE.compiled != nil || featureEvidenceRules[3].pattern.compiled != nil {
+	if setupStringRE.compiled != nil || currencyTypeRE.compiled != nil {
 		t.Fatal("setup patterns initialized at startup")
 	}
-	if setupStringRE.get() == nil || featureEvidenceRules[3].pattern.get() == nil {
+	if setupStringRE.get() == nil || currencyTypeRE.get() == nil {
 		t.Fatal("setup patterns not initialized on use")
 	}
 }
