@@ -1978,6 +1978,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 
 var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
 var manualReadAccessProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)\s+and\s+recordid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)(?:\s+[a-z0-9]{15,18})*\s*$`)
+var manualReadExtraFieldProjection = regexp.MustCompile(`(?is)^\s*select\s+recordid\s*,\s*hasreadaccess\s*,\s*haseditaccess\s+from\s+userrecordaccess\s+where\s+userid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)\s+and\s+recordid\s*=\s*(?::[a-z_][a-z0-9_.]*|'[a-z0-9]+'|[a-z0-9]+)(?:\s+[a-z0-9]{15,18})*\s*$`)
 
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
@@ -1991,8 +1992,13 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	}
 	current := vm.currentUserInfoField("Id", "")
 	api := vm.currentSourceExecutionPolicy().APIVersion
-	anonymousManualShape := vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0") &&
-		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" && manualReadAccessProjection.MatchString(queryText)
+	deniedControl, anonymousManualShape := false, false
+	if vm.testContext == nil && !vm.currentTrigger && (api == "62.0" || api == "67.0" || api == "68.0") &&
+		vm.currentProfileName(vm.currentUserInfoField("ProfileId", "")) == "System Administrator" {
+		standardProjection := manualReadAccessProjection.MatchString(queryText)
+		deniedControl = api == "68.0" && standardProjection || api == "67.0" && manualReadExtraFieldProjection.MatchString(queryText)
+		anonymousManualShape = (api == "62.0" || api == "67.0") && standardProjection || deniedControl
+	}
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
@@ -2038,7 +2044,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				if manualRead {
 					idText := string(record.ID)
 					if len(idText) < 15 || !strings.Contains(strings.ToLower(queryText), strings.ToLower(idText[:15])) ||
-						!vm.capturedAnonymousManualReadRecord(objectName, record, current, string(user.ID)) {
+						!vm.capturedAnonymousManualReadRecord(objectName, record, current, string(user.ID), deniedControl) {
 						continue
 					}
 				}
@@ -2080,10 +2086,10 @@ func (vm *VM) hasAssignedManualReadPermission(user storage.Record, objectName st
 }
 
 // capturedAnonymousManualReadRecord limits anonymous named projections to the
-// private custom-object control in manual_read_lifecycle/org.tsv:10-15.
-func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storage.Record, actorID, readerID string) bool {
-	api := vm.currentSourceExecutionPolicy().APIVersion
-	if (api != "62.0" && api != "67.0") || vm.currentTrigger ||
+// private custom-object controls in manual_read_lifecycle/org.tsv:10-15 and
+// custom_manual_share_lifecycle/projection_controls/org.tsv:2-3.
+func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storage.Record, actorID, readerID string, deniedControl bool) bool {
+	if vm.currentTrigger ||
 		!storage.IDsEqual(record.System.OwnerID, storage.ID(actorID)) ||
 		!storage.IDsEqual(record.System.CreatedByID, storage.ID(actorID)) {
 		return false
@@ -2111,7 +2117,7 @@ func (vm *VM) capturedAnonymousManualReadRecord(objectName string, record storag
 		}
 		target, _ := share.GetField("UserOrGroupId")
 		level, _ := share.GetField("AccessLevel")
-		if !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
+		if deniedControl || !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
 			!storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(readerID)) {
 			return false
 		}

@@ -24,7 +24,7 @@
 
 - In Apex tests, a Partner Community user’s Lead visibility and Manual Read share follow the captured private external default at API 62.0 and 67.0.
 
-- In anonymous Apex, the captured administrator-to-Standard-User access query returns a read row for a private custom record across a Manual Read grant and revoke.
+- In anonymous Apex, the captured administrator-to-Standard-User access queries return read rows for private custom records, including the observed denied projections and Manual Read grant and revoke.
 
 ### Changes
 

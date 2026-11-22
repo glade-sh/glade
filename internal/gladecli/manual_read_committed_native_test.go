@@ -161,8 +161,10 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 	rows := readCriteriaTSV(t, filepath.Join(criteriaSharingFixtures, "custom_manual_share_lifecycle", "projection_controls", "org.tsv"))
 	for _, tc := range []struct{ name, api, model string }{
 		{"api68", "68.0", "Private"},
+		{"api68-granted", "68.0", "Private"},
 		{"public", "67.0", "ReadWrite"},
 		{"extra-field", "67.0", "Private"},
+		{"extra-field-granted", "67.0", "Private"},
 		{"view-all", "67.0", "Private"},
 		{"role", "67.0", "Private"},
 	} {
@@ -211,12 +213,19 @@ func TestManualReadUncapturedProjection(t *testing.T) {
 				}
 				runCriteriaExec(t, root, db, setup+"\nSystem.debug('OBS|done');")
 			}
+			if strings.HasSuffix(tc.name, "-granted") {
+				script, err := os.ReadFile(filepath.Join(base, "grant.apex"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				runCriteriaExec(t, root, db, string(script)+"\nSystem.debug('OBS|done');")
+			}
 			query := `
 User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1];
 ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1];
 List<UserRecordAccess> a=[SELECT RecordId,HasReadAccess FROM UserRecordAccess WHERE UserId=:u.Id AND RecordId=:r.Id];
 System.debug('OBS|row='+a.size()+':read='+(a.isEmpty() ? 'missing' : String.valueOf(a[0].HasReadAccess)));`
-			if tc.name == "extra-field" {
+			if strings.HasPrefix(tc.name, "extra-field") {
 				query = strings.Replace(query, "RecordId,HasReadAccess FROM", "RecordId,HasReadAccess,HasEditAccess FROM", 1)
 			}
 			got := runCriteriaExec(t, root, db, query)
