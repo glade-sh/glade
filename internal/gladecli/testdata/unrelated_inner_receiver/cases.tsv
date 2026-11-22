@@ -1,0 +1,3 @@
+id	route	file	api
+anonymous	anonymous	anonymous.apex	62.0 67.0
+test	istest	ProbeConsumerTest	62.0 67.0
