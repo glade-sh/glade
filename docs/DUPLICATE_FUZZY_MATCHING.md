@@ -711,6 +711,111 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   the stored values; a flow update, a standard-rule update report and
   `runAsCurrentUser` are not captured.
 
+### Divergence and disposition
+
+These limitations remain open. The native fixtures establish the differences
+listed here; they do not establish a safe general rule for the missing shapes.
+Counts in the earlier fit table describe that measured version, not a new
+measurement of the current scorer.
+
+The table below records the disposition of the remaining gaps: retain each
+limitation for the stated reason. No separate parked tickets are required.
+
+| Area | Native observation and Glade divergence | Reason to retain the limitation |
+|---|---|---|
+| Custom Last Name | The two holdouts in the fit table each have two native matches the port misses. | The rows do not establish a general key or phonetic rule for their different shapes. |
+| Keyboard Distance | Some captured additive-cost pairs differ by one confidence point; several trailing characters have no positive row. | The cost model is approximate and the missing tails have no positive evidence. |
+| First Name | Some native nickname and alias-key behavior is absent from the captured tables. | The dictionary and alias keys are unpublished; entries outside the rows cannot be derived safely. |
+| Syllable Alignment | Some vowel variants, joined spellings and acronyms miss, and plural confidences vary. | The captured shapes do not establish the general algorithm. |
+| Custom Street | The measured panels agree except for the explicitly unmeasured shapes listed under Custom rule panels. | Those shapes have no native observations sufficient to fit a rule. |
+| Title | The table stops at six words and some moved-word confidences differ. | The rows do not establish the longer-title table or a general rotation loss. |
+| Blank fields | Contact MatchBlanks and blank last and company names are not captured. | No native rows establish those decisions. |
+| Unknown fuzzy methods | Rules using an unknown method are left unenforced. | Their matching semantics are not known. |
+| Field differences | Fuzzy custom and Person Account field differences are empty; `FDIFF2` confidence is checked only for records both sides return. | The field sets are not captured and unmatched records have no comparable confidence. |
+| Update gate and reports | Some repeat-edit baselines retain stored values; flow updates, standard-rule update reports and `runAsCurrentUser` remain unmeasured. | The existing rows do not establish these routes and sequences. |
+| Standard rules | The standard-rule gaps below include missed first and last names, approximate Street and raw scores, phone attribution and the inactive Person Account rule. | Their individual residuals or missing captures do not prove a broader replacement. |
+
+### Test-visible divergence history
+
+This is the 2026-11-12 reliability comparison, retained as a historical
+record. The baseline was the standard-rule implementation at `1d10a8d96`;
+the delivery column records the then-candidate `7b860d462`, which received
+review changes. Other comparison commits are named in their rows. These are
+not fresh measurements of the current tree. The fixture's row numbers below
+refer to `internal/apextest/testdata/conformance/duplicate_save_behavior/org.tsv`;
+each group of four covers anonymous and `@IsTest` at 62.0 and 67.0. The
+current limitations and disposition are listed above. The fixture is replayed
+by `TestDuplicateSaveBehaviorNativeRoutes`; grade residuals and subsequent
+fits must be assessed from the current tests and captures.
+
+| Case | Salesforce | Glade before fix or stated comparison | Glade at historical delivery | Native rows | Test-visible |
+|---|---|---|---|---|---|
+| Separate numbered Accounts, same city | Find returns the first Account. Second insert rejects, override permitted, one stored. | Same | Agrees | 2–5 | Yes |
+| Single list insert of two; separate third insert | Both siblings save. The third sees and is rejected by both. Two stored. | Same | Agrees | 6–9 | Yes |
+| Change distinct Account to match | Find sees seed. Default edit saves both. | Same | Agrees | 10–13 | Yes |
+| Scalar implicit-ID upsert create | Rejects with overridable duplicate error carrying the seed. | Same | Agrees | 14–17 | Yes |
+| Existing-ID upsert into match | Find sees seed, update succeeds, isCreated=false. | Same | Agrees | 18–21 | Yes |
+| Record setOptions versus explicit Database.insert options | Per-record header rejects. Explicit allowSave saves. | Same | Agrees | 22–25 | Yes |
+| Numbered Accounts without city or ZIP | Find returns an empty match list. Save succeeds. | Same | Agrees | 26–29 | Yes |
+| Contacts, blank first, numbered last | Shared email rejects and returns seed. Different email saves with empty match list. | Same | Agrees | 30–33 | Yes |
+| Leads, blank first, numbered last; different company | Shared email rejects and returns seed. | Same | Agrees | 34–37 | Yes |
+| Identical +44 strings with matching Contact names | Find has no records. Both save. | Same | Agrees | 38–41 | Yes |
+| Identical US phone plus extension with matching Contact names | Find has no records. Both save. | Same | Agrees | 42–45 | Yes |
+| Explicit Person Account type, no active PA rule | By-value Find throws HandledException naming Account. DML saves. | Find returned empty business Account rule | Agrees | 46–49 | Yes |
+| Custom fuzzy phone, Block | Hit returns seed, miss empty. Both insert and edit reject despite override, allowSave=false. | Same | Agrees | 50–53 | Yes |
+| Custom fuzzy phone, Allow+Alert | Hit returns seed, miss empty. Insert and edit reject with allowSave=true. Override saves both. | Same | Agrees | 54–57 | Yes |
+| Custom fuzzy phone, Allow+Report | Hit returns seed, miss empty. Insert and edit both save with or without override. | Same | Agrees | 58–61 | Yes |
+| Explicit person type, fuzzy first + last | Custom search returns seed; negative empty. Insert/edit alert and explicit override agree. | Search selected business rules. DML agreed | Agrees | 62–65 | Yes |
+| Fuzzy Block; scalar upsert create/update and Description-only sibling edit | Both upsert routes reject; unrelated edit saves. | Upsert create rejected; matched upsert saved; unrelated edit rejected | Agrees | 66–69 | Yes |
+| Fuzzy Alert; scalar upsert create/update and unrelated edit | Both upserts reject, allowSave=true; unrelated edit saves. | Upsert create rejected; matched upsert saved; unrelated edit rejected | Agrees | 70–73 | Yes |
+| Fuzzy Report; scalar upsert create/update and unrelated edit | All save, isCreated=true then false. | Same saved outcomes | Agrees | 74–77 | Yes |
+| Person fuzzy alert, scalar upsert and unrelated edit | Both upserts reject; unrelated edit saves. | Upsert create rejected; matched upsert saved; unrelated edit rejected | Agrees | 78–81 | Yes |
+| Account scalar upsert using absent external key | Rejects; duplicate error points to seed; one Northport Account stored. | Two Northport Accounts stored | Agrees | 82–85 | Yes |
+| Account scalar upsert using existing external key | Saves the matching edit; two stored. | Same | Agrees | 86–89 | Yes |
+| Existing initial, full candidate; same surname/email | Find returns seed. DML rejects with allowSave=true. | Empty Find; saved | Agrees | 90–93 | Yes |
+| Existing full first, initial candidate; same surname/email | Same member and rejection. | Empty Find; saved | Agrees | 94–97 | Yes |
+| Existing Smiht, candidate Smith; same first/email | Find returns seed and DML rejects. | Empty Find; saved | Agrees | 98–101 | Yes |
+| Opportunity supplied to by-value Find | HandledException names unsupported Opportunity. | Successful empty result | Agrees | 102–105 | Yes |
+| 105 same-city numbered Accounts, ascending seed names | 100 members, labels 0–99; no unknowns. | 105 members | Agrees | 106–109 | Yes |
+| Stored Person Account by ID; no-RT and business unsaved controls | By ID finds twin under person rule; unsaved without explicit RT uses business rule. | Same | Agrees | 110–113 | Yes |
+| Same stored/unsaved controls after person rule deactivation | By ID throws HandledException naming PersonAccount; no-RT and business Find use business rule. | By ID returned empty graph | Agrees | 114–117 | Yes |
+| 29 directional Contact pairs varying initial, surname and corroboration | 20 positive, 9 empty. Both Find and DML agree on identities per cell. Direct integer confidences retained. | Lost native matches | Agrees | 118–121 | Yes |
+| 30 directional Contact pairs with edits, controls and varying corroboration | 20 positive, 10 empty. Both directions of Parrk/Parkr and Martinezk/Martinekz save. Smith/Smiht rejects with exact first and email. | Lost native matches | Agrees | 122–125 | Yes |
+| 105 seeds with reversed names; exact candidate matches last seed | Find and save error both omit seed ordinals and ID ranks 100–104. | 105 returned before cap | Agrees | 126–129 | Yes |
+| Unicode Kelvin-sign initial controls, both directions | No hit for the two Unicode variants; ASCII K/Karl matches and different initial saves. | Captured against the new fallback; guards the ASCII boundary | Agrees | 134–137 | Yes |
+| 38 independent surname comparisons varying letters and unchanged prefix length | Matched IDs and separate save verdicts observed, with direct whole confidence. Ns/Sn and Rens/Resn miss; Warons/Warosn and Toremins/Toremisn match at 97. | Captured after discovery, strict test rejects the earlier confidence approximation | Agrees | 138–141 | Yes |
+| Earlier standard Alert and later custom Block both match | Find returns both. Default error names Alert. Explicit allowSave reaches Block and still rejects. | Same | Agrees | 130–133 | Yes |
+| Blind keyboard panel shortA | 27 Find hits and DML rejections; 1 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 4 score-only differences. | Agrees | 142–145 | Yes |
+| Blind keyboard panel shortB | 27 Find hits and DML rejections; 1 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 8 score-only differences. | Agrees | 146–149 | Yes |
+| Blind keyboard panel shortC | 23 Find hits and DML rejections; 1 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 6 score-only differences. | Agrees | 150–153 | Yes |
+| Blind keyboard panel longA | 13 Find hits and DML rejections; 15 empty searches and saves. | 94778481a: 14 false rejections, 0 false saves, 2 score-only differences. | Agrees | 154–157 | Yes |
+| Blind keyboard panel longB | 5 Find hits and DML rejections; 3 empty searches and saves. | 94778481a: 2 false rejections, 0 false saves, 0 score-only differences. | Agrees | 158–161 | Yes |
+| Blind keyboard panel nearA | 17 Find hits and DML rejections; 11 empty searches and saves. | 94778481a: 6 false rejections, 0 false saves, 0 score-only differences. | Agrees | 162–165 | Yes |
+| Blind keyboard panel nearB | 15 Find hits and DML rejections; 3 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 0 score-only differences. | Agrees | 166–169 | Yes |
+| Controlled four-letter stems stemA | 5 Find hits and DML rejections; 21 empty searches and saves. | 94778481a: 20 false rejections, 0 false saves, 0 score-only differences. | Agrees | 170–173 | Yes |
+| Controlled four-letter stems stemB | 11 Find hits and DML rejections; 15 empty searches and saves. | 94778481a: 14 false rejections, 0 false saves, 0 score-only differences. | Agrees | 174–177 | Yes |
+| Controlled four-letter stems stemC | 13 Find hits and DML rejections; 13 empty searches and saves. | 94778481a: 12 false rejections, 0 false saves, 0 score-only differences. | Agrees | 178–181 | Yes |
+| Controlled four-letter stems stemD | 17 Find hits and DML rejections; 9 empty searches and saves. | 94778481a: 8 false rejections, 0 false saves, 16 score-only differences. | Agrees | 182–185 | Yes |
+| Controlled four-letter stems stemE | 7 Find hits and DML rejections; 11 empty searches and saves. | 94778481a: 10 false rejections, 0 false saves, 6 score-only differences. | Agrees | 186–189 | Yes |
+| Second blind stem panel blindA | 23 Find hits and DML rejections; 3 empty searches and saves. | 94778481a: 2 false rejections, 0 false saves, 12 score-only differences. | Agrees | 190–193 | Yes |
+| Second blind stem panel blindB | 13 Find hits and DML rejections; 13 empty searches and saves. | 94778481a: 12 false rejections, 0 false saves, 8 score-only differences. | Agrees | 194–197 | Yes |
+| Second blind stem panel blindC | 21 Find hits and DML rejections; 5 empty searches and saves. | 94778481a: 4 false rejections, 0 false saves, 8 score-only differences. | Agrees | 198–201 | Yes |
+| Second blind stem panel blindD | 13 Find hits and DML rejections; 13 empty searches and saves. | 94778481a: 12 false rejections, 0 false saves, 4 score-only differences. | Agrees | 202–205 | Yes |
+| Second blind stem panel blindE | 25 Find hits and DML rejections; 1 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 12 score-only differences. | Agrees | 206–209 | Yes |
+| Second blind stem panel blindF | 17 Find hits and DML rejections; 1 empty searches and saves. | 94778481a: 0 false rejections, 0 false saves, 4 score-only differences. | Agrees | 210–213 | Yes |
+| Independent keyboard boundary confirmation sumA | 7 Find hits and DML rejections; 15 empty searches and saves. | e7d9cf0c2: 0 false rejections, 0 false saves, 0 score-only differences. | Agrees | 214–217 | Yes |
+| Independent keyboard boundary confirmation sumB | 19 Find hits and DML rejections; 3 empty searches and saves. | e7d9cf0c2: 0 false rejections, 0 false saves, 0 score-only differences. | Agrees | 218–221 | Yes |
+| Independent keyboard boundary confirmation sumC | 21 Find hits and DML rejections; 1 empty searches and saves. | e7d9cf0c2: 0 false rejections, 0 false saves, 0 score-only differences. | Agrees | 222–225 | Yes |
+| Independent keyboard boundary confirmation sumD | 13 Find hits and DML rejections; 1 empty searches and saves. | e7d9cf0c2: 0 false rejections, 0 false saves, 0 score-only differences. | Agrees | 226–229 | Yes |
+| Independent short extension, rotation and terminal edit panel editsA | 25 Find hits and DML rejections; 1 empty searches and saves. | b72294965: 0 false rejections, 1 false saves, 3 score-only differences. | Agrees | 242–245 | Yes |
+| Independent short extension, rotation and terminal edit panel editsB | 21 Find hits and DML rejections; 5 empty searches and saves. | b72294965: 0 false rejections, 2 false saves, 2 score-only differences. | Agrees | 246–249 | Yes |
+| Independent short extension, rotation and terminal edit panel editsC | 17 Find hits and DML rejections; 5 empty searches and saves. | b72294965: 0 false rejections, 1 false saves, 3 score-only differences. | Agrees | 250–253 | Yes |
+| Prospective short-edit validation gradeA | 14 Find hits and DML rejections; 6 empty searches and saves. | 95a71e7f9: 3 false rejections, 0 false saves, 4 score-only differences. | Exact members and DML. Two grades differ by 1–2 points | 254–257 | Yes |
+| Prospective short-edit validation gradeB | 14 Find hits and DML rejections; 6 empty searches and saves. | 95a71e7f9: 3 false rejections, 0 false saves, 4 score-only differences. | Exact members and DML. Two grades differ by 1–2 points | 258–261 | Yes |
+| Standard Lead initials with distinct Companies | Confirmed J/Jonathan and dotted J at 100 with email; exact phone also matched. Uncorroborated/wrong initials saved. Matching Find allowSave=true, empty Find allowSave=false. | Earlier anonymous Lead grids cover some initials. The pre-fix runtime missed the corroborated initial as documented in the baseline inventory. | Agrees | 230–233 | Yes |
+| Lead surname swaps at the measured boundary with different Companies | Smith/Smiht 99, Havens/Havesn 97; clear and matching six-letter controls agree on DML and Find. | Earlier Lead grids cover Smith/Smiht. Full confidence and DML graph on these 22 treatments was previously unmeasured. | Agrees | 234–237 | Yes |
+| Custom Contact Phone Block filtered by Title equality | A matching changed-phone upsert rejects. Changing Description, entering scope on Title alone, or leaving scope saves. The matching input can see an out-of-scope stored Contact. | Pre-fix custom edit behavior rejects unrelated and entering edits, and saves matched upsert. Test-only commit 064f23f33 documents the comparison. | Agrees | 238–241 | Yes |
+
 ## Standard rules
 
 The standard rules are off by default. `duplicateRules.standard: on` in

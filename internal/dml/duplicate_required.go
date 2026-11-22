@@ -41,6 +41,8 @@ type duplicateTermVerdicts struct {
 	values map[string]bool
 }
 
+const maxDuplicateTermMemoValues = 96
+
 func (v *duplicateTermVerdicts) mayMatch(p *preparedCustomMatch, existing storage.Record) bool {
 	item := p.items[v.term]
 	value, ok := existing.Fields[item.field]
@@ -51,7 +53,7 @@ func (v *duplicateTermVerdicts) mayMatch(p *preparedCustomMatch, existing storag
 		return matched
 	}
 	matched, _ := p.verdict(v.term, existing)
-	if len(v.values) < 96 {
+	if len(v.values) < maxDuplicateTermMemoValues {
 		v.values[value.String] = matched
 	}
 	return matched

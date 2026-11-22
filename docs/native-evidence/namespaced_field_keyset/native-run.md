@@ -1,0 +1,5 @@
+Native rows: `internal/apextest/testdata/conformance/namespaced_field_keyset/org.tsv`
+
+The original capture was made on 2026-11-22 in an authorized persistent namespaced Developer org, in namespace owner context. Its start and finish timestamps were not recorded in the available capture provenance. No org was created or deleted. APIs 62.0 and 67.0 were exercised anonymously and through synchronous isTest classes compiled at each API. Two runs used separately named synthetic components of the same object and field shape; all four route and API outputs matched.
+
+A recapture ran from 2026-11-22T06:22:18Z to 2026-11-22T06:23:41Z at APIs 62.0, 67.0 and 68.0, twice per API and route. It repeated field key-set text and retainAll observations. Both captures used a synthetic object with four text fields and a temporary permission set. The namespace was consistently normalized to `garden`; identifiers and user information were excluded. Permission assignments and deployed components were removed and their absence verified as described in `RUN-FACTS.txt`. Subscriber execution was not captured. The original replay is a parity pin on unchanged origin/main.
