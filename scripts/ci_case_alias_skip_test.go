@@ -17,6 +17,8 @@ with tempfile.TemporaryDirectory() as tmp:
   events.write_text(''.join(json.dumps(row)+'\n' for row in rows)); r=subprocess.run(['bash','ci-go-test.sh','package-summary','gladecli-ci','fixture',str(events),str(summary),str(metadata),pkg],capture_output=True,text=True)
   assert (r.returncode==0)==valid,(name,reason,r.stdout,r.stderr)
   if valid:
+   deferred=json.loads(summary.read_text())['deferred']
+   assert len(deferred)==1 and deferred[0]['test']==name, ('missing deferred leaf',name,deferred)
    unsharded=subprocess.run(['bash','ci-go-test.sh','package-summary','gladecli','fixture',str(events),str(summary),str(metadata),pkg],capture_output=True,text=True)
    assert unsharded.returncode!=0, ('unsharded policy weakened',name)
 `

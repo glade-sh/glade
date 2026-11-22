@@ -301,9 +301,14 @@ run_package_lane() {
 	if [[ -n "${skip_regex}" ]]; then
 		args+=(-skip "${skip_regex}")
 	fi
-	local lane_rc=0 visualforce_rc=0
+	local lane_rc=0 visualforce_rc=0 validation_rc=0
 	if [[ "${#packages[@]}" -gt 0 ]]; then
-		run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}" || lane_rc="$?"
+		local lane_events
+		lane_events="$(testlog_artifact "${kind}" "${lane}")"
+		run_json_with_heartbeat "go test ${lane}" "${lane_events}" "${args[@]}" "${packages[@]}" || lane_rc="$?"
+		if [[ "${CI_AUDIT_PACKAGE_LANE:-0}" == 1 ]]; then
+			validate_local_release_package_summary "${lane}" "CI ${lane}" "${lane_events}" "${lane_events%.json}-summary.json" "${package_test_metadata_temp}" "${packages[@]}" || validation_rc="$?"
+		fi
 	fi
 	if [[ "${#visualforce_packages[@]}" -gt 0 ]]; then
 		# Browser conformance makes Visualforce longer than the other packages.
@@ -313,7 +318,8 @@ run_package_lane() {
 	if [[ "${lane_rc}" -ne 0 ]]; then
 		return "${lane_rc}"
 	fi
-	return "${visualforce_rc}"
+	if [[ "${visualforce_rc}" -ne 0 ]]; then return "${visualforce_rc}"; fi
+	return "${validation_rc}"
 }
 
 node_integration_run_regex='^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
@@ -545,6 +551,7 @@ run_named_package_lane() {
 # local-release uses run_local_release_lane instead and retains these tests.
 run_ci_package_lane() {
 	local lane="$1"
+	local -x CI_AUDIT_PACKAGE_LANE=1
 	case "${lane}" in
 		workflow-lint)
 			run_json_with_heartbeat "go test workflow-lint" "$(testlog_artifact test workflow-lint)" -count=1 -timeout=3m -run '^TestCIActionlint' ./scripts/ci_actionlint_test.go
@@ -558,7 +565,13 @@ run_ci_package_lane() {
 		server-process-builder)
 			# Large Process Builder host-route tests run in their own job; the
 			# server-and-playground lane skips the same pattern.
-			run_json_with_heartbeat "go test server-process-builder" "$(testlog_artifact test server-process-builder)" -timeout=45m -run '^TestProcessBuilder.*Hosts$' ./internal/server
+			load_package_lanes
+			local events rc=0 validation_rc=0
+			events="$(testlog_artifact test server-process-builder)"
+			run_json_with_heartbeat "go test server-process-builder" "${events}" -timeout=45m -run '^TestProcessBuilder.*Hosts$' ./internal/server || rc="$?"
+			validate_local_release_package_summary server-and-playground 'CI server process builder' "${events}" "${events%.json}-summary.json" "${package_test_metadata_temp}" ./internal/server || validation_rc="$?"
+			if [[ "${rc}" -ne 0 ]]; then return "${rc}"; fi
+			return "${validation_rc}"
 			;;
 		remaining-go)
 			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
@@ -758,6 +771,25 @@ try:
                         elif re.fullmatch(pending, test):
                             reason = r"\s+process\.go:\d+: case-variant alias requires a case-insensitive filesystem; this filesystem is case-sensitive\s*$"
                     if reason and any(re.fullmatch(reason, line) for output in test_output.get(identity, ()) for line in output.splitlines()):
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": "case alias requires a case-insensitive filesystem",
+                            "reason": "case-sensitive runner cannot exercise this case-alias leaf"})
+                        continue
+                    # The source declares this exact test macOS-only. Keep its
+                    # Linux result visible as a deferral, never a passing test.
+                    mac_test = "TestCILocalReleaseLaneMetricsIncludeApexShards"
+                    mac_reason = "local-release resource metrics use macOS /usr/bin/time -l"
+                    mac_source = os.path.join(repo_root, "scripts", "ci_local_release_lane_test.go")
+                    if (identity == (module + "/scripts", mac_test) and os.environ.get("RUNNER_OS") == "Linux"
+                            and any(re.fullmatch(r"\s+ci_local_release_lane_test\.go:\d+: " + re.escape(mac_reason) + r"\s*$", line)
+                                    for output in test_output.get(identity, ()) for line in output.splitlines())):
+                        with open(mac_source, encoding="utf-8") as source:
+                            text = source.read()
+                        declaration = r'func ' + mac_test + r'\(t \*testing\.T\) \{\s*if runtime\.GOOS != "darwin" \{\s*t\.Skip\(' + re.escape('"' + mac_reason + '"') + r'\)\s*\}'
+                        if not re.search(declaration, text):
+                            raise ValueError("macOS metrics deferral source changed")
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": mac_reason, "reason": "macOS-only test on a Linux runner"})
                         continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
@@ -1592,7 +1624,7 @@ try:
             reject(f"shard {index} has an invalid deferred test list")
         if deferred and PACKAGE not in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/vm"):
             reject(f"shard {index} has deferred tests outside the Apex/VM policy")
-        if PACKAGE in ("github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce", "github.com/glade-sh/glade/internal/vm", "github.com/glade-sh/glade/internal/gladecli"):
+        if PACKAGE in ("github.com/glade-sh/glade/internal/sema", "github.com/glade-sh/glade/internal/lwc/compile", "github.com/glade-sh/glade/internal/visualforce", "github.com/glade-sh/glade/internal/vm", "github.com/glade-sh/glade/internal/gladecli"):
             # Recheck package terminals and nested skips/failures from raw
             # events before accepting the package coverage/history union.
             with tempfile.TemporaryDirectory(prefix=f"glade-{PREFIX}-history-") as directory:
@@ -1979,6 +2011,8 @@ def terminals(path, expected):
             event = json.loads(line, object_pairs_hook=no_dupes)
             if event.get("Package") != PACKAGE: reject(f"event {line_number} has wrong package")
             name, action = event.get("Test"), event.get("Action")
+            if isinstance(name, str) and "/" in name and action in ("fail", "skip"):
+                reject(f"non-passing sema subtest {name}")
             if not isinstance(name, str) or "/" in name or action not in ("pass", "fail", "skip"): continue
             if name in result: reject(f"duplicate terminal result for {name}")
             result[name] = action

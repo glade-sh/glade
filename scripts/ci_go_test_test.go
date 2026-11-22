@@ -772,7 +772,11 @@ func durationHistoryRouteFixtureCount(t *testing.T, packageName string, elapsed 
 				if err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(path, bytes.ReplaceAll(data, []byte(fixturePackage), []byte(packageName)), 0o600); err != nil {
+				data = bytes.ReplaceAll(data, []byte(fixturePackage), []byte(packageName))
+				if name == "events.json" {
+					data = append(data, []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q}\n", packageName))...)
+				}
+				if err := os.WriteFile(path, data, 0o600); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -872,6 +876,26 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 				})
 			}
 		}
+	}
+}
+
+func TestCISemaDurationHistoryRejectsMissingPackageTerminal(t *testing.T) {
+	fixture := durationHistoryRouteFixture(t, semaFixturePackage, [2]float64{1, 1})
+	path := filepath.Join(fixture.shards[0], "events.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	terminal := []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q}\n", semaFixturePackage))
+	if !bytes.HasSuffix(data, terminal) {
+		t.Fatal("fixture has no package terminal")
+	}
+	if err := os.WriteFile(path, bytes.TrimSuffix(data, terminal), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := runDurationHistoryRoute(t, "sema", "cli", fixture)
+	if err == nil || !strings.Contains(out, "missing package results:") {
+		t.Fatalf("missing package terminal accepted: %v\n%s", err, out)
 	}
 }
 
@@ -1252,7 +1276,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, workflowText)
 
-	wantJobs := []string{"codeql", "codeql-fast", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
+	wantJobs := []string{"codeql", "codeql-fast", "codeql-scope", "dependency-review", "gosec", "govulncheck", "npm-audit", "scorecard"}
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
 		gotJobs = append(gotJobs, name)
@@ -1696,16 +1720,6 @@ func readCIWorkflow(t *testing.T) (string, map[string]string) {
 	return workflow, workflowJobBlocks(t, workflow)
 }
 
-const benchmarkCachePairInput = `  workflow_dispatch:
-    inputs:
-      benchmark_cache_pair:
-        description: "Cache pair (0 normal; 1-999999 isolated benchmark)"
-        required: true
-        default: 0
-        type: number`
-
-const benchmarkCachePairPrefix = `${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}`
-
 func readWorkflowFile(t *testing.T, name string) string {
 	t.Helper()
 	path := filepath.Join("..", ".github", "workflows", name)
@@ -1714,49 +1728,6 @@ func readWorkflowFile(t *testing.T, name string) string {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	return string(data)
-}
-
-func explicitWorkflowCacheKeys(workflow string) []string {
-	lines := strings.Split(workflow, "\n")
-	var keys []string
-	restoreIndent := -1
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		indent := len(line) - len(strings.TrimLeft(line, " "))
-		if restoreIndent >= 0 {
-			if trimmed == "" {
-				continue
-			}
-			if indent > restoreIndent {
-				keys = append(keys, trimmed)
-				continue
-			}
-			restoreIndent = -1
-		}
-		if trimmed == "restore-keys: |" {
-			restoreIndent = indent
-			continue
-		}
-		if !strings.HasPrefix(trimmed, "key: ") {
-			continue
-		}
-		key := strings.TrimPrefix(trimmed, "key: ")
-		if strings.Contains(key, ".outputs.cache-primary-key") {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	return keys
-}
-
-func workflowIfConditionCount(workflow, condition string) int {
-	count := 0
-	for _, line := range strings.Split(workflow, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(line), "if: ") && strings.Contains(line, condition) {
-			count++
-		}
-	}
-	return count
 }
 
 func workflowStepBlocksText(job string) []string {
@@ -1775,283 +1746,6 @@ func workflowStepBlocksText(job string) []string {
 		searchAt = end
 	}
 	return steps
-}
-
-func workflowCacheAccessSteps(job string) []string {
-	var cacheSteps []string
-	for _, step := range workflowStepBlocksText(job) {
-		explicitCache := strings.Contains(step, "uses: actions/cache")
-		setupNodeCache := strings.Contains(step, "uses: actions/setup-node@") &&
-			strings.Contains(step, "\n          cache:")
-		if explicitCache || setupNodeCache {
-			cacheSteps = append(cacheSteps, step)
-		}
-	}
-	return cacheSteps
-}
-
-func workflowFirstCacheAccessAt(job string) int {
-	first := -1
-	for _, step := range workflowCacheAccessSteps(job) {
-		at := strings.Index(job, step)
-		if first < 0 || at < first {
-			first = at
-		}
-	}
-	return first
-}
-
-func moveWorkflowStepBeforeValidation(t *testing.T, workflow, jobName, step, validationCommand string) string {
-	t.Helper()
-	job := workflowJobBlocksText(workflow)[jobName]
-	if job == "" {
-		t.Fatalf("workflow missing job %q", jobName)
-	}
-	if strings.Count(job, step) != 1 {
-		t.Fatalf("%s cache step count = %d, want 1", jobName, strings.Count(job, step))
-	}
-	validationAt := strings.Index(job, validationCommand)
-	if validationAt < 0 {
-		t.Fatalf("%s missing validation command", jobName)
-	}
-	validationStepStart := strings.LastIndex(job[:validationAt], "\n      - ")
-	if validationStepStart < 0 {
-		t.Fatalf("%s validation command is outside a workflow step", jobName)
-	}
-	validationStepStart++
-	withoutStep := strings.Replace(job, step, "", 1)
-	validationAt = strings.Index(withoutStep, validationCommand)
-	validationStepStart = strings.LastIndex(withoutStep[:validationAt], "\n      - ") + 1
-	mutatedJob := withoutStep[:validationStepStart] + step + "\n" + withoutStep[validationStepStart:]
-	job = strings.TrimSuffix(job, "\n")
-	mutatedJob = strings.TrimSuffix(mutatedJob, "\n")
-	if strings.Count(workflow, job) != 1 {
-		t.Fatalf("%s workflow job block count = %d, want 1", jobName, strings.Count(workflow, job))
-	}
-	return strings.Replace(workflow, job, mutatedJob, 1)
-}
-
-func benchmarkCachePairWorkflowProblem(name, workflow string) string {
-	if strings.Count(workflow, benchmarkCachePairInput) != 1 {
-		return "workflow_dispatch benchmark_cache_pair input is not exact"
-	}
-	keys := explicitWorkflowCacheKeys(workflow)
-	if len(keys) == 0 {
-		return "no explicit cache keys found"
-	}
-	for _, key := range keys {
-		if !strings.HasPrefix(key, benchmarkCachePairPrefix) {
-			return fmt.Sprintf("explicit cache key is not pair-prefixed: %q", key)
-		}
-	}
-	wantOpaqueNPM := 1
-	wantBenchmarkNPM := 1
-	npmWorkflow := workflow
-	if name == "ci.yml" {
-		wantOpaqueNPM = 3
-		wantBenchmarkNPM = 3
-		// The timing bootstrap has its own benchmark isolation condition.
-		for _, name := range []string{"history-input"} {
-			input := workflowJobBlocksText(workflow)[name]
-			npmWorkflow = strings.Replace(npmWorkflow, input, "", 1)
-		}
-		// Scheduling cache conditions are independent of npm cache setup.
-		for _, jobName := range []string{"history-input", "history"} {
-			for _, step := range workflowStepBlocksText(workflowJobBlocksText(workflow)[jobName]) {
-				if strings.Contains(step, "name: Select prior Apex scheduling attempt") || strings.Contains(step, "name: Cache Apex scheduling profile after balance failure") {
-					npmWorkflow = strings.Replace(npmWorkflow, step, "", 1)
-				}
-			}
-		}
-	}
-	if got := strings.Count(workflow, "          cache: npm"); got != wantOpaqueNPM {
-		return fmt.Sprintf("setup-node opaque npm caches = %d, want %d normal-only caches", got, wantOpaqueNPM)
-	}
-	if got := workflowIfConditionCount(npmWorkflow, "inputs.benchmark_cache_pair == 0"); got != wantOpaqueNPM {
-		return fmt.Sprintf("normal-only setup-node conditions = %d, want %d", got, wantOpaqueNPM)
-	}
-	if got := strings.Count(workflow, "      - name: Set up Node for benchmark cache pair"); got != wantBenchmarkNPM {
-		return fmt.Sprintf("benchmark setup-node steps = %d, want %d", got, wantBenchmarkNPM)
-	}
-	if got := strings.Count(workflow, "      - name: Restore and save benchmark npm cache"); got != wantBenchmarkNPM {
-		return fmt.Sprintf("explicit benchmark npm caches = %d, want %d", got, wantBenchmarkNPM)
-	}
-	if got := strings.Count(workflow, "      - name: Resolve benchmark npm cache path"); got != wantBenchmarkNPM {
-		return fmt.Sprintf("benchmark npm cache path resolvers = %d, want %d", got, wantBenchmarkNPM)
-	}
-	if got := strings.Count(workflow, "          path: ${{ steps.benchmark-npm-cache.outputs.path }}"); got != wantBenchmarkNPM {
-		return fmt.Sprintf("explicit benchmark npm cache paths = %d, want %d", got, wantBenchmarkNPM)
-	}
-	if got := workflowIfConditionCount(npmWorkflow, "inputs.benchmark_cache_pair > 0"); got != wantBenchmarkNPM*3 {
-		return fmt.Sprintf("positive-pair benchmark npm conditions = %d, want %d", got, wantBenchmarkNPM*3)
-	}
-	if name == "browser.yml" {
-		if strings.Count(workflow, "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)") != 1 {
-			return "browser normal setup-node condition is not exact"
-		}
-		if strings.Count(workflow, "        if: steps.scope.outputs.run_expensive == 'true' && github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != 3 {
-			return "browser benchmark npm conditions are not exact"
-		}
-		browser := workflowJobBlocksText(workflow)["browser"]
-		validation := `source/scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
-		if strings.Count(browser, validation) != 1 {
-			return "browser benchmark cache-pair validation command is not exact"
-		}
-		checkoutAt := strings.Index(browser, "      - uses: actions/checkout@")
-		validationAt := strings.Index(browser, validation)
-		cacheAt := workflowFirstCacheAccessAt(browser)
-		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {
-			return "browser cache-pair validation must run after checkout and before cache access"
-		}
-		return ""
-	}
-	jobs := workflowJobBlocksText(workflow)
-	if strings.Count(workflow, "        if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0") != wantOpaqueNPM-1 || strings.Count(jobs["site"], "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)") != 1 {
-		return "CI normal setup-node conditions are not exact"
-	}
-	if strings.Count(workflow, "        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != (wantBenchmarkNPM-1)*3 || strings.Count(jobs["site"], "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0)") != 3 {
-		return "CI benchmark npm conditions are not exact"
-	}
-	prExpr := "(github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/'))"
-	boundExpr := "(github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999))"
-	reuseExpr := "(needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')"
-	for _, jobName := range []string{
-		"site", "vet", "gladecli", "vm", "history-input", "node-integration", "sema", "server-and-playground",
-		"test", "lwc-vf", "test-binaries", "test-binaries-apextest", "smoke-runtime", "smoke-distribution", "apextest",
-	} {
-		job := jobs[jobName]
-		runsOnPR := map[string]bool{"site": true, "vet": true, "history-input": true, "test-binaries": true, "test-binaries-apextest": true}
-		expr := boundExpr
-		if !runsOnPR[jobName] {
-			expr = "(" + prExpr + " && " + boundExpr + ")"
-		}
-		if jobName == "smoke-runtime" || jobName == "smoke-distribution" {
-			smokePR := strings.TrimSuffix(prExpr, ")") + " || (needs.pr-select.result == 'success' && needs.pr-select.outputs.smoke == 'true'))"
-			expr = "(" + smokePR + " && " + boundExpr + ")"
-		}
-		if map[string]bool{"site": true, "vet": true, "history-input": true, "node-integration": true, "server-and-playground": true, "test-binaries": true, "test-binaries-apextest": true, "smoke-runtime": true, "smoke-distribution": true}[jobName] {
-			expr = "(" + reuseExpr + " && " + expr + ")"
-		}
-		prereqs := ""
-		switch jobName {
-		case "gladecli", "vm":
-			prereqs = "needs.history-input.result == 'success' && "
-		case "sema":
-			prereqs = "needs.test-binaries.result == 'success' && "
-		case "lwc-vf":
-			prereqs = "needs.history-input.result == 'success' && needs.test-binaries.result == 'success' && "
-		case "apextest":
-			prereqs = "needs.history-input.result == 'success' && needs.test-binaries-apextest.result == 'success' && "
-		}
-		guard := "    if: ${{ !cancelled() && " + prereqs + expr + " }}"
-		if jobName == "site" {
-			guard = "    if: ${{ !cancelled() && " + reuseExpr + " && " + boundExpr + " }}"
-		}
-		if strings.Count(job, guard) != 1 {
-			return fmt.Sprintf("%s PR, reuse, or cache-pair bounds guard is not exact", jobName)
-		}
-		validation := `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
-		if strings.Count(job, validation) != 1 {
-			return fmt.Sprintf("%s benchmark cache-pair validation command is not exact", jobName)
-		}
-		checkoutAt := strings.Index(job, "      - uses: actions/checkout@")
-		validationAt := strings.Index(job, validation)
-		cacheAt := workflowFirstCacheAccessAt(job)
-		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {
-			return fmt.Sprintf("%s cache-pair validation must run after checkout and before cache access", jobName)
-		}
-	}
-	if strings.Count(jobs["sema-full"], "    if: ${{ github.event_name == 'schedule' }}") != 1 {
-		return "sema-full schedule condition changed"
-	}
-	return ""
-}
-
-func TestCIBenchmarkCachePairContract(t *testing.T) {
-	workflows := map[string]string{
-		"ci.yml":      readWorkflowFile(t, "ci.yml"),
-		"browser.yml": readWorkflowFile(t, "browser.yml"),
-	}
-	for name, workflow := range workflows {
-		t.Run(name, func(t *testing.T) {
-			if problem := benchmarkCachePairWorkflowProblem(name, workflow); problem != "" {
-				t.Fatal(problem)
-			}
-		})
-	}
-	if gotCI, gotBrowser := strings.Count(workflows["ci.yml"], benchmarkCachePairInput), strings.Count(workflows["browser.yml"], benchmarkCachePairInput); gotCI != gotBrowser {
-		t.Fatalf("workflow_dispatch benchmark_cache_pair input count differs: ci=%d browser=%d", gotCI, gotBrowser)
-	}
-}
-
-func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.T) {
-	for _, tc := range []struct {
-		workflowName      string
-		jobNames          []string
-		validationCommand string
-	}{
-		{
-			workflowName:      "browser.yml",
-			jobNames:          []string{"browser"},
-			validationCommand: `source/scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
-		},
-		{
-			workflowName: "ci.yml",
-			jobNames: []string{
-				"site", "vet", "gladecli", "vm", "history-input", "node-integration", "sema", "server-and-playground",
-				"test", "smoke-runtime", "smoke-distribution", "apextest",
-			},
-			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
-		},
-	} {
-		workflow := readWorkflowFile(t, tc.workflowName)
-		for _, jobName := range tc.jobNames {
-			job := workflowJobBlocksText(workflow)[jobName]
-			cacheSteps := workflowCacheAccessSteps(job)
-			if len(cacheSteps) == 0 {
-				t.Fatalf("%s/%s has no cache access steps", tc.workflowName, jobName)
-			}
-			for index, cacheStep := range cacheSteps {
-				t.Run(fmt.Sprintf("%s/%s/cache-%d", tc.workflowName, jobName, index), func(t *testing.T) {
-					mutated := moveWorkflowStepBeforeValidation(t, workflow, jobName, cacheStep, tc.validationCommand)
-					mutatedJob := workflowJobBlocksText(mutated)[jobName]
-					cacheAt := workflowFirstCacheAccessAt(mutatedJob)
-					validationAt := strings.Index(mutatedJob, tc.validationCommand)
-					if cacheAt < 0 || cacheAt >= validationAt {
-						t.Fatalf("mutation did not put cache access before validation: cache=%d validation=%d", cacheAt, validationAt)
-					}
-					if problem := benchmarkCachePairWorkflowProblem(tc.workflowName, mutated); problem == "" {
-						t.Fatal("workflow accepted cache access before benchmark cache-pair validation")
-					}
-				})
-			}
-		}
-	}
-}
-
-func TestCIBenchmarkCachePairValidator(t *testing.T) {
-	script := "./ci-benchmark-cache-pair.sh"
-	for _, tc := range []struct {
-		value   string
-		wantErr bool
-	}{
-		{value: "0"},
-		{value: "1"},
-		{value: "999999"},
-		{value: "", wantErr: true},
-		{value: "-1", wantErr: true},
-		{value: "1.5", wantErr: true},
-		{value: "1000000", wantErr: true},
-		{value: "not-a-number", wantErr: true},
-	} {
-		t.Run(tc.value, func(t *testing.T) {
-			cmd := exec.Command(script, tc.value)
-			out, err := cmd.CombinedOutput()
-			if (err != nil) != tc.wantErr {
-				t.Fatalf("validator error = %v, wantErr %v\n%s", err, tc.wantErr, out)
-			}
-		})
-	}
 }
 
 func prWorkflowConcurrencyProblem(workflow, group string) string {
@@ -2083,6 +1777,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - reused-tree-ci
       - workflow-lint
       - pr-tests
+      - pr-authority-union
       - pr-guards
       - early-guards
       - pr-select
@@ -2127,11 +1822,13 @@ func ciRequiredAggregateProblem(workflow string) string {
 	}{
 		{name: "job continue-on-error", marker: "\n    continue-on-error:"},
 		{name: "step continue-on-error", marker: "\n        continue-on-error:"},
-		{name: "step condition", marker: "\n        if:"},
 	} {
 		if strings.Contains(job, forbidden.marker) {
 			return "required-ci must not define " + forbidden.name
 		}
+	}
+	if strings.Count(job, "\n        if:") != 2 || strings.Count(job, "\n        if: ${{ always() }}") != 2 {
+		return "required-ci only permits always conditions on aggregate and upload steps"
 	}
 	checks := []struct {
 		name string
@@ -2146,8 +1843,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "reuse selection", want: `if [[ "$event" == push && "${TREE_REUSE:-}" == true ]]; then`},
 		{name: "reuse required jobs", want: `["tree-reuse-gate", "reused-tree-ci", "leak-scan", "history", "test"]`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
-		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
-		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-guards" and .key != "pr-select")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "pr-authority-union" or .key == "pr-guards" or .key == "early-guards" or .key == "vet" or .key == "leak-scan" or .key == "site")`},
+		{name: "full result selection", want: `(.key != "pr-tests" and .key != "pr-authority-union" and .key != "pr-guards" and .key != "pr-select")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -2155,9 +1852,12 @@ func ciRequiredAggregateProblem(workflow string) string {
 			return fmt.Sprintf("required-ci %s marker count = %d, want 1", check.name, strings.Count(job, check.want))
 		}
 	}
-	_, steps, found := strings.Cut(job, "    steps:\n")
-	if !found || strings.Count(steps, "      - ") != 1 {
-		return fmt.Sprintf("required-ci step count = %d, want 1", strings.Count(steps, "      - "))
+	requireStep := workflowStepBlockText(job, "      - name: Require all CI jobs")
+	if strings.Count(requireStep, "        if: ${{ always() }}") != 1 {
+		return "required-ci aggregate step must run after prior failures"
+	}
+	if strings.Count(job, "      - name: Require all CI jobs") != 1 {
+		return "required-ci must define exactly one aggregate step"
 	}
 	return ""
 }
@@ -2165,7 +1865,11 @@ func ciRequiredAggregateProblem(workflow string) string {
 func requiredAggregateShell(t *testing.T, job string) string {
 	t.Helper()
 	marker := "        run: |\n"
-	_, script, found := strings.Cut(job, marker)
+	step := workflowStepBlockText(job, "      - name: Require all CI jobs")
+	if step == "" {
+		step = job
+	}
+	_, script, found := strings.Cut(step, marker)
 	if !found {
 		t.Fatal("required-ci missing shell run block")
 	}
@@ -2499,8 +2203,8 @@ func browserWorkflowProblem(workflow string) string {
 	if strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()") != 3 {
 		return fmt.Sprintf("success-only cache save conditions = %d, want 3", strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()"))
 	}
-	if strings.Count(workflow, "continue-on-error: true") != 7 {
-		return fmt.Sprintf("continue-on-error count = %d, want 7 cache operations only", strings.Count(workflow, "continue-on-error: true"))
+	if strings.Count(workflow, "continue-on-error: true") != 6 {
+		return fmt.Sprintf("continue-on-error count = %d, want 6 cache operations only", strings.Count(workflow, "continue-on-error: true"))
 	}
 	for marker, want := range map[string]int{
 		"          REAL_NPM=$(command -v npm)\n": 1,
@@ -3045,6 +2749,9 @@ func semaPairFixture(t *testing.T) apexHistoryFixture {
 				t.Fatal(err)
 			}
 			data = bytes.ReplaceAll(data, []byte(fixturePackage), []byte(semaFixturePackage))
+			if name == "events.json" {
+				data = append(data, []byte(`{"Action":"pass","Package":"`+semaFixturePackage+`"}`+"\n")...)
+			}
 			if err := os.WriteFile(path, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -3576,7 +3283,14 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		t.Run(lane, func(t *testing.T) {
 			dir := t.TempDir()
 			calls := filepath.Join(dir, "calls")
-			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >>\"$FIXTURE_CALLS\"\nexit 0\n"
+			goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FIXTURE_CALLS"
+for arg in "$@"; do
+  if [[ "$arg" == ./* ]]; then
+    printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s"}\n' "${arg#./}"
+  fi
+done
+`
 			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
 			for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
 				if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o700); err != nil {
@@ -3624,14 +3338,17 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
 		"remove pr guards":        strings.Replace(workflow, "      - pr-guards\n", "", 1),
+		"remove PR union":         strings.Replace(workflow, "      - pr-authority-union\n", "", 1),
+		"skip classification":     strings.Replace(workflow, "      - name: Classify individual CI workers\n        id: classify", "      - name: Classify individual CI workers\n        if: false\n        id: classify", 1),
+		"skip upload":             strings.Replace(workflow, "      - name: Upload CI worker classification\n        if: ${{ always() }}", "      - name: Upload CI worker classification\n        if: false", 1),
 		"success-only condition":  strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
 		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
-		"rename display":          strings.Replace(workflow, "    name: Required CI\n    outputs:\n", "    name: Required Checks\n    outputs:\n", 1),
+		"rename display":          strings.Replace(workflow, "    name: Required CI\n    permissions:\n", "    name: Required Checks\n    permissions:\n", 1),
 		"job continue on error":   strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
-		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        continue-on-error: true\n        env:\n", 1),
-		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        id: require\n        if: false\n        env:\n", 1),
+		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        continue-on-error: true\n        env:\n", 1),
+		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        if: ${{ always() }}\n        id: require\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        id: require\n        env:\n", 1),
 	}
 	for name, mutated := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -3651,7 +3368,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "history", "gladecli", "leak-scan", "tree-receipt", "tree-reuse-gate", "reused-tree-ci", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full",
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "lwc-vf", "test-binaries", "test-binaries-apextest", "vet", "workflow-lint",
 	}
-	wantJobs = append(wantJobs, "pr-select", "pr-tests")
+	wantJobs = append(wantJobs, "pr-select", "pr-tests", "pr-authority-union")
 	wantJobs = append(wantJobs, "pr-guards", "early-guards", "pr-browser-evidence", "pr-browser-full")
 	wantJobs = append(wantJobs, "history-input", "vm")
 	sort.Strings(wantJobs)
@@ -3668,7 +3385,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && name != "pr-browser-full" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "pr-browser-evidence": "[pr-select, pr-tests]", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "[tree-reuse-gate, pr-select]", "smoke-distribution": "[tree-reuse-gate, pr-select]"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[pr-select, history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "[leak-scan, tree-reuse-gate]", "reused-tree-ci": "tree-reuse-gate", "pr-browser-evidence": "[pr-select, pr-tests]", "pr-authority-union": "[pr-select, pr-tests]", "site": "tree-reuse-gate", "vet": "tree-reuse-gate", "history-input": "tree-reuse-gate", "node-integration": "tree-reuse-gate", "nested-sources": "tree-reuse-gate", "server-process-builder": "tree-reuse-gate", "server-and-playground": "tree-reuse-gate", "test": "tree-reuse-gate", "test-binaries": "tree-reuse-gate", "test-binaries-apextest": "tree-reuse-gate", "smoke-runtime": "[tree-reuse-gate, pr-select]", "smoke-distribution": "[tree-reuse-gate, pr-select]"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}
