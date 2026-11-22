@@ -116,6 +116,9 @@ func BenchmarkWatcherLargeProjectIdle(b *testing.B) {
 			}
 		}
 	}
+	// Exclude startup event delivery from the idle interval. Startup work is
+	// measured separately from the steady-state resource use here.
+	time.Sleep(time.Second)
 	var before, after syscall.Rusage
 	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &before); err != nil {
 		b.Fatal(err)
