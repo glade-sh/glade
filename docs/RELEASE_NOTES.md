@@ -91,6 +91,7 @@
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
+- **SObject field lookup.** Alias lookup avoids allocating for unrelated fields while retaining explicit-field and namespace precedence.
 
 ### CI
 
