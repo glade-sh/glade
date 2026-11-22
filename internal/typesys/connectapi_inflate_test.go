@@ -28,6 +28,20 @@ func TestInflateConnectAPIShape(t *testing.T) {
 	if _, err := inflateConnectAPIShape([]byte("not gzip")); err == nil {
 		t.Fatal("invalid archive accepted")
 	}
+	var members bytes.Buffer
+	for _, part := range []string{"first", "second"} {
+		writer := gzip.NewWriter(&members)
+		if _, err := writer.Write([]byte(part)); err != nil {
+			t.Fatal(err)
+		}
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := inflateConnectAPIShape(members.Bytes())
+	if err != nil || got != "firstsecond" {
+		t.Fatalf("concatenated members = %q, %v", got, err)
+	}
 }
 
 func BenchmarkConnectAPIShapeDecode(b *testing.B) {
