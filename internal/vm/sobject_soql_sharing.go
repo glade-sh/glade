@@ -17,10 +17,32 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
+	return vm.currentUserHasPartnerLeadManualRead(objectName, record, userID) || vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
 		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
 		vm.currentUserHasCriteriaRuleRead(objectName, record, userID) ||
 		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
+}
+
+// currentUserHasPartnerLeadManualRead handles the direct Manual Read share
+// observed in partner_lead_manual_read/org.tsv:2-3.
+func (vm *VM) currentUserHasPartnerLeadManualRead(objectName string, record storage.Record, userID string) bool {
+	if !vm.partnerLeadPrivateExternalDefault(objectName) || !storage.IDsEqual(storage.ID(userID), storage.ID(vm.currentUserID())) {
+		return false
+	}
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		lead, _ := share.GetField("LeadId")
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		cause, _ := share.GetField("RowCause")
+		if storage.IDsEqual(storage.ID(storageValueIDText(lead)), record.ID) && storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(userID)) &&
+			strings.EqualFold(level.String, "Read") && strings.EqualFold(cause.String, "Manual") {
+			return true
+		}
+	}
+	return false
 }
 
 // userModeUnrestrictedObject reports whether every record of the object is

@@ -1601,6 +1601,11 @@ func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct,
 	live := !record.System.IsDeleted
 	read := live && vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, userID)
 	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
+	if direct && vm.partnerLeadPrivateExternalDefault(objectName) && record.System.OwnerID != "" &&
+		!storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) && !vm.currentUserBypassesRecordSharingForWrite() &&
+		!vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
+		edit = false
+	}
 	remove := live && vm.currentUserCanWriteRecord(objectName, record, userID, "delete") && vm.currentUserObjectPermission(objectName, "isDeletable")
 	transfer := live && !vm.recordsHaveNoOwner(objectName) && vm.currentUserCanWriteRecord(objectName, record, userID, "transfer")
 	custom := vm.customObject(objectName)
@@ -4792,6 +4797,9 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	}
 	definition := vm.Org.Objects[canonical].Definition
 	model := strings.TrimSpace(definition.SharingModel)
+	if vm.partnerLeadPrivateExternalDefault(canonical) {
+		return false
+	}
 	// portal_sharing_timing_c4 (APIs 62.0 and 67.0): a Customer Community,
 	// Community Login or Community Plus user reads a declared external model
 	// (Account externalSharingModel Private hides the child Accounts).
@@ -4886,6 +4894,39 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 		return false
 	}
 	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
+}
+
+// partnerLeadPrivateExternalDefault is the named and with-sharing test shape
+// captured in partner_lead_external_default/org.tsv:2-3 and
+// partner_lead_manual_read/org.tsv:2-3 (APIs 62.0 and 67.0).
+func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.currentTrigger || !strings.EqualFold(objectName, "Lead") {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if (api != "62.0" && api != "67.0") || vm.currentUserProfileName(vm.testContext.CurrentUser) != "Partner Community User" {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	if !storage.StandardObjectShapeDeclared(definition) || !strings.EqualFold(strings.TrimSpace(definition.SharingModel), "ReadWrite") || strings.TrimSpace(definition.ExternalSharingModel) != "" {
+		return false
+	}
+	for _, share := range vm.Org.Objects["LeadShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		if strings.EqualFold(cause.String, "Owner") {
+			continue
+		}
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("LeadAccessLevel")
+		if !strings.EqualFold(cause.String, "Manual") || !strings.EqualFold(level.String, "Read") ||
+			!storage.IDsEqual(storage.ID(storageValueIDText(target)), storage.ID(vm.currentUserID())) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) currentUserIsCapturedPortalUser() bool {

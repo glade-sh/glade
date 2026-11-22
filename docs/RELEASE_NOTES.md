@@ -22,6 +22,8 @@
 
 - A Standard User’s denied Lead text update under Read sharing reports the captured DML exception at Apex API 67.0. A Customer Community user’s Case delete permission and user-mode delete follow the captured API 62.0 and 67.0 results.
 
+- A Partner Community user’s Lead visibility and Manual Read share follow the captured private external default at Apex API 62.0 and 67.0.
+
 ### Changes
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
