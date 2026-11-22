@@ -1,6 +1,6 @@
 # Native capture
 
-- Capture date recorded: 2026-11-22T03:48:48.198595+00:00. Exact time is not recorded in the retained facts.
+- Capture timestamp: 2026-11-22T03:48:48.198595+00:00.
 
 - APIs in retained rows: 67.0, 68.0.
 - Routes in retained rows: anonymous.
