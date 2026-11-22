@@ -374,7 +374,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	var endLeadReadScan func()
 	startLeadReadScan := func(objectName string) {
 		if endLeadReadScan == nil && strings.EqualFold(objectName, "Lead") {
-			endLeadReadScan = vm.beginPartnerLeadShareScan()
+			endLeadReadScan = vm.beginPartnerLeadReadPass()
 		}
 	}
 	endLeadScan := func() {
@@ -1623,14 +1623,15 @@ func (vm *VM) userRecordAccessDirect(objectName string, record storage.Record, u
 func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct, directUserMode bool) storage.Record {
 	userID := vm.currentUserInfoField("Id", "005-local-user")
 	live := !record.System.IsDeleted
-	read := live && vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, userID)
+	accessible := live && vm.currentUserObjectPermission(objectName, "isAccessible")
+	read := accessible && vm.userModeRecordVisible(objectName, record, userID)
 	// The captured direct projection names another user. Relationship and
 	// runAs self projections retain their earlier public-model result.
-	if (!direct || vm.testContext != nil && vm.testContext.RunAsDepth > 0) && vm.partnerLeadPrivateExternalDefault(objectName) {
-		read = live && vm.currentUserObjectPermission(objectName, "isAccessible")
+	if accessible && !read && (!direct || vm.testContext != nil && vm.testContext.RunAsDepth > 0) && vm.partnerLeadPrivateExternalDefault(objectName) {
+		read = true
 	}
 	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
-	if direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.capturedPartnerLeadTestOwner(record) &&
+	if edit && direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.capturedPartnerLeadTestOwner(record) &&
 		!storage.IDsEqual(record.System.CreatedByID, storage.ID(userID)) && !storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) && !vm.currentUserBypassesRecordSharingForWrite() &&
 		!vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
 		edit = false
@@ -2793,7 +2794,7 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	defer vm.beginPermissionCheckMemo()()
 	for _, spec := range query.Returning {
 		if strings.EqualFold(spec.Object, "Lead") {
-			defer vm.beginPartnerLeadShareScan()()
+			defer vm.beginPartnerLeadReadPass()()
 			break
 		}
 	}
@@ -3384,7 +3385,7 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 		objectName = canonical
 	}
 	if strings.EqualFold(objectName, "Lead") {
-		defer vm.beginPartnerLeadShareScan()()
+		defer vm.beginPartnerLeadReadPass()()
 	}
 	state, ok := vm.Org.Objects[objectName]
 	if !ok {
@@ -4868,7 +4869,7 @@ func (vm *VM) soqlSharingUserID(query soql.Query) string {
 
 func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result {
 	if strings.EqualFold(query.Object, "Lead") {
-		defer vm.beginPartnerLeadShareScan()()
+		defer vm.beginPartnerLeadReadPass()()
 	}
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {
@@ -5224,12 +5225,24 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 // and partner_lead_transfer_manual_read/org.tsv:2-3
 // (APIs 62.0 and 67.0).
 func (vm *VM) partnerLeadPrivateExternalDefault(objectName string) bool {
+	if !strings.EqualFold(objectName, "Lead") {
+		return false
+	}
+	if vm != nil && vm.partnerLeadShares != nil && vm.partnerLeadShares.fixedReader {
+		pass := vm.partnerLeadShares
+		if !pass.policyResolved {
+			pass.privateDefault = vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
+			pass.policyResolved = true
+		}
+		return pass.privateDefault
+	}
 	return vm.partnerLeadPrivateExternalDefaultForNamedAccess(objectName, "")
 }
 
 type partnerLeadShareIndex struct {
-	ready  bool
-	shares []storage.Record
+	fixedReader, policyResolved, privateDefault bool
+	ready                                       bool
+	shares                                      []storage.Record
 }
 
 // beginPartnerLeadShareScan scopes the index to a read-only record pass.
@@ -5239,6 +5252,16 @@ func (vm *VM) beginPartnerLeadShareScan() func() {
 		return func() {}
 	}
 	vm.partnerLeadShares = &partnerLeadShareIndex{}
+	return func() { vm.partnerLeadShares = nil }
+}
+
+// These record loops run without Apex, DML or a change of principal. A scan
+// that evaluates different named users shares only its non-owner rows.
+func (vm *VM) beginPartnerLeadReadPass() func() {
+	if vm.partnerLeadShares != nil {
+		return func() {}
+	}
+	vm.partnerLeadShares = &partnerLeadShareIndex{fixedReader: true}
 	return func() { vm.partnerLeadShares = nil }
 }
 

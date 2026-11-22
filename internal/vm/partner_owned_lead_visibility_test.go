@@ -37,7 +37,7 @@ func TestPartnerOwnedLeadsAvoidShareScan(t *testing.T) {
 	for _, manual := range []bool{false, true} {
 		t.Run(fmt.Sprintf("manual=%t", manual), func(t *testing.T) {
 			machine := partnerOwnedLeads(t, manual)
-			defer machine.beginPartnerLeadShareScan()()
+			defer machine.beginPartnerLeadReadPass()()
 			user := machine.currentUserID()
 			for _, row := range machine.Org.Objects["Lead"].Records {
 				if !machine.userModeRecordVisible("Lead", row, user) {
@@ -60,7 +60,7 @@ func BenchmarkPartnerOwnedLeadVisibility(b *testing.B) {
 				rows := machine.Org.Objects["Lead"].Records
 				read := func(ids *[]string) int {
 					if scope == "scoped" {
-						defer machine.beginPartnerLeadShareScan()()
+						defer machine.beginPartnerLeadReadPass()()
 					}
 					count := 0
 					for _, row := range rows {

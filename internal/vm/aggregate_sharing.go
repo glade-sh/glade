@@ -18,7 +18,7 @@ func (vm *VM) orgWithVisibleAggregateInputs(org *storage.OrgState, query soql.Qu
 		return org
 	}
 	if strings.EqualFold(query.Object, "Lead") {
-		defer vm.beginPartnerLeadShareScan()()
+		defer vm.beginPartnerLeadReadPass()()
 	}
 	userID := vm.soqlSharingUserID(query)
 	if userID == "" {

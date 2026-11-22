@@ -508,10 +508,10 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 		leadScan = leadScan || strings.EqualFold(matching.Object, "Lead")
 	}
 	if leadScan {
-		defer vm.beginPartnerLeadShareScan()()
+		defer vm.beginPartnerLeadReadPass()()
 	}
 	return scan.Find(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
-		if leadScan && vm.publicLeadWithUncapturedCreator(existing.Object, existing) {
+		if leadScan && vm.publicLeadReadOutsidePartnerPolicy(existing.Object, existing, "") {
 			return true, true
 		}
 		if !principalResolved {
