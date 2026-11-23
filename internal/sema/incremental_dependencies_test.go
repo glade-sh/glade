@@ -246,3 +246,22 @@ func TestIncrementalNestedIdentifierDependencies(t *testing.T) {
 		t.Fatalf("nested reference edit stats = %+v, want edited type and nested reference rechecked, with lookalike reused", stats)
 	}
 }
+
+// TestIncrementalSkipMentionsKeepsSubtypes pins the narrowed rule: a body-only
+// edit rechecks the edited type and its subtype, reuses the type that only
+// names it, and still equals a full analysis.
+func TestIncrementalSkipMentionsKeepsSubtypes(t *testing.T) {
+	generations := incrementalDependencyGenerations(t)
+	state := NewIncrementalState()
+	state.SkipMentionRechecks()
+	for i, gen := range generations {
+		got, stats := state.Analyze(gen.index, incrementalOptions(&gen.artifacts))
+		want := AnalyzeWithOptions(gen.index, incrementalOptions(&gen.artifacts))
+		if !reflect.DeepEqual(got, want) || string(incrementalDependencyJSON(t, got)) != string(incrementalDependencyJSON(t, want)) {
+			t.Fatalf("generation %d: incremental and full results differ", i)
+		}
+		if i == 1 && (!stats.Incremental || stats.Rechecked != 2) {
+			t.Fatalf("literal edit stats = %+v; want the edited type and its subtype", stats)
+		}
+	}
+}

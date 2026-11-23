@@ -36,6 +36,23 @@ type IncrementalState struct {
 	mu   sync.Mutex
 	prev *incrementalSnapshot
 	last IncrementalStats
+	// skipMentions rechecks a body-only edit's types and their subtypes but
+	// not the types that merely name them.
+	skipMentions bool
+}
+
+// SkipMentionRechecks makes a body-only edit recheck the edited types and
+// their subtypes, and reuse the types that only name them. A body-only edit
+// keeps the enriched index identical (any signature, member, annotation,
+// schema or metadata change runs the whole analysis), and a type's body
+// diagnostics read another type only through that index, its superclass
+// chain and the hydration history, which validation already covers. Measured
+// on the sema corpus and a large private project: every narrowed result
+// equaled the full rule's (advisor/private/v0314-daemon-edit.md).
+func (s *IncrementalState) SkipMentionRechecks() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.skipMentions = true
 }
 
 // LastStats reports what the most recent Analyze call did.
@@ -86,6 +103,8 @@ type incrementalRun struct {
 	reason      string
 	// changed marks types whose source or companion metadata differ from prev.
 	changed []bool
+	// skipMentions leaves out the types that only name a changed type.
+	skipMentions bool
 	// recheck marks the types whose bodies run in this call; nil checks all.
 	recheck []bool
 
@@ -126,9 +145,10 @@ func (s *IncrementalState) Analyze(index typesys.Index, opts AnalyzeOptions) (Re
 
 func (s *IncrementalState) analyzeLocked(index typesys.Index, opts AnalyzeOptions, prev *incrementalSnapshot) (Result, *incrementalRun) {
 	run := &incrementalRun{
-		prev:      prev,
-		optionsFP: AnalyzeOptionsFingerprint(opts),
-		artifacts: opts.BuildArtifacts,
+		prev:         prev,
+		optionsFP:    AnalyzeOptionsFingerprint(opts),
+		artifacts:    opts.BuildArtifacts,
+		skipMentions: s.skipMentions,
 	}
 	var result Result
 	if opts.PerfCounters == nil || !opts.PerfCounters.Enabled {
@@ -234,6 +254,10 @@ func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
 					grown = true
 				}
 			}
+		}
+		if r.skipMentions {
+			r.recheck = recheck
+			return
 		}
 		// Mentions: a body or declaration that spells a changed name.
 		needles := make([]string, 0, len(names))

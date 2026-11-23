@@ -64,75 +64,80 @@ func incrementalHasCode(result Result, file, text string) bool {
 // type's cached diagnostics depend on fields an earlier type hydrated. Every
 // generation must equal a full analysis, and reuse must still engage.
 func TestIncrementalHydrationHistoryAcrossTypes(t *testing.T) {
-	for _, procs := range []int{1, 4} {
-		procs := procs
-		t.Run(fmt.Sprintf("gomaxprocs%d", procs), func(t *testing.T) {
-			previous := runtime.GOMAXPROCS(procs)
-			defer runtime.GOMAXPROCS(previous)
-			root := t.TempDir()
-			incrementalHydrationProject(t, root)
-			state := NewIncrementalState()
-			analyze := func(label string) (Result, IncrementalStats) {
-				t.Helper()
-				gen := incrementalLoad(t, root)
-				opts := incrementalOptions(&gen.artifacts)
-				got, stats := state.Analyze(gen.index, opts)
-				want := AnalyzeWithOptions(gen.index, opts)
-				if !reflect.DeepEqual(got, want) {
-					t.Fatalf("%s: incremental result differs from full analysis (stats %+v)\n got: %v\nwant: %v", label, stats, got.Diagnostics, want.Diagnostics)
+	for _, skip := range []bool{false, true} {
+		for _, procs := range []int{1, 4} {
+			procs, skip := procs, skip
+			t.Run(fmt.Sprintf("skip-mentions=%v/gomaxprocs%d", skip, procs), func(t *testing.T) {
+				previous := runtime.GOMAXPROCS(procs)
+				defer runtime.GOMAXPROCS(previous)
+				root := t.TempDir()
+				incrementalHydrationProject(t, root)
+				state := NewIncrementalState()
+				if skip {
+					state.SkipMentionRechecks()
 				}
-				return got, stats
-			}
-			edit := func(file, text string) {
-				incrementalWrite(t, root, "force-app/main/default/classes/"+file, text)
-			}
-			const missing = "Variable does not exist: InstallDate"
-			got, _ := analyze("baseline")
-			if incrementalHasCode(got, "BReader.cls", missing) || incrementalHasCode(got, "DReader.cls", missing) {
-				t.Fatalf("baseline: readers report %q although AHydrator hydrates Asset: %v", missing, got.Diagnostics)
-			}
-			if _, stats := analyze("unchanged"); !stats.Incremental || stats.Rechecked != 0 || stats.Reused == 0 {
-				t.Fatalf("unchanged generation stats = %+v, want every type reused despite history-dependent answers", stats)
-			}
-			// The only provider stops hydrating Asset: both readers flip.
-			edit("AHydrator.cls", incrementalHydratorSource(false))
-			// The rechecked readers' "unknown" answers name a field a type once
-			// added, which only a full analysis settles.
-			got, stats := analyze("provider removed")
-			if !incrementalHasCode(got, "BReader.cls", missing) || !incrementalHasCode(got, "DReader.cls", missing) {
-				t.Fatalf("provider removed: readers do not report %q: %v", missing, got.Diagnostics)
-			}
-			if stats.Incremental {
-				t.Fatalf("provider removed stats = %+v, want a full analysis", stats)
-			}
-			// The provider returns: the cached "unknown" answers flip back.
-			edit("AHydrator.cls", incrementalHydratorSource(true))
-			if got, stats := analyze("provider restored"); incrementalHasCode(got, "BReader.cls", missing) || !stats.Incremental {
-				t.Fatalf("provider restored stats = %+v diagnostics %v", stats, got.Diagnostics)
-			}
-			// A reader edit: its answer comes from the reused provider.
-			edit("BReader.cls", strings.Replace(`public class BReader {
+				analyze := func(label string) (Result, IncrementalStats) {
+					t.Helper()
+					gen := incrementalLoad(t, root)
+					opts := incrementalOptions(&gen.artifacts)
+					got, stats := state.Analyze(gen.index, opts)
+					want := AnalyzeWithOptions(gen.index, opts)
+					if !reflect.DeepEqual(got, want) {
+						t.Fatalf("%s: incremental result differs from full analysis (stats %+v)\n got: %v\nwant: %v", label, stats, got.Diagnostics, want.Diagnostics)
+					}
+					return got, stats
+				}
+				edit := func(file, text string) {
+					incrementalWrite(t, root, "force-app/main/default/classes/"+file, text)
+				}
+				const missing = "Variable does not exist: InstallDate"
+				got, _ := analyze("baseline")
+				if incrementalHasCode(got, "BReader.cls", missing) || incrementalHasCode(got, "DReader.cls", missing) {
+					t.Fatalf("baseline: readers report %q although AHydrator hydrates Asset: %v", missing, got.Diagnostics)
+				}
+				if _, stats := analyze("unchanged"); !stats.Incremental || stats.Rechecked != 0 || stats.Reused == 0 {
+					t.Fatalf("unchanged generation stats = %+v, want every type reused despite history-dependent answers", stats)
+				}
+				// The only provider stops hydrating Asset: both readers flip.
+				edit("AHydrator.cls", incrementalHydratorSource(false))
+				// The rechecked readers' "unknown" answers name a field a type once
+				// added, which only a full analysis settles.
+				got, stats := analyze("provider removed")
+				if !incrementalHasCode(got, "BReader.cls", missing) || !incrementalHasCode(got, "DReader.cls", missing) {
+					t.Fatalf("provider removed: readers do not report %q: %v", missing, got.Diagnostics)
+				}
+				if stats.Incremental {
+					t.Fatalf("provider removed stats = %+v, want a full analysis", stats)
+				}
+				// The provider returns: the cached "unknown" answers flip back.
+				edit("AHydrator.cls", incrementalHydratorSource(true))
+				if got, stats := analyze("provider restored"); incrementalHasCode(got, "BReader.cls", missing) || !stats.Incremental {
+					t.Fatalf("provider restored stats = %+v diagnostics %v", stats, got.Diagnostics)
+				}
+				// A reader edit: its answer comes from the reused provider.
+				edit("BReader.cls", strings.Replace(`public class BReader {
     public static Object read(ApexPages.StandardSetController ssc) {
         Integer marker = 1;
         return ssc.getRecord().InstallDate;
     }
 }
 `, "marker = 1", "marker = 2", 1))
-			if got, stats := analyze("reader edited"); incrementalHasCode(got, "BReader.cls", missing) || !stats.Incremental || stats.Rechecked != 1 {
-				t.Fatalf("reader edited stats = %+v diagnostics %v, want only BReader rechecked", stats, got.Diagnostics)
-			}
-			// An unrelated edit keeps both readers cached.
-			edit("CPlain.cls", strings.Replace(`public class CPlain {
+				if got, stats := analyze("reader edited"); incrementalHasCode(got, "BReader.cls", missing) || !stats.Incremental || stats.Rechecked != 1 {
+					t.Fatalf("reader edited stats = %+v diagnostics %v, want only BReader rechecked", stats, got.Diagnostics)
+				}
+				// An unrelated edit keeps both readers cached.
+				edit("CPlain.cls", strings.Replace(`public class CPlain {
     public static Integer value() {
         Integer v = 1;
         return v;
     }
 }
 `, "v = 1", "v = 2", 1))
-			if _, stats := analyze("unrelated edit"); !stats.Incremental || stats.Rechecked != 1 {
-				t.Fatalf("unrelated edit stats = %+v, want only CPlain rechecked", stats)
-			}
-		})
+				if _, stats := analyze("unrelated edit"); !stats.Incremental || stats.Rechecked != 1 {
+					t.Fatalf("unrelated edit stats = %+v, want only CPlain rechecked", stats)
+				}
+			})
+		}
 	}
 }
 

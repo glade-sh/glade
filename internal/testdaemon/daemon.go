@@ -89,8 +89,16 @@ func New(root string) (*Daemon, error) {
 			return graph.Refreshed(index, changes), nil
 		},
 		warmRuntimeFn: apextest.WarmRuntimeWithBuildArtifacts,
-		semaState:     sema.NewIncrementalState(),
+		semaState:     newDaemonSemaState(),
 	}, nil
+}
+
+// newDaemonSemaState rechecks a body edit's type and subtypes only; see
+// sema.IncrementalState.SkipMentionRechecks.
+func newDaemonSemaState() *sema.IncrementalState {
+	state := sema.NewIncrementalState()
+	state.SkipMentionRechecks()
+	return state
 }
 
 func (d *Daemon) Root() string {
