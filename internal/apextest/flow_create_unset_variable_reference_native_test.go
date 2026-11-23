@@ -72,15 +72,12 @@ func TestFlowCreateUnsetVariableReferenceNativeConformance(t *testing.T) {
 			for _, suite := range run.Suites {
 				for _, c := range suite.Cases {
 					if c.Problem != nil {
-						got[c.Name] = c.Problem.Message
+						got[c.MethodName] = c.Problem.Message
 					}
 				}
 			}
 			for _, method := range []string{"plain", "touched"} {
-				message, ok := got[method]
-				if !ok {
-					message = got["R5PbProbe."+method]
-				}
+				message := got[method]
 				if !strings.Contains(want, method+"=Fail System.AssertException: Assertion Failed: ") {
 					t.Fatalf("native row has no %s outcome: %q", method, want)
 				}
