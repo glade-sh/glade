@@ -5366,6 +5366,9 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 		}
 	}
 	values := make([][]storage.Value, len(order))
+	// columnTexts holds a column whose every value is text and which has no
+	// byte keys; the comparator then reads the texts and no value kinds.
+	columnTexts := make([][]string, len(order))
 	keys := make([][][]byte, len(order))
 	prefixes := make([][]uint64, len(order))
 	commons := make([]int, len(order))
@@ -5424,6 +5427,8 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 			if textual {
 				if keys[column] = asciiTextSortKeys(texts, spec.textComparator); keys[column] != nil {
 					commons[column], prefixes[column] = keyPrefixes(keys[column])
+				} else {
+					columnTexts[column] = texts
 				}
 			}
 		}
@@ -5439,6 +5444,22 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 					}
 				} else {
 					cmp = bytes.Compare(columnKeys[i][commons[column]:], columnKeys[j][commons[column]:])
+				}
+				if cmp != 0 {
+					if specs[column].Desc {
+						return -cmp
+					}
+					return cmp
+				}
+				continue
+			}
+			if texts := columnTexts[column]; texts != nil {
+				// orderCompare for two non-null texts.
+				var cmp int
+				if comparator := specs[column].textComparator; comparator != nil {
+					cmp = comparator.compare(texts[i], texts[j], false)
+				} else {
+					cmp = compareSOQLText(texts[i], texts[j])
 				}
 				if cmp != 0 {
 					if specs[column].Desc {
