@@ -74,6 +74,12 @@ func (index *duplicateCandidateIndex) readIndexedDuplicateCandidates(object stri
 	fieldKey := duplicateIndexFieldKey{object: object, field: field, nameKey: nameKey}
 	indexed := index.fields[fieldKey]
 	if indexed == nil {
+		// A value index over more distinct values than the scan is worth would
+		// be built only to be dropped; count them first, without building it.
+		if !nameKey && !duplicateValueIndexFits(records, field) {
+			index.fields[fieldKey] = &duplicateIndexedField{disabled: true}
+			return nil
+		}
 		// A value index can be disabled after its first distinct values, so
 		// it grows on demand; the name-key index always covers every record.
 		hint := 0
@@ -172,4 +178,29 @@ func (index *duplicateCandidateIndex) readIndexedDuplicateCandidates(object stri
 	appendLive(indexed.unknown)
 	index.selected = selected
 	return selected
+}
+
+// duplicateValueIndexFits reports whether a value index over the field would
+// stay enabled: every map key equals its Record.ID and the usable values take
+// at most maxDuplicateTermMemoValues groups. Those are the two conditions under
+// which readIndexedDuplicateCandidates disables a value index while building it.
+func duplicateValueIndexFits(records map[storage.ID]storage.Record, field string) bool {
+	var distinct map[string]struct{}
+	for id, record := range records {
+		if record.ID != id {
+			return false
+		}
+		value, ok := record.Fields[field]
+		if !ok || value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+			continue
+		}
+		if distinct == nil {
+			distinct = make(map[string]struct{}, maxDuplicateTermMemoValues+1)
+		}
+		distinct[value.String] = struct{}{}
+		if len(distinct) > maxDuplicateTermMemoValues {
+			return false
+		}
+	}
+	return true
 }
