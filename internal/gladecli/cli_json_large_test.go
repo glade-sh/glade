@@ -31,7 +31,7 @@ func TestLargeCLIJSONEnvelopeCompatibility(t *testing.T) {
 			if err := enc.Encode(env); err != nil {
 				t.Fatal(err)
 			}
-			if err := writeLargeCLIJSONEnvelope(&got, env); err != nil {
+			if err := writeCLIJSONEnvelope(&got, env); err != nil {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(got.Bytes(), want.Bytes()) {
@@ -42,12 +42,12 @@ func TestLargeCLIJSONEnvelopeCompatibility(t *testing.T) {
 	}
 }
 
-func BenchmarkWriteLargeCLIJSONEnvelope(b *testing.B) {
+func BenchmarkWriteCLIJSONEnvelope(b *testing.B) {
 	for name, env := range largeCLIEnvelopes() {
 		b.Run(name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				if err := writeLargeCLIJSONEnvelope(io.Discard, env); err != nil {
+				if err := writeCLIJSONEnvelope(io.Discard, env); err != nil {
 					b.Fatal(err)
 				}
 			}
