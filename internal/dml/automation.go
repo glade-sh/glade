@@ -2921,7 +2921,7 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 	var value storage.Value
 	resolved := false
 	field := definition.Fields[fieldName]
-	if frame != nil && frame.afterSaveTrigger == "Create" && field.Type == storage.FieldReference && !field.MasterDetail && strings.HasSuffix(strings.ToLower(fieldName), "__c") && len(field.ReferenceTo) == 1 && strings.EqualFold(field.ReferenceTo[0], objectName) {
+	if frame != nil && frame.afterSaveTrigger == "Create" && field.Type == storage.FieldReference && !field.MasterDetail && hasSuffixFold(fieldName, "__c") && len(field.ReferenceTo) == 1 && strings.EqualFold(field.ReferenceTo[0], objectName) {
 		if id, ok := frame.createdLookupOutputs[flowFrameKey(update.SourceField)]; ok {
 			value, resolved = storage.IDValue(id), true
 		}
