@@ -1858,7 +1858,7 @@ func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, r
 			if ranks != nil {
 				cmp = ranks[value.String] - ranks[best.String]
 			} else {
-				cmp = compareValuesForCollation(value, best, aggregate.textComparator, true)
+				cmp = compareValuesForCollationRef(&value, &best, aggregate.textComparator, true)
 			}
 			if aggregate.Func == "MIN" && cmp < 0 {
 				best = value.Clone()
@@ -2094,12 +2094,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 	switch condition.Op {
 	case "=":
 		if condition.Range {
-			return compareValuesForCollation(left, condition.Value, comparator, true) >= 0 && compareValuesForCollation(left, condition.Value2, comparator, true) < 0
+			return compareValuesForCollationRef(&left, &condition.Value, comparator, true) >= 0 && compareValuesForCollationRef(&left, &condition.Value2, comparator, true) < 0
 		}
 		return equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case "!=":
 		if condition.Range {
-			return compareValuesForCollation(left, condition.Value, comparator, true) < 0 || compareValuesForCollation(left, condition.Value2, comparator, true) >= 0
+			return compareValuesForCollationRef(&left, &condition.Value, comparator, true) < 0 || compareValuesForCollationRef(&left, &condition.Value2, comparator, true) >= 0
 		}
 		return !equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case ">":
@@ -2113,7 +2113,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesForCollation(left, bound, comparator, true) > 0
+		return compareValuesForCollationRef(&left, &bound, comparator, true) > 0
 	case ">=":
 		if entityDefinitionNullLowerBound(definition, condition.Field, condition.Value) {
 			return left.Kind != storage.ValueNull
@@ -2121,12 +2121,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesForCollation(left, condition.Value, comparator, true) >= 0
+		return compareValuesForCollationRef(&left, &condition.Value, comparator, true) >= 0
 	case "<":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesForCollation(left, condition.Value, comparator, true) < 0
+		return compareValuesForCollationRef(&left, &condition.Value, comparator, true) < 0
 	case "<=":
 		bound := condition.Value
 		if condition.Range {
@@ -2136,9 +2136,9 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			return false
 		}
 		if condition.Range {
-			return compareValuesForCollation(left, bound, comparator, true) < 0
+			return compareValuesForCollationRef(&left, &bound, comparator, true) < 0
 		}
-		return compareValuesForCollation(left, bound, comparator, true) <= 0
+		return compareValuesForCollationRef(&left, &bound, comparator, true) <= 0
 	case "LIKE":
 		if scratch != nil && scratch.captureLike {
 			scratch.like = left
@@ -5195,13 +5195,12 @@ func idEqualsInteger(id storage.ID, value int64) bool {
 	return strings.Repeat("0", len(id)-len(text))+text == string(id)
 }
 
-func compareValues(left, right storage.Value) int {
-	return compareValuesCollated(left, right, false)
-}
-
-// compareValuesCollated is compareValues with the captured en_* text collation
-// when collate is set; see compareSOQLTextCollated.
-func compareValuesCollated(left, right storage.Value, collate bool) int {
+// compareValuesCollatedRef orders two values, with the captured en_* text
+// collation when collate is set; see compareSOQLTextCollated. It takes the
+// operands in place: a storage.Value is 104 bytes, and sort and range
+// comparators run once per pair, so they read the operands instead of copying
+// them. The operands are not modified or retained.
+func compareValuesCollatedRef(left, right *storage.Value, collate bool) int {
 	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
 		if left.Kind == right.Kind {
 			return 0
@@ -5217,11 +5216,15 @@ func compareValuesCollated(left, right storage.Value, collate bool) int {
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
 		return strings.Compare(left.String, string(right.ID))
 	}
-	if leftNumber, rightNumber, ok := numericValues(left, right); ok {
-		return leftNumber.Cmp(rightNumber)
+	// numericValues succeeds only for two numeric kinds; test the kinds first
+	// so other comparisons do not copy both operands to find that out.
+	if isNumericKind(left.Kind) && isNumericKind(right.Kind) {
+		if leftNumber, rightNumber, ok := numericValues(*left, *right); ok {
+			return leftNumber.Cmp(rightNumber)
+		}
 	}
 	if isTemporalKind(left.Kind) && isTemporalKind(right.Kind) {
-		return strings.Compare(temporalCompareString(left), temporalCompareString(right))
+		return strings.Compare(temporalCompareString(*left), temporalCompareString(*right))
 	}
 	if left.Kind != right.Kind {
 		return strings.Compare(string(left.Kind), string(right.Kind))
@@ -5445,7 +5448,7 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 				}
 				continue
 			}
-			if cmp := orderCompare(values[column][i], values[column][j], specs[column]); cmp != 0 {
+			if cmp := orderCompareRef(&values[column][i], &values[column][j], &specs[column]); cmp != 0 {
 				return cmp
 			}
 		}
@@ -5680,10 +5683,11 @@ func asciiTextSortKeys(texts []string, comparator *textComparator) [][]byte {
 }
 
 func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []OrderSpec) bool {
-	for _, spec := range order {
+	for i := range order {
+		spec := &order[i]
 		left := aggregateRecordValue(leftRecord, spec.Field)
 		right := aggregateRecordValue(rightRecord, spec.Field)
-		cmp := orderCompare(left, right, spec)
+		cmp := orderCompareRef(&left, &right, spec)
 		if cmp == 0 {
 			continue
 		}
@@ -5693,6 +5697,12 @@ func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []Orde
 }
 
 func orderCompare(left, right storage.Value, spec OrderSpec) int {
+	return orderCompareRef(&left, &right, &spec)
+}
+
+// orderCompareRef is orderCompare over operands held in place; see
+// compareValuesCollatedRef.
+func orderCompareRef(left, right *storage.Value, spec *OrderSpec) int {
 	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
 		if left.Kind == right.Kind {
 			return 0
@@ -5708,11 +5718,16 @@ func orderCompare(left, right storage.Value, spec OrderSpec) int {
 		}
 		return -1
 	}
-	cmp := compareValuesForCollation(left, right, spec.textComparator, false)
+	cmp := compareValuesForCollationRef(left, right, spec.textComparator, false)
 	if spec.Desc {
 		return -cmp
 	}
 	return cmp
+}
+
+// isNumericKind names the kinds numericValue accepts.
+func isNumericKind(kind storage.ValueKind) bool {
+	return kind == storage.ValueInteger || kind == storage.ValueDecimal
 }
 
 func isTemporalKind(kind storage.ValueKind) bool {

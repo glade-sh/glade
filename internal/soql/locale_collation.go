@@ -367,10 +367,16 @@ func (c *textComparator) groupKey(text string) string {
 }
 
 func compareValuesForCollation(left, right storage.Value, c *textComparator, secondary bool) int {
+	return compareValuesForCollationRef(&left, &right, c, secondary)
+}
+
+// compareValuesForCollationRef is compareValuesForCollation over operands held
+// in place; see compareValuesCollatedRef.
+func compareValuesForCollationRef(left, right *storage.Value, c *textComparator, secondary bool) int {
 	if c != nil && left.Kind == storage.ValueString && right.Kind == storage.ValueString {
 		return c.compare(left.String, right.String, secondary)
 	}
-	return compareValues(left, right)
+	return compareValuesCollatedRef(left, right, false)
 }
 
 func (context ExecutionContext) textComparatorForQuery() *textComparator {
