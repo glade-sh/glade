@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Field describe results build faster.** A field describe result is built into a pre-sized map from a static defaults table. First-use describes of a wide object ran about 10 percent faster and allocated about 16 percent fewer bytes. Results are unchanged.
+
 - **Repeated SOQL child subqueries.** A query with a child subquery now reuses the child relationship index built by an earlier query in the same org generation, after checking it against the current child rows. Repeated point queries ran 15 to 30 percent faster and allocated about 90 percent fewer bytes on 1,000 to 10,000 parents. Results are identical, and any write to the child object rebuilds the index.
 
 - **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
