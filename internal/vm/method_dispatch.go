@@ -758,8 +758,10 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			dispatchClass = receiver.Type
 		}
 		class, _ := vm.lookupClass(dispatchClass)
-		if value, handled, err := vm.callCartExtensionCalculatorSuper(class, receiver, method, args); handled || err != nil {
-			return value, true, err
+		if strings.HasPrefix(class.SuperClass, "CartExtension.") {
+			if value, handled, err := vm.callCartExtensionCalculatorSuper(class, receiver, method, args); handled || err != nil {
+				return value, true, err
+			}
 		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(vm.resolvedSuperClassName(class), method, args)
 		if ambiguous {

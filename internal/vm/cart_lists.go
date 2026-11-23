@@ -48,8 +48,8 @@ func (vm *VM) callCartObjectMember(receiver Value, method string, args []Value) 
 	if receiver.Kind != ValueObject || receiver.Fields == nil {
 		return Null, false, nil
 	}
-	if value, handled := vm.callCartLoadedDefaults(receiver, method, args); handled {
-		return value, true, nil
+	if value, handled, err := vm.callCartLoadedDefaults(receiver, method, args); handled || err != nil {
+		return value, handled, err
 	}
 	if strings.EqualFold(receiver.Type, "CartExtension.Cart") && len(args) == 0 && strings.EqualFold(method, "getStatus") {
 		if status, found := receiver.Fields["status"]; found && status.Kind == ValueString {
@@ -246,9 +246,47 @@ func stripCartQuantityScale(value Value) Value {
 // BuyerActionDetails reads false and empty lists for what its builder did not
 // set, and a delivery group's getDeliverToAddress is null until an address
 // part is set, then an Address of the parts.
-func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value) (Value, bool) {
-	if len(args) != 0 || receiver.Kind != ValueObject || receiver.Fields == nil {
-		return Null, false
+func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind != ValueObject || receiver.Fields == nil {
+		return Null, false, nil
+	}
+	if strings.EqualFold(receiver.Type, "CartExtension.CartDeliveryGroup") {
+		// A delivery group owns one list of methods and at most one selected
+		// method, which must come from that list
+		// (commerce_cart_delivery_methods/org.tsv, API 62.0 and 67.0).
+		switch strings.ToLower(method) {
+		case "getcartdeliverygroupmethods":
+			if len(args) == 0 {
+				const key = "__cartList_getcartdeliverygroupmethods"
+				if existing, found := receiver.Fields[key]; found && existing.Kind == ValueObject {
+					return existing, true, nil
+				}
+				list := newCartList("CartExtension.CartDeliveryGroupMethodList", nil)
+				receiver.Fields[key] = list
+				return list, true, nil
+			}
+		case "setselectedcartdeliverygroupmethod":
+			if len(args) == 1 {
+				if args[0].Kind == ValueObject {
+					members := receiver.Fields["__cartList_getcartdeliverygroupmethods"]
+					items := members.Fields[cartListItemsField]
+					if members.Kind != ValueObject || cartListIndex(items, args[0]) < 0 {
+						return Null, true, newExceptionError("System.IllegalArgumentException", "Relation between CartDeliveryGroup and CartDeliveryGroupMethod could not be established. Relations can only be established when both entities are part of the cart. CartDeliveryGroupMethod is not part of the cart yet.")
+					}
+				}
+				receiver.Fields["selectedCartDeliveryGroupMethod"] = args[0]
+				return Null, true, nil
+			}
+		case "getselectedcartdeliverygroupmethod":
+			if len(args) == 0 {
+				if _, value, ok := objectFieldValue(receiver, "selectedCartDeliveryGroupMethod"); ok {
+					return value, true, nil
+				}
+			}
+		}
+	}
+	if len(args) != 0 {
+		return Null, false, nil
 	}
 	field := func(names ...string) (Value, bool) {
 		for _, name := range names {
@@ -263,24 +301,24 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 		switch strings.ToLower(method) {
 		case "ischeckoutstarted":
 			if value, ok := field("checkoutStarted", "isCheckoutStarted"); ok {
-				return value, true
+				return value, true, nil
 			}
-			return Bool(false), true
+			return Bool(false), true, nil
 		case "getcartitemchanges":
 			if value, ok := field("cartItemChanges"); ok {
-				return value, true
+				return value, true, nil
 			}
-			return typedList("List<CartExtension.CartItemChange>"), true
+			return typedList("List<CartExtension.CartItemChange>"), true, nil
 		case "getcouponchanges":
 			if value, ok := field("couponChanges"); ok {
-				return value, true
+				return value, true, nil
 			}
-			return typedList("List<CartExtension.CouponChange>"), true
+			return typedList("List<CartExtension.CouponChange>"), true, nil
 		case "getdeliverygroupchanges":
 			if value, ok := field("deliveryGroupChanges"); ok {
-				return value, true
+				return value, true, nil
 			}
-			return typedList("List<CartExtension.CartDeliveryGroupChange>"), true
+			return typedList("List<CartExtension.CartDeliveryGroupChange>"), true, nil
 		}
 	case strings.EqualFold(receiver.Type, "CartExtension.CartItemChange"):
 		// The builder stores its parameters under their own names. A change
@@ -289,15 +327,15 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 		switch strings.ToLower(method) {
 		case "getchangeditem":
 			if value, ok := field("changedItem", "optionalCartItem"); ok {
-				return value, true
+				return value, true, nil
 			}
-			return Object("CartExtension.OptionalCartItem"), true
+			return Object("CartExtension.OptionalCartItem"), true, nil
 		case "isadded", "isremoved", "isquantityincreased", "isquantitydecreased":
 			name := method[len("is"):]
 			if value, ok := field(strings.ToLower(name[:1])+name[1:], method); ok {
-				return value, true
+				return value, true, nil
 			}
-			return Bool(false), true
+			return Bool(false), true, nil
 		}
 	case strings.EqualFold(receiver.Type, "CartExtension.CartDeliveryGroup") && strings.EqualFold(method, "getDeliverToAddress"):
 		parts := []struct{ group, address string }{
@@ -315,11 +353,11 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 			}
 		}
 		if !present {
-			return Null, true
+			return Null, true, nil
 		}
-		return address, true
+		return address, true, nil
 	}
-	return Null, false
+	return Null, false, nil
 }
 
 // bindCartValidationOutputRelatedEntity gives an output built for a cart item
