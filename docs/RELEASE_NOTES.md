@@ -24,7 +24,7 @@
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
-- A child-query WHERE may now hold one or two IN or NOT IN semi-joins beside scalar conditions, with or without a LIMIT, for any number of sibling child queries, as captured at Apex API 62.0 and 67.0. OR and nested-group semi-joins stay rejected, as in Salesforce.
+- A child-query WHERE may now hold one or two IN or NOT IN semi-joins beside up to two text, boolean, bind or null comparisons, with or without a literal LIMIT, and beside any number of sibling child queries, as captured at Apex API 62.0 and 67.0. OR and nested-group semi-joins stay rejected, as in Salesforce.
 - A Standard User’s denied change to Lead.Company under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. Customer Community Case delete describe, test-context delete denial, anonymous compile denial, Visualforce and Apex REST exceptions follow the observed API 62.0 and 67.0 results.
 
 - A Partner Community user’s Lead visibility, Manual Read share and named access rows in anonymous Apex and Visualforce follow the captured private external default.

@@ -11,11 +11,12 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// NATIVE child semi-join matrix: testdata/conformance/child_semijoin_matrix/{a,b}/org.tsv,
+// NATIVE child semi-join matrix: testdata/conformance/child_semijoin_matrix/{a,b,c}/org.tsv,
 // 62.0 and 67.0, anonymous and istest. Accepted cells: ID or reference field IN or NOT IN
 // a single-field subquery in a child WHERE, with 0, 1, 2 or 5 sibling child queries, no
 // LIMIT, LIMIT 1 or LIMIT 2, with or without scalar conjuncts, and two joins in one child
-// WHERE. Rejected cells: a semi-join with OR, and inside a nested group.
+// WHERE, mixed IN and NOT IN pairs, three-term conjunctions, LIMIT 3 and 50, scalar
+// operands (dotted field, text !=, boolean, bind) and a parent scalar WHERE. Rejected cells: a semi-join with OR, and inside a nested group.
 func TestChildSemiJoinMatrixNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/child_semijoin_matrix"
 	classes := map[string]string{}
@@ -27,7 +28,7 @@ func TestChildSemiJoinMatrixNativeConformance(t *testing.T) {
 		classes[c[0]] = c[2]
 	}
 	seen := map[string]bool{}
-	for _, part := range []string{"a", "b"} {
+	for _, part := range []string{"a", "b", "c"} {
 		rows, err := readTSV(filepath.Join(base, part, "org.tsv"))
 		if err != nil {
 			t.Fatal(err)
@@ -38,7 +39,6 @@ func TestChildSemiJoinMatrixNativeConformance(t *testing.T) {
 				continue
 			}
 			key := id + "/" + api
-			_ = i
 			if seen[key] {
 				t.Fatalf("duplicate clean native row %s", key)
 			}
@@ -98,8 +98,8 @@ func TestChildSemiJoinMatrixNativeConformance(t *testing.T) {
 			})
 		}
 	}
-	if len(seen) != 100 {
-		t.Fatalf("clean native cells: %d, want 100 (50 cases and routes, two APIs)", len(seen))
+	if len(seen) != 148 {
+		t.Fatalf("clean native cells: %d, want 148 (37 cases on two routes and two APIs)", len(seen))
 	}
 }
 

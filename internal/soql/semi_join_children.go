@@ -3,6 +3,8 @@ package soql
 import (
 	"fmt"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func semiJoinCountRejection(joins []Condition) error {
@@ -62,7 +64,7 @@ func semiJoinNestingRejection(query Query) error {
 // and nested groups are rejected by Salesforce and stay rejected here. Other
 // shapes retain their boundary.
 func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
-	if parent.HasLimit || parent.HasOffset || len(parent.Order) != 0 || parent.OrderBy != "" || parent.Count || len(parent.Aggregates) != 0 || len(parent.GroupBy) != 0 || parent.Having != nil || len(parent.Typeofs) != 0 || parent.ForUpdate || parent.ForView || parent.ForReference || parent.AllRows || parent.SecurityMode != "" || parent.UsingScope != "" || parent.OptionsBind != "" || parent.DataCategoryGroup != "" || parent.GroupMode != "" || (parent.Where != nil && conditionContainsSubquery(*parent.Where)) ||
+	if parent.HasLimit || parent.HasOffset || len(parent.Order) != 0 || parent.OrderBy != "" || parent.Count || len(parent.Aggregates) != 0 || len(parent.GroupBy) != 0 || parent.Having != nil || len(parent.Typeofs) != 0 || parent.ForUpdate || parent.ForView || parent.ForReference || parent.AllRows || parent.SecurityMode != "" || parent.UsingScope != "" || parent.OptionsBind != "" || parent.DataCategoryGroup != "" || parent.GroupMode != "" || (parent.Where != nil && !semiJoinCapturedParentWhere(*parent.Where)) ||
 		len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || query.Count || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 || query.OrderBy != "" || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.SecurityMode != "" || query.UsingScope != "" || query.OptionsBind != "" || query.DataCategoryGroup != "" || query.GroupMode != "" ||
 		query.LimitBind != "" || query.HasOffset || query.Offset != 0 || (query.HasLimit && query.Limit < 1) || query.Where == nil {
 		return false
@@ -83,6 +85,9 @@ func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
 			return false
 		}
 		terms = where.And
+		if len(terms) > 3 {
+			return false
+		}
 	}
 	joins := 0
 	for _, condition := range terms {
@@ -94,9 +99,41 @@ func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
 				return false
 			}
 			joins++
-		} else if condition.Op != "=" && condition.Op != "!=" {
+		} else if !semiJoinCapturedScalar(condition) {
 			return false
 		}
 	}
 	return joins == 1 || joins == 2
+}
+
+// Captured scalar conjuncts: = with a text, boolean or bind operand, and !=
+// with a text or null operand. Dotted relationship fields are captured.
+func semiJoinCapturedScalar(condition Condition) bool {
+	if condition.Not || condition.Parenthesized || condition.Range || condition.SourceAnd || condition.Field == "" || condition.Formula != nil || condition.Subquery != nil || len(condition.And) != 0 || len(condition.Or) != 0 || len(condition.Values) != 0 {
+		return false
+	}
+	kind := condition.Value.Kind
+	switch condition.Op {
+	case "=":
+		return kind == storage.ValueString || kind == storage.ValueBoolean || kind == storage.ValueID && strings.HasPrefix(string(condition.Value.ID), ":")
+	case "!=":
+		return kind == storage.ValueString || kind == storage.ValueNull
+	}
+	return false
+}
+
+// The parent WHERE is a captured scalar or an OR group of captured scalars.
+func semiJoinCapturedParentWhere(condition Condition) bool {
+	if len(condition.Or) == 0 {
+		return semiJoinCapturedScalar(condition)
+	}
+	if condition.Not || condition.SourceAnd || condition.Field != "" || condition.Formula != nil || condition.Subquery != nil || len(condition.And) != 0 {
+		return false
+	}
+	for _, term := range condition.Or {
+		if !semiJoinCapturedScalar(term) {
+			return false
+		}
+	}
+	return true
 }
