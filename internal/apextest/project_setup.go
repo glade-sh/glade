@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -752,6 +753,7 @@ func applyProjectProfileMetadata(org *storage.OrgState, p project.Project, permi
 		storage.EnsureDeterministicPlatformData(org)
 	}
 	applyProjectProfileRecordTypeDefaults(org, p, readProfile)
+	applyConfiguredPermissionSetRecordTypeDefault(org, p, readFile)
 	// Dependency profile files are not in bodies; read them from the
 	// captured dependency sources.
 	applyProjectProfileRecordTypeAvailability(org, p, func(file string) ([]byte, error) {
@@ -1883,4 +1885,90 @@ func compileProjectInitializer(className, file string, r diagnostic.Range, bodyR
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,
 	}, nil
+}
+
+// applyConfiguredPermissionSetRecordTypeDefault: when the permission sets named
+// in test.permissionSets make exactly one record type of an object visible, and
+// no profile mapping names a default, that record type is the user's default.
+// An insert that omits RecordTypeId then stores it and takes its picklist
+// defaults; with no grant the record keeps no record type (standard_recordtype
+// _picklist_default x_norecordtype rows and the xnone_visibility rows, API
+// 62.0 and 67.0).
+func applyConfiguredPermissionSetRecordTypeDefault(org *storage.OrgState, p project.Project, readFile func(string) ([]byte, error)) {
+	if org == nil || len(p.Test.PermissionSets) == 0 {
+		return
+	}
+	selected := make(map[string]bool, len(p.Test.PermissionSets))
+	for _, name := range p.Test.PermissionSets {
+		selected[name] = true
+	}
+	visible := map[string]map[string]bool{}
+	for _, file := range p.PermissionSetFiles {
+		name := filepath.Base(file)
+		for _, suffix := range []string{".permissionset-meta.xml", ".permissionset"} {
+			if hasSuffixFold(name, suffix) {
+				name = name[:len(name)-len(suffix)]
+				break
+			}
+		}
+		if !selected[name] {
+			continue
+		}
+		data, err := readFile(file)
+		if err != nil {
+			continue
+		}
+		var set profileXML
+		if xml.Unmarshal(data, &set) != nil {
+			continue
+		}
+		for _, visibility := range set.RecordTypeVisibilities {
+			object, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+			if !ok || !visibility.Visible || strings.EqualFold(object, "PersonAccount") {
+				continue
+			}
+			canonical, ok := storage.ResolveObjectName(*org, object)
+			if !ok {
+				continue
+			}
+			if visible[canonical] == nil {
+				visible[canonical] = map[string]bool{}
+			}
+			visible[canonical][strings.ToLower(stripRecordTypeNamespaceToken(developerName))] = true
+		}
+	}
+	for canonical, developers := range visible {
+		if len(developers) != 1 {
+			continue
+		}
+		state := org.Objects[canonical]
+		if hasPersonAccountRecordType(state.Definition.RecordTypes) {
+			continue
+		}
+		hasDefault := false
+		for _, recordType := range state.Definition.RecordTypes {
+			if recordType.Default && !strings.EqualFold(recordType.DeveloperName, "Master") {
+				hasDefault = true
+			}
+		}
+		if hasDefault {
+			continue
+		}
+		definition := state.Definition.Clone()
+		changed := false
+		for i := range definition.RecordTypes {
+			recordType := &definition.RecordTypes[i]
+			if strings.EqualFold(recordType.DeveloperName, "Master") {
+				continue
+			}
+			if developers[strings.ToLower(stripRecordTypeNamespaceToken(recordType.DeveloperName))] && !recordType.Default {
+				recordType.Default = true
+				changed = true
+			}
+		}
+		if changed {
+			state.Definition = definition
+			org.Objects[canonical] = state
+		}
+	}
 }
