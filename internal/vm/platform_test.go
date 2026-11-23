@@ -529,7 +529,7 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 		},
 		{
 			name: "commerce inventory upsert reservation",
-			src:  `new commerce_inventory.CommerceInventoryService().upsertReservation(new commerce_inventory.UpsertReservationRequest(0, 'res-local', '001000000000001AAA', new List<commerce_inventory.UpsertItemReservationRequest>()), new commerce_inventory.InventoryReservation(), 'ALL');`,
+			src:  `new commerce_inventory.CommerceInventoryService().upsertReservation(null, new commerce_inventory.InventoryReservation(), 'ALL');`,
 			want: `unsupported call "commerce_inventory.CommerceInventoryService.upsertReservation local commerce inventory mutation surface"`,
 		},
 		{
