@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+multi_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=STANDARD_PRICE_NOT_DEFINED:Before creating a custom price, create a standard price.	n/a	n/a	0
+multi_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=STANDARD_PRICE_NOT_DEFINED:Before creating a custom price, create a standard price.	n/a	n/a	0
+multi_flow	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=STANDARD_PRICE_NOT_DEFINED	62.0	n/a	n/a
+multi_flow	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=STANDARD_PRICE_NOT_DEFINED	67.0	n/a	n/a

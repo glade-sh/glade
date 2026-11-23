@@ -1,7 +1,6 @@
 package dml
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -25,9 +24,7 @@ func TestFlowUncapturedLookupNeighborsDifferential(t *testing.T) {
 	frame := &flowFrame{capturedAfterCreate: true}
 	t.Run("reference_without_captured_metadata", func(t *testing.T) {
 		engine := NewEngine(&org)
-		if field := reflect.ValueOf(&engine).Elem().FieldByName("FlowLookupRecordVisible"); field.IsValid() {
-			field.Set(reflect.ValueOf(func(storage.ID) bool { return false }))
-		}
+		engine.SetFlowLookupRecordVisible(func(storage.ID) bool { return false })
 		source := storage.Record{Object: "Opportunity", Fields: map[string]storage.Value{"Pricebook2Id": storage.IDValue(id)}}
 		lookup := storage.FlowRecordLookup{ObjectName: "Pricebook2", GetFirstRecordOnly: true, Criteria: []storage.WorkflowCriteriaItem{{Field: "Id", Operation: "equals", SourceField: "Pricebook2Id"}}}
 		got, _, err := engine.flowRecordLookupRecords(lookup, source, org.Objects["Opportunity"].Definition, frame)

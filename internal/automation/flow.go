@@ -584,6 +584,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 		TriggerOrder:                           raw.TriggerOrder,
 		RunInMode:                              strings.TrimSpace(raw.RunInMode),
 		TextTemplates:                          flowTextTemplateMap(raw.TextTemplates),
+		TemplateAPIFormulas:                    flowTemplateAPIFormulas(raw, formulas),
 	}
 	rule.Variables = flowDeclarationVariables(raw.Variables)
 	if strings.EqualFold(raw.ProcessType, "AutoLaunchedFlow") && strings.TrimSpace(raw.Start.TriggerType) == "" && len(raw.Variables) == 1 && len(raw.Constants) == 1 && len(raw.ActionCalls) == 2 && len(raw.Assignments) == 1 && len(raw.RecordUpdates) == 1 && len(raw.RecordLookups) == 0 && len(raw.Decisions) == 0 && strings.EqualFold(raw.ActionCalls[0].ActionName, raw.ActionCalls[1].ActionName) {
@@ -2572,9 +2573,22 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			modeled = true
 			fault := strings.TrimSpace(update.FaultConnector.TargetReference)
 			if updates, ok := modeledFlowRecordUpdates(flowRecordUpdateConstantValues(update, variables, flowConstantMap(raw.Constants)), formulas, variables, raw.RecordLookups); ok {
-				branch.FieldUpdates = append(branch.FieldUpdates, updates...)
-				if len(updates) > 0 {
-					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
+				if flowTriggerUpdateGateApplies(raw) && flowTriggerUpdateHasIsNullFilters(update) && len(updates) > 0 {
+					gate := storage.FlowBranch{Name: firstNonBlank(update.Name, update.Label)}
+					for _, filter := range update.Filters {
+						gate.Criteria = append(gate.Criteria, storage.WorkflowCriteriaItem{
+							Field:     trimObjectPrefix(strings.TrimSpace(filter.Field)),
+							Operation: flowOperator(strings.TrimSpace(filter.Operator)),
+							Value:     flowDecisionRightValue(filter.Value),
+						})
+					}
+					gate.Steps = []storage.FlowStep{{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates}}
+					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "decision", Branches: []storage.FlowBranch{gate}})
+				} else {
+					branch.FieldUpdates = append(branch.FieldUpdates, updates...)
+					if len(updates) > 0 {
+						branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
+					}
 				}
 			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups, strings.EqualFold(raw.ProcessType, "Workflow")); ok {
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordUpdate", FaultTarget: fault, RecordUpdate: recordUpdate})
@@ -3348,6 +3362,11 @@ func flowRequiresOrderedGraph(raw flowXML) bool {
 	}
 	for _, update := range raw.RecordUpdates {
 		if strings.TrimSpace(update.Object) != "" || !flowUpdatesTriggeringRecord(update.InputReference) {
+			return true
+		}
+		if flowTriggerUpdateGateApplies(raw) && flowTriggerUpdateHasIsNullFilters(update) {
+			// Captured: a before-save update of the triggering record honors an
+			// IsNull=false filter (flow_filter_update_record, API 62.0 and 67.0).
 			return true
 		}
 		for _, field := range update.Fields {
@@ -5087,4 +5106,30 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			value.StringValue, value.ElementReference = "", name
 		}
 	}
+}
+
+// flowTriggerUpdateHasIsNullFilters reports a triggering-record update whose
+// filters are all IsNull=false checks under AND logic, the only filter shape captured.
+func flowTriggerUpdateHasIsNullFilters(update flowRecordUpdateXML) bool {
+	if len(update.Filters) == 0 {
+		return false
+	}
+	if logic := strings.TrimSpace(update.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+		return false
+	}
+	for _, filter := range update.Filters {
+		if !strings.EqualFold(strings.TrimSpace(filter.Operator), "IsNull") || !strings.EqualFold(strings.TrimSpace(filter.Value.BooleanValue), "false") {
+			return false
+		}
+	}
+	return true
+}
+
+// flowTriggerUpdateGateApplies limits the IsNull=false update gate to the
+// captured trigger: a before-save flow that runs on create and update. Other
+// triggers keep their earlier lowering until they are captured.
+func flowTriggerUpdateGateApplies(raw flowXML) bool {
+	return !strings.EqualFold(raw.ProcessType, "Workflow") &&
+		strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") &&
+		strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "CreateAndUpdate")
 }

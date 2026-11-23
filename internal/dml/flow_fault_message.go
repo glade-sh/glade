@@ -25,6 +25,7 @@ var flowFaultCreateCodes = map[string]bool{
 	"FIELD_CUSTOM_VALIDATION_EXCEPTION": true,
 	"DUPLICATE_VALUE":                   true,
 	"DUPLICATES_DETECTED":               true,
+	"STANDARD_PRICE_NOT_DEFINED":        true,
 }
 
 func flowCreateFaultText(code, text string) string {
@@ -217,7 +218,7 @@ func (f *flowElementFault) savedRowFailure() bool {
 // code and the element text (flow_criteria_shapes/org.tsv pb_test rows, 62.0
 // and 67.0). Other routes keep their previous error path.
 func (f *flowElementFault) testRequiredFieldCreate() bool {
-	return f.verb == "create" && f.code == "REQUIRED_FIELD_MISSING" && f.inTest
+	return f.verb == "create" && (f.code == "REQUIRED_FIELD_MISSING" || f.code == "STANDARD_PRICE_NOT_DEFINED") && f.inTest
 }
 
 const flowUnhandledGeneric = "An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information."

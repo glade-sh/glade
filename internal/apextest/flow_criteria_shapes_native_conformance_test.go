@@ -126,12 +126,7 @@ func runFlowCriteriaFixture(t *testing.T, name string, wantRows int, pinned map[
 // testdata/conformance/flow_criteria_shapes/org.tsv, anonymous and @IsTest at
 // 62.0 and 67.0.
 func TestFlowCriteriaShapesNativeConformance(t *testing.T) {
-	runFlowCriteriaFixture(t, "flow_criteria_shapes", 30, map[string]string{
-		// Salesforce rejects a custom price before a standard price
-		// (STANDARD_PRICE_NOT_DEFINED); Glade does not enforce that rule for any
-		// PricebookEntry insert yet, so the Flow's create succeeds.
-		"pbcustom_test": "ok,entries=1,std=false",
-	})
+	runFlowCriteriaFixture(t, "flow_criteria_shapes", 30, nil)
 }
 
 // NATIVE $Profile.Name NotEqualTo a literal and $Record.RecordType.DeveloperName

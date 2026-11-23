@@ -27,16 +27,16 @@ func TestFlowPricebookBaselineVisibilityContext(t *testing.T) {
 	machine := New(nil)
 	machine.Org = &org
 	machine.SetTestStandardPricebookBaseline(&org)
-	if machine.newDMLEngine(nil).FlowLookupRecordVisible != nil {
+	if visibility(machine) != nil {
 		t.Fatal("anonymous route has a test visibility filter")
 	}
 	machine.EnableTestContext()
 	engine := machine.newDMLEngine(nil)
-	if engine.FlowLookupRecordVisible == nil || engine.FlowLookupRecordVisible(standard) || !engine.FlowLookupRecordVisible(custom) {
+	if visible := engine.FlowLookupRecordVisible(); visible == nil || visible(standard) || !visible(custom) {
 		t.Fatal("isolated test baseline visibility is wrong")
 	}
 	machine.SetTestSeeAllData(true)
-	if machine.newDMLEngine(nil).FlowLookupRecordVisible != nil {
+	if visibility(machine) != nil {
 		t.Fatal("see-all-data route has a test visibility filter")
 	}
 	machine.SetTestSeeAllData(false)
@@ -45,14 +45,21 @@ func TestFlowPricebookBaselineVisibilityContext(t *testing.T) {
 	org.Objects["Pricebook2"] = state
 	machine.SetTestStandardPricebookBaseline(&org)
 	updated := machine.newDMLEngine(nil)
-	if updated.FlowLookupRecordVisible == nil || !updated.FlowLookupRecordVisible(standard) || updated.FlowLookupRecordVisible(custom) {
+	if visible := updated.FlowLookupRecordVisible(); visible == nil || !visible(standard) || visible(custom) {
 		t.Fatal("new baseline was not reflected in the next engine")
 	}
-	if engine.FlowLookupRecordVisible(standard) || !engine.FlowLookupRecordVisible(custom) {
-		t.Fatal("existing engine baseline changed")
+	// The filter lives in the machine's shared transaction state, so an older
+	// engine follows the newest baseline.
+	if visible := engine.FlowLookupRecordVisible(); visible == nil || !visible(standard) || visible(custom) {
+		t.Fatal("engine does not follow the machine's current baseline")
 	}
 	machine.SetTestStandardPricebookBaseline(nil)
-	if machine.newDMLEngine(nil).FlowLookupRecordVisible != nil {
+	if visibility(machine) != nil {
 		t.Fatal("empty baseline installed a visibility filter")
 	}
+}
+
+func visibility(machine *VM) func(storage.ID) bool {
+	engine := machine.newDMLEngine(nil)
+	return engine.FlowLookupRecordVisible()
 }

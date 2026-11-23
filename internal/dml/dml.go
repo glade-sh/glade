@@ -93,8 +93,6 @@ type Engine struct {
 	// FlowFaultInTest reports a run inside a test, where Salesforce words a
 	// duplicate-value fault without the field or the record.
 	FlowFaultInTest func() bool
-	// FlowLookupRecordVisible filters a captured test-isolated lookup result.
-	FlowLookupRecordVisible func(storage.ID) bool
 	// UserModeRecordVisible reports whether the running user sees a record.
 	// A Flow that runs in user mode (runInMode UserMode) skips Update Records
 	// targets it cannot see.
@@ -1166,7 +1164,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "Parent ID is invalid: null")
 		}
 	}
-	if err := e.validateReferences(object.Definition, record); err != nil {
+	if err := e.validateInsertReferences(object.Definition, record); err != nil {
 		return "", err
 	}
 	if err := e.validateActiveOwner(object.Definition, record.System.OwnerID, ""); err != nil {
@@ -1273,7 +1271,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 		e.RecordCreations.MarkDuplicate(record.ID)
 		e.duplicates.insertMatched = false
 	}
-	e.addUniqueIndexRecord(objectName, object.Definition, record)
+	e.indexInsertedRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if err := e.reconcilePrivateOwnerShares(objectName, record.ID); err != nil {
 		if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {

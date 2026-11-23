@@ -35,9 +35,7 @@ func BenchmarkFlowTriggeredReferenceLookup(b *testing.B) {
 	engine := NewEngine(&org)
 	// The baseline has no visibility hook; the candidate hook admits this
 	// test-created record. Both iterations must return the identical ID.
-	if field := reflect.ValueOf(&engine).Elem().FieldByName("FlowLookupRecordVisible"); field.IsValid() {
-		field.Set(reflect.ValueOf(func(storage.ID) bool { return true }))
-	}
+	engine.SetFlowLookupRecordVisible(func(storage.ID) bool { return true })
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		chosen := choices[i%len(choices)]

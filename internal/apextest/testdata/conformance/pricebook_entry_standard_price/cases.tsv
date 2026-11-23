@@ -1,0 +1,3 @@
+id	route	file
+price_test	istest	PriceProbeTest
+price_anonymous	anonymous	price.apex

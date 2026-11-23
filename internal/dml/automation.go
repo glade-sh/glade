@@ -826,6 +826,8 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 	for _, rule := range definition.FlowRules {
 		if rule.Name == flowName {
 			frame.stepTargets = rule.StepTargets
+			frame.templateAPIFormulas = rule.TemplateAPIFormulas
+			frame.apiTemplateEnabled = strings.EqualFold(rule.TriggerType, "RecordAfterSave") && (strings.EqualFold(rule.RecordTriggerType, "Create") || strings.EqualFold(rule.RecordTriggerType, "Update"))
 			break
 		}
 	}
@@ -883,29 +885,33 @@ type flowFrame struct {
 	capturedAfterCreate     bool
 	// afterSaveTrigger is Create or Update for an after-save record-triggered
 	// Flow interview and empty otherwise.
-	afterSaveTrigger    string
-	pathVisited         map[string]bool
-	stepTargets         map[string][]storage.FlowStep
-	activeTargets       map[string]bool
-	recordCreations     *RecordCreations
-	saveDecisions       bool
-	priorDecisions      bool
-	beforeSaveDecisions bool
-	scalarBeforeSave    bool
-	afterSaveWriteBack  bool
-	createDecision      bool
-	lookupOutputs       map[string]flowLookupOutput
-	subflowInputs       map[string]flowLookupOutput
-	lookupCollections   map[string]flowRecordCollection
-	matchedObjects      map[string]bool
-	variables           map[string]storage.FlowVariable
-	scalars             map[string]storage.Value
-	records             map[string]storage.Record
-	nullRecordDefaults  map[string]bool
-	collections         map[string][]storage.Record
-	textTemplates       map[string]string
-	priorCollections    map[string]bool
-	assigned            map[string]bool
+	afterSaveTrigger     string
+	pathVisited          map[string]bool
+	stepTargets          map[string][]storage.FlowStep
+	activeTargets        map[string]bool
+	recordCreations      *RecordCreations
+	saveDecisions        bool
+	priorDecisions       bool
+	beforeSaveDecisions  bool
+	scalarBeforeSave     bool
+	afterSaveWriteBack   bool
+	createDecision       bool
+	lookupOutputs        map[string]flowLookupOutput
+	subflowInputs        map[string]flowLookupOutput
+	lookupCollections    map[string]flowRecordCollection
+	matchedObjects       map[string]bool
+	variables            map[string]storage.FlowVariable
+	scalars              map[string]storage.Value
+	records              map[string]storage.Record
+	nullRecordDefaults   map[string]bool
+	collections          map[string][]storage.Record
+	createdLookupOutputs map[string]storage.ID
+	textTemplates        map[string]string
+	templateAPIFormulas  map[string]string
+	apiTemplateEnabled   bool
+	apiTemplateRendering bool
+	priorCollections     map[string]bool
+	assigned             map[string]bool
 	// autolaunched preserves Email Alert's interview-origin logging behavior.
 	autolaunched bool
 	// userMode marks an interview of a Flow with runInMode UserMode.
@@ -1190,6 +1196,12 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			return false, err
 		}
 		frame.scalars[flowFrameKey(step.RecordCreate.Name)] = storage.IDValue(createdID)
+		if frame.afterSaveTrigger == "Create" && step.RecordCreate.StoreOutputAutomatically && strings.EqualFold(step.RecordCreate.ObjectName, objectName) {
+			if frame.createdLookupOutputs == nil {
+				frame.createdLookupOutputs = make(map[string]storage.ID)
+			}
+			frame.createdLookupOutputs[flowFrameKey(step.RecordCreate.Name)] = createdID
+		}
 		if output := strings.TrimSpace(step.RecordCreate.AssignRecordIDToReference); output != "" {
 			if name, field, dotted := strings.Cut(output, "."); dotted && strings.EqualFold(field, "Id") {
 				key := flowFrameKey(name)
@@ -1867,6 +1879,14 @@ func (e *Engine) flowFrameReferenceValueAudit(reference string, frame *flowFrame
 			return value, true
 		}
 	}
+	if frame.apiTemplateRendering && e.flowFaultInTest() {
+		if value, ok := e.flowAPIReference(reference); ok {
+			return value, true
+		}
+		if expression, ok := frame.templateAPIFormulas[flowFrameKey(reference)]; ok {
+			return e.flowContextFormulaValue(expression, frame)
+		}
+	}
 	if value, ok := frame.scalars[flowFrameKey(reference)]; ok {
 		return value.Clone(), true
 	}
@@ -1906,6 +1926,9 @@ func (e *Engine) flowFrameReferenceValueAudit(reference string, frame *flowFrame
 			return storage.Value{}, false
 		}
 		templateStack[key] = true
+		previousAPI := frame.apiTemplateRendering
+		frame.apiTemplateRendering = frame.apiTemplateEnabled && e.flowFaultInTest() && (strings.Contains(strings.ToLower(template), "$api.") || len(frame.templateAPIFormulas) > 0)
+		defer func() { frame.apiTemplateRendering = previousAPI }()
 		value, ok := renderFlowTextTemplate(template, frame, func(name string) (storage.Value, bool) {
 			return e.flowFrameReferenceValueAudit(name, frame, templateStack, audit)
 		})
@@ -2895,7 +2918,22 @@ func (e *Engine) applyFlowFieldUpdate(flowName, objectName string, record *stora
 	if isCalculatedOrSummaryField(definition.Fields[fieldName]) {
 		return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 	}
-	value, resolved := e.flowTextScalarFieldUpdateValue(update, definition.Fields[fieldName], definition, frame)
+	var value storage.Value
+	resolved := false
+	field := definition.Fields[fieldName]
+	if frame != nil && frame.afterSaveTrigger == "Create" && field.Type == storage.FieldReference && !field.MasterDetail && strings.HasSuffix(strings.ToLower(fieldName), "__c") && len(field.ReferenceTo) == 1 && strings.EqualFold(field.ReferenceTo[0], objectName) {
+		if id, ok := frame.createdLookupOutputs[flowFrameKey(update.SourceField)]; ok {
+			value, resolved = storage.IDValue(id), true
+		}
+	}
+	if !resolved && frame != nil && frame.apiTemplateEnabled && e.flowFaultInTest() {
+		if template, ok := frame.textTemplates[flowFrameKey(update.SourceField)]; ok && (strings.Contains(strings.ToLower(template), "$api.") || len(frame.templateAPIFormulas) > 0) {
+			value, resolved = e.flowFrameReferenceValue(update.SourceField, frame)
+		}
+	}
+	if !resolved {
+		value, resolved = e.flowTextScalarFieldUpdateValue(update, definition.Fields[fieldName], definition, frame)
+	}
 	if !resolved {
 		value, resolved = e.flowIntegerScalarFieldUpdateValue(update, definition.Fields[fieldName], definition, frame)
 	}
@@ -4120,7 +4158,8 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 	if len(lookup.Criteria) > len(sourceCacheStack) {
 		sourceCaches = make([]flowLookupSourceCache, len(lookup.Criteria))
 	}
-	hideTestBaseline := e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
+	lookupVisible := e.FlowLookupRecordVisible()
+	hideTestBaseline := lookupVisible != nil && frame != nil && (frame.capturedAfterCreate &&
 		flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
 		strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName))
 	var records []storage.Record
@@ -4157,7 +4196,7 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		if !matches {
 			continue
 		}
-		if hideTestBaseline && !e.FlowLookupRecordVisible(candidate.ID) {
+		if hideTestBaseline && !lookupVisible(candidate.ID) {
 			continue
 		}
 		records = append(records, candidate.Clone())
