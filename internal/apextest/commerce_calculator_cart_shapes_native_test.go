@@ -11,7 +11,8 @@ import (
 )
 
 // NATIVE rows: testdata/conformance/commerce_calculator_executor_defaults/org.tsv,
-// commerce_cart_loaded_shapes/org.tsv and commerce_cart_buyer_details_address/org.tsv, API 62.0 and
+// commerce_cart_loaded_shapes/org.tsv and commerce_cart_buyer_details_address/org.tsv and
+// commerce_cart_validation_outputs/org.tsv, API 62.0 and
 // 67.0, test route. The first fixture runs project subclasses of the platform
 // cart calculators against a project CartCalculateExecutorMock: calculate()
 // runs the executor's default callback. The second reads a cart loaded with
@@ -27,6 +28,7 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_calculator_executor_defaults", class: "R5ExecProbe", methods: []string{"viaDefault", "viaOverride"}},
 		{dir: "commerce_cart_loaded_shapes", class: "R5CartProbe3", methods: []string{"loaded", "groupAddress", "superCalc"}},
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
+		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
 	}
 	outcome := regexp.MustCompile(`(?:^|; )(\w+)=(?:Fail|Pass) `)
 	for _, f := range fixtures {
