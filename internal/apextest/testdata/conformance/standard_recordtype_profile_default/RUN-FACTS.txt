@@ -1,0 +1,18 @@
+capture: r5-rtprofile-20261122
+started: 2026-11-23T01:42:54Z
+finished: 2026-11-23T01:45:36Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 3
+sf: @salesforce/cli/2.159.7
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 199a2a3b153a50ff
+mode: live
+script: capture-v7 (rename mode: every class ran as a per-version copy, 0 copies; phase mode: the original classes and triggers deployed per API; class_api = ApexClass.ApiVersion and trigger_api = ApexTrigger.ApiVersion as reported by the org)
+run mode: rename; phase apis: ; case runs in phase mode: 0; deferred from rename: 0
+residue: after each anonymous run the records created in these objects were found, deleted and verified (baseline diff; CreatedDate window from the first anonymous run minus 15 minutes): Account, BusinessLicenseApplication, RegulatoryAuthorizationType
+residue: updates and deletes of pre-existing records are not covered (no restore-records.txt)
+residue: not covered in any case: records written by async jobs after the run, platform events, outbound mail or callouts, org settings, custom metadata, objects not listed, and (without restore-records.txt) any change to a pre-existing record
+residue: every check queries ALL ROWS (records in the recycle bin count); after a cleanup the bin is emptied for the deleted ids and verified by a second emptyRecycleBin (the org keeps showing an emptied record to ALL ROWS as IsDeleted); a bin that cannot be emptied taints the row (tainted:recycle-bin). Cleaned records stay visible to ALL ROWS: a case that uses ALL ROWS needs its own org per API
+residue: before every anonymous run the state is settled; records found there taint that row (tainted:arrived-before-run); a run that committed is judged by its limits block: no block, async or e-mail counters above 0, or DML rows with nothing found are tainted, never 0
+residue rows: cleaned=6
