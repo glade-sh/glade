@@ -1413,6 +1413,17 @@ func (vm *VM) storeClassLookupAlias(name string, class Class) {
 	vm.classLookup[canonicalClassLookupKey(name)] = class
 }
 func (vm *VM) storeClassValue(class Class) {
+	vm.storeClassValueChecked(class, true)
+}
+
+// storeStaticClassValue is storeClassValue for a class value that the caller
+// derived from the registered class by changing only its static field values,
+// so its structure cannot differ and the structure comparison is skipped.
+func (vm *VM) storeStaticClassValue(class Class) {
+	vm.storeClassValueChecked(class, false)
+}
+
+func (vm *VM) storeClassValueChecked(class Class, checkStructure bool) {
 	// Frozen fast path: static-field writeback updates the value of an
 	// already-registered class. When the shared lookup index is frozen,
 	// lookupClass resolves through vm.Classes by live key, so updating the
@@ -1423,8 +1434,10 @@ func (vm *VM) storeClassValue(class Class) {
 	// copied: the values go to this VM's overlay. Only fall back to the
 	// rebuild path when a name would be newly introduced.
 	vm.classValuesWritten = true
-	if existing, ok := vm.classEntryRaw(class.Name); !ok || !classStructureEqual(existing, class) {
-		vm.classStructureWritten = true
+	if checkStructure && !vm.classStructureWritten {
+		if existing, ok := vm.classEntryRaw(class.Name); !ok || !classStructureEqual(existing, class) {
+			vm.classStructureWritten = true
+		}
 	}
 	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
 		vm.classMapWritten = true
