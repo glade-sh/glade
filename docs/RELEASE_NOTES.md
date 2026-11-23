@@ -99,8 +99,8 @@
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
-- **Startup and ConnectApi symbol loading.** Setup-advice patterns and fuzzy name dictionaries load on first use. Loading the captured ConnectApi shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
-- **JSON output.** Encoding large parse results and test reports uses less temporary memory while preserving their JSON. A synthetic parse benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
+- **Startup and ConnectApi symbol loading.** Setup-advice patterns and fuzzy name dictionaries load on first use, and one-shot `glade test` runs skip runtime-patch proofs that only a later transition could use. Loading the captured ConnectApi shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
+- **JSON output.** Encoding large parse, check, test and report results and server responses uses less temporary memory while preserving their JSON. A synthetic parse benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
 
 - **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
 
