@@ -455,20 +455,25 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
+	generation.oneShot = opts.OneShotProcess
+	early := startRuntimeBesideGate(index, opts, sources, generation, runState)
 	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
+		early.abandon()
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
-	generation.oneShot = opts.OneShotProcess
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
+		early.abandon()
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
-	if runState.counters.enabled {
+	if early != nil {
+		runtimeKey, runtime, runtimeErr = early.finish(generation.controllerCompilation)
+	} else if runState.counters.enabled {
 		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
 	} else {
 		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
@@ -1542,6 +1547,10 @@ type runtimeGeneration struct {
 	// generation, offered to the Visualforce controller compile gate so page
 	// registration does not build and analyze the project a second time.
 	controllerCompilation *visualforce.ControllerCompilation
+	// awaitControllerCompilation, when set, supplies controllerCompilation
+	// once the semantic gate finishes, so the project compile can start
+	// beside the gate. ok false abandons the build; see errRuntimeAbandoned.
+	awaitControllerCompilation func() (compilation *visualforce.ControllerCompilation, ok bool)
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -2046,7 +2055,14 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -2219,7 +2235,14 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
