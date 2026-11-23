@@ -56,13 +56,12 @@ func loadExpressionValidationSources(p project.Project) (*expressionValidationSo
 		parser := apexast.NewParser()
 		defer parser.Close()
 		for _, path := range p.ApexFiles {
-			apexSourceParses.Add(1)
 			source, err := p.ReadFile(path)
 			if err != nil {
+				apexSourceParses.Add(1)
 				return nil, err
 			}
-			file := parser.ParseSource(path, string(source))
-			for _, declaration := range file.Declarations {
+			for _, declaration := range parseApexDeclarations(parser, path, string(source)) {
 				if declaration.Kind == apexast.DeclarationClass {
 					src.classes[strings.ToLower(declaration.Name)] = declaration
 				}

@@ -16,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/watch"
 )
 
@@ -69,6 +70,10 @@ func (e *WatchStateDriftError) Error() string {
 }
 
 func New(root string) (*Daemon, error) {
+	// The daemon rescans the project after every edit; keep per-source scan
+	// results keyed by content so only changed sources are scanned again.
+	apextest.EnableSourceScanMemo()
+	visualforce.EnableApexParseMemo()
 	p, index, artifacts, err := loadProjectGeneration(root)
 	if err != nil {
 		return nil, err
