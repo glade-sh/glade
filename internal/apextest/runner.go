@@ -6360,7 +6360,7 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 		seenObjects := make(map[string]bool)
 		var names []string
 		var objectNames []string
-		fieldSetMatches := apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
+		fieldSetMatches := fieldSetConstantMemo.get(source, fieldSetConstantMatches)
 		for _, match := range fieldSetMatches {
 			if len(match) != 3 || hasPrefixFold(match[1], "error") {
 				continue

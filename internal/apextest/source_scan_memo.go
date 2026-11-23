@@ -129,6 +129,14 @@ func standardFieldMatchesFromSource(source string) *standardFieldSourceMatches {
 	}
 }
 
+// fieldSetConstantMemo holds the field set constant matches of one source;
+// most sources have none, and the org-dependent steps run per call.
+var fieldSetConstantMemo sourceScanMemo[[][]string]
+
+func fieldSetConstantMatches(source string) [][]string {
+	return apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
+}
+
 func scanRecordTypesFromApexSourceMemo(source string) []projectRecordTypeReference {
 	return recordTypeScanMemo.get(source, scanRecordTypesFromApexSource)
 }

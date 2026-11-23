@@ -20,6 +20,7 @@ func withSourceScanMemo(t *testing.T, fn func()) {
 	was := sourceScanMemoEnabled.Load()
 	standardFieldMatchMemo = sourceScanMemo[*standardFieldSourceMatches]{}
 	recordTypeScanMemo = sourceScanMemo[[]projectRecordTypeReference]{}
+	fieldSetConstantMemo = sourceScanMemo[[][]string]{}
 	sourceScanMemoEnabled.Store(true)
 	defer func() {
 		sourceScanMemoEnabled.Store(was)
@@ -80,6 +81,9 @@ func TestSourceScanMemoMatchesDirectScan(t *testing.T) {
 					got := scanProjectReferencedStandardFieldsFromSource(org, source, nil)
 					if !reflect.DeepEqual(got, direct[i][j].fields) {
 						t.Fatalf("round %d org %d source %d: memoized field scan differs", round, i, j)
+					}
+					if sets := fieldSetConstantMemo.get(source, fieldSetConstantMatches); !reflect.DeepEqual(sets, apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)) {
+						t.Fatalf("round %d source %d: memoized field set scan differs", round, j)
 					}
 					if types := scanRecordTypesFromApexSourceMemo(source); !reflect.DeepEqual(types, direct[i][j].types) {
 						t.Fatalf("round %d source %d: memoized record type scan differs", round, j)
