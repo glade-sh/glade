@@ -204,7 +204,7 @@ export function buildPatchPlan({
   return { state, writes, originals };
 }
 
-async function readBoundedRegularFile(filePath, label) {
+export async function readBoundedRegularFile(filePath, label) {
   const before = await lstat(filePath);
   if (!before.isFile()) throw new Error(`${label} is not a regular file: ${filePath}`);
   if (before.size > maxTargetBytes) throw new Error(`${label} exceeds the ${maxTargetBytes}-byte per-file limit: ${filePath}`);
@@ -442,6 +442,9 @@ export async function prepareToolchain(toolchainRoot, { checkOnly = false } = {}
   }
 
   const plan = buildPatchPlan({ patchText, targets, upgradeText, checkOnly });
+  // Validate both patch plans before either dependency is changed.
+  const { planStylePatch, applyStylePatch } = await import("./prepare-lwc-style.mjs");
+  const stylePlan = await planStylePatch(root, checkOnly);
   if (plan.state === "apply" || plan.state === "upgrade") {
     // Every package pin, target hash, patch hunk and computed postimage was
     // checked above before bounded same-directory staging and atomic replacement.
@@ -452,7 +455,8 @@ export async function prepareToolchain(toolchainRoot, { checkOnly = false } = {}
     }
     buildPatchPlan({ patchText, targets: verified, checkOnly: true });
   }
-  return { state: plan.state, toolchainRoot: root };
+  await applyStylePatch(root, stylePlan);
+  return { state: plan.state, styleState: stylePlan.state, toolchainRoot: root };
 }
 
 function usage() {
@@ -460,7 +464,7 @@ function usage() {
     "Usage: node scripts/prepare-lwc-shared.mjs [--check] [<third_party/lwc-root>]",
     "The optional root is the directory containing package.json and node_modules, not node_modules itself.",
     "Without a root, the script uses the third_party/lwc directory containing this script.",
-    "--check verifies all pinned API 68 postimages and never writes; otherwise the patch is applied idempotently.",
+    "--check verifies the pinned shared and style compiler postimages and never writes; otherwise patches are applied idempotently.",
     "Targets at the earlier API 67 postimages are upgraded in place with the API 67-to-68 delta.",
   ].join("\n");
 }
@@ -481,10 +485,10 @@ async function main(args) {
   const toolchainRoot = roots.length === 1 ? roots[0] : defaultToolchainRoot;
   const result = await prepareToolchain(toolchainRoot, { checkOnly });
   if (checkOnly) {
-    process.stdout.write(`prepared @lwc/shared 9.4.3 API 68 targets at ${result.toolchainRoot} (read-only; all postimages verified)\n`);
+    process.stdout.write(`prepared @lwc/shared and @lwc/style-compiler 9.4.3 targets at ${result.toolchainRoot} (read-only; all postimages verified)\n`);
   } else {
     const action = { prepared: "already present", apply: "applied", upgrade: "applied over the API 67 postimages" }[result.state];
-    process.stdout.write(`@lwc/shared 9.4.3 API 68 patch ${action} at ${result.toolchainRoot}\n`);
+    process.stdout.write(`@lwc/shared 9.4.3 API 68 patch ${action}; style compiler patch ${result.styleState === "apply" ? "applied" : "already present"} at ${result.toolchainRoot}\n`);
   }
 }
 

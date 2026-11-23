@@ -1,0 +1,136 @@
+# Glade selector reuse patch for MIT-licensed @lwc/style-compiler 9.4.3.
+# Salesforce copyright and MIT headers in the patched package files are retained.
+--- a/node_modules/@lwc/style-compiler/dist/index.js
++++ b/node_modules/@lwc/style-compiler/dist/index.js
+@@ -552,10 +552,11 @@
+  * - `:host(.foo, .bar) -> [x-foo_tmpl-host].foo, [x-foo_tmpl-host].bar`
+  * @param selector
+  */
+-function transformHost(selector) {
++function transformHost(selector, hostState) {
+     // Locate the first :host pseudo-class
+     const hostNode = findNode(selector, isHostPseudoClass);
+     if (hostNode) {
++        hostState.transformed = true;
+         // Store the original location of the :host in the selector
+         const hostIndex = selector.index(hostNode);
+         // Swap the :host pseudo-class with the host scoping token
+@@ -582,11 +583,11 @@
+         replaceNodeWith(selector, ...contextualSelectors);
+     }
+ }
+-function transformSelector(root, transformConfig, ctx) {
++function transformSelector(root, transformConfig, ctx, hostState) {
+     validate(root, transformConfig.disableSyntheticShadowSupport && !transformConfig.scoped, ctx);
+     root.each(scopeSelector);
+     if (transformConfig.transformHost) {
+-        root.each(transformHost);
++        root.each((selector) => transformHost(selector, hostState));
+     }
+ }
+ 
+@@ -732,10 +733,10 @@
+     // scoped like any other rules.
+     return rule.parent?.type !== 'atrule' || rule.parent.name !== 'keyframes';
+ }
+-function selectorProcessorFactory(transformConfig, ctx) {
++function selectorProcessorFactory(transformConfig, ctx, hostState) {
+     return postCssSelectorParser((root) => {
+         validateIdSelectors(root, ctx);
+-        transformSelector(root, transformConfig, ctx);
++        transformSelector(root, transformConfig, ctx, hostState);
+         transformDirPseudoClass(root, ctx);
+     });
+ }
+@@ -749,11 +750,12 @@
+         disableSyntheticShadowSupport: options.disableSyntheticShadowSupport,
+         scoped: options.scoped,
+     }, ctx);
++    const hostState = { transformed: false };
+     const syntheticShadowSelectorProcessor = selectorProcessorFactory({
+         transformHost: true,
+         disableSyntheticShadowSupport: options.disableSyntheticShadowSupport,
+         scoped: options.scoped,
+-    }, ctx);
++    }, ctx, hostState);
+     return (root, result) => {
+         process$1(root, result, options.scoped, ctx);
+         process(root, ctx);
+@@ -764,8 +766,9 @@
+                     return;
+                 }
+                 // Let transform the selector with the 2 processors.
++                hostState.transformed = false;
+                 const syntheticSelector = syntheticShadowSelectorProcessor.processSync(rule);
+-                const nativeSelector = nativeShadowSelectorProcessor.processSync(rule);
++                const nativeSelector = hostState.transformed ? nativeShadowSelectorProcessor.processSync(rule) : syntheticSelector;
+                 rule.selector = syntheticSelector;
+                 // If the resulting selector are different it means that the selector use the :host selector. In
+                 // this case we need to duplicate the CSS rule and assign the other selector.
+--- a/node_modules/@lwc/style-compiler/dist/index.cjs
++++ b/node_modules/@lwc/style-compiler/dist/index.cjs
+@@ -556,10 +556,11 @@
+  * - `:host(.foo, .bar) -> [x-foo_tmpl-host].foo, [x-foo_tmpl-host].bar`
+  * @param selector
+  */
+-function transformHost(selector) {
++function transformHost(selector, hostState) {
+     // Locate the first :host pseudo-class
+     const hostNode = findNode(selector, isHostPseudoClass);
+     if (hostNode) {
++        hostState.transformed = true;
+         // Store the original location of the :host in the selector
+         const hostIndex = selector.index(hostNode);
+         // Swap the :host pseudo-class with the host scoping token
+@@ -586,11 +587,11 @@
+         replaceNodeWith(selector, ...contextualSelectors);
+     }
+ }
+-function transformSelector(root, transformConfig, ctx) {
++function transformSelector(root, transformConfig, ctx, hostState) {
+     validate(root, transformConfig.disableSyntheticShadowSupport && !transformConfig.scoped, ctx);
+     root.each(scopeSelector);
+     if (transformConfig.transformHost) {
+-        root.each(transformHost);
++        root.each((selector) => transformHost(selector, hostState));
+     }
+ }
+ 
+@@ -736,10 +737,10 @@
+     // scoped like any other rules.
+     return rule.parent?.type !== 'atrule' || rule.parent.name !== 'keyframes';
+ }
+-function selectorProcessorFactory(transformConfig, ctx) {
++function selectorProcessorFactory(transformConfig, ctx, hostState) {
+     return postCssSelectorParser((root) => {
+         validateIdSelectors(root, ctx);
+-        transformSelector(root, transformConfig, ctx);
++        transformSelector(root, transformConfig, ctx, hostState);
+         transformDirPseudoClass(root, ctx);
+     });
+ }
+@@ -753,11 +754,12 @@
+         disableSyntheticShadowSupport: options.disableSyntheticShadowSupport,
+         scoped: options.scoped,
+     }, ctx);
++    const hostState = { transformed: false };
+     const syntheticShadowSelectorProcessor = selectorProcessorFactory({
+         transformHost: true,
+         disableSyntheticShadowSupport: options.disableSyntheticShadowSupport,
+         scoped: options.scoped,
+-    }, ctx);
++    }, ctx, hostState);
+     return (root, result) => {
+         process$1(root, result, options.scoped, ctx);
+         process(root, ctx);
+@@ -768,8 +770,9 @@
+                     return;
+                 }
+                 // Let transform the selector with the 2 processors.
++                hostState.transformed = false;
+                 const syntheticSelector = syntheticShadowSelectorProcessor.processSync(rule);
+-                const nativeSelector = nativeShadowSelectorProcessor.processSync(rule);
++                const nativeSelector = hostState.transformed ? nativeShadowSelectorProcessor.processSync(rule) : syntheticSelector;
+                 rule.selector = syntheticSelector;
+                 // If the resulting selector are different it means that the selector use the :host selector. In
+                 // this case we need to duplicate the CSS rule and assign the other selector.

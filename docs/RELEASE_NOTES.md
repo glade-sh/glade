@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **LWC stylesheet compilation.** Reuses selector scoping when native and synthetic shadow output match, reducing repeated compilation work.
+
 - **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
 
 - **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v45`. Captured at 62.0, 67.0 and 68.0.
