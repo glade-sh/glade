@@ -55,26 +55,42 @@ func semiJoinNestingRejection(query Query) error {
 	return fmt.Errorf("soql: semi-join and anti-join subqueries cannot be nested")
 }
 
-// Captured sibling-child queries use one ID semi-join alongside scalar
-// conjuncts and a single-row child window. Other shapes retain their boundary.
+// Captured child semi-joins (62.0 and 67.0, anonymous and @IsTest) accept a
+// top-level conjunction in the child WHERE holding one or two IN or NOT IN
+// subqueries on a single-field select, beside simple scalar conjuncts, with no
+// LIMIT or a literal LIMIT, for any number of sibling child queries. OR forms
+// and nested groups are rejected by Salesforce and stay rejected here. Other
+// shapes retain their boundary.
 func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
-	if len(parent.ChildQueries) < 3 || len(parent.ChildQueries) > 4 ||
-		parent.HasLimit || parent.HasOffset || len(parent.Order) != 0 || parent.OrderBy != "" || parent.Count || len(parent.Aggregates) != 0 || len(parent.GroupBy) != 0 || parent.Having != nil || len(parent.Typeofs) != 0 || parent.ForUpdate || parent.ForView || parent.ForReference || parent.AllRows || parent.SecurityMode != "" || parent.UsingScope != "" || parent.OptionsBind != "" || parent.DataCategoryGroup != "" || parent.GroupMode != "" || (parent.Where != nil && conditionContainsSubquery(*parent.Where)) ||
+	if parent.HasLimit || parent.HasOffset || len(parent.Order) != 0 || parent.OrderBy != "" || parent.Count || len(parent.Aggregates) != 0 || len(parent.GroupBy) != 0 || parent.Having != nil || len(parent.Typeofs) != 0 || parent.ForUpdate || parent.ForView || parent.ForReference || parent.AllRows || parent.SecurityMode != "" || parent.UsingScope != "" || parent.OptionsBind != "" || parent.DataCategoryGroup != "" || parent.GroupMode != "" || (parent.Where != nil && conditionContainsSubquery(*parent.Where)) ||
 		len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || query.Count || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || len(query.Order) != 0 || query.OrderBy != "" || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.SecurityMode != "" || query.UsingScope != "" || query.OptionsBind != "" || query.DataCategoryGroup != "" || query.GroupMode != "" ||
-		!query.HasLimit || query.Limit != 1 || query.LimitBind != "" || query.HasOffset || query.Where == nil {
+		query.LimitBind != "" || query.HasOffset || query.Offset != 0 || (query.HasLimit && query.Limit < 1) || query.Where == nil {
 		return false
 	}
-	where := query.Where
-	if !where.SourceAnd || where.Not || where.Parenthesized || where.Field != "" || where.Op != "" || where.Formula != nil || where.Subquery != nil || len(where.Or) != 0 || len(where.And) != len(parent.ChildQueries)-1 {
+	withJoins := 0
+	for _, sibling := range parent.ChildQueries {
+		if queryHasSemiAntiJoin(sibling.Query) {
+			withJoins++
+		}
+	}
+	if withJoins != 1 {
 		return false
+	}
+	terms := []Condition{*query.Where}
+	if query.Where.Subquery == nil {
+		where := query.Where
+		if !where.SourceAnd || where.Not || where.Parenthesized || where.Field != "" || where.Op != "" || where.Formula != nil || len(where.Or) != 0 || len(where.And) < 2 {
+			return false
+		}
+		terms = where.And
 	}
 	joins := 0
-	for _, condition := range where.And {
-		if condition.Not || condition.Parenthesized || condition.Field == "" || condition.Range || len(condition.And) != 0 || len(condition.Or) != 0 || condition.Formula != nil {
+	for _, condition := range terms {
+		if condition.Not || condition.Parenthesized || condition.Field == "" || strings.Contains(condition.Field, ".") || condition.Range || len(condition.And) != 0 || len(condition.Or) != 0 || condition.Formula != nil {
 			return false
 		}
 		if condition.Subquery != nil {
-			if !strings.EqualFold(condition.Field, "Id") || !strings.EqualFold(condition.Op, "IN") || len(condition.Subquery.Fields) != 1 {
+			if !strings.EqualFold(condition.Op, "IN") && !strings.EqualFold(condition.Op, "NOT IN") || len(condition.Subquery.Fields) != 1 {
 				return false
 			}
 			joins++
@@ -82,5 +98,5 @@ func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
 			return false
 		}
 	}
-	return joins == 1
+	return joins == 1 || joins == 2
 }
