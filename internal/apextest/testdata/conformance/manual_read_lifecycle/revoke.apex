@@ -1,0 +1,1 @@
+User u=[SELECT Id FROM User WHERE Alias='shr' LIMIT 1]; ShareProbe__c r=[SELECT Id FROM ShareProbe__c WHERE Name='commit-control' LIMIT 1]; delete [SELECT Id FROM ShareProbe__Share WHERE ParentId=:r.Id AND UserOrGroupId=:u.Id AND RowCause='Manual'];

@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+partner_lead_default	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: access=false,false|describe=true|count=0	62.0	n/a	n/a
+partner_lead_default	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: access=false,false|describe=true|count=0	67.0	n/a	n/a

@@ -400,6 +400,10 @@ type VM struct {
 	// loop that cannot change the org or the current user (see
 	// beginPermissionCheckMemo). Nil outside such a loop.
 	permissionChecks *permissionCheckMemo
+	// partnerLeadShares is present only during a read-only record pass.
+	partnerLeadShares *partnerLeadShareIndex
+	// These map keys are lookup hints. Always recheck both current share rows.
+	partnerLeadNonOwnerKeys [2]storage.ID
 	// --- Describe caches ---
 	describeCache               map[describeCacheKey]Value
 	fieldDescribeCache          map[describeCacheKey]Value

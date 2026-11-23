@@ -1,0 +1,27 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+manual_read	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: denied:row=1:read=false:query=0|granted:row=1:read=true:query=1|revoked:row=1:read=false:query=0	62.0	n/a	n/a
+manual_read	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: denied:row=1:read=false:query=0|granted:row=1:read=true:query=1|revoked:row=1:read=false:query=0	67.0	n/a	n/a
+manual_read_committed_denied	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	62.0	n/a	n/a
+manual_read_committed_denied	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	67.0	n/a	n/a
+manual_read_committed_granted	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=true:query=1	62.0	n/a	n/a
+manual_read_committed_granted	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=true:query=1	67.0	n/a	n/a
+manual_read_committed_revoked	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	62.0	n/a	n/a
+manual_read_committed_revoked	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	67.0	n/a	n/a
+manual_read_anonymous_denied	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_anonymous_denied	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_anonymous_granted	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=true	n/a	n/a	0
+manual_read_anonymous_granted	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=true	n/a	n/a	0
+manual_read_anonymous_revoked	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_anonymous_revoked	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_api62_committed_denied	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	62.0	n/a	n/a
+manual_read_api62_committed_denied	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	67.0	n/a	n/a
+manual_read_api62_anonymous_denied	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_api62_anonymous_denied	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_api62_committed_granted	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=true:query=1	62.0	n/a	n/a
+manual_read_api62_committed_granted	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=true:query=1	67.0	n/a	n/a
+manual_read_api62_anonymous_granted	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=true	n/a	n/a	0
+manual_read_api62_anonymous_granted	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=true	n/a	n/a	0
+manual_read_api62_committed_revoked	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	62.0	n/a	n/a
+manual_read_api62_committed_revoked	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: row=1:read=false:query=0	67.0	n/a	n/a
+manual_read_api62_anonymous_revoked	62.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0
+manual_read_api62_anonymous_revoked	67.0	anonymous	true	false	System.AssertException: Assertion Failed: row=1:read=false	n/a	n/a	0

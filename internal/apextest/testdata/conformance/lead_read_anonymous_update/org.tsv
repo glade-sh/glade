@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome
+lead_update	62.0	anonymous	true	true	update=System.DmlException
+lead_update	67.0	anonymous	true	true	update=System.DmlException
