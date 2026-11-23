@@ -2770,8 +2770,25 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 	if index, ok := childCache.indexes[key]; ok {
 		return index
 	}
-	index := make(map[storage.ID][]string)
 	plainField, plain := childRelationshipPlainReferenceField(org, childObject.Definition, field)
+	var cacheKey string
+	var token storage.RecordsToken
+	if plain && childCache.execution != nil {
+		var versioned bool
+		token, versioned = childObject.RecordsToken()
+		if versioned {
+			cacheKey = strings.ToLower(org.Namespace + "\x00" + childObjectName + "\x00" + plainField)
+			cache := childCache.execution
+			cache.mu.RLock()
+			cached := cache.childIndex
+			cache.mu.RUnlock()
+			if cached != nil && cached.key == cacheKey && cached.token == token && childIndexMatches(org, childObject, plainField, cached) {
+				childCache.indexes[key] = cached.index
+				return cached.index
+			}
+		}
+	}
+	index := make(map[storage.ID][]string)
 	for id, record := range childObject.Records {
 		if record.System.IsDeleted {
 			continue
@@ -2793,11 +2810,49 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 		parentID = storage.IDIndexKey(parentID)
 		index[parentID] = append(index[parentID], string(id))
 	}
+	count := 0
 	for parentID := range index {
-		sort.Strings(index[parentID])
+		ids := index[parentID]
+		sort.Strings(ids)
+		count += len(ids)
 	}
 	childCache.indexes[key] = index
+	if cacheKey != "" {
+		cache := childCache.execution
+		cache.mu.Lock()
+		cache.childIndex = &sharedChildIndex{key: cacheKey, token: token, count: count, index: index}
+		cache.mu.Unlock()
+	}
 	return index
+}
+
+// Tokens alone cannot validate row fields because records can share field maps.
+// Only exact field keys are reused: case-folded fallback may be ambiguous.
+func childIndexMatches(org storage.OrgState, object storage.ObjectState, field string, cached *sharedChildIndex) bool {
+	count := 0
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		if _, exact := record.Fields[field]; !exact && !record.HasExplicitNull(field) {
+			return false
+		}
+		value, ok := childRelationshipPlainReferenceValue(org, record, field)
+		if !ok {
+			continue
+		}
+		parent := idFromValue(value)
+		if parent == "" {
+			continue
+		}
+		ids := cached.index[storage.IDIndexKey(parent)]
+		position := sort.SearchStrings(ids, string(id))
+		if position == len(ids) || ids[position] != string(id) {
+			return false
+		}
+		count++
+	}
+	return count == cached.count
 }
 
 // childRelationshipPlainReferenceField resolves a child relationship field

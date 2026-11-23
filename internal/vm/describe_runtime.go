@@ -18,6 +18,8 @@ import (
 // Keep target and permission identities separate so warm describe lookups do
 // not allocate concatenated keys. Permission assignments are still read anew
 // for each lookup, including updates that leave the record count unchanged.
+const describeFieldResultKeyHint = 64
+
 type describeCacheKey struct {
 	ObjectName                  string
 	FieldName                   string
@@ -2109,6 +2111,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		}
 	}
 	desc := Object("Schema.DescribeFieldResult")
+	// A field describe ends with about 60 keys; size once so the map does not
+	// grow and rehash while it is built.
+	desc.Fields = make(map[string]Value, describeFieldResultKeyHint)
 	describeName := vm.describeFieldName(field.APIName)
 	desc.Fields["name"] = String(describeName)
 	desc.Fields["sObjectName"] = String(objectName)
@@ -2896,36 +2901,48 @@ func completeDescribeFieldResultDefaults(desc *Value) {
 	if desc.Fields == nil {
 		desc.Fields = map[string]Value{}
 	}
-	defaults := map[string]Value{
-		"aiPredictionField":            Bool(false),
-		"cascadeDelete":                Bool(false),
-		"controller":                   Null,
-		"controllerValues":             typedMap("Map<String,Integer>"),
-		"dataTranslationEnabled":       Null,
-		"defaultedOnCreate":            Bool(false),
-		"defaultValue":                 Null,
-		"defaultValueFormula":          Null,
-		"dependentPicklist":            Bool(false),
-		"displayLocationInDecimal":     Bool(false),
-		"filteredLookupInfo":           Null,
-		"formulaTreatNullNumberAsZero": Bool(false),
-		"highScaleNumber":              Bool(false),
-		"inlineHelpText":               String(""),
-		"localName":                    Null,
-		"mask":                         Null,
-		"maskType":                     Null,
-		"queryByDistance":              Bool(false),
-		"referenceTargetField":         Null,
-		"relationshipOrder":            Int(0),
-		"restrictedDelete":             Bool(false),
-		"searchPrefilterable":          Bool(false),
-		"writeRequiresMasterRead":      Bool(false),
-	}
-	for field, value := range defaults {
-		if _, ok := desc.Fields[field]; !ok {
-			desc.Fields[field] = value
+	// controllerValues allocates one value reference per call whether or not
+	// it is kept, as the map literal did; reference counts are observable.
+	controllerValues := typedMap("Map<String,Integer>")
+	for i := range describeFieldScalarDefaults {
+		entry := &describeFieldScalarDefaults[i]
+		if _, ok := desc.Fields[entry.name]; !ok {
+			desc.Fields[entry.name] = entry.value
 		}
 	}
+	if _, ok := desc.Fields["controllerValues"]; !ok {
+		desc.Fields["controllerValues"] = controllerValues
+	}
+}
+
+// describeFieldScalarDefaults holds the immutable defaults of a field describe.
+// Every value is a scalar or Null, so entries are safe to copy into any result.
+var describeFieldScalarDefaults = []struct {
+	name  string
+	value Value
+}{
+	{"aiPredictionField", Bool(false)},
+	{"cascadeDelete", Bool(false)},
+	{"controller", Null},
+	{"dataTranslationEnabled", Null},
+	{"defaultedOnCreate", Bool(false)},
+	{"defaultValue", Null},
+	{"defaultValueFormula", Null},
+	{"dependentPicklist", Bool(false)},
+	{"displayLocationInDecimal", Bool(false)},
+	{"filteredLookupInfo", Null},
+	{"formulaTreatNullNumberAsZero", Bool(false)},
+	{"highScaleNumber", Bool(false)},
+	{"inlineHelpText", String("")},
+	{"localName", Null},
+	{"mask", Null},
+	{"maskType", Null},
+	{"queryByDistance", Bool(false)},
+	{"referenceTargetField", Null},
+	{"relationshipOrder", Int(0)},
+	{"restrictedDelete", Bool(false)},
+	{"searchPrefilterable", Bool(false)},
+	{"writeRequiresMasterRead", Bool(false)},
 }
 
 type approxVisitKey struct {
