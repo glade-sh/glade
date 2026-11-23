@@ -285,6 +285,9 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 			}
 		}
 	}
+	if value, handled, err := vm.callCartCustomField(receiver, method, args); handled || err != nil {
+		return value, handled, err
+	}
 	if len(args) != 0 {
 		return Null, false, nil
 	}
@@ -401,4 +404,50 @@ func bindCommerceInventoryConstructorAliases(object *Value) {
 	if value, ok := object.Fields[from]; ok {
 		object.Fields[to] = value
 	}
+}
+
+var cartCustomFieldObjects = map[string]string{
+	"cartextension.cartdeliverygroup": "CartDeliveryGroup",
+	"cartextension.cartitem":          "CartItem",
+}
+
+// callCartCustomField serves getCustomField and setCustomField of a cart item
+// or delivery group (commerce_cart_custom_fields/org.tsv, API 62.0 and 67.0):
+// the name must end in __c or __s and name a field of the backing object, the
+// value is the stored field value, and a set value reads back.
+func (vm *VM) callCartCustomField(receiver Value, method string, args []Value) (Value, bool, error) {
+	object, ok := cartCustomFieldObjects[strings.ToLower(receiver.Type)]
+	if !ok || vm.Org == nil {
+		return Null, false, nil
+	}
+	getter := strings.EqualFold(method, "getCustomField") && len(args) == 1
+	setter := strings.EqualFold(method, "setCustomField") && len(args) == 2
+	if !getter && !setter {
+		return Null, false, nil
+	}
+	if args[0].Kind == ValueNull {
+		return Null, true, newExceptionError("System.IllegalArgumentException", "Name of custom field must not be null.")
+	}
+	name := strings.TrimSpace(args[0].Text)
+	lower := strings.ToLower(name)
+	if !strings.HasSuffix(lower, "__c") && !strings.HasSuffix(lower, "__s") {
+		return Null, true, newExceptionError("System.IllegalArgumentException", "Couldn't access the custom field. Try again with a custom field name ending with '__c' or '__s'.")
+	}
+	state, found := vm.Org.Objects[object]
+	if !found {
+		return Null, false, nil
+	}
+	resolved, known := storage.ResolveFieldName(state.Definition, vm.Org.Namespace, name)
+	if !known {
+		return Null, true, newExceptionError("System.SObjectException", "Invalid field "+name+" for "+object)
+	}
+	key := strings.ToLower(resolved[:1]) + resolved[1:]
+	if setter {
+		receiver.Fields[key] = args[1]
+		return Null, true, nil
+	}
+	if value, present := receiver.Fields[key]; present {
+		return value, true, nil
+	}
+	return Null, true, nil
 }
