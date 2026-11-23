@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+No changes yet.
+
 ## v0.3.13
 
 v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster.
