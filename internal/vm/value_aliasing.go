@@ -2130,6 +2130,9 @@ func collectAliasBackings(value Value, refs map[uint64]aliasRuntimeBacking, visi
 		}
 		refs[value.Ref] = aliasBackingOf(value)
 	}
+	if scalarTypedCollectionCannotHoldAlias(value) {
+		return false
+	}
 	switch value.Kind {
 	case ValueObject:
 		for _, child := range value.Fields {
@@ -2171,6 +2174,18 @@ func sameBackingAliasRefreshKind(kind ValueKind) bool {
 		return false
 	}
 }
+
+// scalarTypedCollectionCannotHoldAlias reports a List or Set declared with a
+// scalar element type. Its elements cannot be collections or objects, so alias
+// traversals need not visit them one by one.
+func scalarTypedCollectionCannotHoldAlias(value Value) bool {
+	if value.Kind != ValueList && value.Kind != ValueSet {
+		return false
+	}
+	elementType, ok := collectionElementType(value.Type)
+	return ok && scalarTypeCannotContainCollectionAlias(elementType)
+}
+
 func valueContainsStaleNestedCollectionAlias(value Value, rootRef uint64, refs map[uint64]aliasRuntimeBacking, seen map[uint64]bool, visits *uint64) bool {
 	if visits != nil {
 		*visits++
@@ -2183,6 +2198,9 @@ func valueContainsStaleNestedCollectionAlias(value Value, rootRef uint64, refs m
 		if previous, ok := refs[value.Ref]; ok && value.Ref != rootRef && sameBackingAliasRefreshKind(value.Kind) && !previous.matches(value) {
 			return true
 		}
+	}
+	if scalarTypedCollectionCannotHoldAlias(value) {
+		return false
 	}
 	switch value.Kind {
 	case ValueObject:
@@ -4495,6 +4513,9 @@ func valueHasNestedAliasRef(value Value, rootRef uint64, seen map[uint64]bool) b
 		if value.Ref != rootRef {
 			return true
 		}
+	}
+	if scalarTypedCollectionCannotHoldAlias(value) {
+		return false
 	}
 	switch value.Kind {
 	case ValueObject:
