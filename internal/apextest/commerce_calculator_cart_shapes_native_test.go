@@ -31,6 +31,7 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
 		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
 		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},
+		{dir: "commerce_place_order_super_validate", class: "R5PoProbe", methods: []string{"domains", "withMock"}},
 	}
 	outcome := regexp.MustCompile(`(?:^|; )(\w+)=(?:Fail|Pass) `)
 	for _, f := range fixtures {
