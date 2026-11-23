@@ -27,10 +27,19 @@ func (vm *VM) cartTestFixture(method string, args []Value) (Value, bool) {
 		}
 		return Null, false
 	}
-	if !strings.EqualFold(method, "createCart") || len(args) != 1 || !strings.EqualFold(args[0].Text, "B2CE") {
+	if !strings.EqualFold(method, "createCart") {
+		return Null, false
+	}
+	// createCart() and createCart(B2B) materialize a store, a cart, one delivery
+	// group and one product item (cartutil native rows, API 62.0 and 67.0).
+	standard := len(args) == 0 || len(args) == 1 && strings.EqualFold(args[0].Text, "B2B")
+	if !standard && !(len(args) == 1 && strings.EqualFold(args[0].Text, "B2CE")) {
 		return Null, false
 	}
 	objects := []string{"Account", "WebStore", "WebCart"}
+	if standard {
+		objects = append(objects, "CartDeliveryGroup", "CartItem")
+	}
 	for _, name := range objects {
 		storage.EnsureStandardObject(vm.Org, name)
 		if len(vm.Org.Objects[name].Definition.KeyPrefix) != 3 {
@@ -69,6 +78,20 @@ func (vm *VM) cartTestFixture(method string, args []Value) (Value, bool) {
 	if currency, found := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), storage.Field{APIName: "CurrencyIsoCode"}); found {
 		records[2].Fields["CurrencyIsoCode"] = currency
 	}
+	if standard {
+		records[1].Fields["Type"] = storage.StringValue("B2B")
+		records = append(records,
+			storage.Record{Object: "CartDeliveryGroup", Fields: map[string]storage.Value{
+				"Name":   storage.StringValue("My Delivery Group"),
+				"CartId": storage.IDValue(identities["WebCart"]),
+			}},
+			storage.Record{Object: "CartItem", Fields: map[string]storage.Value{
+				"Name":                storage.StringValue("My Cart Item"),
+				"CartId":              storage.IDValue(identities["WebCart"]),
+				"CartDeliveryGroupId": storage.IDValue(identities["CartDeliveryGroup"]),
+				"Type":                storage.StringValue("Product"),
+			}})
+	}
 	for i := range records {
 		record := &records[i]
 		record.ID = identities[record.Object]
@@ -83,6 +106,13 @@ func (vm *VM) cartTestFixture(method string, args []Value) (Value, bool) {
 		storage.RebuildObjectIndexes(vm.Org, record.Object)
 	}
 	cart := cartTestFixtureValue(records[2])
+	if standard {
+		vm.seedCartLists(&cart, records[2].ID)
+		if len(args) == 1 {
+			cart.Fields["webStoreType"] = args[0]
+		}
+		return cart, true
+	}
 	cart.Fields["webStoreType"] = args[0]
 	return cart, true
 }
