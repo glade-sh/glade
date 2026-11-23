@@ -1198,6 +1198,8 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	} else {
 		clone.rebuildClassLookup()
 	}
+	// A clone holds its source's classes, pending structural writes included.
+	clone.classStructureWritten = vm.classStructureWritten
 	// triggerMatchCache is computed from Triggers; share the pointer so we
 	// only populate it once across all clones in a run. Concurrent test
 	// methods are protected by the cache's RWMutex.

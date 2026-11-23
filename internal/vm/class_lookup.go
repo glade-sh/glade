@@ -1423,6 +1423,9 @@ func (vm *VM) storeClassValue(class Class) {
 	// copied: the values go to this VM's overlay. Only fall back to the
 	// rebuild path when a name would be newly introduced.
 	vm.classValuesWritten = true
+	if existing, ok := vm.classEntryRaw(class.Name); !ok || !classStructureEqual(existing, class) {
+		vm.classStructureWritten = true
+	}
 	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
 		vm.classMapWritten = true
 		return

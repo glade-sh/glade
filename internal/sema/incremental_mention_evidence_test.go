@@ -3,6 +3,7 @@ package sema
 import (
 	"math/rand"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
@@ -15,9 +16,10 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// TestIncrementalMentionNarrowingEvidence checks SkipMentionRechecks on a
-// project named by GLADE_SEMA_MENTION_EVIDENCE_ROOT; it is skipped otherwise.
-// Every project class is the edited class in turn, with two random body edits
+// TestIncrementalMentionNarrowingEvidence checks SkipMentionRechecks. By
+// default it runs the bundled projects in incrementalMentionEvidenceProjects;
+// GLADE_SEMA_MENTION_EVIDENCE_ROOT names another project to read instead.
+// Every project class is the edited class in turn, with up to three edits of random kinds
 // applied through a source overlay (the project is only read). From one
 // baseline snapshot, the full rule rechecks the edited class, its subtypes
 // and every class that names it. A narrowed run reuses the cached diagnostics
@@ -28,10 +30,30 @@ import (
 // GLADE_SEMA_MENTION_EVIDENCE_SHARD=i/n checks every n-th file from i;
 // GLADE_SEMA_MENTION_EVIDENCE_LIMIT caps the files checked.
 func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
-	root := os.Getenv("GLADE_SEMA_MENTION_EVIDENCE_ROOT")
-	if root == "" {
-		t.Skip("GLADE_SEMA_MENTION_EVIDENCE_ROOT is not set")
+	if root := os.Getenv("GLADE_SEMA_MENTION_EVIDENCE_ROOT"); root != "" {
+		runIncrementalMentionEvidence(t, root)
+		return
 	}
+	for _, rel := range incrementalMentionEvidenceProjects {
+		rel := rel
+		t.Run(rel, func(t *testing.T) {
+			root := t.TempDir()
+			incrementalCopyTree(t, filepath.Join("..", "..", rel), root)
+			runIncrementalMentionEvidence(t, root)
+		})
+	}
+}
+
+// incrementalMentionEvidenceProjects are bundled projects whose classes name
+// each other, so mention-only classes exist for most edits.
+var incrementalMentionEvidenceProjects = []string{
+	"testdata/local-tests/enterprise-composed",
+	"testdata/local-tests/org-like-runner",
+	"testdata/local-tests/platform-apis",
+}
+
+func runIncrementalMentionEvidence(t *testing.T, root string) {
+	t.Helper()
 	shard, shards := 0, 1
 	if spec := os.Getenv("GLADE_SEMA_MENTION_EVIDENCE_SHARD"); spec != "" {
 		left, right, _ := strings.Cut(spec, "/")
@@ -55,8 +77,7 @@ func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
 	start := time.Now()
 	_, run := state.analyzeLocked(index, incrementalOptions(&artifacts), nil)
 	if run.snapshot == nil {
-		// Nothing is cached, so every edit is a full analysis under either rule.
-		t.Skipf("baseline not cached: %+v", run.stats)
+		t.Fatalf("baseline not cached: %+v", run.stats)
 	}
 	base := run.snapshot
 	seen := map[string]bool{}
@@ -71,12 +92,19 @@ func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
 	sort.Strings(files)
 	rng := rand.New(rand.NewSource(42))
 	rng.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
-	edits := []string{"local-in-body", "undefined-call-in-body", "unknown-field-in-body", "unknown-type-in-body", "duplicate-local-in-body"}
-	editFn := map[string]incrementalEdit{}
+	// Every edit kind that can leave the index unchanged; kinds that change it
+	// are counted as not body-only.
+	var edits []incrementalEdit
 	for _, e := range incrementalEdits {
-		editFn[e.name] = e
+		switch e.name {
+		case "comment-at-end", "comment-at-top", "blank-lines-top", "add-method", "add-field", "break-syntax":
+			continue
+		}
+		edits = append(edits, e)
 	}
+	const editsPerFile = 3
 	var checked, compared, notBodyOnly, noBody, fellBack, mentionTypes, differ int
+	kindEdits, kindMentions := map[string]int{}, map[string]int{}
 	for fi, file := range files {
 		if fi%shards != shard {
 			continue
@@ -91,13 +119,17 @@ func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
 		}
 		// One generator per file keeps each file's edits independent of sharding.
 		fileRNG := rand.New(rand.NewSource(int64(fi) + 1))
-		for k := 0; k < 2; k++ {
-			name := edits[fileRNG.Intn(len(edits))]
-			text, ok := editFn[name].apply(string(raw), fileRNG)
+		applied := 0
+		for _, pick := range fileRNG.Perm(len(edits)) {
+			if applied == editsPerFile {
+				break
+			}
+			name := edits[pick].name
+			text, ok := edits[pick].apply(string(raw), fileRNG)
 			if !ok {
-				noBody++
 				continue
 			}
+			applied++
 			overlay := typesys.NewSourceOverlay(map[string]string{file: text})
 			next, exact := typesys.TryUpdateApexFileWithOverlay(index, file, p, overlay)
 			if !exact {
@@ -119,45 +151,35 @@ func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
 				continue
 			}
 			compared++
-			narrowed := narrowedRecheckSet(next, full.changed)
+			kindEdits[name]++
+			narrowed, _ := subtypeClosure(next, full.changed)
 			for typeIndex := range next.Types {
 				if full.recheck == nil || !full.recheck[typeIndex] || narrowed[typeIndex] {
 					continue
 				}
 				mentionTypes++
+				kindMentions[name]++
 				if !reflect.DeepEqual(full.snapshot.typeDiags[typeIndex], base.typeDiags[typeIndex]) {
 					differ++
 					t.Errorf("file #%d edit %s: class #%d names the edited class and its diagnostics changed: %d -> %d", fi, name, typeIndex, len(base.typeDiags[typeIndex]), len(full.snapshot.typeDiags[typeIndex]))
 				}
 			}
 		}
+		if applied == 0 {
+			noBody++
+		}
 		if checked%25 == 0 {
 			t.Logf("progress files=%d edits=%d mentionTypes=%d differ=%d elapsed=%s", checked, compared, mentionTypes, differ, time.Since(start).Round(time.Second))
 		}
 	}
+	kinds := make([]string, 0, len(kindEdits))
+	for name := range kindEdits {
+		kinds = append(kinds, name)
+	}
+	sort.Strings(kinds)
+	for _, name := range kinds {
+		t.Logf("KIND %s bodyOnlyEdits=%d mentionOnlyTypesCompared=%d", name, kindEdits[name], kindMentions[name])
+	}
 	t.Logf("SUMMARY shard=%d/%d files=%d of %d bodyOnlyEdits=%d mentionOnlyTypesCompared=%d differ=%d notBodyOnly=%d noBody=%d fallback=%d elapsed=%s",
 		shard, shards, checked, len(files), compared, mentionTypes, differ, notBodyOnly, noBody, fellBack, time.Since(start).Round(time.Second))
-}
-
-// narrowedRecheckSet is the SkipMentionRechecks set: the changed types and
-// their subtypes, transitively.
-func narrowedRecheckSet(index typesys.Index, changed []bool) []bool {
-	recheck := append([]bool(nil), changed...)
-	names := map[string]bool{}
-	for i, typ := range index.Types {
-		if changed[i] {
-			names[strings.ToLower(topLevelTypeName(typ.Name))] = true
-		}
-	}
-	for grown := true; grown; {
-		grown = false
-		for i, typ := range index.Types {
-			if !recheck[i] && extendsAny(typ, names) {
-				recheck[i] = true
-				names[strings.ToLower(topLevelTypeName(typ.Name))] = true
-				grown = true
-			}
-		}
-	}
-	return recheck
 }

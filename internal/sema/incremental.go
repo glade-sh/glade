@@ -231,30 +231,8 @@ func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
 	if !r.reuseOK {
 		return
 	}
-	recheck := append([]bool(nil), r.changed...)
-	names := map[string]bool{}
-	anyChanged := false
-	for i, typ := range index.Types {
-		if r.changed[i] {
-			anyChanged = true
-			names[strings.ToLower(topLevelTypeName(typ.Name))] = true
-		}
-	}
-	if anyChanged {
-		// Subtypes: closure over superclass and interface names.
-		for grown := true; grown; {
-			grown = false
-			for i, typ := range index.Types {
-				if recheck[i] {
-					continue
-				}
-				if extendsAny(typ, names) {
-					recheck[i] = true
-					names[strings.ToLower(topLevelTypeName(typ.Name))] = true
-					grown = true
-				}
-			}
-		}
+	recheck, names := subtypeClosure(index, r.changed)
+	if len(names) != 0 {
 		if r.skipMentions {
 			r.recheck = recheck
 			return
@@ -283,6 +261,33 @@ func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
 		}
 	}
 	r.recheck = recheck
+}
+
+// subtypeClosure marks the changed types and every type that extends or
+// implements one of them, transitively. names holds the top-level names of
+// the marked types, lowercased.
+func subtypeClosure(index typesys.Index, changed []bool) (marked []bool, names map[string]bool) {
+	marked = append([]bool(nil), changed...)
+	names = map[string]bool{}
+	for i, typ := range index.Types {
+		if changed[i] {
+			names[strings.ToLower(topLevelTypeName(typ.Name))] = true
+		}
+	}
+	if len(names) == 0 {
+		return marked, names
+	}
+	for grown := true; grown; {
+		grown = false
+		for i, typ := range index.Types {
+			if !marked[i] && extendsAny(typ, names) {
+				marked[i] = true
+				names[strings.ToLower(topLevelTypeName(typ.Name))] = true
+				grown = true
+			}
+		}
+	}
+	return marked, names
 }
 
 // containsIdentifierMention keeps uncertain non-ASCII and escaped source

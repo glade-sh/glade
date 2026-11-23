@@ -111,3 +111,30 @@ func sameNameSet(left, right []string) bool {
 	}
 	return true
 }
+
+// classStructureEqual reports whether two values of one class agree on
+// everything the candidate filter and class lookup read: identity,
+// hierarchy, kind and modifiers. Field values may differ.
+func classStructureEqual(a, b Class) bool {
+	if (a.lazy == nil) != (b.lazy == nil) {
+		return false
+	}
+	return a.Name == b.Name && a.Namespace == b.Namespace && a.SuperClass == b.SuperClass &&
+		a.PlatformType == b.PlatformType && a.SourceUnit == b.SourceUnit && a.APIVersion == b.APIVersion &&
+		a.Access == b.Access && a.IsAbstract == b.IsAbstract && a.IsInterface == b.IsInterface &&
+		a.IsTest == b.IsTest && a.Nested == b.Nested && a.Dependency == b.Dependency &&
+		equalStringSlices(a.Interfaces, b.Interfaces) && equalStringSlices(a.Modifiers, b.Modifiers) &&
+		equalStringSlices(a.EnumValues, b.EnumValues)
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

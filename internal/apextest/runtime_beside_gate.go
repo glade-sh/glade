@@ -33,7 +33,14 @@ type runtimeBesideGateResult struct {
 	key     runtimeCacheKey
 	runtime runtimeExecutionView
 	err     error
+	// panicked holds a panic the build raised; finish raises it again on the
+	// run's goroutine, where the sequential build would have raised it.
+	panicked any
 }
+
+// runtimeBesideGateBuilds counts builds still running beside a gate,
+// abandoned ones included; WaitForRuntimeCacheWork drains them.
+var runtimeBesideGateBuilds sync.WaitGroup
 
 // startRuntimeBesideGate starts the build when another processor can take
 // it. Perf-counter runs stay sequential so their phase timings keep their
@@ -49,9 +56,18 @@ func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCa
 		receive.Do(func() { received = <-early.hint })
 		return received.compilation, received.ok
 	}
+	runtimeBesideGateBuilds.Add(1)
 	go func() {
+		defer runtimeBesideGateBuilds.Done()
+		var result runtimeBesideGateResult
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: recovered}
+			}
+			early.result <- result
+		}()
 		key, view, err := runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
-		early.result <- runtimeBesideGateResult{key: key, runtime: view, err: err}
+		result = runtimeBesideGateResult{key: key, runtime: view, err: err}
 	}()
 	return early
 }
@@ -74,5 +90,8 @@ func (e *runtimeBesideGate) abandon() {
 func (e *runtimeBesideGate) finish(compilation *visualforce.ControllerCompilation) (runtimeCacheKey, runtimeExecutionView, error) {
 	e.send(runtimeGateHint{compilation: compilation, ok: true})
 	result := <-e.result
+	if result.panicked != nil {
+		panic(result.panicked)
+	}
 	return result.key, result.runtime, result.err
 }

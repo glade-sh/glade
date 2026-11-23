@@ -461,6 +461,8 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	generation.oneShot = opts.OneShotProcess
 	early := startRuntimeBesideGate(index, opts, sources, generation, runState)
+	// Every exit, a panic included, releases a build the run did not finish.
+	defer early.abandon()
 	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
 		early.abandon()
@@ -1961,6 +1963,11 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if prepared != nil && prepared.awaitControllerCompilation != nil {
+			if _, ok := prepared.awaitControllerCompilation(); !ok {
+				return "", zero, errRuntimeAbandoned
+			}
+		}
 		if sources != nil && sources.privateRuntime {
 			return "", zero, err
 		}
@@ -1997,8 +2004,20 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	} else {
 		generation = *prepared
 	}
+	// A build started beside the semantic gate touches no shared cache state
+	// until the gate accepts the index: accepted blocks for the gate's result.
+	accepted := func() bool {
+		if generation.awaitControllerCompilation == nil {
+			return true
+		}
+		_, ok := generation.awaitControllerCompilation()
+		return ok
+	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
+		if !accepted() {
+			return key, zero, errRuntimeAbandoned
+		}
 		if !sources.privateRuntime {
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -2007,11 +2026,24 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
 	key := generation.key
-	if !sources.privateRuntime {
-		rememberRuntimeCacheRoot(index, key)
+	// rememberRoot records the cache root once the index is accepted; a build
+	// beside the gate does so when it reaches page registration.
+	rememberRoot := func() {
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+		}
+	}
+	if generation.awaitControllerCompilation == nil {
+		rememberRoot()
 	}
 	if !sources.privateRuntime {
 		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			if !accepted() {
+				return key, zero, errRuntimeAbandoned
+			}
+			if generation.awaitControllerCompilation != nil {
+				rememberRoot()
+			}
 			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
 			if err := sources.validateCapturedSourceGeneration(); err != nil {
 				evictSnapshotCaches(key)
@@ -2027,6 +2059,12 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
+				if !accepted() {
+					return key, zero, errRuntimeAbandoned
+				}
+				if generation.awaitControllerCompilation != nil {
+					rememberRoot()
+				}
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
 				if err := sources.validateCapturedSourceGeneration(); err != nil {
 					evictSnapshotCaches(key)
@@ -2065,6 +2103,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
 			return key, zero, errRuntimeAbandoned
 		}
+		rememberRoot()
 	}
 	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
@@ -2120,7 +2159,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			}
 		}
 		if sources.backgroundDiskPublication {
-			publishInBackground(publish)
+			publishInBackground(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)
 		} else {
 			publish()
 		}

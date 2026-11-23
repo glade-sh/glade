@@ -19,19 +19,29 @@ func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 
 // backgroundPublications serializes startup-cache writes that runs with
 // Options.BackgroundDiskPublication hand off: the memory cache already serves
-// the runtime, and the disk copy only speeds a later process start.
+// the runtime, and the disk copy only speeds a later process start. Each
+// write takes a sequence number when its run hands it off; a write older than
+// one already written for the same project root is dropped, so a slow write
+// cannot replace a newer entry.
 var (
 	backgroundPublications     sync.Mutex
 	backgroundPublicationsDone sync.WaitGroup
+	backgroundPublicationSeq   atomic.Uint64
+	backgroundPublished        = map[string]uint64{}
 )
 
-func publishInBackground(publish func()) {
+func publishInBackground(root string, publish func()) {
+	seq := backgroundPublicationSeq.Add(1)
 	backgroundPublicationsDone.Add(1)
 	go func() {
 		defer backgroundPublicationsDone.Done()
 		backgroundPublications.Lock()
 		defer backgroundPublications.Unlock()
+		if backgroundPublished[root] > seq {
+			return
+		}
 		publish()
+		backgroundPublished[root] = seq
 	}()
 }
 

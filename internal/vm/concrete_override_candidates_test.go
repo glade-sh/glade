@@ -64,3 +64,41 @@ func equalStrings(left, right []string) bool {
 	}
 	return true
 }
+
+// TestConcreteOverrideCandidatesCloneAfterReplacement covers a clone taken
+// after a class replacement and before the next freeze: it holds the
+// replaced class, so it must not read or fill the frozen generation's lists.
+func TestConcreteOverrideCandidatesCloneAfterReplacement(t *testing.T) {
+	machine := New(nil)
+	for _, class := range []Class{{Name: "Base", IsAbstract: true}, {Name: "Alpha", SuperClass: "Base"}, {Name: "Beta", SuperClass: "Base"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	machine.FreezeClassLookup()
+	sorted := func(vm *VM) []string {
+		got := append([]string(nil), vm.concreteOverrideCandidates("Base")...)
+		sort.Strings(got)
+		return got
+	}
+	beta, _ := machine.classEntry("Beta")
+	beta.SuperClass = ""
+	machine.storeClassValue(beta)
+	clone := machine.CloneRuntime(nil)
+	if !clone.classStructureWritten {
+		t.Fatal("the clone dropped its source's pending structural write")
+	}
+	if got := sorted(clone); !equalStrings(got, []string{"Alpha"}) {
+		t.Fatalf("clone after replacement: candidates = %v", got)
+	}
+	fresh := New(nil)
+	for _, class := range []Class{{Name: "Base", IsAbstract: true}, {Name: "Alpha", SuperClass: "Base"}, {Name: "Beta", SuperClass: "Base"}} {
+		if err := fresh.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fresh.FreezeClassLookup()
+	if got := sorted(fresh); !equalStrings(got, []string{"Alpha", "Beta"}) {
+		t.Fatalf("unchanged machine: candidates = %v", got)
+	}
+}
