@@ -12,13 +12,14 @@ import (
 // ../apextest/testdata/conformance/commerce_inventory_request_getters/org.tsv
 // (the four commerce_inventory request classes cannot be built outside a test;
 // responses and CartDeliveryGroupMethod can; CartTestUtil.createCart is a test
-// method) and commerce_cart_custom_fields/org.tsv (getCart is a test method, so
+// method), commerce_cartutil_anonymous/org.tsv (getCart and every createCart
+// overload throw) and commerce_cart_custom_fields/org.tsv (getCart is a test method, so
 // the cart custom-field members are unreachable from anonymous Apex). The
 // IsTest rows for the same fixtures run in internal/apextest.
 func TestExecCommerceAnonymousRoutesMatchNativeRows(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_ROOT", "")
-	for _, fixture := range []string{"commerce_inventory_request_getters", "commerce_cart_custom_fields"} {
+	for _, fixture := range []string{"commerce_inventory_request_getters", "commerce_cart_custom_fields", "commerce_cartutil_anonymous"} {
 		base := filepath.Join("../apextest/testdata/conformance", fixture)
 		table, err := os.ReadFile(filepath.Join(base, "org.tsv"))
 		if err != nil {

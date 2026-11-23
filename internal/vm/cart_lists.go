@@ -459,7 +459,7 @@ func (vm *VM) callCartCustomField(receiver Value, method string, args []Value) (
 
 // commerceInventoryOutsideTestError is the failure of building one of the four
 // commerce_inventory request objects outside a test
-// (commerce_cart_anonymous_routes/org.tsv, API 62.0 and 67.0). The response
+// (commerce_inventory_request_getters/org.tsv (invanon), commerce_cart_custom_fields/org.tsv (cfanon) and commerce_cartutil_anonymous/org.tsv, API 62.0 and 67.0). The response
 // classes construct freely.
 func (vm *VM) commerceInventoryOutsideTestError(typeName string) error {
 	if vm.testContext != nil || len(typeName) < len("commerce_inventory.") || !strings.EqualFold(typeName[:len("commerce_inventory.")], "commerce_inventory.") {

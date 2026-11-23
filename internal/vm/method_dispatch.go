@@ -254,7 +254,7 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 	}
 	if method.IsStatic && vm.testContext == nil && len(commerceClassName) == len("CartExtension.CartTestUtil") && strings.EqualFold(commerceClassName, "CartExtension.CartTestUtil") {
 		if name := apexMethodMemberName(method.Name); strings.EqualFold(name, "createCart") || strings.EqualFold(name, "getCart") {
-			// commerce_cart_anonymous_routes/org.tsv, API 62.0 and 67.0.
+			// commerce_inventory_request_getters/org.tsv (invanon), commerce_cart_custom_fields/org.tsv (cfanon) and commerce_cartutil_anonymous/org.tsv, API 62.0 and 67.0.
 			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
 		}
 	}

@@ -6342,3 +6342,25 @@ func TestExecURLMissingProtocolIsCatchable(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Inside a test the utility keeps the store type it was given and the id it
+// was asked for; outside a test both throw (see TestExecGeneratedPlatformHelpers
+// and the commerce_cartutil_anonymous native rows).
+func TestExecCartTestUtilInTestContextKeepsStoreTypeAndId(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.Cart utilCart = CartExtension.CartTestUtil.createCart(CartExtension.WebStoreTypeEnum.B2B);
+CartExtension.Cart fetchedCart = CartExtension.CartTestUtil.getCart('0aB000000000001AAA');
+System.assertNotEquals(null, utilCart);
+System.assertNotEquals(null, fetchedCart);
+System.assertEquals(CartExtension.WebStoreTypeEnum.B2B, utilCart.webStoreType);
+System.assertEquals('0aB000000000001AAA', fetchedCart.id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
