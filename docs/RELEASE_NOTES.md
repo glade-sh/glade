@@ -109,6 +109,9 @@
 - **Parse JSON output.** Encoding a large parse result uses less temporary memory while preserving its JSON. A synthetic benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
 
 - **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
+- **LWC preview bundle ownership.** Preview configuration indexes multiple bundle roots instead of comparing every source with every root. On a synthetic 1,000-bundle preview, Go allocations fell from about 2.05 million to 52,000 with identical compiled artifacts.
+- **LWC runtime assets.** The local shell names its stylesheet and entry script by content (`?v=` with a content hash), so browsers keep them without revalidating. Unversioned URLs still work and revalidate with an ETag taken from the file's stamp, so an unchanged asset costs no body transfer, no disk read and no hashing. The hash is computed once per content version.
+- **Visualforce Lightning bootstrap.** A project with no LWC sources no longer starts Node on every page request. The empty manifest is written directly, with the same bytes the compiler wrote.
 
 ### CI
 
