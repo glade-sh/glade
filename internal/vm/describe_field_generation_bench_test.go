@@ -56,3 +56,26 @@ func BenchmarkFieldDescribeAcrossVMs(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkFieldDescribeWideObject describes 150 distinct fields once per
+// fresh VM, the first-use cost a wide object pays in each test.
+func BenchmarkFieldDescribeWideObject(b *testing.B) {
+	var sb strings.Builder
+	for i := 0; i < 150; i++ {
+		fmt.Fprintf(&sb, "String y%d = Widget__c.pkg__Field_%04d__c.getDescribe().getLabel();\n", i, i)
+	}
+	program, err := CompileAnonymous(sb.String())
+	if err != nil {
+		b.Fatal(err)
+	}
+	org := describeOverlayOrg(200)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		machine := New(nil)
+		machine.SetOrg(&org)
+		if _, err := machine.Execute(program); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
