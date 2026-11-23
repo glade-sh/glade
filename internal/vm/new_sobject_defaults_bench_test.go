@@ -9,9 +9,20 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Measures newSObject(recordTypeId, true) on an object with ordinary string,
-// date and arithmetic defaults.
+// Measures newSObject(recordTypeId, true). The ordinary object holds string,
+// date and arithmetic defaults; the clock object adds a clock-based default
+// that now evaluates instead of returning null.
 func BenchmarkNewSObjectLoadDefaults(b *testing.B) {
+	for _, clock := range []bool{false, true} {
+		name := "ordinary"
+		if clock {
+			name = "clock"
+		}
+		b.Run(name, func(b *testing.B) { benchNewSObjectLoadDefaults(b, clock) })
+	}
+}
+
+func benchNewSObjectLoadDefaults(b *testing.B, clock bool) {
 	org := storage.NewOrgState()
 	org.Now = func() time.Time { return time.Date(2026, 5, 15, 10, 7, 0, 0, time.UTC) }
 	generator := storage.NewStandardIDGenerator()
@@ -24,7 +35,9 @@ func BenchmarkNewSObjectLoadDefaults(b *testing.B) {
 		"Tomorrow__c":  {APIName: "Tomorrow__c", Type: storage.FieldDate, DefaultValue: "TODAY()+1"},
 		"Number__c":    {APIName: "Number__c", Type: storage.FieldDecimal, DefaultValue: "1+2*3"},
 		"Moment__c":    {APIName: "Moment__c", Type: storage.FieldDateTime, DefaultValue: "NOW()"},
-		"Offset__c":    {APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+(30-MOD(MINUTE(TIMEVALUE(NOW())),30))/1440"},
+	}
+	if clock {
+		fields["Offset__c"] = storage.Field{APIName: "Offset__c", Type: storage.FieldDateTime, DefaultValue: "NOW()+(30-MOD(MINUTE(TIMEVALUE(NOW())),30))/1440"}
 	}
 	for i := 0; i < 20; i++ {
 		name := fmt.Sprintf("Extra%02d__c", i)
