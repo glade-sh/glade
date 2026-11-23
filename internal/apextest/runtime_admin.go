@@ -86,6 +86,7 @@ func InvalidateRuntimeCaches() {
 func WaitForRuntimeCacheWork() {
 	runtimePatchTransitionFlights.Wait()
 	semanticResults.Wait()
+	backgroundPublicationsDone.Wait()
 }
 
 // WaitForSemanticCacheWork is retained for internal callers compiled against

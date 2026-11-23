@@ -41,6 +41,9 @@ type Daemon struct {
 	// runGenerationFn is a per-daemon test seam for proving a run receives one
 	// complete immutable generation. Production leaves it nil.
 	runGenerationFn func(context.Context, daemonGeneration, apextest.Options) testreport.Run
+	// backgroundDiskPublication lets a served daemon's runs write the startup
+	// cache after returning; Server.Close waits for those writes.
+	backgroundDiskPublication bool
 }
 
 // daemonGeneration is the complete immutable state consumed by each daemon
@@ -192,7 +195,8 @@ func (d *Daemon) SnapshotSelection(changes []watch.Change) (typesys.Index, watch
 	return generation.index, watch.SelectAffectedTestsWithRefGraph(generation.index, changes, generation.graph)
 }
 
-func optionsForGeneration(opts apextest.Options, generation daemonGeneration) apextest.Options {
+func (d *Daemon) optionsForGeneration(opts apextest.Options, generation daemonGeneration) apextest.Options {
+	opts.BackgroundDiskPublication = d.backgroundDiskPublication
 	artifacts := generation.artifacts
 	opts.BuildArtifacts = &artifacts
 	opts.SourceDigests = artifacts.SourceDigests
@@ -204,9 +208,9 @@ func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration,
 	ctx = apextest.WithSemanticIdentityGeneration(ctx, generation.identity)
 	ctx = apextest.WithIncrementalSemantic(ctx, d.semaState)
 	if d.runGenerationFn != nil {
-		return d.runGenerationFn(ctx, generation, optionsForGeneration(opts, generation))
+		return d.runGenerationFn(ctx, generation, d.optionsForGeneration(opts, generation))
 	}
-	run := apextest.RunContext(ctx, generation.index, optionsForGeneration(opts, generation))
+	run := apextest.RunContext(ctx, generation.index, d.optionsForGeneration(opts, generation))
 	if run.Summary().CompileErrors == 0 || ctx.Err() != nil {
 		return run
 	}
@@ -219,7 +223,7 @@ func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration,
 		return run
 	}
 	ctx = apextest.WithSemanticIdentityGeneration(ctx, refreshed.identity)
-	return apextest.RunContext(ctx, refreshed.index, optionsForGeneration(opts, refreshed))
+	return apextest.RunContext(ctx, refreshed.index, d.optionsForGeneration(opts, refreshed))
 }
 
 // refreshStaleGeneration reports false when generation still matches the

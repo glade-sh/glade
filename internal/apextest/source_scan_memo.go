@@ -17,6 +17,24 @@ var sourceScanMemoEnabled atomic.Bool
 // org- or configuration-dependent step still runs on each call.
 func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 
+// backgroundPublications serializes startup-cache writes that runs with
+// Options.BackgroundDiskPublication hand off: the memory cache already serves
+// the runtime, and the disk copy only speeds a later process start.
+var (
+	backgroundPublications     sync.Mutex
+	backgroundPublicationsDone sync.WaitGroup
+)
+
+func publishInBackground(publish func()) {
+	backgroundPublicationsDone.Add(1)
+	go func() {
+		defer backgroundPublicationsDone.Done()
+		backgroundPublications.Lock()
+		defer backgroundPublications.Unlock()
+		publish()
+	}()
+}
+
 // sourceScanMemoLimit and sourceScanMemoByteLimit bound a memo by entries
 // and by the source bytes its entries were computed from (each entry holds
 // data proportional to its source); past either the memo starts over. Every

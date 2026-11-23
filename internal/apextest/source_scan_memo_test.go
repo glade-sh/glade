@@ -7,7 +7,9 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -175,4 +177,24 @@ func TestSourceScanMemoBoundsBytes(t *testing.T) {
 			t.Fatalf("memo holds %d entries and %d bytes past the byte bound", memo.len(), memo.bytes)
 		}
 	})
+}
+
+func TestBackgroundDiskPublicationDrains(t *testing.T) {
+	var order []int
+	var mu sync.Mutex
+	for i := 0; i < 3; i++ {
+		i := i
+		publishInBackground(func() {
+			time.Sleep(5 * time.Millisecond)
+			mu.Lock()
+			order = append(order, i)
+			mu.Unlock()
+		})
+	}
+	WaitForRuntimeCacheWork()
+	mu.Lock()
+	defer mu.Unlock()
+	if len(order) != 3 {
+		t.Fatalf("WaitForRuntimeCacheWork returned before %d publications finished", 3-len(order))
+	}
 }

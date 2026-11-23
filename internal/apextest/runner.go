@@ -50,15 +50,18 @@ type Options struct {
 	// RuntimeRESTAPIVersion selects the test org REST context, independently of
 	// project and component source API versions. Empty retains the default.
 	RuntimeRESTAPIVersion string
-	Filter                string
-	SelectedClasses       []string
-	SelectedMethod        string
-	LimitMode             vm.LimitMode
-	LimitCaps             vm.LimitCaps
-	LimitCapsSet          bool
-	TraceBlocked          bool
-	TraceAll              bool
-	SlowTestThresholdMS   int64
+	// BackgroundDiskPublication writes a freshly built runtime to the startup
+	// cache after the run returns; WaitForRuntimeCacheWork drains those writes.
+	BackgroundDiskPublication bool
+	Filter                    string
+	SelectedClasses           []string
+	SelectedMethod            string
+	LimitMode                 vm.LimitMode
+	LimitCaps                 vm.LimitCaps
+	LimitCapsSet              bool
+	TraceBlocked              bool
+	TraceAll                  bool
+	SlowTestThresholdMS       int64
 	// WorkSink, when set, receives each test's counted work after it runs.
 	// It is advisory and never changes a test outcome.
 	WorkSink        func(class, method string, total vm.WorkCounts, methods []vm.MethodWork)
@@ -429,6 +432,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
 	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
+	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
 	// A matching snapshot selects the already-loaded project graph for runtime
 	// metadata generation and org setup; nil retains disk discovery. This keeps
 	// dependency roots from changing between indexing and generation. Native
@@ -2110,8 +2114,15 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
-			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+		publish := func() {
+			if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
+				persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+			}
+		}
+		if sources.backgroundDiskPublication {
+			publishInBackground(publish)
+		} else {
+			publish()
 		}
 	}
 	return key, projected, nil
@@ -4119,6 +4130,8 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
+	// backgroundDiskPublication is Options.BackgroundDiskPublication.
+	backgroundDiskPublication   bool
 	mu                          sync.RWMutex
 	expectedDigests             *typesys.SourceDigestSet
 	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
