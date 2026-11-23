@@ -45,7 +45,7 @@ func TestOneShotAuthoritySkipsProofs(t *testing.T) {
 	fixture := newRuntimeTransitionFixture(t)
 	writeFile(t, filepath.Join(fixture.root, "force-app/main/default/classes/OneShotWorkloadTest.cls"), oneShotWorkloadSource)
 	index, digests := fixture.fullIndex(t)
-	if authority := newRuntimePatchAuthority(index, ""), digests, &sourceCache{}, runtimeCacheEntry{}, storage.OrgState{}, true); authority != nil {
+	if authority := newRuntimePatchAuthority(index, "", digests, &sourceCache{}, runtimeCacheEntry{}, storage.OrgState{}, true); authority != nil {
 		t.Fatal("one-shot run built a patch authority")
 	}
 }
