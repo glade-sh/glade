@@ -90,7 +90,7 @@ func (vm *VM) generatedShareParentRecord(objectName string, record storage.Recor
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
-	if hasSuffixFold(objectName, "__share") {
+	if hasSuffixFold(objectName, "__share") && vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
 		if parentObject, parent, ok := vm.generatedShareParentRecord(objectName, record); ok {
 			return vm.userModeRecordVisible(parentObject, parent, userID)
 		}
