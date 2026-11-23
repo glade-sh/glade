@@ -1,0 +1,3 @@
+id	route	file
+relationship	anonymous	relationship.apex
+relationship_test	istest	RelationshipQueryTest

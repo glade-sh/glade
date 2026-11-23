@@ -1449,6 +1449,9 @@ func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) m
 		"UserType":      StringValue(userType),
 	}
 	applyCapturedProfilePermissions(fields, name)
+	if name == "System Administrator" {
+		fields["PermissionsInstallMultiforce"] = BooleanValue(true)
+	}
 	return fields
 }
 
@@ -1490,6 +1493,11 @@ func applyCapturedProfilePermissions(fields map[string]Value, profileName string
 	// user_manage_users/permission_values/org.tsv record both fields at API
 	// 62.0 and 67.0: true for the administrator, false for the other seven.
 	isAdministrator := profileName == "System Administrator"
+	if isAdministrator {
+		for _, flag := range systemAdministratorPermissionDefaults {
+			fields[flag] = BooleanValue(true)
+		}
+	}
 	fields["PermissionsManageUsers"] = BooleanValue(isAdministrator)
 	fields["PermissionsManageInternalUsers"] = BooleanValue(isAdministrator)
 }

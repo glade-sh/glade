@@ -1001,20 +1001,18 @@ System.assertEquals('weekly', options.get(0).getValue());
 System.assertEquals('Weekly', options.get(0).getLabel());
 System.assertEquals('weekly', selected.get(0));
 
-CartExtension.Cart utilCart = CartExtension.CartTestUtil.createCart(CartExtension.WebStoreTypeEnum.B2B);
-CartExtension.Cart fetchedCart = CartExtension.CartTestUtil.getCart('0aB000000000001AAA');
-System.assertNotEquals(null, utilCart);
-System.assertNotEquals(null, fetchedCart);
-System.assertEquals(CartExtension.WebStoreTypeEnum.B2B, utilCart.webStoreType);
-System.assertEquals('0aB000000000001AAA', fetchedCart.id);
+// Outside a test both are test methods (commerce_inventory_request_getters org.tsv invanon, API 62.0 and 67.0).
+Boolean createFailed = false;
+try { CartExtension.CartTestUtil.createCart(CartExtension.WebStoreTypeEnum.B2B); } catch (System.TypeException e) { createFailed = e.getMessage() == 'Cannot call test methods in non-test context'; }
+Boolean getFailed = false;
+try { CartExtension.CartTestUtil.getCart('0aB000000000001AAA'); } catch (System.TypeException e) { getFailed = e.getMessage() == 'Cannot call test methods in non-test context'; }
+System.assert(createFailed);
+System.assert(getFailed);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// CartTestUtil is a test utility: Salesforce throws outside a test.
-	machine := New(nil)
-	machine.EnableTestContext()
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -6341,6 +6339,28 @@ func TestExecURLMissingProtocolIsCatchable(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Inside a test the utility keeps the store type it was given and the id it
+// was asked for; outside a test both throw (see TestExecGeneratedPlatformHelpers
+// and the commerce_cartutil_anonymous native rows).
+func TestExecCartTestUtilInTestContextKeepsStoreTypeAndId(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.Cart utilCart = CartExtension.CartTestUtil.createCart(CartExtension.WebStoreTypeEnum.B2B);
+CartExtension.Cart fetchedCart = CartExtension.CartTestUtil.getCart('0aB000000000001AAA');
+System.assertNotEquals(null, utilCart);
+System.assertNotEquals(null, fetchedCart);
+System.assertEquals(CartExtension.WebStoreTypeEnum.B2B, utilCart.webStoreType);
+System.assertEquals('0aB000000000001AAA', fetchedCart.id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

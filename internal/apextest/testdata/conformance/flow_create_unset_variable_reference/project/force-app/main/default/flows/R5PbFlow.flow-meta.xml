@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>__API__</apiVersion>
+<assignments><name>AsgStd</name><label>AsgStd</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>Std.Id</assignToReference><operator>Assign</operator><value><elementReference>Each.Id</elementReference></value></assignmentItems><connector><targetReference>Each</targetReference></connector></assignments>
+<label>R5PbFlow</label>
+<loops><name>Each</name><label>Each</label><locationX>0</locationX><locationY>0</locationY><collectionReference>GetPbs</collectionReference><iterationOrder>Asc</iterationOrder><nextValueConnector><targetReference>AsgStd</targetReference></nextValueConnector><noMoreValuesConnector><targetReference>MkEntry</targetReference></noMoreValuesConnector></loops>
+<processType>AutoLaunchedFlow</processType>
+<recordCreates><name>MkEntry</name><label>MkEntry</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Pricebook2Id</field><value><elementReference>Std.Id</elementReference></value></inputAssignments><inputAssignments><field>Product2Id</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments><inputAssignments><field>UnitPrice</field><value><numberValue>1.0</numberValue></value></inputAssignments><object>PricebookEntry</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+<recordLookups><name>GetPbs</name><label>GetPbs</label><locationX>0</locationX><locationY>0</locationY><assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound><connector><targetReference>Each</targetReference></connector><filterLogic>or</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Standard Price Book</stringValue></value></filters><getFirstRecordOnly>false</getFirstRecordOnly><object>Pricebook2</object><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>GetPbs</targetReference></connector><object>Product2</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+<status>Active</status>
+<variables><name>Std</name><dataType>SObject</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput><objectType>Pricebook2</objectType></variables>
+</Flow>

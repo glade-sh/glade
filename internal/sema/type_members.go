@@ -139,18 +139,12 @@ func (m *semaTypeMemberModel) hasField(key string) bool {
 type semaTypeMemberState struct {
 	base     *semaTypeMemberModel
 	platform *semaTypeMemberModel
-	// historyProbe is set only on the private state of a parallel body run.
-	// semaAnyKnownField raises it when an earlier type's hydration could have
-	// changed its answer, which a worker that has not seen that type cannot know.
-	historyProbe *atomic.Bool
 	// unknownHistory records speculative misses and every subsequently visible
 	// hydrated field, including entries that are later replaced.
 	unknownHistory *semaUnknownHistory
-	// historyUsed, when set beside historyProbe, is raised when an answer of
-	// "yes" needed a hydrated entry rather than the base or platform model.
-	// An incremental run reuses cached body results only while no answer
-	// depended on what an earlier type happened to hydrate.
-	historyUsed *atomic.Bool
+	// later, set by an incremental run, answers semaAnyKnownField after the
+	// body pass for the history the run did not merge into the view.
+	later *semaLaterHistory
 }
 
 type semaTypeMemberView struct {
@@ -169,6 +163,8 @@ type semaTypeMemberView struct {
 	lastMethodFamilyValid     bool
 	// lexicalShadows memoizes semaLexicalShadowingInner by owner and name.
 	lexicalShadows map[string]string
+	// trace, when set, attributes hydration to the type being checked.
+	trace *semaHydrationTrace
 }
 
 // A source declaration closes nested names only in its own project and
@@ -272,6 +268,9 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 	if v.state.platform != nil {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
+			if v.trace != nil {
+				v.trace.store(typeMembers{}, false, members)
+			}
 			v.hydrated[key] = members
 			if v.state.unknownHistory != nil {
 				v.state.unknownHistory.hydrated(members)
@@ -312,6 +311,10 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 			v.changedHydration()
 			return
 		}
+	}
+	if v.trace != nil {
+		previous, replaced := v.hydrated[key]
+		v.trace.store(previous, replaced, members)
 	}
 	v.hydrated[key] = members
 	if v.state.unknownHistory != nil {
@@ -1120,6 +1123,7 @@ func semaModelWithTriggerScope(model *semaTypeMemberView, trigger typesys.Trigge
 		current:        make(map[string]typeMembers, len(model.current)+1),
 		hydrated:       model.hydrated,
 		hydrationEpoch: model.fieldHydrationEpoch(),
+		trace:          model.trace,
 	}
 	for key, members := range model.current {
 		out.current[key] = members
@@ -1450,6 +1454,7 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 		current:        make(map[string]typeMembers, 2),
 		hydrated:       model.hydrated,
 		hydrationEpoch: model.fieldHydrationEpoch(),
+		trace:          model.trace,
 	}
 	addCurrent := func(currentType typesys.TypeSymbol) {
 		currentMembers := semaTypeMembersFromSymbol(currentType)

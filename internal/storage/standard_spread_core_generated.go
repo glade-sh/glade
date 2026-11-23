@@ -64,6 +64,7 @@ var standardSpreadCoreObjects = []string{
 	"CareEpisode",
 	"CartDeliveryGroup",
 	"CartItem",
+	"CartValidationOutput",
 	"Case",
 	"CaseComment",
 	"CaseParticipant",

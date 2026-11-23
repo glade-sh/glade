@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v54"
+const testRuntimeCacheABI = "apextest-runtime-v55"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -316,13 +316,14 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		CustomObjects:         make(map[string]struct{}),
 		ListCustomSettings:    make(map[string]struct{}),
 	}
-	for _, ref := range projectChildRelationshipSourceReferences(source) {
+	matches := standardFieldMatchMemo.get(source, standardFieldMatchesFromSource)
+	for _, ref := range matches.childRefs {
 		key := strings.ToLower(ref.ParentObject + "\x00" + ref.ChildObject + "\x00" + ref.ChildRelationship)
 		result.ChildRelationshipRefs[key] = ref
 	}
-	scanSource := apexReferenceScanSource(source)
+	scanSource := matches.scanSource
 	varTypes := make(map[string]string)
-	for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1) {
+	for _, match := range matches.typed {
 		if len(match) != 3 {
 			continue
 		}
@@ -337,7 +338,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, objectName, fieldName)
 	}
 	recordNumeric := recordBoolean
-	for _, match := range apexVariableFieldBooleanRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.booleanRight {
 		if len(match) != 6 {
 			continue
 		}
@@ -347,7 +348,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordBoolean(objectName, scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.booleanLeft {
 		if len(match) != 6 {
 			continue
 		}
@@ -357,7 +358,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordBoolean(objectName, scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexVariableFieldBooleanNegationPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.booleanNot {
 		if len(match) != 6 {
 			continue
 		}
@@ -367,7 +368,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordBoolean(objectName, scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexVariableFieldNumericRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.numericRight {
 		if len(match) != 6 {
 			continue
 		}
@@ -377,7 +378,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordNumeric(objectName, scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexVariableFieldNumericLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.numericLeft {
 		if len(match) != 6 {
 			continue
 		}
@@ -387,26 +388,26 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		}
 		recordNumeric(objectName, scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexCustomSettingGetAllPattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.getAll {
 		if len(match) != 4 {
 			continue
 		}
 		result.ListCustomSettings[scanSource[match[2]:match[3]]] = struct{}{}
 	}
-	for _, match := range apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.schemaFields {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.sobjectFields {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
 	}
-	newLiterals := apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
-	literals := apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	newLiterals := matches.newLiterals
+	literals := matches.literals
 	for _, match := range newLiterals {
 		recordSObjectLiteralLookupFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match, varTypes)
 	}
@@ -419,13 +420,13 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 	for _, match := range literals {
 		recordSObjectLiteralFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match)
 	}
-	for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.staticFields {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
 		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
 	}
-	for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1) {
+	for _, match := range matches.variableField {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}

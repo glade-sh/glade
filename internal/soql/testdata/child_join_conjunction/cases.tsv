@@ -1,0 +1,3 @@
+id	route	file	api
+combined_anon	anonymous	combined.apex	-
+combined_test	istest	CombinedProbe	-

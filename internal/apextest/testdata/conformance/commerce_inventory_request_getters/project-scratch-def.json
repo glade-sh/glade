@@ -1,0 +1,1 @@
+{"orgName":"r5 orders","edition":"Enterprise","features":["B2BCommerce","Communities","OrderManagement"],"settings":{"communitiesSettings":{"enableNetworksEnabled":true},"commerceSettings":{"commerceEnabled":true},"orderSettings":{"enableOrders":true,"enableNegativeQuantity":false,"enableOrderEvents":false,"enableZeroQuantity":true}}}

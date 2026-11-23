@@ -1,0 +1,1 @@
+SELECT Id, (SELECT Id FROM Contacts WHERE LastName != null AND Id IN (SELECT ContactId FROM Case WHERE ContactId != null) LIMIT 1), (SELECT Id FROM Opportunities LIMIT 1) FROM Account WHERE Name = 'Probe Parent'

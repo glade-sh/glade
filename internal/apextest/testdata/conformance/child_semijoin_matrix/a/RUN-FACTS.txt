@@ -1,0 +1,9 @@
+capture: matrix-a
+apis: 62.0 67.0
+routes: anonymous istest
+sf: @salesforce/cli/2.159.7
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live, rename mode (per-version class copies), capture-v7 script
+note: the capture process was interrupted by the host before it wrote its own RUN-FACTS.txt; org.tsv was scrubbed by the script and the scratch org was then deleted and verified gone. The sib2_two rows of this run are not used (matrix-b holds the complete run of that case).
+note: records created by each anonymous run were found, deleted and verified (residue column cleaned:6 in every row).
+cases.tsv is shared with matrix-b (one file lists all cases; each run covers its own rows).

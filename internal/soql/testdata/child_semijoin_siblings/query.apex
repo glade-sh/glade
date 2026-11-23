@@ -1,0 +1,2 @@
+String q = 'SELECT Id, (SELECT Id FROM Contacts WHERE Email != null), (SELECT Id, Name FROM Opportunities WHERE StageName = \'Prospecting\' AND Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE Role = \'Decision Maker\') LIMIT 1), (SELECT Id FROM Cases LIMIT 1) FROM Account';
+try { Database.query(q); System.debug('QUERY=accepted'); } catch (Exception e) { System.debug('QUERY=' + e.getTypeName() + ':' + e.getMessage()); }

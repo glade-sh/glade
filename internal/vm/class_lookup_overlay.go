@@ -283,10 +283,46 @@ func classLookupRankAt(alias string, class Class, key string) (int, bool) {
 	}
 	consider(alias, true)
 	consider(class.Name, false)
-	if class.Namespace != "" {
-		consider(class.Namespace+"."+class.Name, true)
+	if class.Namespace != "" && classLookupQualifiedKeyEquals(class.Namespace, class.Name, key) {
+		if candidate := classLookupKeyRank(class, true); !ok || candidate > rank {
+			rank, ok = candidate, true
+		}
 	}
 	return rank, ok
+}
+
+// classLookupQualifiedKeyEquals reports
+// classLookupKeyEquals(namespace+"."+name, key) without building the string.
+func classLookupQualifiedKeyEquals(namespace, name, key string) bool {
+	if namespace == "" || name == "" || !classLookupPlainEdge(namespace[0]) || !classLookupPlainEdge(name[len(name)-1]) {
+		return classLookupKeyEquals(namespace+"."+name, key)
+	}
+	// TrimSpace removes nothing here: both edges are non-space ASCII.
+	if len(namespace)+1+len(name) != len(key) || key[len(namespace)] != '.' {
+		return false
+	}
+	return classLookupFoldedEquals(namespace, key[:len(namespace)]) && classLookupFoldedEquals(name, key[len(namespace)+1:])
+}
+
+func classLookupPlainEdge(c byte) bool {
+	return c < 0x80 && c != ' ' && c != '\t' && c != '\n' && c != '\v' && c != '\f' && c != '\r'
+}
+
+// classLookupFoldedEquals is classLookupKeyEquals without trimming.
+func classLookupFoldedEquals(name, key string) bool {
+	if len(name) != len(key) {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		if c != key[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // classLookupKeyEquals reports canonicalClassLookupKey(name) == key without

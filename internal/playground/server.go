@@ -24,7 +24,7 @@ const (
 	defaultPublicWriteTimeout      = 5 * time.Second
 	defaultPublicOutputBytes       = 16 * 1024
 	maxPublicResponseBytes         = 128 * 1024
-	maxPublicDatabaseBytes         = 512 * 1024 // the seeded org alone is about 100 KiB of snapshot JSON
+	maxPublicDatabaseBytes         = 1024 * 1024 // accounting budget; the seeded org is about 250 KiB of snapshot JSON (more with per-value overhead) since the System Administrator permission seed
 	maxPublicRequestBytes          = 1 << 20
 	defaultPublicRatePerMinute     = 30
 	defaultPublicMaxWorkspaceFiles = 64

@@ -1,0 +1,5 @@
+id	route	file	api
+static_anon	anonymous	static.apex	-
+static_test	istest	StaticBindProbe	-
+dynamic_anon	anonymous	dynamic.apex	-
+dynamic_test	istest	DynamicBindProbe	-
