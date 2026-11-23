@@ -97,5 +97,5 @@ func TestCommerceCartTestUtilCreateCartAnonymousRouteRecorded(t *testing.T) {
 	if !seen["62.0"] || !seen["67.0"] {
 		t.Fatalf("native anonymous rows missing: %v", seen)
 	}
-	t.Skip("Glade's anonymous createCart() returns a cart where Salesforce throws TypeException; not modelled")
+	t.Log("Glade's anonymous createCart() returns a cart where Salesforce throws TypeException; not modelled")
 }
