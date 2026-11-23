@@ -1,0 +1,5 @@
+id	api	route	outcome
+partner_before	62.0	anonymous	accessible=true|count=0
+partner_before	67.0	anonymous	accessible=true|count=0
+partner_after	62.0	anonymous	accessible=true|count=1
+partner_after	67.0	anonymous	accessible=true|count=1

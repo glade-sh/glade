@@ -1982,6 +1982,15 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 			}
 		}
 	}
+	if a.anonymousCommunityCaseDeleteDenied && len(operandTypes) == 1 && strings.EqualFold(inst.Name, "delete") &&
+		(inst.DMLMode == ir.DMLModeUser || inst.DMLMode == ir.DMLModeSystem) && strings.EqualFold(semaDMLObjectType(operandTypes[0]), "Case") &&
+		inst.Expr.Kind == ir.ExprCall && inst.Expr.Callee == "get" && inst.Expr.Operator == "[]" && inst.Expr.Left != nil &&
+		inst.Expr.Left.Kind == ir.ExprVariable && len(inst.Expr.Args) == 1 {
+		message := "DML operation Delete not allowed on Case"
+		d := irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, message)
+		d.NativeMessage = message
+		return []diagnostic.Diagnostic{d}
+	}
 	if len(operandTypes) > 0 {
 		if message := fieldKeyTypedUserUpsert(inst.Name, operandTypes[0], model); message != "" {
 			d := irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, message)

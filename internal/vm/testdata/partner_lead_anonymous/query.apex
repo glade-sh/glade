@@ -1,0 +1,1 @@
+List<Lead> found=[SELECT Id FROM Lead WHERE LastName IN ('Route First','Route Second') ORDER BY LastName]; System.debug('OBS|accessible='+Lead.SObjectType.getDescribe().isAccessible()+'|count='+found.size());
