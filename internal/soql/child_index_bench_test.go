@@ -96,3 +96,24 @@ func BenchmarkChildSubqueryFull(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkChildSubqueryCold builds the index with a fresh cache each run, so
+// reuse never applies and any bookkeeping cost shows.
+func BenchmarkChildSubqueryCold(b *testing.B) {
+	for _, parents := range []int{1000, 10000} {
+		b.Run(fmt.Sprintf("parents%d", parents), func(b *testing.B) {
+			org := childIndexVersionedOrg(parents, 3)
+			query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account WHERE Id = '001000000000001'")
+			if err != nil {
+				b.Fatal(err)
+			}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := ExecuteWithCache(org, query, NewExecutionCache()); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
