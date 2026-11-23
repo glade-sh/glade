@@ -31,16 +31,35 @@ import (
 // GLADE_SEMA_MENTION_EVIDENCE_LIMIT caps the files checked.
 func TestIncrementalMentionNarrowingEvidence(t *testing.T) {
 	if root := os.Getenv("GLADE_SEMA_MENTION_EVIDENCE_ROOT"); root != "" {
-		runIncrementalMentionEvidence(t, root)
+		runIncrementalMentionEvidence(t, root, 3)
 		return
 	}
+	kindEdits, kindMentions := map[string]int{}, map[string]int{}
 	for _, rel := range incrementalMentionEvidenceProjects {
 		rel := rel
 		t.Run(rel, func(t *testing.T) {
 			root := t.TempDir()
 			incrementalCopyTree(t, filepath.Join("..", "..", rel), root)
-			runIncrementalMentionEvidence(t, root)
+			// The small evidence project applies every edit kind to every
+			// file, so no kind depends on a random pick.
+			perFile := 3
+			if strings.HasSuffix(rel, "incremental-edit-kinds") {
+				perFile = len(incrementalEdits)
+			}
+			edits, mentions := runIncrementalMentionEvidence(t, root, perFile)
+			for name, n := range edits {
+				kindEdits[name] += n
+			}
+			for name, n := range mentions {
+				kindMentions[name] += n
+			}
 		})
+	}
+	for _, name := range incrementalMentionRequiredKinds {
+		t.Logf("REQUIRED KIND %s edits=%d comparisons=%d", name, kindEdits[name], kindMentions[name])
+		if kindEdits[name] == 0 || kindMentions[name] == 0 {
+			t.Errorf("edit kind %s ended with %d edits and %d mention comparisons across the bundled projects", name, kindEdits[name], kindMentions[name])
+		}
 	}
 }
 
@@ -50,9 +69,17 @@ var incrementalMentionEvidenceProjects = []string{
 	"testdata/local-tests/enterprise-composed",
 	"testdata/local-tests/org-like-runner",
 	"testdata/local-tests/platform-apis",
+	// A small synthetic project: a static block, a property with accessor
+	// bodies, an inner type method and a multi-field query, all named by
+	// other classes.
+	"internal/sema/testdata/incremental-edit-kinds",
 }
 
-func runIncrementalMentionEvidence(t *testing.T, root string) {
+// incrementalMentionRequiredKinds are edit kinds that must produce at least
+// one edit and one mention-only comparison across the bundled projects.
+var incrementalMentionRequiredKinds = []string{"static-block-body", "accessor-body", "inner-type-body", "soql-field-list"}
+
+func runIncrementalMentionEvidence(t *testing.T, root string, editsPerFile int) (map[string]int, map[string]int) {
 	t.Helper()
 	shard, shards := 0, 1
 	if spec := os.Getenv("GLADE_SEMA_MENTION_EVIDENCE_SHARD"); spec != "" {
@@ -102,7 +129,6 @@ func runIncrementalMentionEvidence(t *testing.T, root string) {
 		}
 		edits = append(edits, e)
 	}
-	const editsPerFile = 3
 	var checked, compared, notBodyOnly, noBody, fellBack, mentionTypes, differ int
 	kindEdits, kindMentions := map[string]int{}, map[string]int{}
 	for fi, file := range files {
@@ -182,4 +208,5 @@ func runIncrementalMentionEvidence(t *testing.T, root string) {
 	}
 	t.Logf("SUMMARY shard=%d/%d files=%d of %d bodyOnlyEdits=%d mentionOnlyTypesCompared=%d differ=%d notBodyOnly=%d noBody=%d fallback=%d elapsed=%s",
 		shard, shards, checked, len(files), compared, mentionTypes, differ, notBodyOnly, noBody, fellBack, time.Since(start).Round(time.Second))
+	return kindEdits, kindMentions
 }
