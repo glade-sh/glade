@@ -1012,10 +1012,7 @@ System.assert(getFailed);
 	if err != nil {
 		t.Fatal(err)
 	}
-	// CartTestUtil is a test utility: Salesforce throws outside a test.
-	machine := New(nil)
-	machine.EnableTestContext()
-	if _, err := machine.Execute(program); err != nil {
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
