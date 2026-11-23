@@ -1,6 +1,6 @@
 capture: r5-commerce-20261122
-started: 2026-11-23T01:28:43Z
-finished: 2026-11-23T01:29:26Z
+started: 2026-11-23T02:25:04Z
+finished: 2026-11-23T02:25:40Z
 apis: 62.0 67.0
 routes: istest 
 cases: 1

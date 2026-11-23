@@ -11,7 +11,7 @@ private class R5CartProbe {
     try {
       Id cid = setupCart();
       CartDeliveryGroup g = new CartDeliveryGroup(Name='g', CartId=cid); insert g;
-      CartItem i = new CartItem(Name='i', CartId=cid, CartDeliveryGroupId=g.Id, Quantity=1, Product2Id='01txx0000006lmmAAA', SalesPrice=1, Type='Product');
+      CartItem i = new CartItem(Name='i', CartId=cid, CartDeliveryGroupId=g.Id, Quantity=1, Product2Id='01t000000000001AAA', SalesPrice=1, Type='Product');
       insert i; msg = 'inserted';
     } catch (Exception e) { msg = e.getTypeName() + '|' + e.getMessage(); }
     System.assert(false, 'R5|fakeProduct|' + msg);
