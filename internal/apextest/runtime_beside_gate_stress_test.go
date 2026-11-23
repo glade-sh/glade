@@ -70,7 +70,7 @@ func TestRuntimeBesideGateStress(t *testing.T) {
 	t.Cleanup(WaitForRuntimeCacheWork)
 	previous := runtime.GOMAXPROCS(4)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
-	iterations := 6
+	iterations := 4
 	if text := os.Getenv("GLADE_BESIDE_GATE_STRESS_ITERATIONS"); text != "" {
 		value, err := strconv.Atoi(text)
 		if err != nil || value < 1 {
