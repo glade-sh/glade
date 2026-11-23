@@ -33,6 +33,7 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},
 		{dir: "commerce_place_order_super_validate", class: "R5PoProbe", methods: []string{"domains", "withMock"}},
 		{dir: "commerce_inventory_request_getters", class: "R5InvProbe", methods: []string{"sizes"}},
+		{dir: "commerce_cart_custom_fields", class: "R5OgProbe", methods: []string{"custom"}},
 	}
 	outcome := regexp.MustCompile(`(?:^|; )(\w+)=(?:Fail|Pass) `)
 	for _, f := range fixtures {
@@ -71,6 +72,9 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 					dir := t.TempDir()
 					writeFile(t, filepath.Join(dir, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 					writeFile(t, filepath.Join(dir, "config/project-scratch-def.json"), read("project-scratch-def.json"))
+					if body, err := os.ReadFile(filepath.Join(root, "assign-permsets.txt")); err == nil {
+						writeFile(t, filepath.Join(dir, "glade.yml"), "test:\n  permissionSets: ["+strings.Join(strings.Fields(string(body)), ", ")+"]\n")
+					}
 					err := filepath.WalkDir(filepath.Join(root, "project/force-app"), func(path string, entry fs.DirEntry, err error) error {
 						if err != nil || entry.IsDir() {
 							return err
