@@ -2,11 +2,19 @@
 
 ## Unreleased
 
-- **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
+No changes yet.
 
-- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v45`. Captured at 62.0, 67.0 and 68.0.
+## v0.3.13
 
-- **Duplicate-rule and record-write performance regressions fixed; text `ORDER BY` is faster.** The duplicate-rule term memo added in this release no longer allocates per scan, scores distinct values twice or adds per-record calls to Exact rules, so inserts under unique Exact or Company Name rules use v0.3.12's memory and time again while the indexed bulk speedup stays. Field access checks on record writes no longer allocate when they look up versioned feature objects. Duplicate outcomes are unchanged. `ORDER BY` on text that is not plain ASCII, or under a non-English locale, now compares each row's text or locale sort key in place instead of copying both values and looking both keys up on every comparison; the order is unchanged. (local contract, benchstat against v0.3.12) Known remaining cost versus v0.3.12: a bulk insert under a Report-mode duplicate rule with matching rows takes about 4-6% longer (memory unchanged), and a plain text-equality `WHERE` scan about 2-3%; both are tracked for v0.3.14.
+v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v100`, `salesforce-platform-v78`, `apextest-runtime-v52`), and the debugger's project cache moves to version 23. The first run after upgrading rebuilds them.
+
+### Apex
+
+- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. Captured at 62.0, 67.0 and 68.0.
 
 - Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
 
@@ -14,16 +22,22 @@
 
 - Authentication flow default objects now follow the captured API version, field access and query clause boundaries for static and dynamic access.
 
-### Apex
-
 - System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
+
 - **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
+
 - Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
+
 - **`Map.deepClone` compiles only on SObject value maps.** Captured rows at API 62.0 and 67.0 (review_round11): a map whose values are not SObjects fails to compile with `Operation only applies to SObject value map types: <type>` instead of failing when the call runs. Sema now rejects every statically typed non-SObject value map at compile (`Map<String,Integer>`, `Map<String,Object>`, `Map<String,List<Account>>`, nested maps, the global describe and field maps); SObject-valued maps, including `Map<Id,SObject>`, org and namespaced custom objects, `Schema.`-prefixed objects and trigger maps, keep compiling. A receiver whose value type is not statically known still fails only when the call runs. `List.deepClone` keeps its run-time-only check: no captured row or public document backs its message at compile.
+
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
+
 - Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
+
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
+
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
+
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
 - A Standard User’s denied change to Lead.Company under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. Customer Community Case delete describe, test-context delete denial, anonymous compile denial, Visualforce and Apex REST exceptions follow the observed API 62.0 and 67.0 results.
@@ -34,29 +48,48 @@
 
 ### Changes
 
+- **LWC record pages in namespaced projects.** The local record page shell matches a FlexiPage and a component's supported objects that name a project object without its namespace prefix (`Widget__c`) to the namespaced object from navigation (`acme__Widget__c`), and keeps the namespaced name in the record context. Navigation without `objectApiName` (the `Record` placeholder) takes the object from the record Id. Another namespace's object still reports `GLADELWC004`. (local contract, no native capture)
+
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).
+
 - **Go toolchain.** Source builds and release binaries use Go 1.27.4.
+
 - **Language server references and rename.** References and rename now find the same textual matches in files containing Unicode whether buffers are open, closed, or reopened after a language server restart.
+
 - The language server refreshes workspace symbols when `.forceignore` or legacy `.object` files change.
+
 - Test daemon watchers now detect restored files whose size and modification time are unchanged, keeping test selection current.
 
 - Test daemon requests immediately after a save retry when their source snapshot has drifted, avoiding a spurious compile error. Compile progress remains paired if a save happens after compilation starts.
+
 - **Duplicate matching limitations.** The duplicate matching guide now summarizes known divergences and why unmeasured shapes remain limitations.
 
 ### Performance
 
+On a large private application's full test suite, v0.3.13 finished 14.6% faster than v0.3.12 (median of 3 cold runs, identical outcomes, peak memory within noise).
+
+- **Duplicate-rule and record-write performance regressions fixed; text `ORDER BY` is faster.** The duplicate-rule term memo added in this release no longer allocates per scan, scores distinct values twice or adds per-record calls to Exact rules, so inserts under unique Exact or Company Name rules use v0.3.12's memory and time again while the indexed bulk speedup stays. Field access checks on record writes no longer allocate when they look up versioned feature objects. Duplicate outcomes are unchanged. `ORDER BY` on text that is not plain ASCII, or under a non-English locale, now compares each row's text or locale sort key in place instead of copying both values and looking both keys up on every comparison; the order is unchanged. (local contract, benchstat against v0.3.12) Known remaining cost versus v0.3.12: a bulk insert under a Report-mode duplicate rule with matching rows takes about 4-6% longer (memory unchanged), and a plain text-equality `WHERE` scan about 2-3%; both are tracked for v0.3.14.
+
 - **Test daemon requests read each source once.** A warm `glade test serve` request re-read and re-hashed every captured Apex source and companion metadata file at each validation boundary when the file was saved inside the racily-clean window: on this release's request shape, 10 reads per source and 8 per companion per request. Each request now reads and hashes each file once and reuses that digest at its later boundaries, while a save between boundaries still changes the file's stat stamp and invalidates the captured snapshot. On a medium 100-class project measured right after a same-content save, one warm request fell from 28.3 ms to 22.1 ms. The executable digest is already remembered per process and on disk under the executable's stat stamp, so requests after the first add no binary hashing.
+
 - **Language server name lookups.** Go-to-definition, references and rename resolve a symbol name through a name index built once per analysis generation instead of scanning every project symbol on each request. On a 2,500-class synthetic benchmark project, one lookup falls from about 535 µs to about 32 ns and a hit's allocations from 6 to 0. Results, including which of several same-named symbols wins, are unchanged.
+
 - **Apex parsing and CLI startup.** The parser uses an updated native allocator and makes fewer calls while checking declarations. The SQLite driver and runtime are updated to reduce startup overhead on macOS.
 
 - **Locale sorting startup.** The first root-locale SOQL text sort loads a prebuilt collation table, reducing first-use work while preserving the existing ordering.
+
 - **Apex AST parsing.** Full syntax tree conversion visits named children directly and reuses node kinds within each parse, reducing allocations while preserving trees and diagnostics.
+
 - **Redirected test startup.** `glade test` skips formatting the startup cache status when automatic progress is suppressed.
+
 - **Wide test classes.** The test runner prepares sibling methods once per class and source file, then shares them with isolated test VMs. In a synthetic 256-method class, measured allocations fell from about 174 MB to 43 MB per run.
+
 - **Repeated Apex matcher searches.** A matcher can reuse decoded input across repeated searches in the same transaction. In a 4,096-match benchmark, one transaction used about 6.3 MB instead of 174 MB and took 49–63 ms instead of 278–314 ms.
+
 - **SOQL semi-joins.** Large ID-based semi-join and anti-join subqueries use a query-local membership set. On a 2,000-by-2,000 synthetic workload, the measured semi-join fell from about 278 ms to 3.6 ms while returning identical ordered results.
 
 - **SOQL ID point queries.** In-memory ID equality queries filter physical record keys before evaluating and sorting matching rows. A synthetic 72-method Apex workload with 3,000 additional setup records fell from about 778 ms to 617 ms with identical results and governor counts.
+
 - **API version parsing.** Parsing common version strings avoids a temporary allocation.
 
 - **Setup advice after test failures.** Source and metadata scans reuse intermediate work when producing setup suggestions.
@@ -64,9 +97,11 @@
 - **Visualforce page validation.** Large pages use a forward position cursor while checking presentation tags.
 
 - **Language server schema analysis.** Scanning sources without schema field references and computing incremental digests now allocate less memory.
+
 - **Semantic cache performance.** Warm test-daemon requests reuse the identity of an unchanged generation, and warm checks reuse the encoded semantic result for checksum verification and memory accounting. Cached results and diagnostics are unchanged.
 
 - **Warm test daemon validation.** Request-local digest lookups avoid a redundant file metadata check on their first lookup. In a 1,531-class source-and-companion benchmark, allocations fell from about 61,270 to 55,150 per request-shaped validation.
+
 - **Source positions in large Apex files.** Building the source-line index allocates its newline offsets once instead of growing the table repeatedly.
 
 - **Lexical type resolution.** Resolving a type from the current execution context avoids allocating a temporary owner list.
@@ -84,22 +119,39 @@
 - **Sharing policy lookups.** Class sharing checks avoid repeated class-name normalization while retaining the same inheritance and cycle handling.
 
 - **Incremental semantic checks.** After a body edit, identifier boundaries avoid rechecking unrelated classes whose names or source contain the edited type name as part of a longer identifier. Semantic results remain unchanged.
+
 - **Read-only persistent execution.** `glade exec --db` avoids rewriting the database when the reconciled state is unchanged.
+
 - **Language server edits.** The language server reuses an edited syntax tree for open documents and falls back to a fresh parse when the document snapshot cannot be reused. On a synthetic 2,048-method file, the measured diagnostics parse path fell from 41–44 ms to 34–35 ms per edit, with identical results.
+
 - **Test startup.** API 68 describe profiles and restricted picklist catalogs decode only the profiles and objects that are used.
+
 - **Duplicate matching.** Scans can reuse match decisions for repeated values of required matching terms, reducing work on large sets while retaining the existing match results.
+
 - **Debugger startup cache.** Stale snapshots are rejected using a small manifest before reading the cached runtime.
+
 - **Test suite time.** The semantic reference-scanner tests reuse each offset's query result, the strict heap matrix and trigger tests reuse isolated setup, and the L12 browser checks run independent rows on two pages.
+
 - **Language server references after saves.** Per-file word postings are reused across generations, with disk content still checked before excluding a file. On a 1,500-file synthetic workspace, the first reference query after an unrelated save measured 37–55 ms instead of 65–74 ms, with ordered results unchanged.
+
 - **Standard object names.** Repeated catalog-wide schema lookups reuse exact standard-object spellings instead of repeatedly evicting them from the bounded name memo.
+
 - **Repeated field scans and diagnostics.** Reuse literal matches within runtime field inference and compiled test bodies while selecting native diagnostic text. In focused synthetic benchmarks, the repeated diagnostic case used 143 allocations instead of about 2,171, and the large field scan used 34,315 instead of about 35,540.
+
 - **Incremental frontend edits.** Reuse captured source and sidecar digests for compatibility and edit discovery while retaining live generation checks. In a synthetic 1,500-class project with sidecars, allocations fell from about 266,000 to 230,000 per edit.
+
 - **Platform symbol memory.** Excluded platform types reserve a full symbol only when first accessed, reducing retained startup heap.
+
 - **Nested enum lookup in test runtimes.** Cloned runtimes reuse an unchanged frozen class index. Runtimes with later registrations or other class-map writes use a full index.
+
 - **Built-in calls.** Repeated calls avoid redundant normalization for canonical built-in names while retaining runtime precedence checks.
+
 - **Scalar object describes.** Direct scalar reads from object type describes avoid copying the describe root when it cannot escape. On a synthetic object with 64 generated fields, a warm read used 272 bytes and 17 allocations instead of 14,112 bytes and 90 allocations.
+
 - **Test org setup.** Already-prepared standard object templates avoid a redundant preparation pass when building a test org.
+
 - **macOS file watching.** Local projects with one source root use a recursive event stream to reduce open file descriptors. Pending changes are delivered even when excluded directories remain busy. Complex scopes and linked files retain a fallback that continues to detect changes.
+
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 
 - **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
@@ -107,18 +159,29 @@
 ### CI
 
 - **Declared resource contracts for the race routes.** The gladecli parallel-route test (`TestRunTestMemoryLimitsParallelMethodAndClassRoutes`) now states its requirement up front: two tests in flight needs two processors, because the runner caps simultaneous test execution owners at `GOMAXPROCS`, so the early race route (one processor) reports the shortfall as a declared, summary-accepted skip instead of failing its overlap assertion — normal lanes, which run with two processors, still run and enforce the overlap. The storage stub-reference allocation budget (`TestStandardStubReferenceFieldsAllocationBudget`) keeps its no-full-decode assertion under the race detector but enforces its one-third byte budget in normal builds only, since race instrumentation inflates the lookup's many small allocations far more than the full decode's buffers (the race lane measured 18,082,104 of 52,252,216 bytes, about 34.61%).
+
 - **Shared repository-guard scans and a per-blob record store.** `internal/repoguard` now decodes each tracked asset once and feeds every decoded member to both public-data rulesets, parses each in-scope working-tree Go file once for the cookie-sink review and the record-write funnel, and stores each file's public-data findings under the git blob hash of its content and the ruleset version — one JSON store under the Go build cache, which the CI lanes already persist, falling back to a full scan when it is missing or corrupt. Unchanged files are therefore not rescanned across runs; files without a record (new, modified, or after a ruleset bump) are scanned on a bounded worker pool following GOMAXPROCS. The ruleset version is no longer a manual constant: it is derived at test time as a SHA-256 over every Go source of the guard package — the rules, matchers, normalizers, name tables and the asset decoder all live there — plus the running Go toolchain, so editing any of them always invalidates stored records instead of silently keeping cached 'clean' records suppressing the new ruleset's findings, and a warm store built under one version is never read under another. Findings, categories, line locations and redaction are unchanged: warm scans are asserted identical to the uncached engine, and regressions catch violations in a newly added file, a modified file and inside a compressed member with a warm store, and rescan after a ruleset change. On one machine at GOMAXPROCS=2 the package fell from 606.7s mean to 322.4s cold and 27.2s warm, with a warm run's matching CPU at 20.2s against 589.5s before; the scanning the pool parallelizes is a larger share under the race detector, where this package's public-data scan has hit the hour limit.
+
 - **Transitive affected-test selection.** The fast PR lane now selects the changed Go packages plus every package that transitively imports them, walking reverse production, internal-test and external-test import edges to a fixed point instead of stopping at direct importers, so an `internal/apexversion` change also runs `internal/vm` and `internal/apextest`. A changed path in the nested Apex parser module selects the root packages that import the parser and their consumers, a path that no longer maps to a package (deleted, renamed or removed) still selects the full set like `go.mod`, `go.sum` and other unowned inputs, and a malformed package graph or lane manifest fails the selection instead of producing an empty one.
+
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
+
 - **Shorter ordinary PR CI.** The repository guard batch (CLI build, repoguard, scripts tests and the vendored-parser check) moved from PR worker 22, which ran it after its own selection and made that worker the ~30-minute long tail, to a dedicated `pr-guards` worker that starts immediately and is required by `Required CI`. The VM, CLI and sema shards of the fast PR lane now plan from the same shared duration-history artifacts the full suite uses, and workers 12-23 split the remaining packages by the measured per-package durations recorded in `scripts/ci-package-lanes.json` (`storage` 370 s, `lwcbrowser` 124 s and the rest of the train measurement) instead of by list position, so the memory-heavy packages never share a worker. The selected test inventory and the required check name are unchanged.
+
 - **Race prerequisites for the LWC compiler and runtime routes.** The nightly Race workflow now installs Node, the vendored LWC compiler toolchain, the lwcruntime browser dependencies and Chromium for the `internal/lwc` and `internal/lwcruntime` generic routes, which previously stopped before their tests ran (`TestStandardFieldPolicyConfiguredLWCSchemaImportRoutes` could not find the LWC compiler, and `TestBrowserRuntimeSuite` reported a missing source checkout that root validation could not pass without it). Pure-Go routes still skip browser setup, and the scripts tests now pin which packages each prerequisite route must cover.
+
 - **PR pool workers balance against their dedicated load.** The fast PR lane's pool balancer now seeds each pool worker's load with the measured seconds of the dedicated route it already runs when that route's package is selected — the VM shards on workers 12-15, CLI shards on 16-19, sema shards on 20-21 and worker 22's CLI doctor authority, all measured in the PR 253 `Required CI` run — before placing the remaining packages longest-first onto the least total load. The heaviest pool package (`storage`, 370 s) no longer stacks on the worker that also carries VM shard 0 (717 s), the 24m18s tail of that run; a manifest whose dedicated table is missing, out of range or otherwise invalid fails the assignment instead of silently ignoring the dedicated work.
+
 - **Test-only changes select only their own package.** The fast PR lane's selector now classifies each changed Go file before walking importers: a changed `*_test.go` file directly in a package directory compiles only into that package's own test binary — the internal test package or the external `<P>_test` package — so it selects that package alone instead of every transitive consumer; a sema test-only change that used to select 49 of 79 packages and launch all 45 workers now selects only `internal/sema`. Production files keep the transitive reverse-import walk, including a test helper package's production files that other packages' tests import and testdata under a package, whatever the file is named; a `*_test.go` path below a non-package directory such as testdata keeps that walk too, and a nested parser module test file selects nothing, because no root lane executes parser packages while the `pr-guards` worker runs the parser module's own tests whenever any parser path changes. A path outside every package still selects the full set.
+
 - **Race runs only concurrent coverage nightly, with a weekly full backstop.** The nightly Race workflow is five jobs instead of about 74: every package outside the six conformance-heavy ones and the browser set whole in two halves; the packages whose tests drive Node, the vendored LWC toolchain and Playwright (`internal/lwc`, `internal/lwcbrowser`, `internal/lwcruntime`) whole, with those prerequisites installed the way the weekly browser routes do; the concurrency-bearing packages (`storage`, `sema`, `gladehome`, `playground`, `testdaemon`) whole; the concurrency-named tests of the big six plus the repoguard scan-cache tests, which run with Node and the vendored LWC compiler because the matched `internal/server` tests serve compiled Lightning modules and would otherwise skip every night (no matched test drives Playwright, so that job installs no browser); and a fixed 1-in-25 sample of apextest and vm conformance chosen at run time by `scripts/ci-race-sample.py` from `go test -list`, the packages' checked-in normal durations and their own `t.Parallel()` tests — so parallel conformance subtests, where the dml activity-refresh race appeared, stay under the detector. A weekly Sunday backstop runs every package whole, one job per big package (split by test-name initial if one outgrows its 330-minute timeout) and one for the rest. The plan job, duration histories, hash-bound manifests, shard evidence and aggregate jobs are gone, along with `scripts/ci-race-*` and their tests (about 5.6k lines); `go test`'s exit status is the verdict. The real race the old runs found — the package-level activity-refresh scan counter in `internal/dml/task_priority.go` — is now atomic, with a concurrent test in `internal/dml`, and the allocation-budget and public-database tests that only failed under race instrumentation state their per-build contracts.
 
 - **PR race pilot.** Pull requests select affected concurrency-bearing packages and run their concurrency-named tests under the race detector. This pilot uses heuristic selection; nightly race coverage and the weekly full backstop remain in place.
+
 - **CI tree receipts.** A main push can reuse a train pull request’s full CI coverage when its receipt, trusted workflow, merge parents and tree match. Missing or incomplete proof runs the full push checks. Push leak scanning and history maintenance still run, and releases require exact-SHA push CI.
+
 - **Lean PR workers.** The PR lane starts only workers with selected tests, and installs browser dependencies only on workers that need them.
+
 - **PR CI path selection.** Documentation, site and editor-extension changes avoid unrelated Go test suites; site changes run the site checks, and Playwright installer changes run Browser checks.
 
 ### Flow
