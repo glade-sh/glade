@@ -2,6 +2,7 @@ package testdaemon
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -230,7 +231,7 @@ func (d *Daemon) refreshStaleGeneration(generation daemonGeneration) (daemonGene
 		var mismatch *typesys.SourceSnapshotMismatchError
 		incremental := attempt < maxIncremental && errors.As(err, &mismatch) && driftChange(mismatch.File) != nil
 		if incremental {
-			exact, updateErr := d.tryUpdateChangesLocked([]watch.Change{*driftChange(mismatch.File)}, nil, true)
+			exact, _, updateErr := d.tryUpdateChangesLocked([]watch.Change{*driftChange(mismatch.File)}, nil, true)
 			incremental = updateErr == nil && exact
 		}
 		if !incremental {
@@ -268,7 +269,7 @@ func optionsForSelection(opts apextest.Options, selection watch.TestSelection) (
 func (d *Daemon) UpdateChanges(changes []watch.Change) error {
 	d.updateMu.Lock()
 	defer d.updateMu.Unlock()
-	exact, err := d.tryUpdateChangesLocked(changes, nil, true)
+	exact, _, err := d.tryUpdateChangesLocked(changes, nil, true)
 	if err != nil {
 		return err
 	}
@@ -282,26 +283,59 @@ func (d *Daemon) UpdateChanges(changes []watch.Change) error {
 // rebuild that preserves currentScope. False means the watch owner must
 // prepare a replacement watcher because the project scope changed.
 func (d *Daemon) TryUpdateChanges(ctx context.Context, changes []watch.Change, currentScope watch.Scope) (bool, error) {
+	reusable, _, err := d.tryUpdateChanges(ctx, changes, currentScope)
+	return reusable, err
+}
+
+// tryUpdateChanges is TryUpdateChanges that also reports whether a new
+// generation was published. A batch that only repeats sources the current
+// generation already holds publishes nothing.
+func (d *Daemon) tryUpdateChanges(ctx context.Context, changes []watch.Change, currentScope watch.Scope) (reusable, published bool, err error) {
 	d.updateMu.Lock()
 	defer d.updateMu.Unlock()
 	allowAuthoritativeGraphRefresh := true
 	for {
 		if err := ctx.Err(); err != nil {
-			return false, err
+			return false, false, err
 		}
-		reusable, err := d.tryUpdateChangesLocked(changes, &currentScope, allowAuthoritativeGraphRefresh)
+		reusable, published, err := d.tryUpdateChangesLocked(changes, &currentScope, allowAuthoritativeGraphRefresh)
 		var drift *WatchStateDriftError
 		if errors.As(err, &drift) {
 			allowAuthoritativeGraphRefresh = false
 			continue
 		}
-		return reusable, err
+		return reusable, published, err
 	}
 }
 
-func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *watch.Scope, allowAuthoritativeGraphRefresh bool) (bool, error) {
+// generationHoldsSources reports whether every change rewrites an Apex source
+// with exactly the bytes the generation captured. A request that found its
+// generation stale applies the save itself; the watcher then reports the same
+// save again, and rebuilding for it would only publish an equal generation.
+func generationHoldsSources(generation daemonGeneration, changes []watch.Change) bool {
+	digests := generation.artifacts.SourceDigests
+	if len(changes) == 0 || digests == nil || generation.artifacts.Volatile() {
+		return false
+	}
+	for _, change := range changes {
+		if change.Op != watch.ChangeModified || (change.Kind != watch.FileKindApexClass && change.Kind != watch.FileKindApexTrigger) {
+			return false
+		}
+		expected, ok := digests.Digest(change.Path)
+		if !ok {
+			return false
+		}
+		data, err := os.ReadFile(change.Path) // #nosec G304 -- a watched project source.
+		if err != nil || sha256.Sum256(data) != expected {
+			return false
+		}
+	}
+	return true
+}
+
+func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *watch.Scope, allowAuthoritativeGraphRefresh bool) (reusable, published bool, err error) {
 	if !canIncrementalIndex(changes) {
-		return false, nil
+		return false, false, nil
 	}
 	var changed []string
 	var deleted []string
@@ -316,23 +350,26 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 	d.mu.RLock()
 	previous := d.daemonGeneration
 	d.mu.RUnlock()
+	if generationHoldsSources(previous, changes) {
+		return true, false, nil
+	}
 	var baseline watch.Snapshot
 	baselineCaptured := false
 	if currentScope != nil && typesys.RequiresAuthoritativeApexRebuild(previous.index, changed, deleted) {
 		var err error
 		baseline, err = d.captureScopeFn(*currentScope)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		baselineCaptured = true
 	}
 	p, err := d.loadProjectFn(d.root)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	index, exact, err := d.tryUpdateIndexFn(previous.index, changed, deleted, p)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	var (
 		graph     *watch.RefGraph
@@ -343,32 +380,32 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 			if !baselineCaptured {
 				baseline, err = d.captureScopeFn(*currentScope)
 				if err != nil {
-					return false, err
+					return false, false, err
 				}
 				p, err = d.loadProjectFn(d.root)
 				if err != nil {
-					return false, err
+					return false, false, err
 				}
 			}
 		}
 		if !typesys.MatchesProjectIdentity(previous.index, p) {
-			return false, nil
+			return false, false, nil
 		}
 		if currentScope != nil {
 			candidateScope := watch.ProjectScopeWithPrevious(d.root, p, *currentScope)
 			if !reflect.DeepEqual(candidateScope, *currentScope) {
-				return false, nil
+				return false, false, nil
 			}
 		}
 		index, artifacts, err = d.buildGeneration(p, previous)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		graphChanges, digestCoverage := watch.AuthoritativeApexGraphChanges(previous.index, index)
 		if allowAuthoritativeGraphRefresh && digestCoverage && watch.CanRefreshAuthoritativeFallbackGraph(previous.index, index, graphChanges) {
 			graph, err = d.refreshGraphFn(previous.graph, index, graphChanges)
 			if err != nil {
-				return false, err
+				return false, false, err
 			}
 		} else {
 			graph = watch.BuildReferenceGraph(index)
@@ -376,29 +413,29 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 		if currentScope != nil {
 			proof, captureErr := d.captureScopeFn(*currentScope)
 			if captureErr != nil {
-				return false, captureErr
+				return false, false, captureErr
 			}
 			if drift := watch.DiffSnapshots(baseline, proof); len(drift) != 0 {
-				return false, &WatchStateDriftError{Path: drift[0].Path}
+				return false, false, &WatchStateDriftError{Path: drift[0].Path}
 			}
 		}
 	}
 	if exact {
 		artifacts, err = typesys.RefreshBuildArtifacts(index, &previous.artifacts)
 		if err != nil {
-			return false, err
+			return false, false, err
 		}
 		if bodyEditKeepsDeclarations(previous.index, index, previous.artifacts, artifacts, changes) {
 			graph, err = d.refreshGraphFn(previous.graph, index, changes)
 			if err != nil {
-				return false, err
+				return false, false, err
 			}
 		} else {
 			graph = watch.BuildReferenceGraph(index)
 		}
 	}
 	d.publishGeneration(daemonGeneration{serial: previous.serial + 1, project: p, index: index, artifacts: artifacts, graph: graph})
-	return true, nil
+	return true, true, nil
 }
 
 func (d *Daemon) Reload() error {

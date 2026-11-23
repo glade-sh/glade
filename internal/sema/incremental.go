@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -25,11 +24,14 @@ import (
 // Every other type keeps its cached diagnostics. Any other difference runs the
 // whole analysis, as does any run that shows the cache could be stale.
 //
-// Reuse is sound only while a type's diagnostics do not depend on what other
-// types hydrated into the member view. Each analysis checks bodies on a
-// probed view; if any lookup answers "no such field", or answers "yes" only
-// through a hydrated entry, the run is serial history dependent: it is
-// computed exactly as AnalyzeWithOptions computes it and is not cached.
+// A serial body pass lets a type see what earlier types hydrated into the
+// member view, and semaAnyKnownField reads that history. Each type's body
+// task records which answers depended on it and which fields the type added
+// (incremental_hydration.go). A reused type keeps its cached diagnostics only
+// while every such answer is still what the serial pass would give; a type
+// whose answer may have changed is checked again. A run whose answers cannot
+// be settled this way is computed exactly as AnalyzeWithOptions computes it
+// and is not cached.
 type IncrementalState struct {
 	mu   sync.Mutex
 	prev *incrementalSnapshot
@@ -65,6 +67,8 @@ type incrementalSnapshot struct {
 	indexDigest [sha256.Size]byte
 	typeDigests [][sha256.Size]byte
 	typeDiags   [][]diagnostic.Diagnostic
+	// typeHydration holds each type's body-pass hydration record.
+	typeHydration []*semaTypeHydration
 }
 
 // incrementalRun is the per-call working state threaded through one analysis.
@@ -88,9 +92,11 @@ type incrementalRun struct {
 	fallback bool
 	finished bool
 
-	laterProbe atomic.Bool
-	laterUsed  atomic.Bool
-	armed      bool
+	// hydration is this generation's per-type records, and visible the fields
+	// they make visible; the passes after the body pass answer from both.
+	hydration []*semaTypeHydration
+	visible   map[string]int
+	later     *semaLaterHistory
 }
 
 // Analyze analyzes index with opts, reusing the previous call's per-type body
@@ -104,6 +110,10 @@ func (s *IncrementalState) Analyze(index typesys.Index, opts AnalyzeOptions) (Re
 	result, run := s.analyzeLocked(index, opts, s.prev)
 	if run.fallback {
 		result, run = s.analyzeLocked(index, opts, nil)
+		if run.fallback {
+			// Even a run that checks every type could not settle its answers.
+			result, run = AnalyzeWithOptions(index, opts), &incrementalRun{}
+		}
 		run.stats.Reason = "stale cache risk"
 	}
 	s.prev = run.snapshot
@@ -322,56 +332,59 @@ func lastNameSegmentBeforeGeneric(name string) string {
 	return strings.TrimSpace(name)
 }
 
-// armLaterPasses watches the passes after the body pass. They run on a view
-// that holds only what the rechecked types hydrated, so any answer that
-// depends on the hydration history sends the call back to a full analysis.
+// armLaterPasses hands the passes after the body pass the body history the
+// run did not merge into their view. Rechecked types ran on private views, and
+// a run that was checked again may have hydrated what the serial pass does
+// not, so only the pre-body history is merged. A field some valid type made
+// visible is "known" there, as it is on the serial history; finish accepts an
+// "unknown" answer only for a field no type touched.
 func (r *incrementalRun) armLaterPasses(state *semaTypeMemberState) {
-	if !r.reuseOK || state == nil {
+	if state == nil || r.snapshot == nil {
 		return
 	}
-	state.historyProbe = &r.laterProbe
-	state.historyUsed = &r.laterUsed
-	r.armed = true
+	r.later = &semaLaterHistory{visible: r.visible}
+	state.later = r.later
 }
 
 // finish closes a successful analysis.
 func (r *incrementalRun) finish() {
-	if r.armed && (r.laterProbe.Load() || r.laterUsed.Load()) {
-		r.fallback = true
-		r.snapshot = nil
+	if r.later != nil {
+		if missing := r.later.missingNames(); len(missing) != 0 && semaTouchedAny(r.hydration, missing) {
+			r.fallback = true
+			r.snapshot = nil
+		}
 	}
 	r.finished = true
 }
 
+// semaIncrementalMaxRounds bounds the recheck rounds of one body pass. Each
+// round checks the reused types whose recorded answers no longer hold.
+const semaIncrementalMaxRounds = 4
+
 // checkMethodBodiesIncremental is checkMethodBodiesWithView with per-type
-// reuse. Its output is identical to the plain pass. It always checks on a
-// probed view, so a run it caches never depended on hydration history.
+// reuse. Its output is identical to the plain pass. Every type it checks runs
+// on a traced view that starts from the pre-body history, and the records are
+// validated in serial order before anything is reused or cached.
 func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, incr *incrementalRun) []diagnostic.Diagnostic {
 	plain := func() []diagnostic.Diagnostic {
 		incr.snapshot = nil
 		return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
 	}
-	if model == nil || model.state == nil || !incr.digestsOK {
-		return plain()
-	}
-	started := recorder.beginPhase()
-	incr.expandDependents(a, index)
-	var probe, used atomic.Bool
-	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, historyProbe: &probe, historyUsed: &used}
-	scratch := model.cloneOnto(probed)
-	var include func(int) bool
-	if incr.recheck != nil {
-		include = func(typeIndex int) bool { return incr.recheck[typeIndex] }
-	}
-	workers := semaMethodBodyWorkerCount()
-	fieldDiagnostics, results, views, recovered := a.checkMethodBodiesPartial(index, scratch, workers, include, &probe)
-	if probe.Load() || used.Load() {
+	giveUp := func() []diagnostic.Diagnostic {
 		if incr.reuseOK {
 			incr.fallback = true
 			return nil
 		}
 		return plain()
 	}
+	if model == nil || model.state == nil || !incr.digestsOK {
+		return plain()
+	}
+	started := recorder.beginPhase()
+	incr.expandDependents(a, index)
+	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform}
+	pre := model.cloneOnto(probed)
+	fieldDiagnostics, recovered := a.checkFieldInitializersRecovering(index, pre)
 	if recovered != nil {
 		if incr.reuseOK {
 			incr.fallback = true
@@ -379,23 +392,70 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 		}
 		panic(recovered)
 	}
-	for _, view := range views {
-		model.mergeHydrated(view)
+	preFields := semaHydratedFieldSet(pre)
+	typeCount := len(index.Types)
+	results := make([]semaMethodBodyResult, typeCount)
+	records := make([]*semaTypeHydration, typeCount)
+	rechecked := make([]bool, typeCount)
+	include := func(typeIndex int) bool { return incr.recheck == nil || incr.recheck[typeIndex] }
+	var oracle map[string]int
+	if incr.recheck != nil {
+		// The reused types' records give the first round its oracle.
+		for typeIndex := range records {
+			if !incr.recheck[typeIndex] {
+				records[typeIndex] = incr.prev.typeHydration[typeIndex]
+			}
+		}
+		oracle = semaValidateHydration(records, rechecked, preFields).firstSelf
 	}
+	workers := semaMethodBodyWorkerCount()
+	var check semaHydrationCheck
+	for round := 1; ; round++ {
+		roundResults, roundRecords, unsafe, recovered := a.checkMethodBodiesTraced(index, pre, preFields, oracle, workers, round, include)
+		if recovered != nil {
+			if incr.reuseOK {
+				incr.fallback = true
+				return nil
+			}
+			panic(recovered)
+		}
+		if unsafe {
+			return giveUp()
+		}
+		for typeIndex := range index.Types {
+			if include(typeIndex) {
+				rechecked[typeIndex] = true
+				results[typeIndex] = roundResults[typeIndex]
+				records[typeIndex] = roundRecords[typeIndex]
+			}
+		}
+		check = semaValidateHydration(records, rechecked, preFields)
+		if check.conflict || (check.reruns != 0 && round == semaIncrementalMaxRounds) {
+			return giveUp()
+		}
+		if check.reruns == 0 {
+			break
+		}
+		again := check.rerun
+		include = func(typeIndex int) bool { return again[typeIndex] }
+		oracle = check.firstSelf
+	}
+	model.mergeHydrated(pre)
 	diagnostics := fieldDiagnostics
 	snapshot := &incrementalSnapshot{
-		optionsFP:   incr.optionsFP,
-		indexDigest: incr.indexDigest,
-		typeDigests: incr.typeDigests,
-		typeDiags:   make([][]diagnostic.Diagnostic, len(index.Types)),
+		optionsFP:     incr.optionsFP,
+		indexDigest:   incr.indexDigest,
+		typeDigests:   incr.typeDigests,
+		typeDiags:     make([][]diagnostic.Diagnostic, typeCount),
+		typeHydration: records,
 	}
 	stats := IncrementalStats{Incremental: incr.reuseOK, Reason: incr.reason}
-	byType := make([][]diagnostic.Diagnostic, len(index.Types))
+	byType := make([][]diagnostic.Diagnostic, typeCount)
 	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || !semaTypeHasMethodBodyWork(typ) {
 			continue
 		}
-		if incr.recheck != nil && !incr.recheck[typeIndex] {
+		if !rechecked[typeIndex] {
 			cached := incr.prev.typeDiags[typeIndex]
 			byType[typeIndex] = cloneDiagnostics(cached)
 			snapshot.typeDiags[typeIndex] = cached
@@ -411,6 +471,8 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 		diagnostics = append(diagnostics, byType[typeIndex]...)
 	}
 	incr.snapshot = snapshot
+	incr.hydration = records
+	incr.visible = check.firstSelf
 	incr.stats = stats
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.MethodBodies, started)
@@ -437,12 +499,27 @@ func cloneDiagnostics(items []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	return out
 }
 
-// checkMethodBodiesPartial runs the field-initializer pass and the body task
-// of every type include admits (nil admits all) on the probed scratch view,
-// with up to workers goroutines. It mirrors checkMethodBodiesRun's parallel
-// branch, so each type's view and result match what that branch produces. The
-// returned views are every worker's view, primary first.
-func (a *Analyzer) checkMethodBodiesPartial(index typesys.Index, scratch *semaTypeMemberView, workers int, include func(int) bool, abort *atomic.Bool) (fieldDiagnostics []diagnostic.Diagnostic, results []semaMethodBodyResult, views []*semaTypeMemberView, recovered any) {
+// checkFieldInitializersRecovering runs the field-initializer pass on view
+// and hands back a panic instead of raising it.
+func (a *Analyzer) checkFieldInitializersRecovering(index typesys.Index, view *semaTypeMemberView) (diagnostics []diagnostic.Diagnostic, recovered any) {
+	defer func() {
+		if r := recover(); r != nil {
+			recovered = r
+		}
+	}()
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
+	return a.checkFieldInitializerTypes(index, view, sources), nil
+}
+
+// checkMethodBodiesTraced runs the body task of every type include admits on
+// up to workers goroutines. Each worker starts from its own copy of pre and
+// carries a trace with the oracle; each task starts with empty view memos. It
+// mirrors checkMethodBodiesRun's parallel branch: worker w takes tasks w,
+// w+n, ..., in serial order.
+func (a *Analyzer) checkMethodBodiesTraced(index typesys.Index, pre *semaTypeMemberView, preFields map[string]struct{}, oracle map[string]int, workers, round int, include func(int) bool) (results []semaMethodBodyResult, records []*semaTypeHydration, unsafe bool, recovered any) {
 	defer func() {
 		if r := recover(); r != nil {
 			recovered = r
@@ -454,9 +531,13 @@ func (a *Analyzer) checkMethodBodiesPartial(index typesys.Index, scratch *semaTy
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
-	fieldDiagnostics = a.checkFieldInitializerTypes(index, scratch, sources)
 	workItems := buildSemaMethodBodyWorkItemsFor(index, sources, include)
-	tasks := buildSemaMethodBodyTasks(index, workItems)
+	var tasks []semaMethodBodyTask
+	for _, task := range buildSemaMethodBodyTasks(index, workItems) {
+		if include(task.typeIndex) {
+			tasks = append(tasks, task)
+		}
+	}
 	if workers > len(tasks) {
 		workers = len(tasks)
 	}
@@ -464,10 +545,13 @@ func (a *Analyzer) checkMethodBodiesPartial(index typesys.Index, scratch *semaTy
 		workers = 1
 	}
 	results = make([]semaMethodBodyResult, len(index.Types))
-	views = make([]*semaTypeMemberView, workers)
-	views[0] = scratch
-	for workerID := 1; workerID < workers; workerID++ {
-		views[workerID] = scratch.cloneOnto(scratch.state)
+	records = make([]*semaTypeHydration, len(index.Types))
+	views := make([]*semaTypeMemberView, workers)
+	traces := make([]*semaHydrationTrace, workers)
+	for workerID := range views {
+		views[workerID] = pre.cloneOnto(pre.state)
+		traces[workerID] = newSemaHydrationTrace(preFields, oracle, workerID, round)
+		views[workerID].trace = traces[workerID]
 	}
 	var group sync.WaitGroup
 	for workerID := 0; workerID < workers; workerID++ {
@@ -475,16 +559,21 @@ func (a *Analyzer) checkMethodBodiesPartial(index typesys.Index, scratch *semaTy
 		group.Add(1)
 		go func() {
 			defer group.Done()
+			view, trace := views[workerID], traces[workerID]
 			for taskIndex := workerID; taskIndex < len(tasks); taskIndex += workers {
-				if abort != nil && abort.Load() {
-					return
-				}
 				task := tasks[taskIndex]
-				results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, views[workerID], duplicateTypes, constructability)
+				record := trace.begin(task.typeIndex)
+				view.resetBodyMemos()
+				results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, view, duplicateTypes, constructability)
+				trace.cur = nil
+				records[task.typeIndex] = record
 			}
 		}()
 	}
 	group.Wait()
+	for _, trace := range traces {
+		unsafe = unsafe || trace.unsafe
+	}
 	for typeIndex := range results {
 		if results[typeIndex].recovered != nil {
 			recovered = results[typeIndex].recovered
