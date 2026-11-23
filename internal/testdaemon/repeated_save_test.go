@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
 )
 
@@ -30,11 +30,11 @@ func TestServerWatchLoopSkipsSaveTheRequestApplied(t *testing.T) {
 		created <- serverWatchCreation{scope: cfg.Scope, initial: initial, watcher: stub}
 		return stub, watch.BackendPoll, nil
 	}
-	loads := 0
-	load := d.loadProjectFn
-	d.loadProjectFn = func(root string) (project.Project, error) {
-		loads++
-		return load(root)
+	refreshes := 0
+	refresh := d.refreshGraphFn
+	d.refreshGraphFn = func(graph *watch.RefGraph, index typesys.Index, changes []watch.Change) (*watch.RefGraph, error) {
+		refreshes++
+		return refresh(graph, index, changes)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -55,7 +55,7 @@ func TestServerWatchLoopSkipsSaveTheRequestApplied(t *testing.T) {
 	if !ok || refreshed.serial != stale.serial+1 {
 		t.Fatalf("request refresh: ok=%v serial %d -> %d", ok, stale.serial, refreshed.serial)
 	}
-	loads = 0
+	refreshes = 0
 	first.watcher.changes <- change
 	// A real save afterwards proves the loop handled the repeat before it.
 	writeFile(t, path, "\npublic class Helper {\n  public static Integer value() { return 1 + 1; }\n}\n")
@@ -73,8 +73,8 @@ func TestServerWatchLoopSkipsSaveTheRequestApplied(t *testing.T) {
 	if got := d.snapshotGeneration().serial; got != refreshed.serial+1 {
 		t.Fatalf("generation serial = %d, want %d: the repeated save published a generation", got, refreshed.serial+1)
 	}
-	if loads != 1 {
-		t.Fatalf("project loaded %d times for two watcher batches, want one", loads)
+	if refreshes != 1 {
+		t.Fatalf("graph refreshed %d times for two watcher batches, want one", refreshes)
 	}
 	if data, err := os.ReadFile(path); err != nil || len(data) == 0 {
 		t.Fatalf("source unreadable: %v", err)

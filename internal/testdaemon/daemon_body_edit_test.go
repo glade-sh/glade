@@ -49,6 +49,10 @@ func TestDaemonBodyEditRefreshesGraph(t *testing.T) {
 	if refreshes != 1 {
 		t.Fatalf("body edit refreshed graph %d times, want one incremental refresh", refreshes)
 	}
+	generation := d.snapshotGeneration()
+	if want := watch.BuildReferenceGraph(generation.index); !reflect.DeepEqual(generation.graph, want) {
+		t.Fatalf("refreshed graph differs from a full build:\n got %+v\nwant %+v", generation.graph, want)
+	}
 }
 
 func TestDaemonSignatureEditRebuildsGraph(t *testing.T) {
@@ -136,6 +140,9 @@ func TestDaemonBodyEditRefreshesChangedReferences(t *testing.T) {
 		got, want := d.SelectAffected([]watch.Change{otherChange}), cold.SelectAffected([]watch.Change{otherChange})
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("selection got %+v, cold %+v", got, want)
+		}
+		if generation := d.snapshotGeneration(); !reflect.DeepEqual(generation.graph, watch.BuildReferenceGraph(generation.index)) {
+			t.Fatalf("reference edit %d: refreshed graph differs from a full build", i)
 		}
 		if i == 0 && got.Mode != watch.SelectionDirect || i == 1 && got.Mode != watch.SelectionAll {
 			t.Fatalf("reference edit %d selected %+v", i, got)

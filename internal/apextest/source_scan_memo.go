@@ -17,13 +17,20 @@ var sourceScanMemoEnabled atomic.Bool
 // org- or configuration-dependent step still runs on each call.
 func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 
-// sourceScanMemoLimit bounds a memo; past it the memo starts over.
-const sourceScanMemoLimit = 1 << 15
+// sourceScanMemoLimit and sourceScanMemoByteLimit bound a memo by entries
+// and by the source bytes its entries were computed from (each entry holds
+// data proportional to its source); past either the memo starts over. Every
+// edit of a file adds an entry, so a long-lived daemon needs both bounds.
+const (
+	sourceScanMemoLimit     = 1 << 15
+	sourceScanMemoByteLimit = 256 << 20
+)
 
 // sourceScanMemo memoizes a pure function of one source text.
 type sourceScanMemo[T any] struct {
 	mu      sync.Mutex
 	entries map[[sha256.Size]byte]T
+	bytes   int
 }
 
 func (m *sourceScanMemo[T]) get(source string, compute func(string) T) T {
@@ -39,8 +46,12 @@ func (m *sourceScanMemo[T]) get(source string, compute func(string) T) T {
 	}
 	value = compute(source)
 	m.mu.Lock()
-	if m.entries == nil || len(m.entries) >= sourceScanMemoLimit {
+	if m.entries == nil || len(m.entries) >= sourceScanMemoLimit || m.bytes+len(source) > sourceScanMemoByteLimit {
 		m.entries = make(map[[sha256.Size]byte]T)
+		m.bytes = 0
+	}
+	if _, present := m.entries[key]; !present {
+		m.bytes += len(source)
 	}
 	m.entries[key] = value
 	m.mu.Unlock()

@@ -164,3 +164,15 @@ func TestParallelSourceScansWithMemo(t *testing.T) {
 		}
 	})
 }
+
+func TestSourceScanMemoBoundsBytes(t *testing.T) {
+	withSourceScanMemo(t, func() {
+		var memo sourceScanMemo[int]
+		big := strings.Repeat("x", sourceScanMemoByteLimit/2+1)
+		memo.get(big+"a", func(string) int { return 1 })
+		memo.get(big+"b", func(string) int { return 2 })
+		if memo.len() != 1 || memo.bytes > sourceScanMemoByteLimit {
+			t.Fatalf("memo holds %d entries and %d bytes past the byte bound", memo.len(), memo.bytes)
+		}
+	})
+}
