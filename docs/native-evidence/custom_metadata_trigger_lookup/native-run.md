@@ -1,0 +1,2 @@
+Salesforce Developer scratch org on the campaign Dev Hub, capture date 2026-11-22 (30-day org, deleted after the run).
+Deployed a custom metadata record and a trigger that calls getInstance, at API 62.0 and 67.0, through anonymous Apex and an @IsTest method. The lookup returned the record on both routes and Glade matched, so no lookup change was made. The affected project's cause is its .forceignore directory rule excluding the metadata file, leaving zero records selected. Data: internal/apextest/testdata/conformance/custom_metadata_trigger_lookup.

@@ -1,0 +1,5 @@
+Account
+Contact
+Opportunity
+OpportunityContactRole
+Case

@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+seeded	62.0	anonymous	True	True	SEEDED=pass	n/a	n/a	cleaned:5
+seeded	67.0	anonymous	True	True	SEEDED=pass	n/a	n/a	cleaned:5
+seeded_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+seeded_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a

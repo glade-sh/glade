@@ -1,0 +1,7 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+query	62.0	anonymous	True	True	QUERY=accepted	n/a	n/a	0
+query	67.0	anonymous	True	True	QUERY=accepted	n/a	n/a	0
+metadata	62.0	anonymous	True	True	METADATA=pass	n/a	n/a	0
+metadata	67.0	anonymous	True	True	METADATA=pass	n/a	n/a	0
+routes	62.0	istest	true	Passed	metadata=Pass; query=Pass	62.0	n/a	n/a
+routes	67.0	istest	true	Passed	metadata=Pass; query=Pass	67.0	n/a	n/a

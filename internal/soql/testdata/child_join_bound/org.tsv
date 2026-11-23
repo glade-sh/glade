@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+static_anon	62.0	anonymous	True	True	OBS:rows=1;contacts=1;name=Hit	n/a	n/a	cleaned:4
+static_anon	67.0	anonymous	True	True	OBS:rows=1;contacts=1;name=Hit	n/a	n/a	cleaned:4
+static_test	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;name=Hit	62.0	n/a	n/a
+static_test	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;name=Hit	67.0	n/a	n/a
+dynamic_anon	62.0	anonymous	True	True	OBS:rows=1;contacts=1;name=Hit	n/a	n/a	cleaned:4
+dynamic_anon	67.0	anonymous	True	True	OBS:rows=1;contacts=1;name=Hit	n/a	n/a	cleaned:4
+dynamic_test	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;name=Hit	62.0	n/a	n/a
+dynamic_test	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;name=Hit	67.0	n/a	n/a

@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+trigger	62.0	anonymous	True	True	TRIGGER=pass	n/a	62.0	cleaned:1
+trigger	67.0	anonymous	True	True	TRIGGER=pass	n/a	67.0	cleaned:1
+trigger_test	62.0	istest	true	Passed	run=Pass	62.0	62.0	n/a
+trigger_test	67.0	istest	true	Passed	run=Pass	67.0	67.0	n/a

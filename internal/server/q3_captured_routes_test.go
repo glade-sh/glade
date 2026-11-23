@@ -13,14 +13,14 @@ import (
 
 // q3semijoin/org.tsv:2-5 and q3share/org.tsv:2-5 contain native source results.
 func TestQ3CapturedServerRoutes(t *testing.T) {
-	for _, tc := range []struct{ name, path string }{{"child", "../apextest/testdata/conformance/q3semijoin/seeded.apex"}, {"share", "../apextest/testdata/conformance/q3share/standard.apex"}} {
+	for _, tc := range []struct{ name, path string }{{"child", "../apextest/testdata/conformance/q3semijoin/seeded.apex"}, {"sibling", "../apextest/testdata/conformance/child_semijoin_siblings/seeded.apex"}, {"share", "../apextest/testdata/conformance/q3share/standard.apex"}} {
 		t.Run(tc.name, func(t *testing.T) {
 			body, err := os.ReadFile(tc.path)
 			if err != nil {
 				t.Fatal(err)
 			}
 			org := storage.NewOrgState()
-			for _, name := range []string{"Account", "Contact", "Opportunity", "OpportunityContactRole", "AccountShare", "OpportunityShare"} {
+			for _, name := range []string{"Account", "Contact", "Opportunity", "OpportunityContactRole", "Case", "AccountShare", "OpportunityShare"} {
 				storage.EnsureStandardObject(&org, name)
 			}
 			handler := New(&org)

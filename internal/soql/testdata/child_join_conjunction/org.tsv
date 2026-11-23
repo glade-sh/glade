@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+combined_anon	62.0	anonymous	True	True	OBS:rows=1;contacts=1;opportunities=0	n/a	n/a	cleaned:4
+combined_anon	67.0	anonymous	True	True	OBS:rows=1;contacts=1;opportunities=0	n/a	n/a	cleaned:4
+combined_test	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;opportunities=0	62.0	n/a	n/a
+combined_test	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS:rows=1;contacts=1;opportunities=0	67.0	n/a	n/a
