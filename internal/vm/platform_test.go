@@ -5400,8 +5400,7 @@ System.assertEquals(false, new CommerceDxSampleapp.CommerceDx_Inventory_Tutorial
 	System.assertEquals('[]', data_mask.DataMaskIntegrationUtil.getJobs());
 System.assertEquals('{}', data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local'));
 commerce_inventory.CommerceInventoryService inventoryService = new commerce_inventory.CommerceInventoryService();
-commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(
-	new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>()));
+commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(null);
 System.assertNotEquals(null, levels);
 System.assertEquals(0, levels.getItemsInventoryLevels().size());
 commerce_inventory.InventoryReservation reservation = inventoryService.getReservation('0aB000000000001AAA');
