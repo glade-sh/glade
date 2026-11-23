@@ -122,12 +122,24 @@ func semiJoinCapturedScalar(condition Condition) bool {
 	return false
 }
 
-// The parent WHERE is a captured scalar or an OR group of captured scalars.
+// The parent WHERE is a captured scalar, an OR group of captured scalars, or an
+// AND of those (captured: an OR group followed by Id = :bind).
 func semiJoinCapturedParentWhere(condition Condition) bool {
+	if len(condition.And) != 0 {
+		if condition.Not || condition.Field != "" || condition.Formula != nil || condition.Subquery != nil || len(condition.Or) != 0 || len(condition.And) > 3 {
+			return false
+		}
+		for _, term := range condition.And {
+			if len(term.And) != 0 || !semiJoinCapturedParentWhere(term) {
+				return false
+			}
+		}
+		return true
+	}
 	if len(condition.Or) == 0 {
 		return semiJoinCapturedScalar(condition)
 	}
-	if condition.Not || condition.SourceAnd || condition.Field != "" || condition.Formula != nil || condition.Subquery != nil || len(condition.And) != 0 {
+	if condition.Not || condition.Field != "" || condition.Formula != nil || condition.Subquery != nil {
 		return false
 	}
 	for _, term := range condition.Or {
