@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+probe	62.0	istest	true	Failed	sizes=Fail System.AssertException: Assertion Failed: R5|inv|upsertItems=1,ident=ident,secs=100,src=0a9SG000003AfY1YAK,qty=10.0,assocNull=false,levels=1,type=LocationGroup,sku=sku1,levelsNullType=1,typeNull=true,respItemsNull=false	62.0	n/a	n/a
+probe	67.0	istest	true	Failed	sizes=Fail System.AssertException: Assertion Failed: R5|inv|upsertItems=1,ident=ident,secs=100,src=0a9SG000003AfY1YAK,qty=10.0,assocNull=false,levels=1,type=LocationGroup,sku=sku1,levelsNullType=1,typeNull=true,respItemsNull=false	67.0	n/a	n/a
