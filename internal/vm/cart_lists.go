@@ -439,6 +439,10 @@ func (vm *VM) callCartCustomField(receiver Value, method string, args []Value) (
 		return Null, false, nil
 	}
 	resolved, known := storage.ResolveFieldName(state.Definition, vm.Org.Namespace, name)
+	if !known && object != "CartDeliveryGroup" {
+		// Only the delivery group's invalid-field message is captured.
+		return Null, false, nil
+	}
 	if !known {
 		return Null, true, newExceptionError("System.SObjectException", "Invalid field "+name+" for "+object)
 	}

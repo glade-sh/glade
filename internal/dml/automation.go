@@ -5055,7 +5055,8 @@ func (e *Engine) flowCreateTargetObjectName(name string) (string, bool) {
 	if resolved, ok := storage.ResolveObjectName(*e.Org, name); ok {
 		return resolved, true
 	}
-	if !storage.IsKnownStandardObject(name) {
+	// Only the objects the rows cover; every other object keeps its error.
+	if !strings.EqualFold(name, "PricebookEntry") && !strings.EqualFold(name, "Pricebook2") || !storage.IsKnownStandardObject(name) {
 		return "", false
 	}
 	storage.EnsureStandardObject(e.Org, name)

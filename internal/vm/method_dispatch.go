@@ -781,6 +781,12 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			}
 			return Null, true, unsupportedCallError(callee)
 		}
+		if strings.HasPrefix(target.ClassName, "CartExtension.") && !strings.HasPrefix(class.SuperClass, "CartExtension.") {
+			// A deeper subclass reaches the platform class through a project parent.
+			if value, handled, err := vm.callCartExtensionCalculatorSuperOf(target.ClassName, receiver, method, args); handled || err != nil {
+				return value, true, err
+			}
+		}
 		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
 			return Null, true, err
 		}
