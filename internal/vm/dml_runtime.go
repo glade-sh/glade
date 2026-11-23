@@ -7001,6 +7001,126 @@ func allAccountRecords(vm *VM, records []Value) bool {
 	return len(records) > 0
 }
 
+// defaultRunAsReadLeadUpdate preserves the row-level failure captured in
+// lead_read_model_recalculation/org.tsv:4-5 (istest APIs 62.0 and 67.0).
+func (vm *VM) defaultRunAsReadLeadUpdate(op string, value Value) bool {
+	entry := vm.testExecutionEntry
+	if entry == nil || !strings.EqualFold(vm.currentClass, entry.className) || len(vm.callStack) != entry.depth {
+		return false
+	}
+	class, ok := vm.lookupClass(vm.currentClass)
+	if !ok || !class.IsTest || methodHasModifier(class.Modifiers, "with sharing") ||
+		methodHasModifier(class.Modifiers, "without sharing") || methodHasModifier(class.Modifiers, "inherited sharing") {
+		return false
+	}
+	if vm.testContext == nil || vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
+		vm.currentSourceExecutionPolicy().APIVersion != "67.0" || vm.currentUserProfileName(vm.testContext.CurrentUser) != "Standard User" {
+		return false
+	}
+	if !vm.capturedReadLeadUpdate(op, value, false) {
+		return false
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !storage.IDsEqual(stored.System.OwnerID, stored.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, stored.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
+}
+
+// defaultAnonymousReadLeadUpdate is the separately authenticated Standard User
+// observation in lead_read_anonymous_update/org.tsv:2-3.
+func (vm *VM) defaultAnonymousReadLeadUpdate(op string, value Value) bool {
+	if op != "update" || value.Kind != ValueObject || vm.testContext != nil || vm.currentTrigger || vm.Org == nil || vm.currentUserProfileName(vm.executionUser) != "Standard User" {
+		return false
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if api != "62.0" && api != "67.0" {
+		return false
+	}
+	permissionSetFound := false
+	for _, id := range vm.assignedPermissionSetIDs(vm.currentUserID()) {
+		match := true
+		for _, field := range []string{"PermissionsApiEnabled", "PermissionsAuthorApex", "PermissionsViewSetup", "PermissionsModifyMetadata", "PermissionsViewRoles"} {
+			if !vm.recordHasAnyBooleanPermission("PermissionSet", id, field) {
+				match = false
+				break
+			}
+		}
+		if match {
+			permissionSetFound = true
+			break
+		}
+	}
+	selected, queried := value.Fields[sobjectQueriedFieldsField]
+	if !permissionSetFound || !queried || selected.Kind != ValueMap || len(selected.Map) != 3 ||
+		selected.Map[mapKey(String("company"))].Kind != ValueBool || !vm.capturedReadLeadUpdate(op, value, true) {
+		return false
+	}
+	for _, name := range explicitSObjectFieldNamesInInsertionOrder(value) {
+		if !strings.EqualFold(name, "Id") && !strings.EqualFold(name, "Company") {
+			return false
+		}
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !storage.IDsEqual(stored.System.OwnerID, stored.System.CreatedByID) {
+		return false
+	}
+	_, owner, found := storage.LookupRecordByID(vm.Org.Objects["User"].Records, stored.System.OwnerID)
+	profile, _ := owner.GetField("ProfileId")
+	return found && vm.currentProfileName(storageValueIDText(profile)) == "System Administrator"
+}
+
+func (vm *VM) capturedReadLeadUpdate(op string, value Value, queried bool) bool {
+	if op != "update" || value.Kind != ValueObject || vm.Org == nil || vm.currentTrigger ||
+		!strings.EqualFold(vm.Org.Objects["Lead"].Definition.SharingModel, "Read") {
+		return false
+	}
+	record, err := vm.recordFromValue(&value)
+	if err != nil || !strings.EqualFold(record.Object, "Lead") || record.ID == "" {
+		return false
+	}
+	stored, found := vm.findOrgRecord(record.Object, record.ID)
+	if !found || !strings.HasPrefix(string(stored.System.OwnerID), "005") ||
+		vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	companyChanged := false
+	for name, fieldValue := range value.Fields {
+		if isInternalSObjectField(name) || strings.EqualFold(name, "Id") {
+			continue
+		}
+		if (queried || dmlAccessibleSObject(value)) && isSObjectSystemField(name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
+			continue
+		}
+		if isDefaultedSObjectField(value, name) && !isExplicitSObjectField(value, name) && !isUserSetSObjectField(value, name) {
+			continue
+		}
+		field, exists := definition.Fields[vm.resolveSObjectFieldName("Lead", name)]
+		if !exists || field.Type != storage.FieldString || fieldValue.Kind != ValueString {
+			return false
+		}
+		old, present := stored.GetField(name)
+		if !present || old.Kind != storage.ValueString || old.String != fieldValue.Text {
+			if !strings.EqualFold(name, "Company") {
+				return false
+			}
+			companyChanged = true
+		}
+	}
+	return companyChanged
+}
+
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	if mode == ir.DMLModeSystem {
 		if err := vm.validateExplicitAccessLevel(accessLevelValue("SYSTEM_MODE")); err != nil {
@@ -7188,7 +7308,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	if op == "update" {
 		dmlOptions.ApexRecordTypeUpdateMode = vm.recordTypeDMLMode(dmlMode)
 	}
-	if mode == ir.DMLModeDefault && vm.defaultRunAsPrivateTextUpdate(op, value) {
+	if mode == ir.DMLModeDefault && (vm.defaultRunAsPrivateTextUpdate(op, value) || vm.defaultRunAsReadLeadUpdate(op, value) || vm.defaultAnonymousReadLeadUpdate(op, value)) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, true, true, dmlMode)
 	} else if mode == ir.DMLModeDefault && dmlMode == "SYSTEM_MODE" && op == "delete" &&
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {

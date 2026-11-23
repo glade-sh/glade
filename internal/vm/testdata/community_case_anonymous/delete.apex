@@ -1,0 +1,1 @@
+List<Case> cases=[SELECT Id FROM Case WHERE Subject='Changed __API__' LIMIT 1]; String result; try {if(cases.isEmpty()) result='missing'; else {delete as user cases[0]; result='ok';}} catch(Exception e){result=e.getTypeName();} System.debug('OBS|delete='+result);
