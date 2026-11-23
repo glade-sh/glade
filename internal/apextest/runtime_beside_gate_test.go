@@ -2,10 +2,13 @@ package apextest
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -124,5 +127,76 @@ func TestBackgroundDiskPublicationBesideConcurrentRuns(t *testing.T) {
 	matches, _ := filepath.Glob(filepath.Join(index.Project.Root, ".glade", "test", "startup.payload.*"))
 	if len(matches) == 0 {
 		t.Fatal("the background write left no startup payload")
+	}
+}
+
+// TestRuntimeBesideGateRunWaitsForAbandonedBuild pins the build's lifetime:
+// a run whose gate rejects the index does not return while the build it
+// started is still running. An abandoned build that outlived its run kept
+// compiling the rejected index beside later runs, cache invalidations and
+// test cleanups, and any panic it raised was dropped.
+func TestRuntimeBesideGateRunWaitsForAbandonedBuild(t *testing.T) {
+	t.Cleanup(InvalidateRuntimeCaches)
+	previous := runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(previous)
+	index, artifacts, cases := besideGateProject(t, "Object value = new MissingBesideGateType();")
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var once sync.Once
+	runtimeBesideGateStartHook = func() {
+		once.Do(func() { close(started) })
+		<-release
+	}
+	t.Cleanup(func() { runtimeBesideGateStartHook = nil })
+	runDone := make(chan testreport.Run, 1)
+	go func() {
+		runDone <- RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+	}()
+	<-started
+	select {
+	case <-runDone:
+		close(release)
+		t.Fatal("the run returned while its abandoned runtime build was still running")
+	case <-time.After(time.Second):
+	}
+	close(release)
+	run := <-runDone
+	if summary := run.Summary(); summary.CompileErrors != 1 {
+		t.Fatalf("summary = %#v, problem %q", summary, firstRunProblem(run))
+	}
+	assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
+}
+
+// TestRuntimeBesideGateFinishKeepsBuildPanicStack pins the re-raise of a
+// build panic: finish raises the original value with the stack captured on
+// the build goroutine, never a bare value without its origin.
+func TestRuntimeBesideGateFinishKeepsBuildPanicStack(t *testing.T) {
+	t.Cleanup(InvalidateRuntimeCaches)
+	previous := runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(previous)
+	index, artifacts, cases := besideGateProject(t, "System.assertEquals(1, 1);")
+	runtimeBesideGateStartHook = func() {
+		var missing *struct{ value int }
+		_ = missing.value
+	}
+	t.Cleanup(func() { runtimeBesideGateStartHook = nil })
+	var recovered any
+	func() {
+		defer func() { recovered = recover() }()
+		RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+	}()
+	buildPanic, ok := recovered.(*runtimeBuildPanic)
+	if !ok {
+		t.Fatalf("recovered %T %v, want *runtimeBuildPanic", recovered, recovered)
+	}
+	var runtimeErr runtime.Error
+	if !errors.As(buildPanic, &runtimeErr) || !strings.Contains(runtimeErr.Error(), "nil pointer dereference") {
+		t.Fatalf("panic value = %v, want the original nil dereference", buildPanic.value)
+	}
+	if !strings.Contains(string(buildPanic.stack), "TestRuntimeBesideGateFinishKeepsBuildPanicStack") {
+		t.Fatalf("stack does not show the build goroutine's origin:\n%s", buildPanic.stack)
+	}
+	if !strings.Contains(buildPanic.Error(), "original stack:") {
+		t.Fatalf("Error() = %q", buildPanic.Error())
 	}
 }

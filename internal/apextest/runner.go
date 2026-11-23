@@ -1557,6 +1557,9 @@ type runtimeGeneration struct {
 	// once the semantic gate finishes, so the project compile can start
 	// beside the gate. ok false abandons the build; see errRuntimeAbandoned.
 	awaitControllerCompilation func() (compilation *visualforce.ControllerCompilation, ok bool)
+	// besideGateRejected, when set, reports without blocking that the gate
+	// rejected the index, so the build stops at its next compile phase.
+	besideGateRejected func() bool
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -2083,16 +2086,32 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			}
 		}
 	}
+	// rejected stops a build beside the gate between compile phases once the
+	// gate has rejected the index; the sequential build never compiled one.
+	rejected := func() bool {
+		return generation.besideGateRejected != nil && generation.besideGateRejected()
+	}
 	if digests != nil {
 		if err := preloadRuntimeSources(index, sources); err != nil {
 			return key, zero, err
 		}
 	}
-
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	methods := compileProjectMethods(index, sources)
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	classRuntime := prepareProjectClassRuntime(index, methods, sources)
 	classes := classRuntime.classes
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	org, orgErr := orgFromIndexWithError(index, sources)
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
