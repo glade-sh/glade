@@ -1,0 +1,60 @@
+# Glade selector reuse patch for MIT-licensed @lwc/style-compiler 9.4.3.
+# Salesforce copyright and MIT headers in the patched package files are retained.
+--- a/node_modules/@lwc/style-compiler/dist/index.js
++++ b/node_modules/@lwc/style-compiler/dist/index.js
+@@ -555 +555 @@
+-function transformHost(selector) {
++function transformHost(selector, hostState) {
+@@ -558,0 +559 @@
++        hostState.transformed = true;
+@@ -585 +586 @@
+-function transformSelector(root, transformConfig, ctx) {
++function transformSelector(root, transformConfig, ctx, hostState) {
+@@ -589 +590 @@
+-        root.each(transformHost);
++        root.each((selector) => transformHost(selector, hostState));
+@@ -735 +736 @@
+-function selectorProcessorFactory(transformConfig, ctx) {
++function selectorProcessorFactory(transformConfig, ctx, hostState) {
+@@ -738 +739 @@
+-        transformSelector(root, transformConfig, ctx);
++        transformSelector(root, transformConfig, ctx, hostState);
+@@ -751,0 +753 @@
++    const hostState = { transformed: false };
+@@ -756 +758 @@
+-    }, ctx);
++    }, ctx, hostState);
+@@ -766,0 +769 @@
++                hostState.transformed = false;
+@@ -768 +771 @@
+-                const nativeSelector = nativeShadowSelectorProcessor.processSync(rule);
++                const nativeSelector = hostState.transformed ? nativeShadowSelectorProcessor.processSync(rule) : syntheticSelector;
+--- a/node_modules/@lwc/style-compiler/dist/index.cjs
++++ b/node_modules/@lwc/style-compiler/dist/index.cjs
+@@ -559 +559 @@
+-function transformHost(selector) {
++function transformHost(selector, hostState) {
+@@ -562,0 +563 @@
++        hostState.transformed = true;
+@@ -589 +590 @@
+-function transformSelector(root, transformConfig, ctx) {
++function transformSelector(root, transformConfig, ctx, hostState) {
+@@ -593 +594 @@
+-        root.each(transformHost);
++        root.each((selector) => transformHost(selector, hostState));
+@@ -739 +740 @@
+-function selectorProcessorFactory(transformConfig, ctx) {
++function selectorProcessorFactory(transformConfig, ctx, hostState) {
+@@ -742 +743 @@
+-        transformSelector(root, transformConfig, ctx);
++        transformSelector(root, transformConfig, ctx, hostState);
+@@ -755,0 +757 @@
++    const hostState = { transformed: false };
+@@ -760 +762 @@
+-    }, ctx);
++    }, ctx, hostState);
+@@ -770,0 +773 @@
++                hostState.transformed = false;
+@@ -772 +775 @@
+-                const nativeSelector = nativeShadowSelectorProcessor.processSync(rule);
++                const nativeSelector = hostState.transformed ? nativeShadowSelectorProcessor.processSync(rule) : syntheticSelector;
