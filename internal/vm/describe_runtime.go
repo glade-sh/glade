@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"maps"
+	"math/big"
 	"reflect"
 	"slices"
 	"sort"
@@ -1258,6 +1259,16 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 		if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, vm.Org, definition, stored, defaultOptions); ok {
 			if rawRecordTypeDefaultStorageValue(value, field) {
 				return storage.Value{}, false
+			}
+			if loadDefaults && field.Type == storage.FieldDecimal && field.Scale > 0 && (value.Kind == storage.ValueDecimal || value.Kind == storage.ValueInteger) {
+				// A loaded numeric formula default carries the field's declared scale.
+				text := value.Decimal
+				if value.Kind == storage.ValueInteger {
+					text = strconv.FormatInt(value.Integer, 10)
+				}
+				if number, ok := new(big.Rat).SetString(text); ok {
+					value = storage.DecimalValue(number.FloatString(field.Scale))
+				}
 			}
 			return value, true
 		}

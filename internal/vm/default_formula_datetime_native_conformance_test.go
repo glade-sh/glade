@@ -3,7 +3,6 @@ package vm_test
 import (
 	"encoding/csv"
 	"html"
-	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -163,25 +162,4 @@ func TestDefaultFormulaNeighborUnchanged(t *testing.T) {
 	}
 }
 
-// The capture observes a numeric value as text. Compare its mathematical
-// value while retaining the formatting discrepancy as a separate follow-up.
-func equalDefaultFormulaObservation(got, want string) bool {
-	a, b := strings.Split(got, "|"), strings.Split(want, "|")
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] == b[i] {
-			continue
-		}
-		if !strings.HasPrefix(a[i], "number=") || !strings.HasPrefix(b[i], "number=") {
-			return false
-		}
-		x, xok := new(big.Rat).SetString(strings.TrimPrefix(a[i], "number="))
-		y, yok := new(big.Rat).SetString(strings.TrimPrefix(b[i], "number="))
-		if !xok || !yok || x.Cmp(y) != 0 {
-			return false
-		}
-	}
-	return true
-}
+func equalDefaultFormulaObservation(got, want string) bool { return got == want }
