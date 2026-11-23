@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/testreport"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
