@@ -4,7 +4,7 @@
 
 ## v0.3.13
 
-v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster. CI selects fewer tests per pull request.
+v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster.
 
 ### Upgrade notes
 
@@ -12,7 +12,7 @@ v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lo
 
 ### Apex
 
-- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v45`. Captured at 62.0, 67.0 and 68.0.
+- **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. Captured at 62.0, 67.0 and 68.0.
 
 - Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
 
