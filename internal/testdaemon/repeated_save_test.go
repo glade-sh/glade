@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -29,6 +30,13 @@ func TestServerWatchLoopSkipsSaveTheRequestApplied(t *testing.T) {
 		stub := newServerWatchStub()
 		created <- serverWatchCreation{scope: cfg.Scope, initial: initial, watcher: stub}
 		return stub, watch.BackendPoll, nil
+	}
+	indexUpdates := make(chan struct{}, 4)
+	update := d.tryUpdateIndexFn
+	d.tryUpdateIndexFn = func(previous typesys.Index, changed, deleted []string, p project.Project) (typesys.Index, bool, error) {
+		index, exact, err := update(previous, changed, deleted, p)
+		indexUpdates <- struct{}{}
+		return index, exact, err
 	}
 	refreshes := 0
 	refresh := d.refreshGraphFn
@@ -56,7 +64,18 @@ func TestServerWatchLoopSkipsSaveTheRequestApplied(t *testing.T) {
 		t.Fatalf("request refresh: ok=%v serial %d -> %d", ok, stale.serial, refreshed.serial)
 	}
 	refreshes = 0
+	for len(indexUpdates) > 0 {
+		<-indexUpdates
+	}
 	first.watcher.changes <- change
+	// Let the loop finish the repeat before the real save lands on disk.
+	select {
+	case <-indexUpdates:
+	case <-time.After(30 * time.Second):
+		t.Fatal("the repeated save was not handled")
+	}
+	d.updateMu.Lock()
+	d.updateMu.Unlock()
 	// A real save afterwards proves the loop handled the repeat before it.
 	writeFile(t, path, "\npublic class Helper {\n  public static Integer value() { return 1 + 1; }\n}\n")
 	first.watcher.changes <- change
