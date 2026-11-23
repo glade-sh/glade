@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Corpus-driven standard object and flow fixes (Apex API 62.0, 67.0).** A record type's default picklist value now applies to standard objects when the record carries the 18-character Id of a record type that Glade stores in 15 characters (`Account.Industry`, `BusinessLicenseApplication.Category`); the required `Category` check no longer fires first. `UnitOfMeasure.Type` is defaulted on insert under the captured feature sets: `Custom` with `HealthCloudAddOn`, `Period` with `PublicSectorAccess`; a plain Developer org still requires it, and a combination of both features is not defaulted. Record-triggered after-save Update Flows evaluate `$Profile.Name` decisions with EqualTo and NotEqualTo; other global operands and routes keep the before-save equality rule. A `CartItem` naming a missing `Product2` fails with `INVALID_CROSS_REFERENCE_KEY`. `CartExtension.CartTestUtil.createCart()` and `createCart(B2B)` create the captured default cart: account, store, cart `My Cart`, one delivery group and one product item. Test runtime cache and SemanticABI are unchanged. Captured at 62.0 and 67.0.
+- **Record type defaults, UnitOfMeasure.Type and test carts (Apex API 62.0, 67.0).** A record type's default picklist value now applies on insert to standard objects whose record type Id Glade stores in 15 characters (`Account.Industry`, `BusinessLicenseApplication.Category`), so the required `Category` check no longer fires first. `UnitOfMeasure.Type` is filled on insert when the org has Health Cloud (`Custom`) or `PublicSectorAccess` (`Period`); a plain org still requires it and an org with both is not defaulted. A `CartItem` whose `Product2Id` names no record fails with `INVALID_CROSS_REFERENCE_KEY`. `CartExtension.CartTestUtil.createCart()` and `createCart(B2B)` create the default cart: account, store, cart `My Cart`, one delivery group and one product item.
 
 - **Corpus-driven flow, permission and commerce cart fixes, round 3 (Apex API 62.0, 67.0).** A Get Records filter whose value is a parent's lookup field (`$Record.Parent__r.Contact__c`) resolves, and a null value matches null fields. A Create Records element that reads an unset record variable creates with null and fails a test with the native `REQUIRED_FIELD_MISSING` text. The System Administrator profile and its permission set carry the captured `Permissions*` flags. A record type that the Admin profile hides is available when an assigned permission set grants it. Cart calculators run the executor's default callbacks from `super.calculate`, loaded carts keep quantity scale, stored validation outputs, an empty selected delivery method and an unset address, and a delivery group keeps its method list and selection.
 
@@ -126,6 +126,8 @@
 ### Flow
 
 - **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
+
+- **Record-triggered Flow criteria.** Several more Flow shapes now match captured Salesforce behavior at API 62.0 and 67.0. After-save decisions compare `$Profile.Name` with literals and record text fields (EqualTo and NotEqualTo), and NotEqualTo reads String constants. Get Records follows a parent's lookup field, filters custom metadata by a formula value, hides the test-isolated standard price book, and faults on relationship-path filters. Send Email renders text-template subjects and bodies and rejects an unknown org-wide sender.
 
 ## v0.3.12
 

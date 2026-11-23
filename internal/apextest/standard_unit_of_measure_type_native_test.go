@@ -18,6 +18,21 @@ func TestStandardUnitOfMeasureTypeNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	istestRows := map[string]map[string]string{}
+	for _, profile := range []string{"dev", "hconly"} {
+		body, err := os.ReadFile(filepath.Join(fixture, profile, "org-istest.tsv"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		istestRows[profile] = map[string]string{}
+		for _, row := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
+			cols := strings.Split(row, "\t")
+			if len(cols) < 9 || cols[2] != "istest" {
+				t.Fatalf("invalid native istest row: %s", row)
+			}
+			istestRows[profile][cols[1]] = nativeOutcome(cols[5])
+		}
+	}
 	for profile, features := range map[string]string{"dev": "[]", "psa": "[PublicSectorAccess]", "hconly": "[HealthCloudAddOn]"} {
 		body, err := os.ReadFile(filepath.Join(fixture, profile, "org.tsv"))
 		if err != nil {
@@ -38,16 +53,24 @@ func TestStandardUnitOfMeasureTypeNativeConformance(t *testing.T) {
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 				writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: "+features+"\n")
-				source := strings.ReplaceAll(string(apex), "System.debug(", "r5out.add(")
-				probe := "@IsTest private class UomProbe { @IsTest static void observe() {\nList<String> r5out = new List<String>();\n" + source + "\nSystem.assert(false, String.join(r5out, ';'));\n} }"
-				writeFile(t, filepath.Join(root, "force-app/main/default/classes/UomProbe.cls"), probe)
-				index := loadTestIndex(t, root)
-				run := Run(index, Options{SelectedClasses: []string{"UomProbe"}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
-				if run.Summary().Total != 1 || len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
-					t.Fatalf("unexpected test selection: %+v", run.Summary())
+				probeClass, err := os.ReadFile(filepath.Join(fixture, "R5UomProbe.cls"))
+				if err != nil {
+					t.Fatal(err)
 				}
-				if got := run.Suites[0].Cases[0].Problem.Message; !strings.Contains(got, want) {
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/R5UomProbe.cls"), string(probeClass))
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/R5UomProbe.cls-meta.xml"), fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?><ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
+				index := loadTestIndex(t, root)
+				if got := runAnonymousRouteProbe(t, index, api, string(apex)); !strings.Contains(got, want) {
 					t.Fatalf("NATIVE standard_unit_of_measure_type/%s/org.tsv %s anonymous: want %q; Glade %q", profile, api, want, got)
+				}
+				// The IsTest rows (dev, hconly) report the same outcome.
+				if istestWant, ok := istestRows[profile][api]; ok {
+					if !strings.Contains(istestWant, "Assertion Failed: "+want) {
+						t.Fatalf("native istest outcome differs from anonymous: %s", istestWant)
+					}
+					if got := runIsTestRouteProbe(t, index, "R5UomProbe", "uom"); !strings.Contains(got, want) {
+						t.Fatalf("NATIVE standard_unit_of_measure_type/%s/org-istest.tsv %s istest: want %q; Glade %q", profile, api, want, got)
+					}
 				}
 			})
 		}

@@ -55,6 +55,20 @@ func TestCommerceCartItemMissingProductNativeConformance(t *testing.T) {
 			if got := run.Suites[0].Cases[0].Problem.Message; !strings.Contains(got, want) {
 				t.Fatalf("NATIVE commerce_cartitem_missing_product/org.tsv %s istest: want %q; Glade %q", api, want, got)
 			}
+			// Anonymous route (org-anonymous.tsv): the same error.
+			anonymousWant := ""
+			for _, row := range strings.Split(strings.TrimSpace(read("org-anonymous.tsv")), "\n")[1:] {
+				cols := strings.Split(row, "\t")
+				if len(cols) >= 9 && cols[0] == "fake" && cols[1] == api && cols[2] == "anonymous" && cols[3] == "True" {
+					anonymousWant = strings.ReplaceAll(cols[5], "&#124;", "|")
+				}
+			}
+			if !strings.Contains(anonymousWant, "INVALID_CROSS_REFERENCE_KEY, invalid cross reference id: []") {
+				t.Fatalf("no native anonymous row for %s", api)
+			}
+			if got := runAnonymousRouteProbe(t, index, api, read("fake.apex")); !strings.Contains(got, anonymousWant) {
+				t.Fatalf("NATIVE commerce_cartitem_missing_product/org-anonymous.tsv %s anonymous: want %q; Glade %q", api, anonymousWant, got)
+			}
 		})
 	}
 }

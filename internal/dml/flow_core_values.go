@@ -42,7 +42,14 @@ func flowCoreFormulaUsesScalars(expression string, frame *flowFrame, captured bo
 
 func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (storage.ID, error) {
 	assignments := append([]storage.WorkflowFieldUpdate(nil), create.InputAssignments...)
-	var nullFields map[string]bool
+	kept := assignments[:0]
+	for _, assignment := range assignments {
+		if e.flowCreateUnsetSObjectReference(create, assignment, frame) {
+			continue
+		}
+		kept = append(kept, assignment)
+	}
+	assignments = kept
 	for i := range assignments {
 		assignment := &assignments[i]
 		var value storage.Value
@@ -62,15 +69,6 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 			resolved = true
 		}
 		if resolved {
-			// An unset record variable field is null, not an empty string
-			// (flow_create_unset_variable_reference/org.tsv: a null Pricebook2Id
-			// reports REQUIRED_FIELD_MISSING, API 62.0 and 67.0).
-			if value.Kind == storage.ValueNull || value.Kind == storage.ValueID && value.ID == "" {
-				if nullFields == nil {
-					nullFields = make(map[string]bool)
-				}
-				nullFields[strings.ToLower(assignment.Field)] = true
-			}
 			assignment.SourceField, assignment.Formula = "", ""
 			assignment.LiteralValue = workflowValueString(value)
 			if value.Kind == storage.ValueDecimal {
@@ -79,5 +77,36 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 		}
 	}
 	create.InputAssignments = assignments
-	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs, nullFields)
+	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs)
+}
+
+// flowCreateUnsetSObjectReference reports a Create Records lookup-field input
+// read from a field of a declared SObject variable that the interview never
+// assigned. The value is null, so the field is left unset (lookup fields have
+// no default value): flow_criteria_shapes/org.tsv pb_test rows, 62.0 and 67.0,
+// where Salesforce reports REQUIRED_FIELD_MISSING for the create.
+func (e *Engine) flowCreateUnsetSObjectReference(create storage.FlowRecordCreate, assignment storage.WorkflowFieldUpdate, frame *flowFrame) bool {
+	if frame == nil || e.Org == nil || strings.TrimSpace(assignment.Formula) != "" || assignment.LiteralValue != "" {
+		return false
+	}
+	variable, field, nested := strings.Cut(strings.TrimSpace(assignment.SourceField), ".")
+	if !nested || strings.Contains(field, ".") || !flowFrameSObjectVariable(frame, flowFrameKey(variable)) {
+		return false
+	}
+	key := flowFrameKey(variable)
+	if _, assigned := frame.records[key]; assigned {
+		return false
+	}
+	if _, scalar := frame.scalars[key]; scalar {
+		return false
+	}
+	if _, lookup := frame.lookupOutputs[key]; lookup {
+		return false
+	}
+	target, _, err := e.object(create.ObjectName)
+	if err != nil {
+		return false
+	}
+	name, ok := storage.ResolveFieldName(target.Definition, e.Org.Namespace, assignment.Field)
+	return ok && target.Definition.Fields[name].Type == storage.FieldReference
 }

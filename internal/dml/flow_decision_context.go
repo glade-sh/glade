@@ -51,19 +51,3 @@ func flowAfterSaveScalarWriteBackMode(flowName string, definition storage.Object
 	}
 	return false
 }
-
-// A record-triggered after-save Flow on Update has native rows for $Profile.Name
-// decisions (flow_profile_after_save_update, API 62.0 and 67.0).
-func flowRuleAfterSaveUpdate(rule storage.FlowRule) bool {
-	return strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") &&
-		strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Update")
-}
-
-func flowAfterSaveUpdateMode(flowName string, definition storage.ObjectDefinition) bool {
-	for _, rule := range definition.FlowRules {
-		if rule.Name == flowName {
-			return flowRuleAfterSaveUpdate(rule)
-		}
-	}
-	return false
-}

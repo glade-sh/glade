@@ -9,23 +9,10 @@ import (
 // flowGlobalDecisionCriterion handles captured direct global equality operands.
 // Both flat and ordered Flow graphs must use the same running-user context.
 func (e *Engine) flowGlobalDecisionCriterion(item storage.WorkflowCriteriaItem) (bool, bool, bool) {
-	return e.flowGlobalDecisionCriterionMode(item, false)
-}
-
-// flowGlobalDecisionCriterionMode adds the after-save Update route: a
-// record-triggered after-save Flow on Update evaluates $Profile.Name with
-// both EqualTo and NotEqualTo against the running user's profile
-// (flow_profile_after_save_update, API 62.0 and 67.0). Other global operands
-// and operators keep the before-save equality route only.
-func (e *Engine) flowGlobalDecisionCriterionMode(item storage.WorkflowCriteriaItem, afterSaveUpdate bool) (bool, bool, bool) {
-	reference := strings.TrimSpace(item.Field)
-	operation := strings.ToLower(strings.TrimSpace(item.Operation))
-	if afterSaveUpdate && strings.EqualFold(reference, "$Profile.Name") && flowProfileNameOperation(operation) {
-		return e.flowProfileNameCriterion(item)
-	}
 	if !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
 		return false, false, false
 	}
+	reference := strings.TrimSpace(item.Field)
 	if strings.EqualFold(reference, "$User.Id") {
 		value, ok := e.flowCurrentUserID()
 		if !ok {
@@ -51,22 +38,51 @@ func (e *Engine) flowGlobalDecisionCriterionMode(item storage.WorkflowCriteriaIt
 		matched, supported := evaluateFlowValueCriteria(storage.BooleanValue(value), item)
 		return matched, supported, true
 	}
-	if strings.EqualFold(reference, "$Profile.Name") {
-		return e.flowProfileNameCriterion(item)
+	if strings.EqualFold(reference, "$Profile.Name") && flowCriteriaResourceReference(item) == "" && e.Org != nil {
+		parser := formulaParser{org: e.Org, userID: e.systemUserID()}
+		profile := parser.profileNameValue()
+		if profile.kind == formulaNull {
+			return false, false, true
+		}
+		matched, supported := evaluateFlowValueCriteria(storage.StringValue(profile.asString()), item)
+		return matched, supported, true
 	}
 	return false, false, false
 }
 
-func flowProfileNameOperation(operation string) bool {
-	switch operation {
-	case "equals", "equal", "eq", "notequal", "notequalto", "not equal", "notequals", "not equals", "ne":
-		return true
+// flowAfterCreateProfileRecordCriterion covers $Profile.Name equality and
+// inequality in an after-save record-triggered Flow, against a triggering-record
+// text field or a string literal. Both compare case-insensitively; a null record
+// field never equals and always differs. Captured at 62.0 and 67.0 on both
+// routes in flow_direct_profile_decision, flow_profile_comparison_boundaries,
+// flow_profile_record_normalization and flow_criteria_shapes (org.tsv). Other
+// operators, non-ASCII or padded text and other operands are not handled.
+func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition) (bool, bool, bool) {
+	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") {
+		return false, false, false
 	}
-	return false
-}
-
-func (e *Engine) flowProfileNameCriterion(item storage.WorkflowCriteriaItem) (bool, bool, bool) {
-	if flowCriteriaResourceReference(item) != "" || e.Org == nil {
+	operation := strings.TrimSpace(item.Operation)
+	equals := strings.EqualFold(operation, "equals")
+	if !equals && !strings.EqualFold(operation, "notEqual") {
+		return false, false, false
+	}
+	reference := flowCriteriaResourceReference(item)
+	name := ""
+	if reference != "" {
+		const prefix = "$Record."
+		if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
+			return false, false, false
+		}
+		field := reference[len(prefix):]
+		if strings.Contains(field, ".") {
+			return false, false, false
+		}
+		resolved, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+		if !ok || definition.Fields[resolved].Type != storage.FieldString || !strings.EqualFold(definition.Fields[resolved].DisplayType, "STRING") {
+			return false, false, false
+		}
+		name = resolved
+	} else if item.Value == "" || !flowProfileComparableText(item.Value) {
 		return false, false, false
 	}
 	parser := formulaParser{org: e.Org, userID: e.systemUserID()}
@@ -74,8 +90,38 @@ func (e *Engine) flowProfileNameCriterion(item storage.WorkflowCriteriaItem) (bo
 	if profile.kind == formulaNull {
 		return false, false, true
 	}
-	matched, supported := evaluateFlowValueCriteria(storage.StringValue(profile.asString()), item)
-	return matched, supported, true
+	profileName := profile.asString()
+	if !flowProfileComparableText(profileName) {
+		return false, false, false
+	}
+	text := item.Value
+	if name != "" {
+		value, present := sourceRecordFieldValue(record, name)
+		if !present || value.Kind == storage.ValueNull {
+			return !equals, true, true
+		}
+		if value.Kind != storage.ValueString {
+			return false, false, true
+		}
+		if !flowProfileComparableText(value.String) {
+			return false, false, false
+		}
+		text = value.String
+	}
+	return strings.EqualFold(profileName, text) == equals, true, true
+}
+
+// flowProfileComparableText limits the captured comparison to trimmed ASCII.
+func flowProfileComparableText(text string) bool {
+	if strings.TrimSpace(text) != text {
+		return false
+	}
+	for _, char := range text {
+		if char >= 128 {
+			return false
+		}
+	}
+	return true
 }
 
 func flowGlobalDecisionReference(reference string) bool {

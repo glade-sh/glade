@@ -61,6 +61,10 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 			return failure
 		}
 	}
+	var relationshipFilter *flowRelationshipLookupFilterError
+	if errors.As(err, &relationshipFilter) {
+		return &flowRelationshipLookupFailure{cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "We can't save this record because the “%s” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.", rule.Name)}
+	}
 	var unknownOutput *flowCoreUnknownSubflowOutputError
 	var unstoredInput *flowUnstoredSubflowInputFieldError
 	if errors.As(err, &unknownOutput) || errors.As(err, &unstoredInput) {
@@ -70,6 +74,20 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 		return err
 	}
 	return &flowCoreRecordDeleteFailure{cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "We can't save this record because the “%s” process failed. Give your Salesforce admin these details. %s", rule.Name, noMatch.Error())}
+}
+
+type flowRelationshipLookupFailure struct{ cause error }
+
+func (e *flowRelationshipLookupFailure) Error() string { return e.cause.Error() }
+func (e *flowRelationshipLookupFailure) Unwrap() error { return e.cause }
+
+// FlowRelationshipLookupFailureResult exposes the captured singleton row fault.
+func FlowRelationshipLookupFailureResult(err error) (Result, bool) {
+	var failure *flowRelationshipLookupFailure
+	if !errors.As(err, &failure) {
+		return Result{}, false
+	}
+	return resultFromError("", failure.cause), true
 }
 
 type flowCoreRecordDeleteFailure struct{ cause error }

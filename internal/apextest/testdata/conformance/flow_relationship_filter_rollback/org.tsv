@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+relationship_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|remaining=0	62.0	n/a	0
+relationship_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|remaining=0	67.0	n/a	0
+relationship_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|remaining=0	62.0	n/a	n/a
+relationship_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|error:CANNOT_EXECUTE_FLOW_TRIGGER|remaining=0	67.0	n/a	n/a

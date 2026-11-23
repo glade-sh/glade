@@ -1,0 +1,16 @@
+id	route	file
+pl_anonymous	anonymous	pl.apex
+rv_anonymous	anonymous	rv.apex
+mv_anonymous	anonymous	mv.apex
+pb_anonymous	anonymous	pb.apex
+ea_anonymous	anonymous	ea.apex
+eb_anonymous	anonymous	eb.apex
+ec_anonymous	anonymous	ec.apex
+pl_test	istest	CritPLTest
+rv_test	istest	CritRVTest
+mv_test	istest	CritMVTest
+pb_test	istest	CritPBTest
+pbcustom_test	istest	CritPBCustomTest
+ea_test	istest	CritEATest
+eb_test	istest	CritEBTest
+ec_test	istest	CritECTest
