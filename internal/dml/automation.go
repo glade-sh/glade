@@ -4334,11 +4334,10 @@ func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCri
 		resolved.targetField, resolved.fieldOK = storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
 		if resolved.fieldOK && resolved.targetField != "" {
 			resolved.value, resolved.valueOK = e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
-			if !resolved.valueOK && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
-				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
-			}
 			if !resolved.valueOK && frame != nil && frame.saveDecisions {
-				resolved.value, resolved.valueOK = e.flowRefsLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+				// Create and Update after-save frames agree, with a missing parent
+				// reading as null (flow_record_lookup_parent_ref/org.tsv, 62.0 and 67.0).
+				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
 			}
 		}
 		if cache != nil {
