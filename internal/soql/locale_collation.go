@@ -338,6 +338,10 @@ func (c *textComparator) compare(a, b string, secondary bool) int {
 		return strings.Compare(c.rootKey(a, secondary), c.rootKey(b, secondary))
 	}
 	left, right := c.elementKey(a), c.elementKey(b)
+	return compareElementKeys(&left, &right, secondary)
+}
+
+func compareElementKeys(left, right *elementKey, secondary bool) int {
 	if cmp := bytes.Compare(left.primary, right.primary); cmp != 0 {
 		return cmp
 	}
@@ -348,6 +352,41 @@ func (c *textComparator) compare(a, b string, secondary bool) int {
 		return 0
 	}
 	return bytes.Compare(left.tertiary, right.tertiary)
+}
+
+// textSortKeys holds the ORDER BY key of every row of one text column, so a
+// sort looks each key up once per row instead of twice per comparison.
+type textSortKeys struct {
+	root     []string
+	elements []elementKey
+}
+
+// sortKeys resolves the keys compare(a, b, false) would compare. It returns
+// nil for the folded and en_* orders, which compare the texts directly.
+func (c *textComparator) sortKeys(texts []string) *textSortKeys {
+	if c == nil || c.english {
+		return nil
+	}
+	if c.root {
+		keys := make([]string, len(texts))
+		for i, text := range texts {
+			keys[i] = c.rootKey(text, false)
+		}
+		return &textSortKeys{root: keys}
+	}
+	keys := make([]elementKey, len(texts))
+	for i, text := range texts {
+		keys[i] = c.elementKey(text)
+	}
+	return &textSortKeys{elements: keys}
+}
+
+// compare orders rows i and j as compare(texts[i], texts[j], false) does.
+func (k *textSortKeys) compare(i, j int) int {
+	if k.root != nil {
+		return strings.Compare(k.root[i], k.root[j])
+	}
+	return compareElementKeys(&k.elements[i], &k.elements[j], false)
 }
 
 func (c *textComparator) groupKey(text string) string {

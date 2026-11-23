@@ -5369,6 +5369,7 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 	// columnTexts holds a column whose every value is text and which has no
 	// byte keys; the comparator then reads the texts and no value kinds.
 	columnTexts := make([][]string, len(order))
+	localeKeys := make([]*textSortKeys, len(order))
 	keys := make([][][]byte, len(order))
 	prefixes := make([][]uint64, len(order))
 	commons := make([]int, len(order))
@@ -5388,6 +5389,11 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 					commons[column], prefixes[column] = keyPrefixes(columnKeys)
 					continue
 				}
+				// No byte keys (non-ASCII text or a tailored locale): the
+				// texts still order the column without the value matrix.
+				columnTexts[column] = texts
+				localeKeys[column] = spec.textComparator.sortKeys(texts)
+				continue
 			}
 		}
 		values[column] = make([]storage.Value, len(records))
@@ -5429,6 +5435,7 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 					commons[column], prefixes[column] = keyPrefixes(keys[column])
 				} else {
 					columnTexts[column] = texts
+					localeKeys[column] = spec.textComparator.sortKeys(texts)
 				}
 			}
 		}
@@ -5456,7 +5463,9 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 			if texts := columnTexts[column]; texts != nil {
 				// orderCompare for two non-null texts.
 				var cmp int
-				if comparator := specs[column].textComparator; comparator != nil {
+				if rowKeys := localeKeys[column]; rowKeys != nil {
+					cmp = rowKeys.compare(i, j)
+				} else if comparator := specs[column].textComparator; comparator != nil {
 					cmp = comparator.compare(texts[i], texts[j], false)
 				} else {
 					cmp = compareSOQLText(texts[i], texts[j])
