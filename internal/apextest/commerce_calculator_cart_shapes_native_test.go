@@ -12,7 +12,8 @@ import (
 
 // NATIVE rows: testdata/conformance/commerce_calculator_executor_defaults/org.tsv,
 // commerce_cart_loaded_shapes/org.tsv and commerce_cart_buyer_details_address/org.tsv and
-// commerce_cart_validation_outputs/org.tsv, API 62.0 and
+// commerce_cart_validation_outputs/org.tsv and
+// commerce_cart_delivery_methods/org.tsv, API 62.0 and
 // 67.0, test route. The first fixture runs project subclasses of the platform
 // cart calculators against a project CartCalculateExecutorMock: calculate()
 // runs the executor's default callback. The second reads a cart loaded with
@@ -29,6 +30,7 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_cart_loaded_shapes", class: "R5CartProbe3", methods: []string{"loaded", "groupAddress", "superCalc"}},
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
 		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
+		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},
 	}
 	outcome := regexp.MustCompile(`(?:^|; )(\w+)=(?:Fail|Pass) `)
 	for _, f := range fixtures {
@@ -86,7 +88,11 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 					if run.Summary().Total != 1 || len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
 						t.Fatalf("unexpected test selection: %+v", run.Summary())
 					}
-					got := strings.TrimPrefix(run.Suites[0].Cases[0].Problem.Message, "Assertion Failed: ")
+					problem := run.Suites[0].Cases[0].Problem
+					got := strings.TrimPrefix(problem.Message, "Assertion Failed: ")
+					if problem.Type != "System.AssertException" && problem.Type != "" {
+						got = problem.Type + ": " + problem.Message
+					}
 					if got != want {
 						t.Fatalf("NATIVE %s/org.tsv %s istest %s:\nwant %q\nGlade %q", f.dir, api, method, want, got)
 					}
