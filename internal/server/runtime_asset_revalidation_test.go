@@ -56,8 +56,10 @@ func useRuntimeAssetRoot(t testing.TB, root string) {
 	t.Setenv("GLADE_ALLOW_PROJECT_TOOLCHAIN", "0")
 	resetRuntimeAssetMemo()
 	previous := runtimeAssetTrustAge
-	runtimeAssetTrustAge = 0
 	t.Cleanup(func() { runtimeAssetTrustAge = previous; runtimeAssetHashHook = nil; resetRuntimeAssetMemo() })
+	// Stamps are trusted only for files older than the window, which is longer
+	// than any file system's timestamp granularity. Let the fixture age.
+	time.Sleep(runtimeAssetTrustAge + 100*time.Millisecond)
 }
 
 func TestLightningRuntimeAssetRevalidation(t *testing.T) {

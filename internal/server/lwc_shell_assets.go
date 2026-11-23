@@ -799,7 +799,7 @@ func lightningRuntimeAssetWith(kind, name string, use func(file, contentType str
 	if sourceRoot, err := gladehome.CompilerSourceRoot(); err == nil {
 		for _, candidate := range candidates {
 			file := filepath.Join(sourceRoot, "lwcruntime", "src", kind, candidate)
-			if info, err := os.Stat(file); err == nil && info.Mode().IsRegular() && use(file, lightningRuntimeContentType(candidate)) {
+			if info, err := os.Stat(file); err == nil && !info.IsDir() && use(file, lightningRuntimeContentType(candidate)) {
 				return true
 			}
 		}
@@ -815,7 +815,7 @@ func lightningRuntimeAssetWith(kind, name string, use func(file, contentType str
 	}
 	for _, candidate := range candidates {
 		file := filepath.Join(dir, candidate)
-		if info, err := os.Stat(file); err == nil && info.Mode().IsRegular() && use(file, lightningRuntimeContentType(candidate)) {
+		if info, err := os.Stat(file); err == nil && !info.IsDir() && use(file, lightningRuntimeContentType(candidate)) {
 			return true
 		}
 	}
