@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Faster bulk inserts under Exact duplicate rules.** A custom duplicate rule whose items are all Exact now checks whether a stored record was inserted by the same statement only when that record matches, instead of for every stored record, and no longer builds a candidate index over highly distinct values only to switch it off. Bulk inserts under such rules are up to about 12% faster than v0.3.12 and use v0.3.12's memory; fuzzy and standard rules are unchanged. Duplicate outcomes are unchanged. The 2-5% slower plain text-equality `WHERE` scan reported for v0.3.13 does not appear in a benchmark binary built from product code only, where the hot functions are the same machine code as v0.3.12; it is attributed to test-binary layout, and its exact cause is not identified. (local contract, benchstat against v0.3.12)
 
 ## v0.3.13
 
