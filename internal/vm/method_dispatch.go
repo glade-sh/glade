@@ -252,6 +252,18 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
 		return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 	}
+	if method.IsStatic && vm.testContext == nil && len(commerceClassName) == len("CartExtension.CartTestUtil") && strings.EqualFold(commerceClassName, "CartExtension.CartTestUtil") {
+		if name := apexMethodMemberName(method.Name); strings.EqualFold(name, "createCart") || strings.EqualFold(name, "getCart") {
+			// commerce_cart_anonymous_routes/org.tsv, API 62.0 and 67.0.
+			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
+		}
+	}
+	if vm.testContext != nil && receiver.Kind == ValueObject && strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
+		!strings.EqualFold(receiver.Type, "CartExtension.CheckoutPlaceOrder") && strings.EqualFold(apexMethodMemberName(method.Name), "validate") {
+		// An inherited platform validate on a project subclass fails like super.validate
+		// (commerce_place_order_super_validate/org.tsv deep rows, API 62.0 and 67.0).
+		return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+	}
 	if strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(commerceClassName, apexMethodMemberName(method.Name)) {
 		if method.ClassName == "" {

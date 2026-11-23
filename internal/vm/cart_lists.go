@@ -456,3 +456,19 @@ func (vm *VM) callCartCustomField(receiver Value, method string, args []Value) (
 	}
 	return Null, true, nil
 }
+
+// commerceInventoryOutsideTestError is the failure of building one of the four
+// commerce_inventory request objects outside a test
+// (commerce_cart_anonymous_routes/org.tsv, API 62.0 and 67.0). The response
+// classes construct freely.
+func (vm *VM) commerceInventoryOutsideTestError(typeName string) error {
+	if vm.testContext != nil || len(typeName) < len("commerce_inventory.") || !strings.EqualFold(typeName[:len("commerce_inventory.")], "commerce_inventory.") {
+		return nil
+	}
+	short := typeName[len("commerce_inventory."):]
+	switch strings.ToLower(short) {
+	case "upsertitemreservationrequest", "upsertreservationrequest", "inventorylevelsitemrequest", "inventorylevelsrequest":
+		return newExceptionError("System.UnsupportedOperationException", short+" cannot be constructed directly outside of a test")
+	}
+	return nil
+}

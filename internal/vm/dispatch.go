@@ -4112,6 +4112,10 @@ platformStaticCall:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 		}
+		if vm.testContext == nil && (callee == "CartExtension.CartTestUtil.createCart" || callee == "CartExtension.CartTestUtil.getCart") {
+			// commerce_cart_anonymous_routes/org.tsv, API 62.0 and 67.0.
+			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
+		}
 		if value, handled, err := vm.callCachePartitionStaticDefault(callee, args); handled || err != nil {
 			return value, err
 		}
