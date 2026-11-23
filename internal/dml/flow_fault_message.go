@@ -222,7 +222,7 @@ const flowUnhandledGeneric = "An unhandled fault has occurred while processing t
 // delete, a lookup or a duplicate-rule rejection (rows in
 // automation_residual_paths) adds an Error ID outside tests.
 func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (error, bool) {
-	if !fault.unhandledCaptured() {
+	if !fault.unhandledCaptured() && !fault.requiredFieldCreateCaptured() {
 		return nil, false
 	}
 	errorID := ""
@@ -277,6 +277,15 @@ func FlowUnhandledDetail(err error) (string, bool) {
 // STRING_TOO_LONG (R16 and R17). Rows 01-06 cover the other Create codes
 // and the reference-type rejections only with a fault connector, so those keep
 // their earlier behavior when nothing catches them.
+// requiredFieldCreateCaptured marks a Create Records element rejected with
+// REQUIRED_FIELD_MISSING inside a record-triggered after-save flow. Native rows
+// (flow_create_unset_variable_reference/org.tsv, test route, API 62.0 and
+// 67.0) fail the statement with the element's own text. Autolaunched flows keep
+// their existing behavior.
+func (f *flowElementFault) requiredFieldCreateCaptured() bool {
+	return f.verb == "create" && f.code == "REQUIRED_FIELD_MISSING" && f.inTest
+}
+
 func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == "" {
 		return false

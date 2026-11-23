@@ -3395,7 +3395,7 @@ func (e *Engine) applyFlowRecordLookupStep(lookup storage.FlowRecordLookup, sour
 	return nil
 }
 
-func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput) (storage.ID, error) {
+func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, nullFields ...map[string]bool) (storage.ID, error) {
 	targetName, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
 	if !ok {
 		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
@@ -3417,6 +3417,11 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 		field := target.Definition.Fields[fieldName]
 		if isCalculatedOrSummaryField(field) {
 			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
+		}
+		if len(nullFields) > 0 && nullFields[0][strings.ToLower(assignment.Field)] {
+			record.ExplicitNulls[fieldName] = true
+			delete(record.Fields, fieldName)
+			continue
 		}
 		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org, lookupOutputs, e.flowFormulaEvaluationOptions())
 		if !ok {

@@ -42,6 +42,7 @@ func flowCoreFormulaUsesScalars(expression string, frame *flowFrame, captured bo
 
 func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (storage.ID, error) {
 	assignments := append([]storage.WorkflowFieldUpdate(nil), create.InputAssignments...)
+	var nullFields map[string]bool
 	for i := range assignments {
 		assignment := &assignments[i]
 		var value storage.Value
@@ -61,6 +62,15 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 			resolved = true
 		}
 		if resolved {
+			// An unset record variable field is null, not an empty string
+			// (flow_create_unset_variable_reference/org.tsv: a null Pricebook2Id
+			// reports REQUIRED_FIELD_MISSING, API 62.0 and 67.0).
+			if value.Kind == storage.ValueNull || value.Kind == storage.ValueID && value.ID == "" {
+				if nullFields == nil {
+					nullFields = make(map[string]bool)
+				}
+				nullFields[strings.ToLower(assignment.Field)] = true
+			}
 			assignment.SourceField, assignment.Formula = "", ""
 			assignment.LiteralValue = workflowValueString(value)
 			if value.Kind == storage.ValueDecimal {
@@ -69,5 +79,5 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 		}
 	}
 	create.InputAssignments = assignments
-	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs)
+	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs, nullFields)
 }
