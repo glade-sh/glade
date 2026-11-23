@@ -2,7 +2,9 @@ package apextest
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
+	"runtime/debug"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/typesys"
@@ -35,7 +37,25 @@ type runtimeBesideGateResult struct {
 	err     error
 	// panicked holds a panic the build raised; finish raises it again on the
 	// run's goroutine, where the sequential build would have raised it.
-	panicked any
+	panicked *runtimeBuildPanic
+}
+
+// runtimeBuildPanic is a panic recovered on the build goroutine. It keeps
+// the original value and the stack captured at recover time, which the
+// re-raise on the run's goroutine would otherwise lose.
+type runtimeBuildPanic struct {
+	value any
+	stack []byte
+}
+
+func (p *runtimeBuildPanic) Error() string {
+	return fmt.Sprintf("runtime build beside the semantic gate panicked: %v\n\noriginal stack:\n%s", p.value, p.stack)
+}
+
+// Unwrap exposes an error panic value, such as a runtime.Error, to errors.As.
+func (p *runtimeBuildPanic) Unwrap() error {
+	err, _ := p.value.(error)
+	return err
 }
 
 // runtimeBesideGateBuilds counts builds still running beside a gate,
@@ -62,7 +82,7 @@ func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCa
 		var result runtimeBesideGateResult
 		defer func() {
 			if recovered := recover(); recovered != nil {
-				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: recovered}
+				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: &runtimeBuildPanic{value: recovered, stack: debug.Stack()}}
 			}
 			early.result <- result
 		}()
