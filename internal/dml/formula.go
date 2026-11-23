@@ -153,6 +153,7 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 // defaults used by stored formulas, validation rules and workflow evaluation.
 type FormulaEvaluationOptions struct {
 	PreserveNumericNull bool
+	DefaultValueFormula bool
 	// QueryBlankNumber preserves null through ROUND, ABS, FLOOR, MOD, MIN and
 	// MAX on queried numeric calculated fields with an explicit BlankAsBlank
 	// policy. Other callers keep the prior null-as-zero behavior.
@@ -253,6 +254,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		permissionUserFields:          options.PermissionUserFields,
 		assignmentActive:              options.AssignmentActive,
 		setupUserID:                   options.SetupUserID,
+		defaultValueFormula:           options.DefaultValueFormula,
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -671,6 +673,7 @@ type formulaParser struct {
 	permissionUserFields          map[string]storage.Value
 	assignmentActive              func(storage.Record) bool
 	setupUserID                   storage.ID
+	defaultValueFormula           bool
 }
 
 func (p *formulaParser) setupActor() storage.ID {
@@ -1789,6 +1792,15 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			now = p.org.Now().UTC()
 		}
 		return formulaValue{kind: formulaDate, text: now.Format(time.RFC3339Nano)}, true
+	case "MINUTE":
+		if !p.defaultValueFormula || len(args) != 1 || args[0].fieldType != storage.FieldTime {
+			return formulaValue{}, false
+		}
+		value, err := time.Parse("15:04:05.999Z", args[0].text)
+		if err != nil {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaNumber, number: float64(value.Minute())}, true
 	case "DATE":
 		if len(args) != 3 {
 			return formulaValue{}, false

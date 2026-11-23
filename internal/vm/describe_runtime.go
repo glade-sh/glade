@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"maps"
+	"math/big"
 	"reflect"
 	"slices"
 	"sort"
@@ -1244,7 +1245,7 @@ func defaultRecordTypeID(definition storage.ObjectDefinition) storage.ID {
 	return ""
 }
 
-func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition, record Value, field storage.Field) (storage.Value, bool) {
+func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition, record Value, field storage.Field, loadDefaults bool) (storage.Value, bool) {
 	if vm != nil {
 		if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
 			return value, true
@@ -1261,9 +1262,20 @@ func (vm *VM) defaultValueForNewSObjectField(definition storage.ObjectDefinition
 	if rawDefault != "" && (strings.Contains(rawDefault, "$RecordType") || strings.ContainsAny(rawDefault, "()+-*/&<>=")) {
 		defaultOptions := vm.formulaEvaluationOptions()
 		defaultOptions.LineFeedBR = true
+		defaultOptions.DefaultValueFormula = loadDefaults
 		if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(rawDefault, field, vm.Org, definition, stored, defaultOptions); ok {
 			if rawRecordTypeDefaultStorageValue(value, field) {
 				return storage.Value{}, false
+			}
+			if loadDefaults && field.Type == storage.FieldDecimal && field.Scale > 0 && (value.Kind == storage.ValueDecimal || value.Kind == storage.ValueInteger) {
+				// A loaded numeric formula default carries the field's declared scale.
+				text := value.Decimal
+				if value.Kind == storage.ValueInteger {
+					text = strconv.FormatInt(value.Integer, 10)
+				}
+				if number, ok := new(big.Rat).SetString(text); ok {
+					value = storage.DecimalValue(number.FloatString(field.Scale))
+				}
 			}
 			return value, true
 		}

@@ -2560,7 +2560,7 @@ func (vm *VM) applySObjectMetadataDefaults(record *Value) {
 		if _, _, exists := objectFieldValue(*record, name); exists {
 			continue
 		}
-		defaultValue, ok := vm.defaultValueForNewSObjectField(definition, *record, field)
+		defaultValue, ok := vm.defaultValueForNewSObjectField(definition, *record, field, false)
 		if !ok {
 			continue
 		}

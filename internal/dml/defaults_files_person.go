@@ -97,7 +97,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		if field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) == "" {
 			continue
 		}
-		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields}); ok {
+		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields, DefaultValueFormula: true}); ok {
 			record.Fields[name] = value
 		}
 	}
