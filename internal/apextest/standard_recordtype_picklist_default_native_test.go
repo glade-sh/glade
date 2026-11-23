@@ -18,7 +18,7 @@ import (
 func TestStandardRecordTypePicklistDefaultNativeConformance(t *testing.T) {
 	runRecordTypePicklistDefaultFixture(t, "testdata/conformance/standard_recordtype_picklist_default",
 		"org:\n  features: [PublicSectorAccess]\ntest:\n  permissionSets: [RTP]\n",
-		map[string]string{"x_norecordtype": "native applies the user's default record type picklist default without RecordTypeId; Glade's Apex insert mode does not (uncaptured RecordTypeId result)"})
+	)
 }
 
 // NATIVE rows: testdata/conformance/standard_recordtype_profile_default/org.tsv.
@@ -26,10 +26,10 @@ func TestStandardRecordTypePicklistDefaultNativeConformance(t *testing.T) {
 // the record types visible.
 func TestStandardRecordTypeProfileDefaultNativeConformance(t *testing.T) {
 	runRecordTypePicklistDefaultFixture(t, "testdata/conformance/standard_recordtype_profile_default",
-		"org:\n  features: [PublicSectorAccess]\n", nil)
+		"org:\n  features: [PublicSectorAccess]\n")
 }
 
-func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string, skip map[string]string) {
+func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string) {
 	t.Helper()
 	read := func(path string) string {
 		t.Helper()
@@ -86,9 +86,6 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 		index := loadTestIndex(t, root)
 		for id, want := range anonymous[api] {
 			t.Run(api+"/"+id, func(t *testing.T) {
-				if reason, skipped := skip[id]; skipped {
-					t.Skip(reason)
-				}
 				method := strings.TrimSuffix(cases[id], ".apex")
 				if _, ok := cases[id]; !ok {
 					t.Fatalf("no case %s", id)
@@ -96,14 +93,8 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 				if strings.Contains(istest[api], method+"=") && !strings.Contains(istest[api], "Assertion Failed: "+want) {
 					t.Fatalf("native istest outcome differs from anonymous for %s: %s", id, istest[api])
 				}
-				// glade.yml test.permissionSets grants field access to test
-				// runs only; the anonymous route cannot read the custom field
-				// P__c without it, where the native capture assigned the set
-				// to the running user. The IsTest route below covers x_rt.
-				if !(id == "x_rt" && strings.Contains(gladeYML, "permissionSets")) {
-					if got := runAnonymousRouteProbe(t, index, api, read(cases[id])); !strings.Contains(got, want) {
-						t.Fatalf("NATIVE standard_recordtype*/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
-					}
+				if got := runAnonymousRouteProbe(t, index, api, read(cases[id])); !strings.Contains(got, want) {
+					t.Fatalf("NATIVE standard_recordtype*/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
 				}
 				if strings.Contains(istest[api], method+"=") {
 					if got := runIsTestRouteProbe(t, index, "R5RtProbe", method); !strings.Contains(got, want) {

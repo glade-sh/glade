@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+x_none2	62.0	anonymous	True	True	R5&#124;x_none2&#124;P=B&#124;rtNull=false&#124;inMemRtNull=true&#124;inMemP=null	n/a	n/a	cleaned:1
+x_none2	67.0	anonymous	True	True	R5&#124;x_none2&#124;P=B&#124;rtNull=false&#124;inMemRtNull=true&#124;inMemP=null	n/a	n/a	cleaned:1
+xprobe	62.0	istest	true	Failed	x_none2=Fail System.AssertException: Assertion Failed: R5|x_none2|P=B|rtNull=false|inMemRtNull=true|inMemP=null	62.0	n/a	n/a
+xprobe	67.0	istest	true	Failed	x_none2=Fail System.AssertException: Assertion Failed: R5|x_none2|P=B|rtNull=false|inMemRtNull=true|inMemP=null	67.0	n/a	n/a

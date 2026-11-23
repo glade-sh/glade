@@ -79,23 +79,44 @@ func TestCommerceCartTestUtilCreateCartNativeConformance(t *testing.T) {
 // NATIVE rows: testdata/conformance/commerce_carttestutil_createcart/org-anonymous.tsv.
 // Anonymous Apex cannot call the test utility: Salesforce throws a
 // TypeException ("Cannot call test methods in non-test context") at 62.0 and
-// 67.0. Glade's anonymous route still returns a cart; that difference is
-// recorded, not modelled, because VM unit tests build carts outside a test
-// context.
+// 67.0, and so does Glade's anonymous route.
 func TestCommerceCartTestUtilCreateCartAnonymousRouteRecorded(t *testing.T) {
-	body, err := os.ReadFile("testdata/conformance/commerce_carttestutil_createcart/org-anonymous.tsv")
+	const fixture = "testdata/conformance/commerce_carttestutil_createcart"
+	body, err := os.ReadFile(filepath.Join(fixture, "org-anonymous.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	seen := map[string]bool{}
+	apex, err := os.ReadFile(filepath.Join(fixture, "cart.apex"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	scratch, err := os.ReadFile(filepath.Join(fixture, "project-scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := 0
 	for _, row := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
 		cols := strings.Split(row, "\t")
-		if len(cols) >= 9 && cols[0] == "cart" && cols[2] == "anonymous" && strings.Contains(cols[5], "System.TypeException&#124;Cannot call test methods in non-test context") {
-			seen[cols[1]] = true
+		if len(cols) < 9 || cols[0] != "cart" || cols[2] != "anonymous" {
+			continue
 		}
+		rows++
+		api, want := cols[1], strings.ReplaceAll(cols[5], "&#124;", "|")
+		if !strings.Contains(want, "R5|noArg|System.TypeException|Cannot call test methods in non-test context") {
+			t.Fatalf("unexpected native row: %s", row)
+		}
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(scratch))
+			writeFile(t, filepath.Join(root, "force-app/main/default/classes/Keep.cls"), "public class Keep {}")
+			index := loadTestIndex(t, root)
+			if got := runAnonymousRouteProbe(t, index, api, string(apex)); !strings.Contains(got, want) {
+				t.Fatalf("NATIVE commerce_carttestutil_createcart/org-anonymous.tsv %s anonymous: want %q; Glade %q", api, want, got)
+			}
+		})
 	}
-	if !seen["62.0"] || !seen["67.0"] {
-		t.Fatalf("native anonymous rows missing: %v", seen)
+	if rows != 2 {
+		t.Fatalf("native anonymous rows = %d, want 2", rows)
 	}
-	t.Skip("Glade's anonymous createCart() returns a cart where Salesforce throws TypeException; not modelled")
 }
