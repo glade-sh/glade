@@ -91,3 +91,20 @@ func TestCIWorkflowLintLaneSyntheticProjectRoute(t *testing.T) {
 		})
 	}
 }
+
+// The remaining-go lane rejects skipped tests, so the job that runs it must
+// install actionlint before the scripts package executes the actionlint routes.
+func TestCIRemainingGoJobInstallsActionlint(t *testing.T) {
+	job := workflowJobBlocksText(actionlintRead(t, "../.github/workflows/ci.yml"))["test"]
+	install := strings.Index(job, "      - name: Install actionlint for scripts tests\n")
+	run := strings.Index(job, "scripts/ci-go-test.sh lane remaining-go")
+	if install < 0 || run < 0 || install > run {
+		t.Fatalf("test job must install actionlint before the remaining-go lane (install=%d run=%d)", install, run)
+	}
+	step := workflowStepBlockText(job, "      - name: Install actionlint for scripts tests")
+	for _, want := range []string{`scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"`, `echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"`} {
+		if !strings.Contains(step, want) {
+			t.Errorf("actionlint install step lacks %q", want)
+		}
+	}
+}

@@ -2089,7 +2089,7 @@ func browserWorkflowProblem(workflow string) string {
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
 		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
 		"go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath",
-		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestL08SalesforceConformance)$'",
+		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestLWCAPI68RegistrationRunsInBrowser|TestL08SalesforceConformance)$'",
 		"./internal/lwcruntime ./internal/lwcbrowser ./internal/server",
 		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
 		"PIPESTATUS[@]",
@@ -2101,6 +2101,7 @@ func browserWorkflowProblem(workflow string) string {
 		"TestBrowserRuntimeSuite",
 		"TestGeneratedPhase3BaseComponentsRunInBrowser",
 		"TestLWCAPI67RegistrationRunsInBrowser",
+		"TestLWCAPI68RegistrationRunsInBrowser",
 		`action in {"pass", "fail", "skip"}`,
 		`if action == "skip":`,
 		`elif actions[0] != "pass":`,
@@ -2328,6 +2329,9 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		},
 		"missing API67 selector": func(s string) string {
 			return strings.Replace(s, "|TestLWCAPI67RegistrationRunsInBrowser", "", 1)
+		},
+		"missing API68 selector": func(s string) string {
+			return strings.Replace(s, "|TestLWCAPI68RegistrationRunsInBrowser", "", 1)
 		},
 		"missing L08 selector": func(s string) string {
 			return strings.Replace(s, "|TestL08SalesforceConformance", "", 1)
@@ -2577,6 +2581,7 @@ func TestCIBrowserTAPValidationFixtures(t *testing.T) {
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI68RegistrationRunsInBrowser"}`,
 		l08Pass,
 	}, "\n") + "\n"
 	cases := []struct {
@@ -3277,7 +3282,7 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
 		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents|TestL08SalesforceConformance|TestProcessBuilder.*Hosts)$",
 		"repoguard":             "",
-		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$",
+		"remaining-go":          "^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestLWCAPI68RegistrationRunsInBrowser)$",
 	}
 	for lane, skip := range wantSkip {
 		t.Run(lane, func(t *testing.T) {

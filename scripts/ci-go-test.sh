@@ -545,13 +545,15 @@ run_named_package_lane() {
 
 # These lane-specific skips route tests to provisioned authorities; they are not
 # known-failure waivers. The 35 excluded Node tests run in node-integration,
-# whose validator requires every selected test to pass without skips. The four
+# whose validator requires every selected test to pass without skips. The five
 # browser tests run in .github/workflows/browser.yml with Node, LWC dependencies,
 # Chromium and GLADE_LWC_BROWSER=1; that workflow rejects Go and Node skip events.
+# The CI test job installs actionlint, so the scripts actionlint tests run in
+# remaining-go without skips.
 # local-release uses run_local_release_lane instead and retains these tests.
 run_ci_package_lane() {
 	local lane="$1"
-	local -x CI_AUDIT_PACKAGE_LANE=1
+	local CI_AUDIT_PACKAGE_LANE=1  # not exported: nested go test runs must not inherit it
 	case "${lane}" in
 		workflow-lint)
 			run_json_with_heartbeat "go test workflow-lint" "$(testlog_artifact test workflow-lint)" -count=1 -timeout=3m -run '^TestCIActionlint' ./scripts/ci_actionlint_test.go
@@ -574,7 +576,7 @@ run_ci_package_lane() {
 			return "${validation_rc}"
 			;;
 		remaining-go)
-			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$' ci-remaining
+			run_package_lane "${lane}" test 30m '^(?:TestBuildCompileConfigAPIVersionMatrix|TestLWCModuleAvailabilityFollowsBundleAPIVersion|TestComplexTemplateExpressionsFollowBundleAPIVersion|TestHTMLDetailsNameFollowsBundleAPIVersion|TestCompilePreservesDeclaredAPI67|TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser|TestLWCAPI68RegistrationRunsInBrowser)$' ci-remaining
 			;;
 		sema|repoguard)
 			run_named_package_lane "${lane}"
