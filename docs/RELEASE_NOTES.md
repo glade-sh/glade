@@ -107,7 +107,6 @@
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 - **ConnectApi symbol loading.** Loading the captured shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
 - **Parse JSON output.** Encoding a large parse result uses less temporary memory while preserving its JSON. A synthetic benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
-
 - **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
 - **LWC preview bundle ownership.** Preview configuration indexes multiple bundle roots instead of comparing every source with every root. On a synthetic 1,000-bundle preview, Go allocations fell from about 2.05 million to 52,000 with identical compiled artifacts.
 - **LWC runtime assets.** The local shell names its stylesheet and entry script by content (`?v=` with a content hash), so browsers keep them without revalidating. Unversioned URLs still work and revalidate with an ETag taken from the file's stamp, so an unchanged asset costs no body transfer, no disk read and no hashing. The hash is computed once per content version.
