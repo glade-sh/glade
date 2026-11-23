@@ -1283,6 +1283,7 @@ func (vm *VM) FreezeClassLookup() {
 	vm.frozenClassLookup = frozen
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
 	vm.classMapWritten = false
+	vm.classStructureWritten = false
 	vm.classValuesWritten = false
 	vm.classLookupGeneration = generation
 	// A search cache missing names (one that predates an unregistered alias

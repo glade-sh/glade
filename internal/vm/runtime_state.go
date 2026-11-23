@@ -147,6 +147,10 @@ type VM struct {
 	// the frozen copy plan may no longer describe the map's alias values.
 	classMapShared  atomic.Bool
 	classMapWritten bool
+	// classStructureWritten records a write since the last freeze that can add
+	// or replace a Classes key; a static-value writeback of an existing class
+	// (storeClassValue's frozen fast path) does not set it.
+	classStructureWritten bool
 	// classValueOverlay holds the class values this VM wrote while sharing
 	// Classes, keyed by existing Classes keys. Reads go through classEntry and
 	// ClassEntries; prepareClassMapWrite folds it into a private copy.
@@ -1312,6 +1316,7 @@ func (vm *VM) canShareClassMap() bool {
 // other's writes.
 func (vm *VM) prepareClassMapWrite() {
 	vm.classMapWritten = true
+	vm.classStructureWritten = true
 	if !vm.classMapShared.Load() {
 		return
 	}

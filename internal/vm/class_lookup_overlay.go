@@ -231,6 +231,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 	vm.frozenClassLookup = layer
 	vm.sharedClassCopyPlan = plan
 	vm.classMapWritten = false
+	vm.classStructureWritten = false
 	vm.classLookupGeneration = generation
 	vm.classNameSearchCache = layer.searchEntries
 	vm.topLevelClassLookup = layer.topLevel

@@ -28,7 +28,7 @@ var verifyConcreteOverrideCandidates bool
 // concreteOverrideCandidates lists the classes that are, or extend, baseType
 // without being it.
 func (vm *VM) concreteOverrideCandidates(baseType string) []string {
-	cacheable := vm.classOverlay == nil && !vm.classMapWritten && vm.classLookupGeneration != 0
+	cacheable := vm.classOverlay == nil && !vm.classStructureWritten && vm.frozenClassLookup != nil && vm.classLookupGeneration != 0
 	var key concreteOverrideCandidateKey
 	if cacheable {
 		key = concreteOverrideCandidateKey{
