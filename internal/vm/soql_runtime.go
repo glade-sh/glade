@@ -5140,7 +5140,7 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 
 func (vm *VM) objectModelHasPublicRead(canonical string) bool {
 	definition := vm.Org.Objects[canonical].Definition
-	if hasSuffixFold(canonical, "__share") && storage.IsGeneratedShareObject(definition) {
+	if hasSuffixFold(canonical, "__share") && vm.testContext != nil && vm.testContext.RunAsDepth > 0 && storage.IsGeneratedShareObject(definition) {
 		// A share table is as open as its parent: rows follow the parent
 		// record's visibility (userModeRecordVisible).
 		return vm.soqlObjectHasPublicReadSharing(definition.Metadata["parentObject"])
