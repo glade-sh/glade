@@ -1,1 +1,2 @@
 Synthetic capture, 2026-11-23. Fresh 1-day Enterprise scratch org with B2BCommerce, Communities and commerceEnabled. A CartItem insert with a well-formed Product2Id that names no record failed INVALID_CROSS_REFERENCE_KEY, invalid cross reference id, at APIs 62.0 and 67.0. The same capture shows CartExtension.CartTestUtil.createCart() returns a cart whose delivery group has a null address. Org deleted and verified gone.
+Second route, 2026-11-23: the same insert from anonymous Apex (org-anonymous.tsv) failed with the same error at both APIs.

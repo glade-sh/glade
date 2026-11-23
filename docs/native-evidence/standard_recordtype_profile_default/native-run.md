@@ -1,1 +1,2 @@
 Synthetic capture, 2026-11-23. Fresh 1-day Enterprise scratch org with PublicSectorAccess. The Admin profile (not a permission set) made Account.RT and BusinessLicenseApplication.RT visible and default. Record type picklist defaults applied on insert at APIs 62.0 and 67.0, with and without an explicit RecordTypeId. Org deleted and verified gone.
+Second route, 2026-11-23: the same cases from an @IsTest class (org-istest.tsv) gave the same values.
