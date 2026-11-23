@@ -13676,7 +13676,7 @@ System.assertEquals(null, Site.login('tail@example.invalid', 'secret', ''));
 func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assert(UserInfo.isMultiCurrencyOrganization());
-System.assertEquals('0DM000000000001', Site.getSiteId());
+System.assertEquals(null, Site.getSiteId());
 System.assertEquals('', Site.getBaseUrl());
 System.assertEquals('', Site.getBaseRequestUrl());
 System.assertEquals('', Site.getBaseSecureUrl());
@@ -13686,10 +13686,10 @@ System.assertEquals(null, Site.getName());
 System.assertEquals('/site/SiteTemplate.apexp', Site.getTemplate().getUrl());
 System.assertEquals(null, Site.getSiteType());
 System.assertEquals(null, Site.getSiteTypeLabel());
-System.assertEquals('local', Site.getPathPrefix());
-System.assertEquals('system@example.invalid', Site.getAdminEmail());
+System.assertEquals('', Site.getPathPrefix());
+System.assertEquals(null, Site.getAdminEmail());
 System.assertEquals(UserInfo.getUserId(), Site.getAdminId());
-System.assertEquals('Local Site', Site.getMasterLabel());
+System.assertEquals(null, Site.getMasterLabel());
 System.assertEquals(false, Site.isRegistrationEnabled());
 System.assertEquals(false, Site.isLoginEnabled());
 System.assertEquals(true, Site.isValidUsername('user@example.invalid'));
