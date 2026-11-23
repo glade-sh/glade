@@ -1,6 +1,6 @@
-capture: u3-cap-lookup
-started: 2026-11-23T02:38:16Z
-finished: 2026-11-23T02:40:04Z
+capture: u5-cap-lookup
+started: 2026-11-23T07:19:30Z
+finished: 2026-11-23T07:21:04Z
 apis: 62.0 67.0
 routes: anonymous 
 cases: 1
