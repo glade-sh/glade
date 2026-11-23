@@ -551,7 +551,7 @@ run_named_package_lane() {
 # local-release uses run_local_release_lane instead and retains these tests.
 run_ci_package_lane() {
 	local lane="$1"
-	local -x CI_AUDIT_PACKAGE_LANE=1
+	local CI_AUDIT_PACKAGE_LANE=1  # not exported: nested go test runs must not inherit it
 	case "${lane}" in
 		workflow-lint)
 			run_json_with_heartbeat "go test workflow-lint" "$(testlog_artifact test workflow-lint)" -count=1 -timeout=3m -run '^TestCIActionlint' ./scripts/ci_actionlint_test.go
