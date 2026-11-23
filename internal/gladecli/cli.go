@@ -118,8 +118,10 @@ type cliJSONEnvelope struct {
 	Data          any      `json:"data,omitempty"`
 }
 
+const cliJSONSchemaVersion = "1.0"
+
 func writeCLIJSONEnvelope(w io.Writer, env cliJSONEnvelope) error {
-	env.SchemaVersion = "1.0"
+	env.SchemaVersion = cliJSONSchemaVersion
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(env)
@@ -1332,7 +1334,7 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	renderer.Finish(cliui.Result{OK: !result.HasErrors(), Label: "parse complete"})
 
 	if jsonOut {
-		return result, writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		return result, writeParseCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:  "parse",
 			Status:   statusForOK(!result.HasErrors()),
 			ExitCode: exitCodeForOK(!result.HasErrors()),
