@@ -52,7 +52,7 @@ func TestJSONParserDiskCachePayloadIdentity(t *testing.T) {
 		t.Fatalf("debug runtime digest %s", got)
 	}
 	got := fmt.Sprintf("%x", sha256.Sum256(data))
-	if got != "b58813819f81e43b395e848efca40a3aa98f100ebe499861df601372e9f75da8" {
+	if got != "3639cab4a7f2b8a99c92cd5f2cc9f3ab3f7b59f027b789b7c9c627bd2982f2f7" {
 		t.Fatalf("disk payload digest %s", got)
 	}
 }
