@@ -1,0 +1,3 @@
+id	route	file
+MISSING_METHOD	istest	MissingAdapterTest
+WRONG_PARAMETER	istest	WrongAdapterTest

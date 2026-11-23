@@ -36,6 +36,43 @@ func (vm *VM) replayDescribeStandardPublishMode(value Value) int {
 	return -1
 }
 
+// batchApexErrorEventPublishField lists the fields a named method can set
+// before publication without leaving the blank-event contract. Native rows
+// share_mdt_event_runas (API 62.0 and 67.0) set each one alone and together:
+// the test route enqueues below API 67 and returns a failed SaveResult at 67.
+func batchApexErrorEventPublishField(field string) bool {
+	switch strings.ToLower(field) {
+	case "asyncapexjobid", "doesexceedjobscopemaxlength", "exceptiontype", "jobscope", "message", "phase", "requestid", "stacktrace":
+		return true
+	}
+	return false
+}
+
+// batchApexErrorEventMessageAssignable: native rows share_mdt_event_runas set
+// Message by assignment (the constructor argument is always accepted). A test
+// below API 67 writes it; anonymous execution and API 67 raise "Field is not
+// writeable".
+func (vm *VM) batchApexErrorEventMessageAssignable() bool {
+	if vm == nil || vm.testContext == nil {
+		return false
+	}
+	major, ok := apexversion.Major(vm.currentSourceExecutionPolicy().APIVersion)
+	return !ok || major < platformEventTestSaveResultAPIVersion
+}
+
+// standardEventImmediateInsert recognizes Database.insertImmediate of one
+// standard error event from a named method.
+func (vm *VM) standardEventImmediateInsert(args []Value) bool {
+	if vm == nil || vm.Org == nil || len(args) != 1 || vm.currentMethod.ClassName == "" || vm.currentTrigger {
+		return false
+	}
+	record := args[0]
+	if record.Kind != ValueObject || record.classInstance || record.projectClass || sObjectIDFromFields(record.Fields) != "" {
+		return false
+	}
+	return vm.replayDescribeStandardEvent(record.Type)
+}
+
 // Blank standard error events have a named-method publication contract that
 // also applies when an anonymous caller invokes that method. Standalone
 // anonymous publication and Database DML keep their separate contracts.
@@ -50,7 +87,7 @@ func (vm *VM) namedStandardEventPublishMode(value Value) int {
 		return 0
 	}
 	for field := range value.Fields {
-		if !isInternalSObjectField(field) && !isDefaultedSObjectField(value, field) {
+		if !isInternalSObjectField(field) && !isDefaultedSObjectField(value, field) && !batchApexErrorEventPublishField(field) {
 			return 0
 		}
 	}

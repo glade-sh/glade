@@ -1,0 +1,7 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+DISPATCH_ANON	62.0	anonymous	True	True	ok	62.0	n/a	0
+DISPATCH_ANON	67.0	anonymous	True	True	ok	67.0	n/a	0
+DISPATCH_TEST	62.0	istest	true	Passed	dispatch=Pass	62.0	n/a	n/a
+DISPATCH_TEST	67.0	istest	true	Passed	dispatch=Pass	67.0	n/a	n/a
+INTERFACE_CONSTRUCTION	62.0	anonymous	False	False	Type cannot be constructed: commercepayments.PaymentGatewayAdapter	n/a	n/a	0
+INTERFACE_CONSTRUCTION	67.0	anonymous	False	False	Type cannot be constructed: commercepayments.PaymentGatewayAdapter	n/a	n/a	0

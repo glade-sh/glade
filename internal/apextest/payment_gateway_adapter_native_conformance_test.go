@@ -1,0 +1,165 @@
+package apextest
+
+import (
+	"encoding/csv"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/vm"
+)
+
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:2 anonymous 62.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:3 anonymous 67.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:4 istest 62.0
+// NATIVE adapter dispatch testdata/conformance/payment_gateway_adapter/org.tsv:5 istest 67.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/org.tsv:6 anonymous 62.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/org.tsv:7 anonymous 67.0
+func TestPaymentGatewayAdapterNativeConformance(t *testing.T) {
+	dir := filepath.Join("testdata", "conformance", "payment_gateway_adapter")
+	read := func(name string) string {
+		t.Helper()
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	f, err := os.Open(filepath.Join(dir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 7 {
+		t.Fatalf("expected six native rows, got %d", len(rows)-1)
+	}
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		if len(row) != 9 {
+			t.Fatalf("bad row: %v", row)
+		}
+		id, api, route := row[0], row[1], row[2]
+		key := id + "/" + api
+		if seen[key] || (api != "62.0" && api != "67.0") {
+			t.Fatalf("unexpected row %v", row)
+		}
+		seen[key] = true
+		t.Run(key, func(t *testing.T) {
+			files := map[string]string{"AdapterProbe": read("AdapterProbe.cls"), "AdapterProbeTest": read("AdapterProbeTest.cls")}
+			if id == "INTERFACE_CONSTRUCTION" {
+				files = nil
+			}
+			index := nativeBoundaryIndex(t, api, files, nil)
+			if id == "DISPATCH_TEST" && route == "istest" {
+				analysis := sema.Analyze(index)
+				if index.HasErrors() || analysis.HasErrors() {
+					t.Fatalf("native compiled; diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
+				}
+				run := Run(index, Options{SelectedClasses: []string{"AdapterProbeTest"}, SelectedMethod: "dispatch", NoDiskCache: true, Parallelism: 1})
+				if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 || row[4] != "Passed" {
+					t.Fatalf("native %v; Glade %+v, suites %+v", row, summary, run.Suites)
+				}
+				return
+			}
+			if route != "anonymous" || (id != "DISPATCH_ANON" && id != "INTERFACE_CONSTRUCTION") {
+				t.Fatalf("unexpected row %v", row)
+			}
+			source := "dispatch.apex"
+			if id == "INTERFACE_CONSTRUCTION" {
+				source = "reject.apex"
+			}
+			prepared := innerShapePrepareAnonymous(t, api, index, read(source))
+			var errors []string
+			for _, d := range prepared.diagnostics {
+				if d.Severity == diagnostic.Error {
+					msg := d.NativeMessage
+					if msg == "" {
+						msg = d.Message
+					}
+					errors = append(errors, msg)
+				}
+			}
+			if id == "INTERFACE_CONSTRUCTION" {
+				if row[3] != "False" || len(errors) != 1 || errors[0] != row[5] {
+					t.Fatalf("native %v; Glade errors %v", row, errors)
+				}
+				return
+			}
+			analysis := sema.Analyze(index)
+			if index.HasErrors() || analysis.HasErrors() || len(errors) != 0 {
+				t.Fatalf("native compiled; diagnostics: %v %v %v", index.Diagnostics, analysis.Diagnostics, errors)
+			}
+			program, err := vm.CompileAnonymousWithOptions(prepared.body, vm.CompileOptions{APIVersion: api, ApprovedPrefixStatements: sema.ApprovedAnonymousPrefixStatements(prepared.merged, prepared.body, api)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			org := orgFromIndex(index)
+			org.APIVersion = api
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			if _, err := runner.execute(program); err != nil || row[3] != "True" || row[4] != "True" {
+				t.Fatalf("native %v; Glade error %v", row, err)
+			}
+		})
+	}
+}
+
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/test_construction/org.tsv:2 istest 62.0
+// NATIVE interface construction testdata/conformance/payment_gateway_adapter/test_construction/org.tsv:3 istest 67.0
+func TestPaymentGatewayAdapterTestConstructionNativeConformance(t *testing.T) {
+	dir := filepath.Join("testdata", "conformance", "payment_gateway_adapter", "test_construction")
+	read := func(name string) string {
+		t.Helper()
+		data, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	reader := csv.NewReader(strings.NewReader(read("org.tsv")))
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("expected two native rows, got %d", len(rows)-1)
+	}
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		if len(row) != 9 || row[0] != "INTERFACE_CONSTRUCTION_TEST" || row[2] != "istest" || row[3] != "false" || row[4] != "false" || (row[1] != "62.0" && row[1] != "67.0") || seen[row[1]] {
+			t.Fatalf("unexpected native row: %v", row)
+		}
+		seen[row[1]] = true
+		t.Run(row[1], func(t *testing.T) {
+			index := nativeBoundaryIndex(t, row[1], map[string]string{"AdapterRejectTest": read("AdapterRejectTest.cls"), "AdapterSupport": read("AdapterSupport.cls")}, nil)
+			analysis := sema.Analyze(index)
+			var messages []string
+			for _, d := range analysis.Diagnostics {
+				if d.Severity == diagnostic.Error {
+					msg := d.NativeMessage
+					if msg == "" {
+						msg = d.Message
+					}
+					messages = append(messages, msg)
+				}
+			}
+			want := strings.TrimPrefix(row[5], "AdapterRejectTest: ")
+			if len(messages) != 1 || messages[0] != want {
+				t.Fatalf("native %q; Glade %v", want, messages)
+			}
+			run := Run(index, Options{SelectedClasses: []string{"AdapterRejectTest"}, SelectedMethod: "reject", NoDiskCache: true, Parallelism: 1})
+			if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 {
+				t.Fatalf("native rejects deployment; Glade %+v, suites %+v", summary, run.Suites)
+			}
+		})
+	}
+}

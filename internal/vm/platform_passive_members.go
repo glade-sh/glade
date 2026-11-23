@@ -3369,6 +3369,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Bool(false), receiver, false, true, nil
 				}
 			}
+			if method == "isCreateable" && vm.replayDescribeStandardEvent(name.Text) {
+				// share_mdt_event_runas rows (API 62.0 and 67.0).
+				return Bool(false), receiver, false, true, nil
+			}
 			return Bool(vm.currentUserObjectPermission(name.Text, method)), receiver, false, true, nil
 		case "isCustom":
 			if len(args) != 0 {
@@ -5321,6 +5325,9 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		}
 		return value, true, nil
 	case "isAssignableFrom":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
 		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Type") {
 			return Null, true, fmt.Errorf("Type.isAssignableFrom expects Type")
 		}

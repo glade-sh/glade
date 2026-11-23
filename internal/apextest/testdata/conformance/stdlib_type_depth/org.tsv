@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+assign	62.0	anonymous	True	True	self=true;other=false;null=System.NullPointerException:Attempt to de-reference a null object	62.0	n/a	0
+assign	67.0	anonymous	True	True	self=true;other=false;null=System.NullPointerException:Attempt to de-reference a null object	67.0	n/a	0
+assign_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: Expected: PROBE, Actual: self=true;other=false;null=System.NullPointerException:Attempt to de-reference a null object	62.0	n/a	n/a
+assign_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: Expected: PROBE, Actual: self=true;other=false;null=System.NullPointerException:Attempt to de-reference a null object	67.0	n/a	n/a
+depth_safe	62.0	anonymous	True	True	ok	62.0	n/a	0
+depth_safe	67.0	anonymous	True	True	ok	67.0	n/a	0
+depth_safe_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+depth_safe_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
+depth_limit	62.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	0
+depth_limit	67.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	0
+depth_limit_test	62.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	n/a
+depth_limit_test	67.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	n/a

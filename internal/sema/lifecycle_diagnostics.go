@@ -312,6 +312,17 @@ func nativeLifecycleMissingMethodMessage(model *semaTypeMemberView, owner typesy
 			}
 		}
 	}
+	if requirement.sourceKind == "interface" {
+		if declaringType, ok := model.lookupName(methodOwner); ok && declaringType.platform && declaringType.namespace != "" {
+			qualified := declaringType.name
+			if !strings.HasPrefix(strings.ToLower(qualified), strings.ToLower(declaringType.namespace)+".") {
+				qualified = declaringType.namespace + "." + qualified
+			}
+			if contract, captured := semaNativeInterfaceContracts[normalizeName(qualified)]; captured && contract.qualifyMissingMethodOwner {
+				signature = nativeLifecycleSignature(qualified, required)
+			}
+		}
+	}
 	kind := "method"
 	if requirement.sourceKind == "abstract" {
 		kind = "abstract method"

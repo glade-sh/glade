@@ -1048,6 +1048,11 @@ platformStaticCall:
 	case "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate":
 		op := strings.TrimPrefix(callee, "Database.")
 		op = strings.TrimSuffix(op, "Immediate")
+		if op == "insert" && vm.standardEventImmediateInsert(args) {
+			// A named method inserts the standard error event as it would
+			// publish it (native rows share_mdt_event_runas, API 62.0 and 67.0).
+			return vm.eventBusPublishWithNamedSource([]Value{cloneValue(args[0])}, result, true, false)
+		}
 		return vm.executeDatabaseDMLWithHistoryTestSeed(op, args, result, false, false)
 	case "Database.getAsyncSaveResult", "Database.getAsyncDeleteResult":
 		if len(args) != 1 {
@@ -3752,10 +3757,8 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("Id"), nil
-		}
-		return String(vm.firstOrgRecordID("Site", "local-site")), nil
+		// Native: null without a Site request context, whatever Site records exist.
+		return typedNull("Id"), nil
 	case "Site.getBaseUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
@@ -3773,7 +3776,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		if (strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl")) && !vm.hasOrgRecords("Site") {
+		if strings.EqualFold(callee, "Site.getAnalyticsTrackingCode") || strings.EqualFold(callee, "Site.getOriginalUrl") {
 			return typedNull("String"), nil
 		}
 		return String(""), nil
@@ -3804,7 +3807,10 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPathPrefix expects 0 arguments")
 		}
-		return String(vm.firstOrgRecordString("Site", "UrlPathPrefix", "")), nil
+		// Native answers the empty string without a Site request context, in
+		// anonymous and test execution, with or without Sites declared. The
+		// seeded local Site record is not request state.
+		return String(""), nil
 	case "Site.getPrefix":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPrefix expects 0 arguments")
@@ -3814,10 +3820,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("String"), nil
-		}
-		return String(vm.siteAdminEmail()), nil
+		return typedNull("String"), nil
 	case "Site.getAdminId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
@@ -3830,10 +3833,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
 		}
-		if !vm.hasOrgRecords("Site") {
-			return typedNull("String"), nil
-		}
-		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
+		return typedNull("String"), nil
 	case "Site.isRegistrationEnabled":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.isRegistrationEnabled expects 0 arguments")

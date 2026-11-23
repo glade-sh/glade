@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+anonymous	62.0	anonymous	True	True	ok	62.0	n/a	0
+anonymous	67.0	anonymous	True	True	ok	67.0	n/a	0
+test	62.0	istest	true	Passed	check=Pass	62.0	n/a	n/a
+test	67.0	istest	true	Passed	check=Pass	67.0	n/a	n/a

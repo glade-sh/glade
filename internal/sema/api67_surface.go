@@ -49,7 +49,15 @@ func semaAPI67ReadOnlyPlatformField(path string) bool {
 	return readOnly
 }
 
+var semaNativeInterfaceContracts = map[string]struct {
+	rejectNoArg               bool
+	qualifyMissingMethodOwner bool
+}{
+	"commercepayments.paymentgatewayadapter": {rejectNoArg: true, qualifyMissingMethodOwner: true},
+}
+
 var semaAPI67RejectedPlatformConstructors = map[string]struct{}{
+	"commercepayments.paymentgatewayadapter": {},
 	// At API 62 and 67, CacheBuilder is an interface.
 	"cache.cachebuilder": {},
 	// These describe types reject construction at API 62 and 67.

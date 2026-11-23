@@ -2,7 +2,23 @@
 
 ## Unreleased
 
-No changes yet.
+- **Site methods without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` return null, as captured, instead of answering from the seeded Site.
+
+- Classes can implement `CommercePayments.PaymentGatewayAdapter` and dispatch its captured `processRequest` method at Apex APIs 62.0 and 67.0.
+
+- **Share tables, custom metadata access and `BatchApexErrorEvent` in tests (Apex API 62.0, 67.0).** A custom object's `__Share` table is accessible, with its columns, exactly when its parent object is, and its rows show exactly when the parent record does, for a runAs user. A runAs user reads a custom metadata type in `USER_MODE` (MasterLabel, DeveloperName and custom fields, with no field permission) only with the Custom Metadata Types grant, and `ORDER BY MasterLabel` or `Label` on such a type keeps the default record order. A named test publishes a `BatchApexErrorEvent` with its fields set, from `EventBus.publish`, `List` publish and `Database.insertImmediate`, as the captured rows show: enqueued with the trigger run below API 67.0, a failed result at 67.0, and an exception thrown by the event trigger stays out of the test.
+
+- At Apex API 62.0 and 67.0, object sorting follows captured `Comparable` declaration and rejection rules, `Type.isAssignableFrom` throws the captured null-pointer exception for a null argument, and direct static integer recursion observes the captured anonymous and test-entry stack limits.
+
+- **ConnectApi symbol loading.** Loading the captured shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
+
+- **Parse JSON output.** Encoding a large parse result uses less temporary memory while preserving its JSON. A synthetic benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
+
+- **LWC preview bundle ownership.** Preview configuration indexes multiple bundle roots instead of comparing every source with every root. On a synthetic 1,000-bundle preview, Go allocations fell from about 2.05 million to 52,000 with identical compiled artifacts.
+
+- **LWC runtime assets.** The local shell names its stylesheet and entry script by content (`?v=` with a content hash), so browsers keep them without revalidating. Unversioned URLs still work and revalidate with an ETag taken from the file's stamp, so an unchanged asset costs no body transfer, no disk read and no hashing. The hash is computed once per content version.
+
+- **Visualforce Lightning bootstrap.** A project with no LWC sources no longer starts Node on every page request. The empty manifest is written directly, with the same bytes the compiler wrote.
 
 ## v0.3.13
 

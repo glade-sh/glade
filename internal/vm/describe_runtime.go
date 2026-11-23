@@ -304,6 +304,11 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		desc.Fields["updateable"] = Bool(false)
 		desc.Fields["deletable"] = Bool(false)
 	}
+	if strings.EqualFold(name, "BatchApexErrorEvent") && storage.IsKnownStandardObject(name) {
+		// Native rows share_mdt_event_runas (API 62.0 and 67.0): the standard
+		// error event reads accessible and not createable.
+		desc.Fields["createable"] = Bool(false)
+	}
 	if storage.IsCustomMetadataDefinition(definition) {
 		// A custom metadata type is never written through DML
 		// (cmdt_describe_flags).

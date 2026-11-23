@@ -1,0 +1,15 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+assert_996	62.0	anonymous	True	True	ok	62.0	n/a	0
+assert_996	67.0	anonymous	True	True	ok	67.0	n/a	0
+assert_997	62.0	anonymous	True	True	ok	62.0	n/a	0
+assert_997	67.0	anonymous	True	True	ok	67.0	n/a	0
+assign_997	62.0	anonymous	True	True	ok	62.0	n/a	0
+assign_997	67.0	anonymous	True	True	ok	67.0	n/a	0
+assign_998	62.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	0
+assign_998	67.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	0
+assign_999	62.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	0
+assign_999	67.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	0
+assign_1000	62.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	0
+assign_1000	67.0	anonymous	True	False	System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	0
+assign_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+assign_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a

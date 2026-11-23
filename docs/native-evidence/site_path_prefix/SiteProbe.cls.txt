@@ -1,0 +1,21 @@
+public class SiteProbe {
+  public static String run(Integer n) {
+    try {
+      Object r;
+      if (n == 1) r = Site.getPathPrefix();
+      else if (n == 2) r = Site.getBaseUrl();
+      else if (n == 3) r = Site.getName();
+      else if (n == 4) r = Site.getSiteId();
+      else if (n == 5) r = Site.getErrorMessage();
+      else if (n == 6) r = Site.getMasterLabel();
+      else if (n == 7) r = Site.getDomain();
+      else if (n == 8) r = Site.getSiteType();
+      else if (n == 9) r = Site.getAdminEmail();
+      else if (n == 10) r = Site.getBaseRequestUrl();
+      else if (n == 11) r = Site.getBaseSecureUrl();
+      else if (n == 12) r = Site.getOriginalUrl();
+      else r = Site.getAnalyticsTrackingCode();
+      return r == null ? 'NULL' : 'VALUE|' + String.valueOf(r);
+    } catch (Exception e) { return 'EXCEPTION|' + e.getTypeName() + '|' + e.getMessage(); }
+  }
+}

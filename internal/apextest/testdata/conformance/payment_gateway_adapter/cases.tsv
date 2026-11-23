@@ -1,0 +1,4 @@
+id	route	file
+DISPATCH_ANON	anonymous	dispatch.apex
+DISPATCH_TEST	istest	AdapterProbeTest
+INTERFACE_CONSTRUCTION	anonymous	reject.apex

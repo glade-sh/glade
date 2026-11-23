@@ -149,7 +149,10 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 	}
 	cfg.LightningModules = opts.LightningModules
 	cfg.CompleteLocalModuleInventory = opts.CompleteLocalModuleInventory
-	result, err := runCompiler(p, cfg, roots)
+	result, handled, err := compileWithoutBundles(p, cfg, roots)
+	if !handled && err == nil {
+		result, err = runCompiler(p, cfg, roots)
+	}
 	if err != nil {
 		return Manifest{}, err
 	}
@@ -359,6 +362,39 @@ func filesInBundle(root string, paths []string) []string {
 	return files
 }
 
+// compileWithoutBundles answers a project with no LWC sources without starting
+// Node. It writes the same empty manifest the compiler writes. When Node or the
+// installed toolchain is absent it declines, so the compiler reports its usual
+// failure.
+func compileWithoutBundles(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, bool, error) {
+	if len(cfg.LWCFiles) > 0 || len(cfg.LWCHTMLFiles) > 0 || len(cfg.LWCMetaFiles) > 0 {
+		return compileResult{}, false, nil
+	}
+	if _, err := exec.LookPath("node"); err != nil {
+		return compileResult{}, false, nil
+	}
+	toolchainDir := filepath.Join(roots.DependencyRoot, "third_party", "lwc")
+	if shared := strings.TrimSpace(os.Getenv("GLADE_LWC_DEPS_DIR")); shared != "" {
+		toolchainDir = shared
+	}
+	for _, name := range []string{"@babel/parser", "@babel/traverse", "@lwc/compiler", "@lwc/template-compiler", "@lwc/shared"} {
+		if _, err := os.Stat(filepath.Join(toolchainDir, "node_modules", filepath.FromSlash(name), "package.json")); err != nil {
+			return compileResult{}, false, nil
+		}
+	}
+	if _, err := loadSalesforceImports(p, nil); err != nil {
+		return compileResult{}, true, err
+	}
+	if err := os.MkdirAll(cfg.OutDir, 0o755); err != nil {
+		return compileResult{}, true, err
+	}
+	manifestPath := filepath.Join(cfg.OutDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte("{\n  \"modules\": {}\n}"), 0o644); err != nil {
+		return compileResult{}, true, err
+	}
+	return compileResult{Modules: map[string]ModuleEntry{}}, true, nil
+}
+
 func runCompiler(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, error) {
 	// Managed installations can contain the previous compiler script. Only use
 	// the streaming protocol when that exact script advertises support for it.
@@ -502,6 +538,10 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 	capabilities := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilityErrors := make(map[string]string, len(p.LWCMetaFiles))
 	roots := make([]string, 0, len(p.LWCMetaFiles))
+	var keys []string
+	if len(p.LWCMetaFiles) > 1 {
+		keys = make([]string, 0, len(p.LWCMetaFiles))
+	}
 	for _, metaPath := range p.LWCMetaFiles {
 		root := filepath.Clean(filepath.Dir(metaPath))
 		relative, err := filepath.Rel(projectRoot, root)
@@ -546,17 +586,26 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 			}
 		}
 		roots = append(roots, root)
-	}
-	for _, sourcePath := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
-		matches := 0
-		for _, root := range roots {
-			relative, err := filepath.Rel(root, sourcePath)
-			if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-				matches++
-			}
+		if keys != nil {
+			keys = append(keys, key)
 		}
-		if matches != 1 {
-			return compileConfig{}, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(sourcePath), matches)
+	}
+	if len(roots) > 1 {
+		if _, _, err := partitionBundleSources(projectRoot, keys, p.LWCFiles, p.LWCHTMLFiles); err != nil {
+			return compileConfig{}, err
+		}
+	} else {
+		for _, sourcePath := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
+			matches := 0
+			for _, root := range roots {
+				relative, err := filepath.Rel(root, sourcePath)
+				if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+					matches++
+				}
+			}
+			if matches != 1 {
+				return compileConfig{}, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(sourcePath), matches)
+			}
 		}
 	}
 	return compileConfig{

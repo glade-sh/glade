@@ -353,6 +353,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		query.Having = &condition
 	}
 
+	query.Order = customMetadataOrder(object.Definition, query.Order)
 	ids := candidateRecordIDs(object, query.Where, query.AllRows)
 	sort.Strings(ids)
 	filterKnowledgeHistory := knowledgeArchivedLatestFilter(objectName, query.Where)
@@ -6124,4 +6125,25 @@ func foldTurkish(text string) string {
 // on the definition wins.
 func customNumberNotGroupable(field storage.Field) bool {
 	return field.Groupable == nil && field.Type == storage.FieldDecimal && !field.AutoNumber && strings.HasSuffix(field.APIName, "__c")
+}
+
+// customMetadataOrder drops ORDER BY on the label of a custom metadata type.
+// Native rows (share_mdt_runas_access, API 62.0 and 67.0) return the records in
+// their default order for ORDER BY MasterLabel and ORDER BY Label in both
+// directions; DeveloperName and custom fields order normally.
+func customMetadataOrder(definition storage.ObjectDefinition, order []OrderSpec) []OrderSpec {
+	if len(order) == 0 || !storage.IsCustomMetadataDefinition(definition) {
+		return order
+	}
+	kept := make([]OrderSpec, 0, len(order))
+	for _, spec := range order {
+		if strings.EqualFold(spec.Field, "MasterLabel") || strings.EqualFold(spec.Field, "Label") {
+			continue
+		}
+		kept = append(kept, spec)
+	}
+	if len(kept) == len(order) {
+		return order
+	}
+	return kept
 }

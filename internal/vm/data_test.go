@@ -5219,7 +5219,7 @@ insert u;
 	}
 }
 
-func TestExecMinimumAccessCanReadRecordTypeAndCustomMetadataDescribe(t *testing.T) {
+func TestExecMinimumAccessReadsRecordTypeButNotUngrantedCustomMetadataDescribe(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
 User u = new User(
@@ -5238,7 +5238,10 @@ System.runAs(u) {
 	// RecordType.SObjectType is RecordType's SobjectType field token (native
 	// H1XT8-A), so the object describe comes from a record's type token.
 	System.assert(new RecordType().getSObjectType().getDescribe().isAccessible(), 'RecordType should be readable metadata');
-	System.assert(Filter__mdt.SObjectType.getDescribe().isAccessible(), 'custom metadata should be readable');
+	// Native rows (docs/native-evidence/share_mdt_native_fixtures, API 62.0 and
+	// 67.0): a custom metadata type is accessible to a runAs user only with the
+	// Custom Metadata Types grant. This user has none.
+	System.assert(!Filter__mdt.SObjectType.getDescribe().isAccessible(), 'ungranted custom metadata should not be accessible');
 }
 `)
 	if err != nil {
