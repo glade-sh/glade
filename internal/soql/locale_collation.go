@@ -355,38 +355,53 @@ func compareElementKeys(left, right *elementKey, secondary bool) int {
 }
 
 // textSortKeys holds the ORDER BY key of every row of one text column, so a
-// sort looks each key up once per row instead of twice per comparison.
+// sort looks each key up once per row instead of twice per comparison. A key
+// is resolved when a comparison first reads its row: a later sort column is
+// only compared on ties, and most of its rows never need a key.
 type textSortKeys struct {
-	root     []string
-	elements []elementKey
+	comparator *textComparator
+	texts      []string
+	resolved   []bool
+	root       []string
+	elements   []elementKey
 }
 
-// sortKeys resolves the keys compare(a, b, false) would compare. It returns
+// sortKeys prepares the keys compare(a, b, false) would compare. It returns
 // nil for the folded and en_* orders, which compare the texts directly.
 func (c *textComparator) sortKeys(texts []string) *textSortKeys {
 	if c == nil || c.english {
 		return nil
 	}
+	keys := &textSortKeys{comparator: c, texts: texts, resolved: make([]bool, len(texts))}
 	if c.root {
-		keys := make([]string, len(texts))
-		for i, text := range texts {
-			keys[i] = c.rootKey(text, false)
-		}
-		return &textSortKeys{root: keys}
+		keys.root = make([]string, len(texts))
+	} else {
+		keys.elements = make([]elementKey, len(texts))
 	}
-	keys := make([]elementKey, len(texts))
-	for i, text := range texts {
-		keys[i] = c.elementKey(text)
-	}
-	return &textSortKeys{elements: keys}
+	return keys
 }
 
 // compare orders rows i and j as compare(texts[i], texts[j], false) does.
 func (k *textSortKeys) compare(i, j int) int {
+	if !k.resolved[i] {
+		k.resolve(i)
+	}
+	if !k.resolved[j] {
+		k.resolve(j)
+	}
 	if k.root != nil {
 		return strings.Compare(k.root[i], k.root[j])
 	}
 	return compareElementKeys(&k.elements[i], &k.elements[j], false)
+}
+
+func (k *textSortKeys) resolve(i int) {
+	if k.root != nil {
+		k.root[i] = k.comparator.rootKey(k.texts[i], false)
+	} else {
+		k.elements[i] = k.comparator.elementKey(k.texts[i])
+	}
+	k.resolved[i] = true
 }
 
 func (c *textComparator) groupKey(text string) string {
