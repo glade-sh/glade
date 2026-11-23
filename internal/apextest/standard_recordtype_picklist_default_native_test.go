@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -40,13 +39,32 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 		}
 		return string(body)
 	}
-	rows := strings.Split(strings.TrimSpace(read("org.tsv")), "\n")
 	cases := map[string]string{}
 	for _, line := range strings.Split(strings.TrimSpace(read("cases.tsv")), "\n")[1:] {
 		cols := strings.Split(line, "\t")
 		cases[cols[0]] = cols[2]
 	}
-	debug := regexp.MustCompile(`System\.debug\(`)
+	// Anonymous rows: one outcome per case. IsTest rows: one row per API whose
+	// outcome lists every probe method.
+	anonymous := map[string]map[string]string{}
+	for line, row := range strings.Split(strings.TrimSpace(read("org.tsv")), "\n")[1:] {
+		cols := strings.Split(row, "\t")
+		if len(cols) < 9 || cols[2] != "anonymous" || cols[3] != "True" || cols[4] != "True" || !strings.HasPrefix(cols[8], "cleaned") {
+			t.Fatalf("invalid native row %d: %s", line+2, row)
+		}
+		if anonymous[cols[1]] == nil {
+			anonymous[cols[1]] = map[string]string{}
+		}
+		anonymous[cols[1]][cols[0]] = nativeOutcome(cols[5])
+	}
+	istest := map[string]string{}
+	for line, row := range strings.Split(strings.TrimSpace(read("org-istest.tsv")), "\n")[1:] {
+		cols := strings.Split(row, "\t")
+		if len(cols) < 9 || cols[2] != "istest" {
+			t.Fatalf("invalid native istest row %d: %s", line+2, row)
+		}
+		istest[cols[1]] = nativeOutcome(cols[5])
+	}
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
 		writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
@@ -59,51 +77,34 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 			if err != nil {
 				return err
 			}
-			writeFile(t, filepath.Join(root, name), read(filepath.Join("project", name)))
+			writeFile(t, filepath.Join(root, name), strings.ReplaceAll(read(filepath.Join("project", name)), "__API__", api))
 			return nil
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		var order []string
-		for line, row := range rows[1:] {
-			cols := strings.Split(row, "\t")
-			if len(cols) < 9 || cols[2] != "anonymous" || cols[3] != "True" || cols[4] != "True" || !strings.HasPrefix(cols[8], "cleaned") {
-				t.Fatalf("invalid native row %d: %s", line+2, row)
-			}
-			if cols[1] != api {
-				continue
-			}
-			order = append(order, cols[0])
-			body := "List<String> r5out = new List<String>();\n" + debug.ReplaceAllString(read(cases[cols[0]]), "r5out.add(") + "\nSystem.assert(false, String.join(r5out, ';'));"
-			class := "Probe" + strings.ReplaceAll(cols[0], "_", "")
-			writeFile(t, filepath.Join(root, "force-app/main/default/classes", class+".cls"), "@IsTest private class "+class+" { @IsTest static void observe() {\n"+body+"\n} }")
-		}
 		index := loadTestIndex(t, root)
-		for _, row := range rows[1:] {
-			cols := strings.Split(row, "\t")
-			if cols[1] != api {
-				continue
-			}
-			id, want := cols[0], strings.ReplaceAll(cols[5], "&#124;", "|")
+		for id, want := range anonymous[api] {
 			t.Run(api+"/"+id, func(t *testing.T) {
 				if reason, skipped := skip[id]; skipped {
 					t.Skip(reason)
 				}
-				class := "Probe" + strings.ReplaceAll(id, "_", "")
-				run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
-				if run.Summary().Total != 1 || len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
-					t.Fatalf("unexpected test selection: %+v", run.Summary())
+				method := strings.TrimSuffix(cases[id], ".apex")
+				if _, ok := cases[id]; !ok {
+					t.Fatalf("no case %s", id)
 				}
-				observation := run.Suites[0].Cases[0]
-				if observation.Problem == nil {
-					t.Fatal("probe did not report")
+				if strings.Contains(istest[api], method+"=") && !strings.Contains(istest[api], "Assertion Failed: "+want) {
+					t.Fatalf("native istest outcome differs from anonymous for %s: %s", id, istest[api])
 				}
-				if got := observation.Problem.Message; !strings.Contains(got, want) {
-					t.Fatalf("NATIVE standard_recordtype_picklist_default/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
+				if got := runAnonymousRouteProbe(t, index, api, read(cases[id])); !strings.Contains(got, want) {
+					t.Fatalf("NATIVE standard_recordtype*/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
+				}
+				if strings.Contains(istest[api], method+"=") {
+					if got := runIsTestRouteProbe(t, index, "R5RtProbe", method); !strings.Contains(got, want) {
+						t.Fatalf("NATIVE standard_recordtype*/org-istest.tsv %s istest: want %q; Glade %q", api, want, got)
+					}
 				}
 			})
 		}
-		_ = order
 	}
 }
