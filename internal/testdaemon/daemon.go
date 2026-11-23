@@ -363,9 +363,6 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 	d.mu.RLock()
 	previous := d.daemonGeneration
 	d.mu.RUnlock()
-	if generationHoldsSources(previous, changes) {
-		return true, false, nil
-	}
 	var baseline watch.Snapshot
 	baselineCaptured := false
 	if currentScope != nil && typesys.RequiresAuthoritativeApexRebuild(previous.index, changed, deleted) {
@@ -383,6 +380,11 @@ func (d *Daemon) tryUpdateChangesLocked(changes []watch.Change, currentScope *wa
 	index, exact, err := d.tryUpdateIndexFn(previous.index, changed, deleted, p)
 	if err != nil {
 		return false, false, err
+	}
+	if exact && generationHoldsSources(previous, changes) {
+		// The exact update would publish an equal generation; the fallback path
+		// keeps its identity and build checks.
+		return true, false, nil
 	}
 	var (
 		graph     *watch.RefGraph

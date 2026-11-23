@@ -17,7 +17,12 @@ var apexParseMemoEnabled atomic.Bool
 // EnableApexParseMemo turns on the declaration memo.
 func EnableApexParseMemo() { apexParseMemoEnabled.Store(true) }
 
-const apexParseMemoLimit = 1 << 15
+// apexParseMemoLimit and apexParseMemoByteLimit bound the memo by entries
+// and by the source bytes parsed into it; past either it starts over.
+const (
+	apexParseMemoLimit     = 1 << 15
+	apexParseMemoByteLimit = 256 << 20
+)
 
 type apexParseKey struct {
 	path   string
@@ -27,6 +32,7 @@ type apexParseKey struct {
 var apexParseMemo struct {
 	mu      sync.Mutex
 	entries map[apexParseKey][]apexast.Declaration
+	bytes   int
 }
 
 // parseApexDeclarations returns the declarations of one Apex source. Callers
@@ -46,8 +52,12 @@ func parseApexDeclarations(parser *apexast.Parser, path, source string) []apexas
 	apexSourceParses.Add(1)
 	declarations = parser.ParseSource(path, source).Declarations
 	apexParseMemo.mu.Lock()
-	if apexParseMemo.entries == nil || len(apexParseMemo.entries) >= apexParseMemoLimit {
+	if apexParseMemo.entries == nil || len(apexParseMemo.entries) >= apexParseMemoLimit || apexParseMemo.bytes+len(source) > apexParseMemoByteLimit {
 		apexParseMemo.entries = make(map[apexParseKey][]apexast.Declaration)
+		apexParseMemo.bytes = 0
+	}
+	if _, present := apexParseMemo.entries[key]; !present {
+		apexParseMemo.bytes += len(source)
 	}
 	apexParseMemo.entries[key] = declarations
 	apexParseMemo.mu.Unlock()
