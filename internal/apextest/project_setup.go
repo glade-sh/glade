@@ -753,7 +753,7 @@ func applyProjectProfileMetadata(org *storage.OrgState, p project.Project, permi
 		storage.EnsureDeterministicPlatformData(org)
 	}
 	applyProjectProfileRecordTypeDefaults(org, p, readProfile)
-	applyConfiguredPermissionSetRecordTypeDefault(org, p, readFile)
+	applyConfiguredPermissionSetRecordTypeDefault(org, p)
 	// Dependency profile files are not in bodies; read them from the
 	// captured dependency sources.
 	applyProjectProfileRecordTypeAvailability(org, p, func(file string) ([]byte, error) {
@@ -1894,7 +1894,7 @@ func compileProjectInitializer(className, file string, r diagnostic.Range, bodyR
 // defaults; with no grant the record keeps no record type (standard_recordtype
 // _picklist_default x_norecordtype rows and the xnone_visibility rows, API
 // 62.0 and 67.0).
-func applyConfiguredPermissionSetRecordTypeDefault(org *storage.OrgState, p project.Project, readFile func(string) ([]byte, error)) {
+func applyConfiguredPermissionSetRecordTypeDefault(org *storage.OrgState, p project.Project) {
 	if org == nil || len(p.Test.PermissionSets) == 0 {
 		return
 	}
@@ -1914,7 +1914,7 @@ func applyConfiguredPermissionSetRecordTypeDefault(org *storage.OrgState, p proj
 		if !selected[name] {
 			continue
 		}
-		data, err := readFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
