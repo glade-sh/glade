@@ -4785,7 +4785,10 @@ func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t 
 }
 
 // Native duplicate enforcement ST02 (nameOnly): the active default Account
-// rule reports one DuplicateResult with no matched records.
+// rule reports one DuplicateResult with no matched records. Anonymous exec
+// cannot construct InventoryLevelsRequest: native rows invanon, API 62.0 and 67.0
+// (apextest/testdata/conformance/commerce_inventory_request_getters/org.tsv)
+// throw System.UnsupportedOperationException outside a test.
 func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
@@ -4793,7 +4796,7 @@ func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
 		"exec", "--project", root,
-		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(1, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getDuplicateResults()[0].getMatchResults()[0].getSize()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed());",
+		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(1, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getDuplicateResults()[0].getMatchResults()[0].getSize()); System.assertEquals(0, duplicateRows[0].getErrors().size()); String levelsError = null; try { new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>()); } catch (System.UnsupportedOperationException e) { levelsError = e.getMessage(); } System.assertEquals('InventoryLevelsRequest cannot be constructed directly outside of a test', levelsError); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed());",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("project-backed local platform harnesses failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
