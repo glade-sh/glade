@@ -75,3 +75,49 @@ func TestSortRecordsByOrderMatchesPerComparisonResolution(t *testing.T) {
 		}
 	}
 }
+
+// A column whose every value is text sorts by its texts alone, without
+// reading value kinds. The order must stay the one orderCompare gives, for
+// every comparator kind (folded, en_*, root and tailored locales).
+func TestSortRecordsByOrderTextColumnsMatchOrderCompare(t *testing.T) {
+	org := benchmarkSOQLOrg(1)
+	definition := org.Objects["Account"].Definition
+	rng := rand.New(rand.NewSource(20261122))
+	alphabet := []string{"a", "A", "b", "B", "-", " ", "1", "é", "Z", "ä", "ö", "å", "ß", "ss", "中", "あ", "z"}
+	build := func(n int) []storage.Record {
+		records := make([]storage.Record, n)
+		for i := range records {
+			text := ""
+			for k, length := 0, 1+rng.Intn(4); k < length; k++ {
+				text += alphabet[rng.Intn(len(alphabet))]
+			}
+			site := alphabet[rng.Intn(len(alphabet))] + alphabet[rng.Intn(len(alphabet))]
+			records[i] = storage.Record{ID: storage.ID(fmt.Sprintf("001%012d", i+1)), Object: "Account", Fields: map[string]storage.Value{
+				"Name": storage.StringValue(text),
+				"Site": storage.StringValue(site),
+			}}
+		}
+		return records
+	}
+	orders := [][]OrderSpec{
+		{{Field: "Name"}},
+		{{Field: "Name", Desc: true}},
+		{{Field: "Site", Nulls: "LAST"}, {Field: "Name", Desc: true}},
+		{{Field: "Site", Desc: true}, {Field: "Name"}},
+	}
+	for _, locale := range []string{"", "en_US", "de_DE", "sv_SE", "ja_JP", "zh_CN"} {
+		for _, n := range []int{2, 50, 1500} {
+			for _, order := range orders {
+				got := build(n)
+				want := append([]storage.Record(nil), got...)
+				sortRecordsByOrder(org, definition, got, collateOrder(order, newTextComparator(locale)), false, false)
+				referenceSortRecords(org, definition, want, collateOrder(order, newTextComparator(locale)))
+				for i := range got {
+					if got[i].ID != want[i].ID {
+						t.Fatalf("locale=%q n=%d order=%v: position %d = %s; want %s", locale, n, order, i, got[i].ID, want[i].ID)
+					}
+				}
+			}
+		}
+	}
+}
