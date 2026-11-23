@@ -1280,6 +1280,11 @@ jobs:
       - name: Install conformance Chromium
         if: (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Install actionlint for scripts tests
+        if: (needs.tree-reuse-gate.result != 'success' || needs.tree-reuse-gate.outputs.reuse != 'true')
+        run: |
+          scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
+          echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
       - name: Warm trusted main caches
         if: (needs.tree-reuse-gate.result == 'success' && needs.tree-reuse-gate.outputs.reuse == 'true')
         run: |
