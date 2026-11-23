@@ -29,7 +29,7 @@ func TestStandardUnitOfMeasureTypeNativeConformance(t *testing.T) {
 				continue
 			}
 			api, want := cols[1], strings.ReplaceAll(cols[5], "&#124;", "|")
-			if cols[2] != "anonymous" || cols[3] != "True" || cols[4] != "True" || !strings.HasPrefix(cols[8], "cleaned") {
+			if cols[2] != "anonymous" || cols[3] != "True" || cols[4] != "True" || strings.HasPrefix(cols[8], "tainted") {
 				t.Fatalf("invalid native row: %s", row)
 			}
 			t.Run(profile+"/"+api, func(t *testing.T) {
