@@ -4378,9 +4378,6 @@ func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCri
 				// reading as null (flow_record_lookup_parent_ref/org.tsv, 62.0 and 67.0).
 				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
 			}
-			if !resolved.valueOK && frame != nil && frame.saveDecisions {
-				resolved.value, resolved.valueOK = e.flowRefsLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
-			}
 		}
 		if cache != nil {
 			*cache = resolved

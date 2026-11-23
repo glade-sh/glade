@@ -70,6 +70,15 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 			resolved = true
 		}
 		if resolved {
+			// An unset record variable field is null, not an empty string
+			// (flow_create_unset_variable_reference/org.tsv: a null Pricebook2Id
+			// reports REQUIRED_FIELD_MISSING, API 62.0 and 67.0).
+			if value.Kind == storage.ValueNull || value.Kind == storage.ValueID && value.ID == "" {
+				if nullFields == nil {
+					nullFields = make(map[string]bool)
+				}
+				nullFields[strings.ToLower(assignment.Field)] = true
+			}
 			assignment.SourceField, assignment.Formula = "", ""
 			assignment.LiteralValue = workflowValueString(value)
 			if value.Kind == storage.ValueDecimal {
@@ -78,7 +87,7 @@ func (e *Engine) flowCoreRecordCreateWithFrame(create storage.FlowRecordCreate, 
 		}
 	}
 	create.InputAssignments = assignments
-	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs)
+	return e.executeFlowRecordCreate(create, source, definition, frame.lookupOutputs, nullFields)
 }
 
 // flowCreateUnsetSObjectReference reports a Create Records lookup-field input
