@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -24,6 +25,17 @@ func runAnonymousRouteProbe(t *testing.T, index typesys.Index, api, apex string)
 	t.Helper()
 	org := orgFromIndex(index)
 	org.APIVersion = api
+	// The anonymous route has no configured test user; the native captures
+	// assigned the permission sets to the running user, so replay that.
+	p, err := project.Load(index.Project.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Test.PermissionSets)+len(p.Test.PermissionSetGroups) > 0 {
+		if err := ApplyConfiguredTestPermissions(&org, p); err != nil {
+			t.Fatal(err)
+		}
+	}
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 	program, err := vm.CompileAnonymousWithOptions(routeProbeBody(apex), vm.CompileOptions{APIVersion: api})
 	if err != nil {

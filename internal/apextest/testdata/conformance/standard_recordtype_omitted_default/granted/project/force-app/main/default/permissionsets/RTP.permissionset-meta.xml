@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>RTP</label><hasActivationRequired>false</hasActivationRequired>
+<fieldPermissions><editable>true</editable><field>X__c.P__c</field><readable>true</readable></fieldPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>X__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<recordTypeVisibilities><recordType>X__c.RT</recordType><visible>true</visible></recordTypeVisibilities>
+<recordTypeVisibilities><recordType>Account.RT</recordType><visible>true</visible></recordTypeVisibilities>
+<recordTypeVisibilities><recordType>BusinessLicenseApplication.RT</recordType><visible>true</visible></recordTypeVisibilities>
+</PermissionSet>
