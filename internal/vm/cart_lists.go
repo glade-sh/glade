@@ -247,7 +247,8 @@ func stripCartQuantityScale(value Value) Value {
 // set, and a delivery group's getDeliverToAddress is null until an address
 // part is set, then an Address of the parts.
 func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value) (Value, bool, error) {
-	if receiver.Kind != ValueObject || receiver.Fields == nil {
+	if receiver.Kind != ValueObject || receiver.Fields == nil || len(receiver.Type) < len("CartExtension.") ||
+		!strings.EqualFold(receiver.Type[:len("CartExtension.")], "CartExtension.") {
 		return Null, false, nil
 	}
 	if strings.EqualFold(receiver.Type, "CartExtension.CartDeliveryGroup") {
