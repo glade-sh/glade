@@ -1011,7 +1011,10 @@ System.assertEquals('0aB000000000001AAA', fetchedCart.id);
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	// CartTestUtil is a test utility: Salesforce throws outside a test.
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -44,6 +44,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if local, ok := vm.anonymousLocalCallee(callee); ok {
 		callee = local
 	}
+	// commerce_carttestutil_createcart (org-anonymous.tsv, API 62.0, 67.0):
+	// outside a test the utility throws.
+	if vm.testContext == nil && strings.EqualFold(callee, "CartExtension.CartTestUtil.createCart") {
+		return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
+	}
 	vm.markRootCollectionRefsEscaped(args...)
 	for _, value := range namedArgs {
 		vm.markCollectionRefsEscaped(value)
