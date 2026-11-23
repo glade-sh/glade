@@ -19,7 +19,7 @@ import (
 func TestStandardRecordTypePicklistDefaultNativeConformance(t *testing.T) {
 	runRecordTypePicklistDefaultFixture(t, "testdata/conformance/standard_recordtype_picklist_default",
 		"org:\n  features: [PublicSectorAccess]\ntest:\n  permissionSets: [RTP]\n",
-		map[string]string{"x_norecordtype": "native applies the user's default record type picklist default without RecordTypeId; Glade's Apex insert mode does not (uncaptured RecordTypeId result), see ROAD-551 report"})
+		map[string]string{"x_norecordtype": "native applies the user's default record type picklist default without RecordTypeId; Glade's Apex insert mode does not (uncaptured RecordTypeId result)"})
 }
 
 // NATIVE rows: testdata/conformance/standard_recordtype_profile_default/org.tsv.
