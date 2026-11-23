@@ -22,7 +22,9 @@ var featureInsertDefaults = []featureInsertDefault{
 // field under the org's features. A field whose feature sets both match, or
 // that no capture covers, has none (the combination is not captured).
 func FeatureInsertDefault(org *OrgState, object, field string) (Value, bool) {
-	if org == nil {
+	// Insert defaults run for every field of every inserted record; most
+	// objects have no entry, so reject them before any feature lookup.
+	if org == nil || len(object) != len("UnitOfMeasure") || !stringsEqualFold(object, "UnitOfMeasure") {
 		return Value{}, false
 	}
 	var found *featureInsertDefault
