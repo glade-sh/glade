@@ -664,8 +664,13 @@ func (s *Server) watchLoop(ctx context.Context, root string) {
 			if len(changes) == 0 {
 				continue
 			}
-			exact, err := s.daemon.TryUpdateChanges(ctx, changes, cfg.Scope)
+			exact, published, err := s.daemon.tryUpdateChanges(ctx, changes, cfg.Scope)
 			if err != nil {
+				continue
+			}
+			if exact && !published {
+				// The generation already holds these bytes, typically because a
+				// request applied the save first. Nothing changed to warm.
 				continue
 			}
 			if !exact {

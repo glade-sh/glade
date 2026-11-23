@@ -1521,15 +1521,17 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && (model.trace != nil || !known && model.state != nil && model.state.later != nil) {
+		if key := normalizeName(name); key != "" && !strings.Contains(key, ".") {
+			if model.trace != nil {
+				known = model.trace.answer(model, key, known)
+			} else {
+				known = model.state.later.answer(key)
+			}
+		}
+	}
 	if model != nil && model.state != nil && model.state.unknownHistory != nil && !known {
 		model.state.unknownHistory.missing(name)
-	}
-	if model != nil && model.state != nil && model.state.historyProbe != nil {
-		if !known {
-			model.state.historyProbe.Store(true)
-		} else if model.state.historyUsed != nil && !semaAnyKnownFieldInView(model, name, true) {
-			model.state.historyUsed.Store(true)
-		}
 	}
 	return known
 }

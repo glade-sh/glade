@@ -177,6 +177,10 @@ func (d *Daemon) runRequestV1Attempt(
 	d.mu.RLock()
 	generation := d.daemonGeneration
 	d.mu.RUnlock()
+	if !options.NoDiskCache {
+		ctx = apextest.WithSemanticIdentityGeneration(ctx, generation.identity)
+		ctx = apextest.WithIncrementalSemantic(ctx, d.semaState)
+	}
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}

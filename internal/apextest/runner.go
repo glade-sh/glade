@@ -6882,7 +6882,7 @@ func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache
 			if err != nil {
 				continue
 			}
-			merged = append(merged, scanRecordTypesFromApexSource(source)...)
+			merged = append(merged, scanRecordTypesFromApexSourceMemo(source)...)
 		}
 		return merged
 	}
@@ -6898,7 +6898,7 @@ func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache
 				if err != nil {
 					continue
 				}
-				results <- scanRecordTypesFromApexSource(source)
+				results <- scanRecordTypesFromApexSourceMemo(source)
 			}
 		}()
 	}
