@@ -48,6 +48,9 @@ func (vm *VM) callCartObjectMember(receiver Value, method string, args []Value) 
 	if receiver.Kind != ValueObject || receiver.Fields == nil {
 		return Null, false, nil
 	}
+	if value, handled := vm.callCartLoadedDefaults(receiver, method, args); handled {
+		return value, true, nil
+	}
 	if strings.EqualFold(receiver.Type, "CartExtension.Cart") && len(args) == 0 && strings.EqualFold(method, "getStatus") {
 		if status, found := receiver.Fields["status"]; found && status.Kind == ValueString {
 			name := strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(status.Text), " ", "_"))
@@ -224,4 +227,68 @@ func stripCartQuantityScale(value Value) Value {
 	out := value
 	out.Text = text
 	return out
+}
+
+// callCartLoadedDefaults serves two platform defaults the native rows
+// (commerce_cart_buyer_details_address/org.tsv, API 62.0 and 67.0) observe: a
+// BuyerActionDetails reads false and empty lists for what its builder did not
+// set, and a delivery group's getDeliverToAddress is null until an address
+// part is set, then an Address of the parts.
+func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value) (Value, bool) {
+	if len(args) != 0 || receiver.Kind != ValueObject || receiver.Fields == nil {
+		return Null, false
+	}
+	field := func(names ...string) (Value, bool) {
+		for _, name := range names {
+			if _, value, ok := objectFieldValue(receiver, name); ok && value.Kind != ValueNull {
+				return value, true
+			}
+		}
+		return Null, false
+	}
+	switch {
+	case strings.EqualFold(receiver.Type, "CartExtension.BuyerActionDetails"):
+		switch strings.ToLower(method) {
+		case "ischeckoutstarted":
+			if value, ok := field("checkoutStarted", "isCheckoutStarted"); ok {
+				return value, true
+			}
+			return Bool(false), true
+		case "getcartitemchanges":
+			if value, ok := field("cartItemChanges"); ok {
+				return value, true
+			}
+			return typedList("List<CartExtension.CartItemChange>"), true
+		case "getcouponchanges":
+			if value, ok := field("couponChanges"); ok {
+				return value, true
+			}
+			return typedList("List<CartExtension.CouponChange>"), true
+		case "getdeliverygroupchanges":
+			if value, ok := field("deliveryGroupChanges"); ok {
+				return value, true
+			}
+			return typedList("List<CartExtension.CartDeliveryGroupChange>"), true
+		}
+	case strings.EqualFold(receiver.Type, "CartExtension.CartDeliveryGroup") && strings.EqualFold(method, "getDeliverToAddress"):
+		parts := []struct{ group, address string }{
+			{"deliverToStreet", "Street"}, {"deliverToCity", "City"}, {"deliverToState", "State"},
+			{"deliverToCountry", "Country"}, {"deliverToPostalCode", "PostalCode"},
+			{"deliverToLatitude", "Latitude"}, {"deliverToLongitude", "Longitude"},
+			{"deliverToGeocodeAccuracy", "GeocodeAccuracy"},
+		}
+		address := newSystemAddress()
+		present := false
+		for _, part := range parts {
+			if value, ok := field(part.group); ok {
+				address.Fields[passiveAccessorFieldName(address, part.address)] = value
+				present = true
+			}
+		}
+		if !present {
+			return Null, true
+		}
+		return address, true
+	}
+	return Null, false
 }
