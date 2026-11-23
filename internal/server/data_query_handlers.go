@@ -516,7 +516,7 @@ func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = writeServerJSON(w, value)
+	_ = json.NewEncoder(w).Encode(value)
 }
 
 const defaultLocalUserID = storage.ID(storage.DefaultUserID)

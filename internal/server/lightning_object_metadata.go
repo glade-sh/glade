@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 	"sort"
 	"strings"
@@ -27,7 +28,7 @@ func writeObjectMetadataWireError(w http.ResponseWriter, status int, code, id, m
 	if id != "" {
 		body["id"] = id
 	}
-	_ = writeServerJSON(w, map[string]any{
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"error": map[string]any{
 			"body":       body,
 			"errorType":  "fetchResponse",
