@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Rf__c</fullName><label>Rf__c</label><type>Lookup</type><referenceTo>Contact</referenceTo><relationshipName>TgRf</relationshipName><relationshipLabel>TgRfs</relationshipLabel><deleteConstraint>SetNull</deleteConstraint></CustomField>

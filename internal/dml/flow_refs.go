@@ -33,6 +33,34 @@ func (e *Engine) flowRefsRelationshipValue(reference string, record storage.Reco
 	return storage.StringValue(value.asString()), true
 }
 
+// flowRefsLookupParentReferenceValue serves one Get Records filter whose value
+// is $Record.<Relationship>.<LookupField> on a triggering record: the parent's
+// lookup value, or null when the parent or its lookup is empty. Native rows
+// (flow_record_lookup_parent_ref/org.tsv, API 62.0 and 67.0) match a null value
+// against null fields. Decisions and assignments keep flowRefsRelationshipValue.
+func (e *Engine) flowRefsLookupParentReferenceValue(reference string, record storage.Record, definition storage.ObjectDefinition) (storage.Value, bool) {
+	parts := strings.Split(strings.TrimSpace(reference), ".")
+	if e == nil || e.Org == nil || len(parts) != 2 {
+		return storage.Value{}, false
+	}
+	lookup, ok := relationshipLookupField(definition, e.Org.Namespace, parts[0])
+	if !ok {
+		return storage.Value{}, false
+	}
+	field, _, ok := formulaRelationshipFieldDefinition(*e.Org, lookup, parts[1:], e.Org.Namespace)
+	if !ok || field.Type != storage.FieldReference || strings.TrimSpace(field.Formula) != "" {
+		return storage.Value{}, false
+	}
+	value, ok := formulaRelationshipFieldValue(e.Org, definition, record, reference, e.Org.Namespace, nil, e.systemUserID(), e.PermissionUserFields, e.systemUserID())
+	if !ok {
+		return storage.Value{}, false
+	}
+	if value.kind == formulaNull || strings.TrimSpace(value.asString()) == "" {
+		return storage.NullValue(), true
+	}
+	return storage.IDValue(storage.ID(value.asString())), true
+}
+
 func (e *Engine) flowRefsDecisionRelationshipValue(reference string, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (storage.Value, bool) {
 	if value, ok := e.flowTypedUserBooleanDecisionValue(reference, source, definition); ok {
 		return value, true

@@ -393,6 +393,7 @@ func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method strin
 	if !ok || mock.Kind != ValueObject {
 		return Null, receiver, false, false, nil
 	}
+	calculatorDefault := cartExtensionCalculatorDefaultMethod(receiver.Type, method)
 	method = cartExtensionMockExecutorMethod(receiver.Type, method)
 	if !strings.EqualFold(mock.Type, "CartExtension.CartCalculateExecutorMock") {
 		// A project subclass of the executor mock: its overrides run in place of
@@ -400,6 +401,15 @@ func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method strin
 		class, found := vm.lookupClass(mock.Type)
 		if !found || class.PlatformType {
 			return Null, receiver, false, false, nil
+		}
+		if calculatorDefault != "" {
+			// A calculator's own calculate() runs the executor's default
+			// callback, even when the executor also overrides the plain one
+			// (commerce_calculator_executor_defaults/org.tsv, API 62.0 and 67.0).
+			if target, found, _ := vm.resolveInstanceMethodForArgs(mock.Type, calculatorDefault, args); found && target.ClassName != "" && !strings.EqualFold(target.ClassName, "CartExtension.CartCalculateExecutorMock") {
+				value, err := vm.callMethodWithReceiver(target, mock, args, &Result{})
+				return value, receiver, false, true, err
+			}
 		}
 		target, found, _ := vm.resolveInstanceMethodForArgs(mock.Type, method, args)
 		if !found || target.ClassName == "" || strings.EqualFold(target.ClassName, "CartExtension.CartCalculateExecutorMock") {
@@ -413,6 +423,50 @@ func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method strin
 		receiver.Fields["mockExecutor"] = updatedMock
 	}
 	return value, receiver, mutated, handled, err
+}
+
+// callCartExtensionCalculatorSuper runs super.calculate(request) of a project
+// class that extends a platform cart calculator. The calculator hands the
+// request to the executor callback it was constructed with
+// (commerce_calculator_executor_defaults/org.tsv, API 62.0 and 67.0); a
+// pricing or inventory calculator built without an executor fails with a
+// NullPointerException. Other shapes keep the existing behavior.
+func (vm *VM) callCartExtensionCalculatorSuper(class Class, receiver Value, method string, args []Value) (Value, bool, error) {
+	superName := vm.resolvedSuperClassName(class)
+	if cartExtensionCalculatorDefaultMethod(superName, method) == "" || len(args) != 1 {
+		return Null, false, nil
+	}
+	typed := receiver
+	typed.Type = superName
+	if mock, ok := receiver.Fields["mockExecutor"]; !ok || mock.Kind != ValueObject {
+		if superName == "CartExtension.PricingCartCalculator" || superName == "CartExtension.InventoryCartCalculator" {
+			return Null, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
+		return Null, false, nil
+	}
+	value, _, _, handled, err := vm.callCartExtensionMockBackedCalculator(typed, method, args)
+	return value, handled, err
+}
+
+// cartExtensionCalculatorDefaultMethod names the executor callback a platform
+// calculator's calculate() delegates to, or "" for any other call.
+func cartExtensionCalculatorDefaultMethod(receiverType, method string) string {
+	if !strings.EqualFold(method, "calculate") {
+		return ""
+	}
+	switch receiverType {
+	case "CartExtension.InventoryCartCalculator":
+		return "defaultInventory"
+	case "CartExtension.PricingCartCalculator":
+		return "defaultPrices"
+	case "CartExtension.PromotionsCartCalculator":
+		return "defaultPromotions"
+	case "CartExtension.ShippingCartCalculator":
+		return "defaultShipping"
+	case "CartExtension.TaxCartCalculator":
+		return "defaultTax"
+	}
+	return ""
 }
 
 func cartExtensionMockExecutorMethod(receiverType, method string) string {

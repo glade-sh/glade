@@ -252,6 +252,14 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 	if commerceClassName == "" && receiver.Kind == ValueObject {
 		commerceClassName = receiver.Type
 	}
+	if !method.IsConstructor && receiver.Kind == ValueObject &&
+		len(method.ClassName) == len("CartExtension.CartCalculateExecutorMock") && strings.EqualFold(method.ClassName, "CartExtension.CartCalculateExecutorMock") &&
+		!strings.EqualFold(receiver.Type, "CartExtension.CartCalculateExecutorMock") &&
+		methodHasModifier(method.Modifiers, "passive-generated") {
+		// A project executor that does not override a callback runs nothing
+		// (commerce_calculator_executor_defaults/org.tsv: direct, API 62.0 and 67.0).
+		return Null, nil
+	}
 	if strings.EqualFold(commerceClassName, "commercepayments.ClientSidePaymentAdapter") &&
 		strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
 		return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
@@ -763,6 +771,11 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			dispatchClass = receiver.Type
 		}
 		class, _ := vm.lookupClass(dispatchClass)
+		if strings.HasPrefix(class.SuperClass, "CartExtension.") {
+			if value, handled, err := vm.callCartExtensionCalculatorSuper(class, receiver, method, args); handled || err != nil {
+				return value, true, err
+			}
+		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(vm.resolvedSuperClassName(class), method, args)
 		if ambiguous {
 			return Null, true, vm.ambiguousOverloadError(callee, args)

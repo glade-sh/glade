@@ -38,6 +38,8 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			paths = append(paths, resource.NamedCredentialMetadataFiles(loaded)...)
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
 			paths = append(paths, loaded.ProfileFiles...)
+			// Assigned permission sets contribute record type visibility.
+			paths = append(paths, assignedPermissionSetFiles(loaded)...)
 			paths = append(paths, dependencyAdminProfileFiles(loaded)...)
 			paths = append(paths, resource.FeatureParameterMetadataFiles(loaded)...)
 			paths = append(paths, resource.StandardValueSetTranslationMetadataFiles(loaded)...)

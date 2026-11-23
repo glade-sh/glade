@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+lookup	62.0	anonymous	True	True	R5&#124;lookup&#124;ca1:FlowP-none,ca1:FlowT-found,ca1:FlowU-none,ca2:FlowP-none,ca2:FlowT-none,ca2:FlowU-found	n/a	n/a	cleaned:12
+lookup	67.0	anonymous	True	True	R5&#124;lookup&#124;ca1:FlowP-none,ca1:FlowT-found,ca1:FlowU-none,ca2:FlowP-none,ca2:FlowT-none,ca2:FlowU-found	n/a	n/a	cleaned:12

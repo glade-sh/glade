@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Pv__c</fullName><label>Pv__c</label><type>Lookup</type><referenceTo>Pv__c</referenceTo><relationshipName>CaPv</relationshipName><relationshipLabel>CaPvs</relationshipLabel><deleteConstraint>SetNull</deleteConstraint></CustomField>

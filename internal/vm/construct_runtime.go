@@ -543,6 +543,10 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			ctor, ctorArgs, ok, ambiguous = vm.matchConstructorWithNamedArgs(class, args, namedArgs)
 		}
 		if ok {
+			if len(ctorArgs) == 3 && ctorArgs[2].Kind == ValueNull && strings.EqualFold(typeName, "CartExtension.CartDeliveryGroupMethod") {
+				// commerce_cart_loaded_shapes/org.tsv groupAddress, API 62.0 and 67.0.
+				return Null, newExceptionError("System.IllegalArgumentException", "ProductId must not be null.")
+			}
 			if err := vm.callImplicitSuperConstructor(class, ctor, object, result); err != nil {
 				return Null, err
 			}
@@ -568,6 +572,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			if passiveDTO {
 				bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 				vm.bindPassivePaymentConstructor(&object, ctor, ctorArgs)
+				bindCartValidationOutputRelatedEntity(&object, ctorArgs)
 			}
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", typeName, len(args))
