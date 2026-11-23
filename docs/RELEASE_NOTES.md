@@ -25,6 +25,7 @@
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
+- Classes can implement `CommercePayments.PaymentGatewayAdapter` and dispatch its captured `processRequest` method at Apex APIs 62.0 and 67.0.
 
 - A Standard User’s denied change to Lead.Company under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. Customer Community Case delete describe, test-context delete denial, anonymous compile denial, Visualforce and Apex REST exceptions follow the observed API 62.0 and 67.0 results.
 

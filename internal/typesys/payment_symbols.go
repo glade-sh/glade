@@ -6,6 +6,7 @@ import "github.com/glade-sh/glade/internal/apexast"
 // DTO inheritance and interface edges. The request interface's native delegate
 // is opaque; this catalog does not provide a local payment service.
 var paymentPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "commercepayments.PaymentGatewayAdapter", Kind: apexast.DeclarationInterface, ReplaceConstructors: true},
 	{Name: "commercepayments.PaymentGatewayRequest", Kind: apexast.DeclarationInterface},
 	{Name: "commercepayments.GatewayResponse", Kind: apexast.DeclarationInterface},
 	{Name: "commercepayments.BaseRequest", Interfaces: []string{"commercepayments.PaymentGatewayRequest"}},
