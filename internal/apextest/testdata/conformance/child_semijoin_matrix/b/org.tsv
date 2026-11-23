@@ -1,0 +1,25 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+sib2_two	62.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_two	67.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_two_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+sib2_two_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
+sib0_notin	62.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib0_notin	67.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib0_notin_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+sib0_notin_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
+sib2_notin	62.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_notin	67.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_notin_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+sib2_notin_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
+sib2_notin_limit1	62.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_notin_limit1	67.0	anonymous	True	True	R=pass	n/a	n/a	cleaned:6
+sib2_notin_limit1_test	62.0	istest	true	Passed	run=Pass	62.0	n/a	n/a
+sib2_notin_limit1_test	67.0	istest	true	Passed	run=Pass	67.0	n/a	n/a
+sib0_or	62.0	anonymous	False	False	Semi join sub-selects are not allowed with the 'OR' operator	n/a	n/a	0
+sib0_or	67.0	anonymous	False	False	Semi join sub-selects are not allowed with the 'OR' operator	n/a	n/a	0
+sib0_or_test	62.0	istest	false	false	SjS0OrTest: Semi join sub-selects are not allowed with the 'OR' operator	62.0	n/a	n/a
+sib0_or_test	67.0	istest	false	false	SjS0OrTest: Semi join sub-selects are not allowed with the 'OR' operator	67.0	n/a	n/a
+sib2_conj_or	62.0	anonymous	False	False	Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.	n/a	n/a	0
+sib2_conj_or	67.0	anonymous	False	False	Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.	n/a	n/a	0
+sib2_conj_or_test	62.0	istest	false	false	SjS2ConjOrTest: Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.	62.0	n/a	n/a
+sib2_conj_or_test	67.0	istest	false	false	SjS2ConjOrTest: Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.	67.0	n/a	n/a
