@@ -93,6 +93,8 @@ type Engine struct {
 	// FlowFaultInTest reports a run inside a test, where Salesforce words a
 	// duplicate-value fault without the field or the record.
 	FlowFaultInTest func() bool
+	// FlowLookupRecordVisible filters a captured test-isolated lookup result.
+	FlowLookupRecordVisible func(storage.ID) bool
 	// UserModeRecordVisible reports whether the running user sees a record.
 	// A Flow that runs in user mode (runInMode UserMode) skips Update Records
 	// targets it cannot see.

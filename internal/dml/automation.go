@@ -708,14 +708,21 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 			}
 			continue
 		}
+		profileAfterCreate := false
 		if !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") || !strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate") {
 			for _, item := range branch.Criteria {
 				if flowGlobalDecisionReference(item.Field) {
+					if flowAfterSaveProfileRule(rule) {
+						if _, _, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+							profileAfterCreate = true
+							continue
+						}
+					}
 					return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
 				}
 			}
 		}
-		matches, ok := e.evaluateFlowBranch(branch, record, definition, flowRuleHasSaveDecisions(rule))
+		matches, ok := e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, flowRuleHasSaveDecisions(rule), profileAfterCreate)
 		if !ok {
 			for _, item := range branch.Criteria {
 				reference := strings.TrimSpace(item.Field)
@@ -840,9 +847,26 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 			}
 		}
 	}
+	if !e.InvocableFlow {
+		for _, rule := range definition.FlowRules {
+			if rule.Name == flowName {
+				if flowAfterSaveProfileRule(rule) {
+					frame.afterSaveTrigger = strings.TrimSpace(rule.RecordTriggerType)
+				}
+				break
+			}
+		}
+	}
 	seedFlowFrame(e, record, frame)
 	e.seedFlowDecisionPrior(flowName, *record, definition, steps, frame)
 	return frame
+}
+
+// flowAfterSaveProfileRule reports the captured after-save create and update
+// record triggers whose $Profile.Name decisions compare natively.
+func flowAfterSaveProfileRule(rule storage.FlowRule) bool {
+	return strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") &&
+		(strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Update"))
 }
 
 type flowRecordCollection struct {
@@ -857,28 +881,31 @@ type flowFrame struct {
 	capturedFormulaBindings bool
 	capturedBeforeCreate    bool
 	capturedAfterCreate     bool
-	pathVisited             map[string]bool
-	stepTargets             map[string][]storage.FlowStep
-	activeTargets           map[string]bool
-	recordCreations         *RecordCreations
-	saveDecisions           bool
-	priorDecisions          bool
-	beforeSaveDecisions     bool
-	scalarBeforeSave        bool
-	afterSaveWriteBack      bool
-	createDecision          bool
-	lookupOutputs           map[string]flowLookupOutput
-	subflowInputs           map[string]flowLookupOutput
-	lookupCollections       map[string]flowRecordCollection
-	matchedObjects          map[string]bool
-	variables               map[string]storage.FlowVariable
-	scalars                 map[string]storage.Value
-	records                 map[string]storage.Record
-	nullRecordDefaults      map[string]bool
-	collections             map[string][]storage.Record
-	textTemplates           map[string]string
-	priorCollections        map[string]bool
-	assigned                map[string]bool
+	// afterSaveTrigger is Create or Update for an after-save record-triggered
+	// Flow interview and empty otherwise.
+	afterSaveTrigger    string
+	pathVisited         map[string]bool
+	stepTargets         map[string][]storage.FlowStep
+	activeTargets       map[string]bool
+	recordCreations     *RecordCreations
+	saveDecisions       bool
+	priorDecisions      bool
+	beforeSaveDecisions bool
+	scalarBeforeSave    bool
+	afterSaveWriteBack  bool
+	createDecision      bool
+	lookupOutputs       map[string]flowLookupOutput
+	subflowInputs       map[string]flowLookupOutput
+	lookupCollections   map[string]flowRecordCollection
+	matchedObjects      map[string]bool
+	variables           map[string]storage.FlowVariable
+	scalars             map[string]storage.Value
+	records             map[string]storage.Record
+	nullRecordDefaults  map[string]bool
+	collections         map[string][]storage.Record
+	textTemplates       map[string]string
+	priorCollections    map[string]bool
+	assigned            map[string]bool
 	// autolaunched preserves Email Alert's interview-origin logging behavior.
 	autolaunched bool
 	// userMode marks an interview of a Flow with runInMode UserMode.
@@ -1489,6 +1516,11 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 		}
 		record.Fields[fieldName] = value
 		delete(record.ExplicitNulls, fieldName)
+		if id := idFromStorageValue(value); strings.EqualFold(fieldName, "Id") && value.Kind == storage.ValueID && id != "" && !lookupTarget && flowFrameSObjectVariable(frame, recordName) {
+			// An Id assigned to an SObject variable is its record Id; a later
+			// {!Var.Id} reads it (flow_criteria_shapes/org.tsv pb rows).
+			record.ID = id
+		}
 		frame.records[recordName] = record
 		if lookupTarget {
 			output.record = record
@@ -2533,6 +2565,14 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			continue
 		}
 		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
+			if frame != nil && (frame.capturedAfterCreate || frame.afterSaveTrigger != "") {
+				if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, source, definition); handled {
+					if !supported || !matches {
+						return matches, supported
+					}
+					continue
+				}
+			}
 			return false, false
 		}
 		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
@@ -3082,9 +3122,12 @@ func isNoOpFlowSideEffectActionName(name string) bool {
 }
 
 func (e *Engine) executeFlowEmailSimple(flowName string, action storage.FlowAction, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, frame *flowFrame) error {
-	inputs, ok := e.flowActionInputValues(action, source, sourceDefinition, lookupOutputs, frame)
+	inputs, ok := e.flowEmailActionInputs(action, source, sourceDefinition, lookupOutputs, frame)
 	if !ok {
 		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s has unsupported email input", action.Name)
+	}
+	if err := e.flowEmailOrgWideSenderFault(action, inputs); err != nil {
+		return err
 	}
 	if handled, err := e.flowEmailToRecipientID(flowName, action, inputs, frame); handled {
 		return err
@@ -4065,6 +4108,21 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 			return nil, storage.ObjectDefinition{}, err
 		}
 	}
+	if len(lookup.Criteria) == 2 && frame != nil && frame.capturedAfterCreate && source.ID != "" && len(target.Records) != 0 &&
+		strings.EqualFold(source.Object, targetName) && flowCapturedRelationshipFilterRuntime(lookup) &&
+		flowCapturedRelationshipFilterFields(e.Org, sourceDefinition, lookup) {
+		return nil, storage.ObjectDefinition{}, &flowRelationshipLookupFilterError{}
+	}
+	// The captured test-isolated standard price book filter depends only on
+	// the lookup shape, so it is decided once per lookup.
+	var sourceCacheStack [4]flowLookupSourceCache
+	sourceCaches := sourceCacheStack[:]
+	if len(lookup.Criteria) > len(sourceCacheStack) {
+		sourceCaches = make([]flowLookupSourceCache, len(lookup.Criteria))
+	}
+	hideTestBaseline := e.FlowLookupRecordVisible != nil && frame != nil && (frame.capturedAfterCreate &&
+		flowCapturedReferenceIDLookup(lookup, sourceDefinition, targetName, e.Org.Namespace) ||
+		strings.EqualFold(frame.afterSaveTrigger, "Create") && flowCapturedPricebookNameLookup(lookup, targetName))
 	var records []storage.Record
 	for _, candidate := range target.Records {
 		if candidate.System.IsDeleted {
@@ -4072,8 +4130,9 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		}
 		disjunction := strings.EqualFold(lookup.CriteriaLogic, "or") && len(lookup.Criteria) > 0
 		matches := !disjunction
-		for _, item := range lookup.Criteria {
-			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
+		for index := range lookup.Criteria {
+			item := &lookup.Criteria[index]
+			match, ok := e.evaluateFlowLookupCriteriaCached(item, candidate, target.Definition, source, sourceDefinition, frame, &sourceCaches[index])
 			if !ok {
 				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
 				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
@@ -4096,6 +4155,9 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 			}
 		}
 		if !matches {
+			continue
+		}
+		if hideTestBaseline && !e.FlowLookupRecordVisible(candidate.ID) {
 			continue
 		}
 		records = append(records, candidate.Clone())
@@ -4130,6 +4192,101 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 	return records, target.Definition, nil
 }
 
+type flowRelationshipLookupFilterError struct{}
+
+func (*flowRelationshipLookupFilterError) Error() string {
+	return "dml: flow relationship filter fault"
+}
+
+func flowCapturedRelationshipFilterRuntime(lookup storage.FlowRecordLookup) bool {
+	if !lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Criteria) != 2 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.CriteriaLogic), "and") || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	left, right := lookup.Criteria[0], lookup.Criteria[1]
+	path := strings.TrimSpace(lookup.CapturedRelationshipFilterPath)
+	_, field, nested := strings.Cut(path, ".")
+	return nested && !strings.Contains(field, ".") &&
+		strings.EqualFold(field, strings.TrimSpace(left.Field)) && strings.EqualFold(path, strings.TrimSpace(left.SourceField)) &&
+		strings.EqualFold(strings.TrimSpace(left.Operation), "equals") &&
+		strings.EqualFold(strings.TrimSpace(right.Operation), "equals") &&
+		!strings.Contains(strings.TrimSpace(right.Field), ".") && strings.TrimSpace(right.SourceField) == "" && strings.TrimSpace(right.Value) != ""
+}
+
+// The native fault covers a single non-polymorphic relationship to a text
+// field and a second text-field filter. Other metadata retains its old route.
+func flowCapturedRelationshipFilterFields(org *storage.OrgState, definition storage.ObjectDefinition, lookup storage.FlowRecordLookup) bool {
+	if org == nil || len(lookup.Criteria) != 2 {
+		return false
+	}
+	relationship, name, nested := strings.Cut(strings.TrimSpace(lookup.CapturedRelationshipFilterPath), ".")
+	if !nested || relationship == "" || name == "" || strings.Contains(name, ".") {
+		return false
+	}
+	other, ok := storage.ResolveFieldName(definition, org.Namespace, lookup.Criteria[1].Field)
+	if !ok || definition.Fields[other].Type != storage.FieldString || !strings.EqualFold(definition.Fields[other].DisplayType, "STRING") {
+		return false
+	}
+	for _, field := range definition.Fields {
+		if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 ||
+			!dmlRelationshipNameMatches(org.Namespace, storage.ParentRelationshipName(field), relationship) {
+			continue
+		}
+		objectName, ok := storage.ResolveObjectName(*org, field.ReferenceTo[0])
+		if !ok {
+			return false
+		}
+		parent := org.Objects[objectName].Definition
+		fieldName, ok := storage.ResolveFieldName(parent, org.Namespace, name)
+		return ok && parent.Fields[fieldName].Type == storage.FieldString && strings.EqualFold(parent.Fields[fieldName].DisplayType, "STRING")
+	}
+	return false
+}
+
+// flowCapturedPricebookNameLookup is the captured Get Records of Pricebook2 by
+// Name literals in an after-save create Flow: inside a test without
+// SeeAllData the org's standard price book is not returned
+// (flow_criteria_shapes/org.tsv pb rows, 62.0 and 67.0).
+func flowCapturedPricebookNameLookup(lookup storage.FlowRecordLookup, targetName string) bool {
+	if !strings.EqualFold(targetName, "Pricebook2") || len(lookup.Criteria) == 0 {
+		return false
+	}
+	for _, item := range lookup.Criteria {
+		if !strings.EqualFold(strings.TrimSpace(item.Field), "Name") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") ||
+			strings.TrimSpace(item.SourceField) != "" || strings.TrimSpace(item.Value) == "" {
+			return false
+		}
+	}
+	return true
+}
+
+// flowCapturedReferenceIDLookup limits test visibility to the captured
+// first-record lookup by the triggering record's direct reference field.
+func flowCapturedReferenceIDLookup(lookup storage.FlowRecordLookup, definition storage.ObjectDefinition, targetName, namespace string) bool {
+	if !lookup.CapturedTestReferenceLookup || !lookup.GetFirstRecordOnly || len(lookup.Criteria) != 1 {
+		return false
+	}
+	item := lookup.Criteria[0]
+	if !strings.EqualFold(strings.TrimSpace(item.Field), "Id") || !strings.EqualFold(strings.TrimSpace(item.Operation), "equals") {
+		return false
+	}
+	fieldName, ok := storage.ResolveFieldName(definition, namespace, item.SourceField)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[fieldName]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 {
+		return false
+	}
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, targetName) {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *Engine) flowRecordLookupMatch(lookup storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (storage.Record, storage.ObjectDefinition, bool, error) {
 	records, definition, err := e.flowRecordLookupRecords(lookup, source, sourceDefinition, nil)
 	if err != nil {
@@ -4141,18 +4298,50 @@ func (e *Engine) flowRecordLookupMatch(lookup storage.FlowRecordLookup, source s
 	return records[0], definition, true, nil
 }
 
+// flowLookupSourceCache holds the parts of one Get Records criterion that do
+// not depend on the candidate record: its resolved target field and the
+// filter value read from the interview. A lookup resolves them once.
+type flowLookupSourceCache struct {
+	done        bool
+	fieldOK     bool
+	valueOK     bool
+	targetField string
+	value       storage.Value
+}
+
 func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
+	return e.evaluateFlowLookupCriteriaCached(&item, target, targetDefinition, source, sourceDefinition, frame, nil)
+}
+
+func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame, cache *flowLookupSourceCache) (bool, bool) {
+	item := criterion
+	if item.Formula != "" {
+		return e.flowLookupFormulaCriterion(*item, target, targetDefinition, frame)
+	}
 	if strings.TrimSpace(item.SourceField) == "" {
-		return evaluateFlowCoreLookupCriteria(item, target, targetDefinition, e.Org.Namespace)
+		return evaluateFlowCoreLookupCriteria(*item, target, targetDefinition, e.Org.Namespace)
 	}
-	targetField, ok := storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
-	if !ok || targetField == "" {
+	var resolved flowLookupSourceCache
+	if cache != nil && cache.done {
+		resolved = *cache
+	} else {
+		resolved.done = true
+		resolved.targetField, resolved.fieldOK = storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
+		if resolved.fieldOK && resolved.targetField != "" {
+			resolved.value, resolved.valueOK = e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+			if !resolved.valueOK && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
+				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+			}
+		}
+		if cache != nil {
+			*cache = resolved
+		}
+	}
+	targetField := resolved.targetField
+	if !resolved.fieldOK || targetField == "" || !resolved.valueOK {
 		return false, false
 	}
-	sourceValue, ok := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
-	if !ok {
-		return false, false
-	}
+	sourceValue := resolved.value
 	targetValue, targetOK := sourceRecordFieldValue(target, targetField)
 	if !targetOK {
 		targetValue = storage.NullValue()
@@ -4352,6 +4541,10 @@ func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Rec
 }
 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
+	return e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, save, false)
+}
+
+func (e *Engine) evaluateFlowBranchWithProfileAfterCreate(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save, profileAfterCreate bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
 			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID(), e.PermissionUserFields)
@@ -4375,6 +4568,14 @@ func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Re
 	}
 	prior := e.flowPriorRecord(record.ID)
 	for _, item := range branch.Criteria {
+		if profileAfterCreate {
+			if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+				if !supported || !matches {
+					return matches, supported
+				}
+				continue
+			}
+		}
 		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
 			if !supported || !matches {
 				return matches, supported

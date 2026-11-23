@@ -30,6 +30,9 @@ func flowActionInputDMLResults(op string, results []dml.Result, err error) ([]dm
 // earlier error path.
 func singleFlowRecordFailureResults(op string, results []dml.Result, err error) []dml.Result {
 	failure, ok := dml.FlowSavedRecordFailureResult(err)
+	if !ok && op == "insert" {
+		failure, ok = dml.FlowRelationshipLookupFailureResult(err)
+	}
 	if !ok || (op != "insert" && op != "update") || len(results) != 1 || !results[0].Success {
 		return nil
 	}

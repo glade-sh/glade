@@ -1,0 +1,3 @@
+id	route	file
+all_data	istest	BookSeeAllTest
+custom	istest	BookCustomTest
