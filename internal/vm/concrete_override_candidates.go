@@ -14,11 +14,17 @@ type concreteOverrideCandidateKey struct {
 	generation uint64
 	classes    int
 	lifetime   metadataCacheLifetime
-	class      string
-	namespace  string
-	execution  string
-	caller     string
-	trigger    bool
+	// shared keys leave out the org pointer: a stamped org's runtime
+	// generation identifies every clone with the same schema and metadata.
+	orgGeneration uint64
+	orgSchema     uint64
+	orgObjects    int
+	orgNamespace  string
+	class         string
+	namespace     string
+	execution     string
+	caller        string
+	trigger       bool
 }
 
 // verifyConcreteOverrideCandidates, set by the package tests, recomputes
@@ -29,35 +35,52 @@ var verifyConcreteOverrideCandidates bool
 // without being it.
 func (vm *VM) concreteOverrideCandidates(baseType string) []string {
 	cacheable := vm.classOverlay == nil && !vm.classStructureWritten && vm.frozenClassLookup != nil && vm.classLookupGeneration != 0
-	var key concreteOverrideCandidateKey
-	if cacheable {
-		key = concreteOverrideCandidateKey{
-			baseType:   baseType,
-			generation: vm.classLookupGeneration,
-			classes:    len(vm.Classes),
-			lifetime:   metadataLifetimeForOrg(vm.Org),
-			class:      vm.currentClass,
-			namespace:  vm.currentNamespace,
-			execution:  vm.currentExecutionNamespace(),
-			caller:     vm.currentCallerNamespace(),
-			trigger:    vm.currentTrigger,
-		}
-		if names, ok := vm.concreteOverrideCandidateMemo[key]; ok {
-			if verifyConcreteOverrideCandidates {
-				if direct := vm.concreteOverrideCandidatesDirect(baseType); !sameNameSet(direct, names) {
-					panic("concrete override candidates changed under an unchanged key: " + baseType)
-				}
+	if !cacheable {
+		return vm.concreteOverrideCandidatesDirect(baseType)
+	}
+	key := concreteOverrideCandidateKey{
+		baseType:   baseType,
+		generation: vm.classLookupGeneration,
+		classes:    len(vm.Classes),
+		class:      vm.currentClass,
+		namespace:  vm.currentNamespace,
+		execution:  vm.currentExecutionNamespace(),
+		caller:     vm.currentCallerNamespace(),
+		trigger:    vm.currentTrigger,
+	}
+	shared := vm.Org != nil && strings.TrimSpace(vm.Org.RuntimeSchemaStamp) != ""
+	if shared {
+		key.orgGeneration = vm.Org.RuntimeGenerationID()
+		key.orgSchema = vm.Org.SchemaGeneration()
+		key.orgObjects = len(vm.Org.Objects)
+		key.orgNamespace = vm.Org.Namespace
+	} else {
+		key.lifetime = metadataLifetimeForOrg(vm.Org)
+	}
+	verify := func(names []string) []string {
+		if verifyConcreteOverrideCandidates {
+			if direct := vm.concreteOverrideCandidatesDirect(baseType); !sameNameSet(direct, names) {
+				panic("concrete override candidates changed under an unchanged key: " + baseType)
 			}
-			return names
 		}
+		return names
+	}
+	if shared {
+		if names, ok := vm.frozenClassLookup.overrideCandidates.Load(key); ok {
+			return verify(names.([]string))
+		}
+	} else if names, ok := vm.concreteOverrideCandidateMemo[key]; ok {
+		return verify(names)
 	}
 	names := vm.concreteOverrideCandidatesDirect(baseType)
-	if cacheable {
-		if vm.concreteOverrideCandidateMemo == nil || len(vm.concreteOverrideCandidateMemo) >= 4096 {
-			vm.concreteOverrideCandidateMemo = make(map[concreteOverrideCandidateKey][]string)
-		}
-		vm.concreteOverrideCandidateMemo[key] = names
+	if shared {
+		vm.frozenClassLookup.overrideCandidates.Store(key, names)
+		return names
 	}
+	if vm.concreteOverrideCandidateMemo == nil || len(vm.concreteOverrideCandidateMemo) >= 4096 {
+		vm.concreteOverrideCandidateMemo = make(map[concreteOverrideCandidateKey][]string)
+	}
+	vm.concreteOverrideCandidateMemo[key] = names
 	return names
 }
 

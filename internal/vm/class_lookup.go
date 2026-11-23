@@ -40,6 +40,11 @@ type frozenClassLookup struct {
 	contributorsReady atomic.Bool
 	contributors      map[string][]string
 
+	// overrideCandidates caches uniqueConcreteOverride's type filter for
+	// clones of this generation whose org is a stamped runtime generation;
+	// see concreteOverrideCandidateKey.
+	overrideCandidates sync.Map
+
 	// namespaceAliases is built lazily, once per namespace, by the first clone
 	// that queries it and then shared by every clone of this generation.
 	namespaceMu      sync.RWMutex
