@@ -120,34 +120,3 @@ func (e *Engine) flowCreateUnsetSObjectReference(create storage.FlowRecordCreate
 	name, ok := storage.ResolveFieldName(target.Definition, e.Org.Namespace, assignment.Field)
 	return ok && target.Definition.Fields[name].Type == storage.FieldReference
 }
-
-// flowCreateUnsetSObjectReference reports a Create Records lookup-field input
-// read from a field of a declared SObject variable that the interview never
-// assigned. The value is null, so the field is left unset (lookup fields have
-// no default value): flow_criteria_shapes/org.tsv pb_test rows, 62.0 and 67.0,
-// where Salesforce reports REQUIRED_FIELD_MISSING for the create.
-func (e *Engine) flowCreateUnsetSObjectReference(create storage.FlowRecordCreate, assignment storage.WorkflowFieldUpdate, frame *flowFrame) bool {
-	if frame == nil || e.Org == nil || strings.TrimSpace(assignment.Formula) != "" || assignment.LiteralValue != "" {
-		return false
-	}
-	variable, field, nested := strings.Cut(strings.TrimSpace(assignment.SourceField), ".")
-	if !nested || strings.Contains(field, ".") || !flowFrameSObjectVariable(frame, flowFrameKey(variable)) {
-		return false
-	}
-	key := flowFrameKey(variable)
-	if _, assigned := frame.records[key]; assigned {
-		return false
-	}
-	if _, scalar := frame.scalars[key]; scalar {
-		return false
-	}
-	if _, lookup := frame.lookupOutputs[key]; lookup {
-		return false
-	}
-	target, _, err := e.object(create.ObjectName)
-	if err != nil {
-		return false
-	}
-	name, ok := storage.ResolveFieldName(target.Definition, e.Org.Namespace, assignment.Field)
-	return ok && target.Definition.Fields[name].Type == storage.FieldReference
-}
