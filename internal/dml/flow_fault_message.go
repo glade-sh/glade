@@ -25,6 +25,7 @@ var flowFaultCreateCodes = map[string]bool{
 	"FIELD_CUSTOM_VALIDATION_EXCEPTION": true,
 	"DUPLICATE_VALUE":                   true,
 	"DUPLICATES_DETECTED":               true,
+	"STANDARD_PRICE_NOT_DEFINED":        true,
 }
 
 func flowCreateFaultText(code, text string) string {
@@ -209,7 +210,15 @@ const flowApexActionVerb = "apex action"
 // savedRowFailure reports the captured failures whose singleton save returns a
 // row error: a duplicate-rule rejection and an Apex action failure.
 func (f *flowElementFault) savedRowFailure() bool {
-	return f.code == "DUPLICATES_DETECTED" || f.verb == flowApexActionVerb
+	return f.code == "DUPLICATES_DETECTED" || f.verb == flowApexActionVerb || f.verb == flowEmailActionVerb || f.testRequiredFieldCreate()
+}
+
+// testRequiredFieldCreate is a Create Records element rejected for a missing
+// required field inside a test: the triggering singleton save fails with that
+// code and the element text (flow_criteria_shapes/org.tsv pb_test rows, 62.0
+// and 67.0). Other routes keep their previous error path.
+func (f *flowElementFault) testRequiredFieldCreate() bool {
+	return f.verb == "create" && (f.code == "REQUIRED_FIELD_MISSING" || f.code == "STANDARD_PRICE_NOT_DEFINED") && f.inTest
 }
 
 const flowUnhandledGeneric = "An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information."
@@ -229,7 +238,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up" || fault.code == "DUPLICATES_DETECTED") {
 		errorID = " Error ID: 0-0 (0)"
 	}
-	if fault.verb == flowApexActionVerb {
+	if fault.verb == flowApexActionVerb || fault.verb == flowEmailActionVerb {
 		if !fault.inTest {
 			errorID = " Error ID: 0-0 (0)"
 		}
@@ -254,7 +263,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 // for these elements: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
-	if !errors.As(err, &fault) || !fault.unhandledCaptured() || fault.verb == flowApexActionVerb {
+	if !errors.As(err, &fault) || !fault.unhandledCaptured() || fault.verb == flowApexActionVerb || fault.verb == flowEmailActionVerb {
 		return "", false
 	}
 	if !fault.inTest {
@@ -281,8 +290,8 @@ func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == "" {
 		return false
 	}
-	if f.verb == flowApexActionVerb {
+	if f.verb == flowApexActionVerb || f.verb == flowEmailActionVerb {
 		return true
 	}
-	return f.verb != "create" || f.code == "STRING_TOO_LONG" || f.code == "DUPLICATES_DETECTED"
+	return f.verb != "create" || f.code == "STRING_TOO_LONG" || f.code == "DUPLICATES_DETECTED" || f.testRequiredFieldCreate()
 }

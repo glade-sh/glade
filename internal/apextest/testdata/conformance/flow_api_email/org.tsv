@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+api_email_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=direct=<host>/services/Soap/u/56.0/<org>|host=<host>	62.0	n/a	n/a
+api_email_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=direct=<host>/services/Soap/u/56.0/<org>|host=<host>	67.0	n/a	n/a

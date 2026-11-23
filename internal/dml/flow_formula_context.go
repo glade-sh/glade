@@ -40,6 +40,11 @@ func (e *Engine) flowContextFormulaValueWithCapturedBindings(expression string, 
 		bound = append(bound, token)
 	}
 	resolve := func(reference string) (formulaValue, bool, bool) {
+		if frame.apiTemplateRendering && e.flowFaultInTest() {
+			if value, ok := e.flowAPIReference(reference); ok {
+				return formulaStorageValue(value), true, true
+			}
+		}
 		if strings.HasPrefix(reference, "$Setup.") && e.Org != nil {
 			parser := formulaParser{org: e.Org, setupUserID: e.systemUserID()}
 			value, handled := parser.setupFieldValue(reference)

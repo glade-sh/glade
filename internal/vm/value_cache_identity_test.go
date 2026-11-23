@@ -52,7 +52,7 @@ func TestValuePersistedCacheMatchesParent(t *testing.T) {
 		t.Fatal(err)
 	}
 	valueHash, cacheHash := fmt.Sprintf("%x", sha256.Sum256(buffer.Bytes())), fmt.Sprintf("%x", sha256.Sum256(data))
-	if valueHash != "44685425f08834dc2b3ef8c9d9d72ba9f4001df0747dd9af05711a0efe0b4f95" || cacheHash != "14d2f85cd1eee5faf8715b78c429f4b1b7a1c2562714ffb435ef8a4f81074a19" {
+	if valueHash != "44685425f08834dc2b3ef8c9d9d72ba9f4001df0747dd9af05711a0efe0b4f95" || cacheHash != "f3aab425ccded6c9739f9e01712e4cfd6ce6c6780581d7fe33e59655f6cda736" {
 		t.Fatalf("parent byte digests: gob=%s cache=%s", valueHash, cacheHash)
 	}
 }

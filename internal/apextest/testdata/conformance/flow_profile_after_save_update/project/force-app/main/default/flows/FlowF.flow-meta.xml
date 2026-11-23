@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>__API__</apiVersion>
+<decisions><name>D</name><label>D</label><locationX>0</locationX><locationY>0</locationY><defaultConnectorLabel>Default</defaultConnectorLabel><rules><name>R</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Profile.Name</leftValueReference><operator>NotEqualTo</operator><rightValue><stringValue>Nobody Profile</stringValue></rightValue></conditions><conditions><leftValueReference>$Record.Status__c</leftValueReference><operator>EqualTo</operator><rightValue><elementReference>V</elementReference></rightValue></conditions><connector><targetReference>Mk</targetReference></connector><label>R</label></rules></decisions>
+<label>FlowF</label><processType>AutoLaunchedFlow</processType>
+<recordCreates><name>Mk</name><label>Mk</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Name</field><value><stringValue>x</stringValue></value></inputAssignments><inputAssignments><field>Tag__c</field><value><stringValue>FlowF</stringValue></value></inputAssignments><object>FL__c</object></recordCreates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>D</targetReference></connector><object>FX__c</object><recordTriggerType>Update</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+<status>Active</status>
+<variables><name>V</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><stringValue>zzz</stringValue></value></variables>
+</Flow>

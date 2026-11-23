@@ -1403,6 +1403,11 @@ func missingReferenceError(record storage.Record, field string, id storage.ID) e
 	if strings.EqualFold(record.Object, "Task") && strings.EqualFold(field, "WhatId") {
 		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
 	}
+	// commerce_cartitem_missing_product (API 62.0, 67.0): a CartItem whose
+	// Product2Id names no Product2 fails with the bare cross-reference error.
+	if strings.EqualFold(record.Object, "CartItem") && strings.EqualFold(field, "Product2Id") {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
+	}
 	// case289_followups OPV8 (API 62.0, 67.0): an ObjectPermissions row whose
 	// ParentId is a permission set Id (0PS) that no set holds fails with the
 	// bare cross-reference error. An Id of another type (approval_reference

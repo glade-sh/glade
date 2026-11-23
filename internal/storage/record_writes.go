@@ -54,6 +54,12 @@ type RecordsToken struct {
 	version uint64
 }
 
+// FollowsOne reports whether t is the token of the same map exactly one write
+// after prev.
+func (t RecordsToken) FollowsOne(prev RecordsToken) bool {
+	return t.clock != nil && t.clock == prev.clock && t.version == prev.version+1
+}
+
 // Valid reports whether the token came from a versioned object.
 func (t RecordsToken) Valid() bool { return t.clock != nil }
 

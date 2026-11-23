@@ -121,10 +121,7 @@ type cliJSONEnvelope struct {
 const cliJSONSchemaVersion = "1.0"
 
 func writeCLIJSONEnvelope(w io.Writer, env cliJSONEnvelope) error {
-	env.SchemaVersion = cliJSONSchemaVersion
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(env)
+	return writeParseCLIJSONEnvelope(w, env)
 }
 
 func statusForOK(ok bool) string {

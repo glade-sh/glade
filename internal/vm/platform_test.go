@@ -3781,7 +3781,12 @@ System.assert(caught);
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := Execute(program, nil); err != nil {
+		machine := New(nil)
+		// CartTestUtil is a test utility: Salesforce throws outside a test.
+		if strings.Contains(source, "CartTestUtil") {
+			machine.EnableTestContext()
+		}
+		if _, err := machine.Execute(program); err != nil {
 			t.Fatalf("%s\n%v", source, err)
 		}
 	}

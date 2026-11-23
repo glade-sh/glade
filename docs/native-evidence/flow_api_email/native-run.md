@@ -1,0 +1,3 @@
+# API references in Flow email text
+
+Captured 2026-11-23 in a fresh 30-day Developer scratch org, then deleted and verified gone. At Apex API 62.0 and 67.0, an isolated test ran an after-save Flow deployed at API 67.0. The flow passes a plain-text template to Send Email and writes the same template to the record. It contains a direct partner endpoint reference and a formula using LEFT and FIND to extract its host. The test replaces host and org ID with placeholders before recording the result. The rows do not establish the email delivery result, exact host or org ID, or other API reference versions.

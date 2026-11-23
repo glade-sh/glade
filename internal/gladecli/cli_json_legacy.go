@@ -2,8 +2,14 @@
 
 package gladecli
 
-import "io"
+import (
+	"encoding/json"
+	"io"
+)
 
 func writeParseCLIJSONEnvelope(w io.Writer, env cliJSONEnvelope) error {
-	return writeCLIJSONEnvelope(w, env)
+	env.SchemaVersion = cliJSONSchemaVersion
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(env)
 }

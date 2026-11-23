@@ -796,6 +796,9 @@ type WorkflowCriteriaItem struct {
 	Operation   string `json:"operation,omitempty"`
 	Value       string `json:"value,omitempty"`
 	SourceField string `json:"sourceField,omitempty"`
+	// Formula is the expression of a text formula resource that supplies a
+	// captured Get Records filter value.
+	Formula string `json:"formula,omitempty"`
 }
 
 type WorkflowFieldUpdate struct {
@@ -843,6 +846,7 @@ type FlowRule struct {
 	// CoreEntryFilterLogic distinguishes a generated start-filter formula from an arbitrary formula.
 	CoreEntryFilterLogic bool              `json:"coreEntryFilterLogic,omitempty"`
 	TextTemplates        map[string]string `json:"textTemplates,omitempty"`
+	TemplateAPIFormulas  map[string]string `json:"templateApiFormulas,omitempty"`
 	// ProcessStringConstants are available only to captured process subflow interviews.
 	ProcessStringConstants map[string]string      `json:"processStringConstants,omitempty"`
 	Criteria               []WorkflowCriteriaItem `json:"criteria,omitempty"`
@@ -1163,6 +1167,8 @@ type FlowActionOutput struct {
 
 type FlowRecordLookup struct {
 	Name                             string                 `json:"name"`
+	CapturedRelationshipFilterPath   string                 `json:"capturedRelationshipFilterPath,omitempty"`
+	CapturedTestReferenceLookup      bool                   `json:"capturedTestReferenceLookup,omitempty"`
 	ObjectName                       string                 `json:"objectName"`
 	SortField                        string                 `json:"sortField,omitempty"`
 	SortOrder                        string                 `json:"sortOrder,omitempty"`
@@ -1702,7 +1708,7 @@ func defaultPicklistValueForRecordType(definition ObjectDefinition, record Recor
 		return Value{}, false
 	}
 	for _, recordType := range definition.RecordTypes {
-		if string(recordType.ID) != recordTypeID {
+		if !IDsEqual(recordType.ID, ID(recordTypeID)) {
 			continue
 		}
 		for name, value := range recordType.PicklistDefaults {
@@ -2521,6 +2527,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	out.FlowRules = append([]FlowRule(nil), d.FlowRules...)
 	for i := range out.FlowRules {
 		out.FlowRules[i].TextTemplates = cloneStringMap(d.FlowRules[i].TextTemplates)
+		out.FlowRules[i].TemplateAPIFormulas = cloneStringMap(d.FlowRules[i].TemplateAPIFormulas)
 		out.FlowRules[i].ProcessStringConstants = cloneStringMap(d.FlowRules[i].ProcessStringConstants)
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
@@ -2578,6 +2585,7 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 	out := append([]FlowRule(nil), rules...)
 	for i := range out {
 		out[i].TextTemplates = cloneStringMap(rules[i].TextTemplates)
+		out[i].TemplateAPIFormulas = cloneStringMap(rules[i].TemplateAPIFormulas)
 		out[i].ProcessStringConstants = cloneStringMap(rules[i].ProcessStringConstants)
 		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
 		out[i].Steps = cloneFlowSteps(rules[i].Steps)

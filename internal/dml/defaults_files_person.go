@@ -97,7 +97,7 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 		if field.Type == storage.FieldCalculated && strings.TrimSpace(field.Formula) == "" {
 			continue
 		}
-		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields}); ok {
+		if value, ok := defaultValueForRecordFieldWithOptions(org, definition, *record, field, FormulaEvaluationOptions{UserID: userID, PermissionUserFields: permissionFields, DefaultValueFormula: true}); ok {
 			record.Fields[name] = value
 		}
 	}
@@ -228,6 +228,9 @@ func defaultValueForRecordField(org *storage.OrgState, definition storage.Object
 func defaultValueForRecordFieldWithOptions(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, options FormulaEvaluationOptions) (storage.Value, bool) {
 	if !PersonAccountCustomFieldDefaultAllowed(org, definition, record, field) {
 		return storage.Value{}, false
+	}
+	if value, ok := storage.FeatureInsertDefault(org, definition.APIName, field.APIName); ok && strings.TrimSpace(field.DefaultValue) == "" {
+		return value, true
 	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	options.LineFeedBR = true

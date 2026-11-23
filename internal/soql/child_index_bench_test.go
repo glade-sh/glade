@@ -35,3 +35,85 @@ func BenchmarkChildRelationshipIndexBuild(b *testing.B) {
 		childRelationshipIndex(org, "Contact", obj, "AccountId", nil)
 	}
 }
+
+func childIndexVersionedOrg(parents, perParent int) storage.OrgState {
+	org := childIndexBenchOrg(parents, perParent)
+	child := org.Objects["Contact"]
+	var versioned storage.ObjectState
+	versioned.Definition = child.Definition
+	versioned.SetRecords(child.Records)
+	org.Objects["Contact"] = versioned
+	return org
+}
+
+// BenchmarkChildSubqueryRepeated runs a point query with a child subquery
+// repeatedly against one generation cache, the shape a test loop produces.
+func BenchmarkChildSubqueryRepeated(b *testing.B) {
+	for _, parents := range []int{1000, 10000} {
+		b.Run(fmt.Sprintf("parents%d", parents), func(b *testing.B) {
+			org := childIndexVersionedOrg(parents, 3)
+			query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account WHERE Id = '001000000000001'")
+			if err != nil {
+				b.Fatal(err)
+			}
+			cache := NewExecutionCache()
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				result, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if len(result.Records) != 1 || len(result.Records[0].Children["Contacts"]) != 3 {
+					b.Fatalf("unexpected result: %#v", result)
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkChildSubqueryFull runs one query over every parent, repeated.
+func BenchmarkChildSubqueryFull(b *testing.B) {
+	for _, parents := range []int{1000, 10000} {
+		b.Run(fmt.Sprintf("parents%d", parents), func(b *testing.B) {
+			org := childIndexVersionedOrg(parents, 3)
+			query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account")
+			if err != nil {
+				b.Fatal(err)
+			}
+			cache := NewExecutionCache()
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				result, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if len(result.Records) != parents {
+					b.Fatalf("unexpected rows %d", len(result.Records))
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkChildSubqueryCold builds the index with a fresh cache each run, so
+// reuse never applies and any bookkeeping cost shows.
+func BenchmarkChildSubqueryCold(b *testing.B) {
+	for _, parents := range []int{1000, 10000} {
+		b.Run(fmt.Sprintf("parents%d", parents), func(b *testing.B) {
+			org := childIndexVersionedOrg(parents, 3)
+			query, err := Parse("SELECT Id,(SELECT Id,AccountId FROM Contacts) FROM Account WHERE Id = '001000000000001'")
+			if err != nil {
+				b.Fatal(err)
+			}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := ExecuteWithCache(org, query, NewExecutionCache()); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}

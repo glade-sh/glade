@@ -584,6 +584,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 		TriggerOrder:                           raw.TriggerOrder,
 		RunInMode:                              strings.TrimSpace(raw.RunInMode),
 		TextTemplates:                          flowTextTemplateMap(raw.TextTemplates),
+		TemplateAPIFormulas:                    flowTemplateAPIFormulas(raw, formulas),
 	}
 	rule.Variables = flowDeclarationVariables(raw.Variables)
 	if strings.EqualFold(raw.ProcessType, "AutoLaunchedFlow") && strings.TrimSpace(raw.Start.TriggerType) == "" && len(raw.Variables) == 1 && len(raw.Constants) == 1 && len(raw.ActionCalls) == 2 && len(raw.Assignments) == 1 && len(raw.RecordUpdates) == 1 && len(raw.RecordLookups) == 0 && len(raw.Decisions) == 0 && strings.EqualFold(raw.ActionCalls[0].ActionName, raw.ActionCalls[1].ActionName) {
@@ -753,7 +754,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 		}
 	}
 	for _, lookup := range raw.RecordLookups {
-		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups)
+		recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups, raw)
 		if !ok {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record lookup node %q is not modeled", firstNonBlank(lookup.Name, lookup.Label))))
 			continue
@@ -1935,7 +1936,7 @@ func flowLiteralOrVariableOrConstantValue(value flowValueXML, variables map[stri
 	return flowLiteralOrConstantValue(value, constants)
 }
 
-func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordLookup, bool) {
+func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML, raw flowXML) (storage.FlowRecordLookup, bool) {
 	name := firstNonBlank(lookup.Name, lookup.Label)
 	objectName := strings.TrimSpace(lookup.Object)
 	if name == "" || objectName == "" {
@@ -1947,6 +1948,7 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	}
 	out := storage.FlowRecordLookup{
 		Name:                             name,
+		CapturedTestReferenceLookup:      flowCapturedTestReferenceLookup(raw, lookup),
 		ObjectName:                       objectName,
 		SortField:                        strings.TrimSpace(lookup.SortField),
 		SortOrder:                        strings.TrimSpace(lookup.SortOrder),
@@ -1966,19 +1968,100 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	if len(out.OutputAssignments) > 0 {
 		out.GetFirstRecordOnly = true
 	}
-	for _, filter := range lookup.Filters {
+	for index, filter := range lookup.Filters {
 		field := trimObjectPrefix(strings.TrimSpace(filter.Field))
+		if index == 0 && flowCapturedRelationshipFilterFault(raw, lookup) {
+			out.CapturedRelationshipFilterPath = strings.TrimSpace(filter.Field)
+		}
 		if field == "" {
 			return storage.FlowRecordLookup{}, false
 		}
-		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
+		item := storage.WorkflowCriteriaItem{
 			Field:       field,
 			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
 			Value:       flowLiteralOrVariableOrConstantValue(filter.Value, variables, constants),
 			SourceField: flowLookupCriteriaSourceFieldValue(filter.Value, variables, constants, lookups),
-		})
+		}
+		if expression, ok := flowMetadataLookupFormulaValue(raw, lookup, filter); ok {
+			item.Value, item.SourceField, item.Formula = "", "", expression
+		}
+		out.Criteria = append(out.Criteria, item)
 	}
 	return out, true
+}
+
+// flowMetadataLookupFormulaValue reads a before-save create Get Records of
+// custom metadata whose EqualTo filter value is a String formula resource
+// (flow_metadata_formula_lookup/org.tsv, 62.0 and 67.0, both routes). Other
+// lookups keep their filter value shape.
+func flowMetadataLookupFormulaValue(raw flowXML, lookup flowRecordLookupXML, filter flowFilterXML) (string, bool) {
+	reference := strings.TrimSpace(filter.Value.ElementReference)
+	if reference == "" || !strings.EqualFold(strings.TrimSpace(filter.Operator), "EqualTo") ||
+		!strings.HasSuffix(strings.ToLower(strings.TrimSpace(lookup.Object)), "__mdt") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") {
+		return "", false
+	}
+	for _, formula := range raw.Formulas {
+		if strings.EqualFold(strings.TrimSpace(formula.Name), reference) {
+			expression := normalizeFlowFormula(formula.Expression)
+			return expression, strings.EqualFold(strings.TrimSpace(formula.DataType), "String") && expression != ""
+		}
+	}
+	return "", false
+}
+
+func flowCapturedTestReferenceLookup(raw flowXML, lookup flowRecordLookupXML) bool {
+	if !strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") ||
+		!lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Filters) != 1 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.FilterLogic), "and") ||
+		strings.TrimSpace(lookup.FaultConnector.TargetReference) != "" || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	filter := lookup.Filters[0]
+	const prefix = "$Record."
+	reference := strings.TrimSpace(filter.Value.ElementReference)
+	return strings.EqualFold(strings.TrimSpace(filter.Field), "Id") && strings.EqualFold(strings.TrimSpace(filter.Operator), "EqualTo") &&
+		len(reference) > len(prefix) && strings.EqualFold(reference[:len(prefix)], prefix) && !strings.Contains(reference[len(prefix):], ".") &&
+		strings.TrimSpace(filter.Value.StringValue) == "" && strings.TrimSpace(filter.Value.BooleanValue) == "" &&
+		strings.TrimSpace(filter.Value.NumberValue) == "" && strings.TrimSpace(filter.Value.DateValue) == "" &&
+		strings.TrimSpace(filter.Value.DateTimeValue) == "" && strings.TrimSpace(filter.Value.Formula) == "" &&
+		strings.TrimSpace(filter.Value.Expression) == "" && !filter.Value.EmptyStringValue
+}
+
+// Preserve the captured relationship filter so the runtime can report the
+// native fault without changing other lookup filter representations.
+func flowCapturedRelationshipFilterFault(raw flowXML, lookup flowRecordLookupXML) bool {
+	if !strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") ||
+		!strings.EqualFold(strings.TrimSpace(raw.Start.Object), strings.TrimSpace(lookup.Object)) ||
+		!lookup.GetFirstRecordOnly || !lookup.StoreOutputAutomatically || lookup.AssignNullValuesIfNoRecordsFound || len(lookup.Filters) != 2 ||
+		!strings.EqualFold(strings.TrimSpace(lookup.FilterLogic), "and") ||
+		strings.TrimSpace(lookup.FaultConnector.TargetReference) != "" || strings.TrimSpace(lookup.SortField) != "" || strings.TrimSpace(lookup.SortOrder) != "" ||
+		len(lookup.OutputAssignments) != 0 || strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.QueriedFields) != 0 {
+		return false
+	}
+	left, right := lookup.Filters[0], lookup.Filters[1]
+	path := strings.TrimSpace(left.Field)
+	const prefix = "$Record."
+	reference := strings.TrimSpace(left.Value.ElementReference)
+	return strings.Count(path, ".") == 1 && len(reference) > len(prefix) &&
+		strings.EqualFold(reference[:len(prefix)], prefix) && strings.EqualFold(path, reference[len(prefix):]) &&
+		strings.EqualFold(strings.TrimSpace(left.Operator), "EqualTo") &&
+		strings.TrimSpace(left.Value.StringValue) == "" && strings.TrimSpace(left.Value.BooleanValue) == "" &&
+		strings.TrimSpace(left.Value.NumberValue) == "" && strings.TrimSpace(left.Value.DateValue) == "" &&
+		strings.TrimSpace(left.Value.DateTimeValue) == "" && strings.TrimSpace(left.Value.Formula) == "" &&
+		strings.TrimSpace(left.Value.Expression) == "" && !left.Value.EmptyStringValue &&
+		strings.EqualFold(strings.TrimSpace(right.Operator), "EqualTo") &&
+		!strings.Contains(strings.TrimSpace(right.Field), ".") && strings.TrimSpace(right.Value.ElementReference) == "" &&
+		strings.TrimSpace(right.Value.BooleanValue) == "" && strings.TrimSpace(right.Value.NumberValue) == "" &&
+		strings.TrimSpace(right.Value.DateValue) == "" && strings.TrimSpace(right.Value.DateTimeValue) == "" &&
+		strings.TrimSpace(right.Value.Formula) == "" && strings.TrimSpace(right.Value.Expression) == "" &&
+		!right.Value.EmptyStringValue && strings.TrimSpace(right.Value.StringValue) != ""
 }
 
 // Carry the selected formula resource on each create input through the stored graph.
@@ -2275,7 +2358,16 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowLiteralValue(condition.RightValue),
 					}
-					if strings.EqualFold(field, "$User.Id") {
+					right := strings.TrimSpace(condition.RightValue.ElementReference)
+					const recordPrefix = "$Record."
+					profileRecordOperand := strings.EqualFold(field, "$Profile.Name") &&
+						strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") &&
+						(strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") || strings.EqualFold(strings.TrimSpace(condition.Operator), "NotEqualTo")) &&
+						strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") &&
+						(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Update")) &&
+						len(right) > len(recordPrefix) && strings.EqualFold(right[:len(recordPrefix)], recordPrefix) &&
+						!strings.Contains(right[len(recordPrefix):], ".")
+					if strings.EqualFold(field, "$User.Id") || profileRecordOperand {
 						item.Value = flowDecisionRightValue(condition.RightValue)
 					}
 					flowVariableEmptyOperand(&item, condition, variables)
@@ -2481,9 +2573,22 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			modeled = true
 			fault := strings.TrimSpace(update.FaultConnector.TargetReference)
 			if updates, ok := modeledFlowRecordUpdates(flowRecordUpdateConstantValues(update, variables, flowConstantMap(raw.Constants)), formulas, variables, raw.RecordLookups); ok {
-				branch.FieldUpdates = append(branch.FieldUpdates, updates...)
-				if len(updates) > 0 {
-					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
+				if flowTriggerUpdateGateApplies(raw) && flowTriggerUpdateHasIsNullFilters(update) && len(updates) > 0 {
+					gate := storage.FlowBranch{Name: firstNonBlank(update.Name, update.Label)}
+					for _, filter := range update.Filters {
+						gate.Criteria = append(gate.Criteria, storage.WorkflowCriteriaItem{
+							Field:     trimObjectPrefix(strings.TrimSpace(filter.Field)),
+							Operation: flowOperator(strings.TrimSpace(filter.Operator)),
+							Value:     flowDecisionRightValue(filter.Value),
+						})
+					}
+					gate.Steps = []storage.FlowStep{{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates}}
+					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "decision", Branches: []storage.FlowBranch{gate}})
+				} else {
+					branch.FieldUpdates = append(branch.FieldUpdates, updates...)
+					if len(updates) > 0 {
+						branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
+					}
 				}
 			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups, strings.EqualFold(raw.ProcessType, "Workflow")); ok {
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordUpdate", FaultTarget: fault, RecordUpdate: recordUpdate})
@@ -2503,7 +2608,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			}
 			modeled = true
 			fault := strings.TrimSpace(lookup.FaultConnector.TargetReference)
-			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
+			if recordLookup, ok := modeledFlowRecordLookup(lookup, variables, flowConstantMap(raw.Constants), raw.RecordLookups, raw); ok {
 				branch.RecordLookups = append(branch.RecordLookups, recordLookup)
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordLookup", FaultTarget: fault, RecordLookup: recordLookup})
 			} else {
@@ -2872,6 +2977,32 @@ func inlineFlowConstantMergeFields(text string, constants []flowConstantXML) str
 	return out.String()
 }
 
+// flowRecordStringConstantOperand reads a String constant on the right of a
+// NotEqualTo condition whose left side is a $Record field path. A constant is
+// immutable, so the condition compares its literal value
+// (flow_record_type_decision/org.tsv, 62.0 and 67.0, both routes). Other
+// operators and operands keep their element reference.
+func flowRecordStringConstantOperand(raw flowXML, condition flowConditionXML) (string, bool) {
+	reference := strings.TrimSpace(condition.RightValue.ElementReference)
+	left := strings.TrimSpace(condition.LeftValueReference)
+	const prefix = "$Record."
+	if reference == "" || strings.Contains(reference, ".") || !strings.EqualFold(strings.TrimSpace(condition.Operator), "NotEqualTo") ||
+		len(left) <= len(prefix) || !strings.EqualFold(left[:len(prefix)], prefix) {
+		return "", false
+	}
+	for _, constant := range raw.Constants {
+		if !strings.EqualFold(strings.TrimSpace(constant.Name), reference) {
+			continue
+		}
+		value := constant.Value.StringValue
+		if !strings.EqualFold(strings.TrimSpace(constant.DataType), "String") || value == "" || strings.TrimSpace(value) != value {
+			return "", false
+		}
+		return value, true
+	}
+	return "", false
+}
+
 func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML, visited map[string]bool) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
 	var branches []storage.FlowBranch
 	var diagnostics []diagnostic.Diagnostic
@@ -2914,6 +3045,9 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 						Field:     left,
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowDecisionRightValue(condition.RightValue),
+					}
+					if value, ok := flowRecordStringConstantOperand(raw, condition); ok {
+						item.Value = value
 					}
 					flowVariableEmptyOperand(&item, condition, variables)
 					branch.Criteria = append(branch.Criteria, item)
@@ -3228,6 +3362,11 @@ func flowRequiresOrderedGraph(raw flowXML) bool {
 	}
 	for _, update := range raw.RecordUpdates {
 		if strings.TrimSpace(update.Object) != "" || !flowUpdatesTriggeringRecord(update.InputReference) {
+			return true
+		}
+		if flowTriggerUpdateGateApplies(raw) && flowTriggerUpdateHasIsNullFilters(update) {
+			// Captured: a before-save update of the triggering record honors an
+			// IsNull=false filter (flow_filter_update_record, API 62.0 and 67.0).
 			return true
 		}
 		for _, field := range update.Fields {
@@ -4967,4 +5106,30 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			value.StringValue, value.ElementReference = "", name
 		}
 	}
+}
+
+// flowTriggerUpdateHasIsNullFilters reports a triggering-record update whose
+// filters are all IsNull=false checks under AND logic, the only filter shape captured.
+func flowTriggerUpdateHasIsNullFilters(update flowRecordUpdateXML) bool {
+	if len(update.Filters) == 0 {
+		return false
+	}
+	if logic := strings.TrimSpace(update.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+		return false
+	}
+	for _, filter := range update.Filters {
+		if !strings.EqualFold(strings.TrimSpace(filter.Operator), "IsNull") || !strings.EqualFold(strings.TrimSpace(filter.Value.BooleanValue), "false") {
+			return false
+		}
+	}
+	return true
+}
+
+// flowTriggerUpdateGateApplies limits the IsNull=false update gate to the
+// captured trigger: a before-save flow that runs on create and update. Other
+// triggers keep their earlier lowering until they are captured.
+func flowTriggerUpdateGateApplies(raw flowXML) bool {
+	return !strings.EqualFold(raw.ProcessType, "Workflow") &&
+		strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordBeforeSave") &&
+		strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "CreateAndUpdate")
 }

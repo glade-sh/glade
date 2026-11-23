@@ -301,7 +301,8 @@ func standardDictionaryFirstName(a, b string) bool {
 	if standardPhoneNativeNames[x] {
 		return true
 	}
-	if !nameVariantHeads[x] {
+	_, heads := getNameVariantTables()
+	if !heads[x] {
 		return false
 	}
 	_, alias := nameAliasKeys[x]

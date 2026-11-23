@@ -20,6 +20,30 @@
 
 - **Visualforce Lightning bootstrap.** A project with no LWC sources no longer starts Node on every page request. The empty manifest is written directly, with the same bytes the compiler wrote.
 
+- **Field describe results build faster.** A field describe result is built into a pre-sized map from a static defaults table. First-use describes of a wide object ran about 10 percent faster and allocated about 16 percent fewer bytes. Results are unchanged.
+
+- **Repeated SOQL child subqueries.** A query with a child subquery now reuses the child relationship index built by an earlier query in the same org generation, after checking it against the current child rows. Repeated point queries ran 15 to 30 percent faster and allocated about 90 percent fewer bytes on 1,000 to 10,000 parents. Results are identical, and any write to the child object rebuilds the index.
+
+- **LWC stylesheet compilation.** Reuses selector scoping when native and synthetic shadow output match, reducing repeated compilation work.
+
+- **Record type defaults, UnitOfMeasure.Type and test carts (Apex API 62.0, 67.0).** A record type's default picklist value now applies on insert to standard objects whose record type Id Glade stores in 15 characters (`Account.Industry`, `BusinessLicenseApplication.Category`), so the required `Category` check no longer fires first. `UnitOfMeasure.Type` is filled on insert when the org has Health Cloud (`Custom`) or `PublicSectorAccess` (`Period`); a plain org still requires it and an org with both is not defaulted. A `CartItem` whose `Product2Id` names no record fails with `INVALID_CROSS_REFERENCE_KEY`. `CartExtension.CartTestUtil.createCart()` and `createCart(B2B)` create the default cart: account, store, cart `My Cart`, one delivery group and one product item.
+
+- **Flow follow-ups: custom prices and `$Api` templates (Apex API 62.0, 67.0).** Inserting an active price into a custom price book for a product with no standard price now fails with `STANDARD_PRICE_NOT_DEFINED` in anonymous Apex, isolated tests and record-triggered Flows, in a single-currency org or at the default currency; other currencies, inactive prices and unseen shapes keep their earlier behavior. Record-triggered after-save Flow text templates (create and update) render `$Api.Partner_Server_URL_*` and `$Api.Enterprise_Server_URL_*` references, including the endpoint-host formula, as the SOAP path shapes seen in test context, and a Create Records output assigned to a same-object custom lookup on the triggering record populates it. Captured at 62.0 and 67.0.
+
+- Default-value formulas built from `NOW()`, `TODAY()`, `DATEVALUE`, `TIMEVALUE`, `MINUTE`, `MOD`, `FLOOR` and arithmetic (for example `NOW()+(30-MOD(MINUTE(TIMEVALUE(NOW())),30))/1440`) now evaluate for `newSObject(recordTypeId, true)`, `newSObject(null, true)` and insert instead of returning null (a loaded numeric default carries the field's declared scale, such as `7.00`), matching captured Salesforce results at API 62.0 and 67.0.
+
+- **Scalar list writebacks.** Repeated writes to growing instance-field lists avoid unnecessary escape-tracking work for scalar elements.
+
+- **Scalar-typed list alias walks.** Nested-collection alias checks no longer visit every element of a List or Set declared with a scalar element type, which removes quadratic work when large pixel or number buffers sit beside other collections.
+
+- **SObject field lookup.** Alias lookup avoids allocating for unrelated fields while retaining explicit-field and namespace precedence.
+
+- **Startup and ConnectApi symbol loading.** Setup-advice patterns and fuzzy name dictionaries load on first use, and one-shot `glade test` runs skip runtime-patch proofs that only a later transition could use. Loading the captured ConnectApi shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
+
+- **JSON output.** Encoding large parse, check, test and report results uses less temporary memory while preserving their JSON. A synthetic parse benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
+
+- **Record-triggered Flow criteria.** Several more Flow shapes now match captured Salesforce behavior at API 62.0 and 67.0. After-save decisions compare `$Profile.Name` with literals and record text fields (EqualTo and NotEqualTo), and NotEqualTo reads String constants. Get Records follows a parent's lookup field, filters custom metadata by a formula value, hides the test-isolated standard price book, and faults on relationship-path filters. Send Email renders text-template subjects and bodies, including captured API endpoint references in test context, and rejects an unknown org-wide sender. A custom price for an active product requires an existing standard price for that product in the captured single-currency and default-currency cases.
+
 ## v0.3.13
 
 v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster.

@@ -13,6 +13,12 @@ type RecordCreations struct {
 	// duplicates holds the created records whose insert matched a duplicate
 	// (see Engine.updateGateBaseline).
 	duplicates map[storage.ID]bool
+	// standardPrices caches the standard price index of the pricebook check;
+	// it lives here so the Engine struct, and insertOne's frame, stay unchanged.
+	// flowLookupVisible filters a captured test-isolated lookup result.
+	flowLookupVisible   func(storage.ID) bool
+	standardPrices      *standardPriceIndex
+	standardPriceMisses int
 }
 
 // MarkDuplicate notes that a created record was inserted as an allowed duplicate.
@@ -107,4 +113,21 @@ func (r *RecordCreations) Rollback(mark int) {
 	}
 	clear(r.order[mark:])
 	r.order = r.order[:mark]
+}
+
+// SetFlowLookupRecordVisible installs the filter for a captured test-isolated
+// lookup result; nil removes it. It lives beside the transaction state so the
+// Engine struct keeps its size.
+func (e *Engine) SetFlowLookupRecordVisible(visible func(storage.ID) bool) {
+	if e.RecordCreations != nil {
+		e.RecordCreations.flowLookupVisible = visible
+	}
+}
+
+// FlowLookupRecordVisible returns the installed lookup filter, or nil.
+func (e *Engine) FlowLookupRecordVisible() func(storage.ID) bool {
+	if e.RecordCreations == nil {
+		return nil
+	}
+	return e.RecordCreations.flowLookupVisible
 }

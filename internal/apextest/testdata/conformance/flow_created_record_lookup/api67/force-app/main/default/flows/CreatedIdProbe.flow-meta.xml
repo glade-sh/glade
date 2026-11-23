@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>67.0</apiVersion><label>Created Id Probe</label><processType>AutoLaunchedFlow</processType>
+<recordCreates><name>CreateAccount</name><label>Create Account</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetLookup</targetReference></connector><inputAssignments><field>Name</field><value><stringValue>Probe child</stringValue></value></inputAssignments><object>Account</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+<recordUpdates><name>SetLookup</name><label>Set Lookup</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>ProbeParent__c</field><value><elementReference>CreateAccount</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>CreateAccount</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>Probe parent</stringValue></value></filters><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>

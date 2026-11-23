@@ -2517,6 +2517,15 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.FlowFaultDetail = vm.flowApexFaultDetail
 	engine.FlowFaultInTest = func() bool { return vm.testContext != nil }
+	if vm.testContext != nil && !vm.testContext.SeeAllData && len(vm.testStandardPricebookBaseline) != 0 {
+		baseline := vm.testStandardPricebookBaseline
+		engine.SetFlowLookupRecordVisible(func(id storage.ID) bool {
+			_, hidden := baseline[id]
+			return !hidden
+		})
+	} else {
+		engine.SetFlowLookupRecordVisible(nil)
+	}
 	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
 	engine.PlatformEventPublisher = func(records []storage.Record) error {
 		return vm.publishFlowEvents(records, result)

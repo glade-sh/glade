@@ -22,6 +22,9 @@ func (vm *VM) flowCoreStatementInsertError(op string, value Value, err error) er
 	if value.Kind != ValueObject {
 		return err
 	}
+	if failure, ok := dml.FlowRelationshipLookupFailureResult(err); ok {
+		return statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
+	}
 	if failure, ok := dml.FlowSubflowOutputFailureResult(err); ok {
 		return statementDMLException(op, []dml.Result{failure}, vm.dmlExceptionObjectTypes(value))
 	}

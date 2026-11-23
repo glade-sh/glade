@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+uom_notype	62.0	anonymous	True	True	R5&#124;uom&#124;OK Type=Custom	n/a	n/a	cleaned:1
+uom_notype	67.0	anonymous	True	True	R5&#124;uom&#124;OK Type=Custom	n/a	n/a	cleaned:1
+uom_desc	62.0	anonymous	True	True	R5&#124;uomdesc&#124;nillable=false&#124;defaultedOnCreate=true&#124;default=Custom&#124;values=Custom*;R5&#124;acctIsActive&#124;true	n/a	n/a	0
+uom_desc	67.0	anonymous	True	True	R5&#124;uomdesc&#124;nillable=false&#124;defaultedOnCreate=true&#124;default=Custom&#124;values=Custom*;R5&#124;acctIsActive&#124;true	n/a	n/a	0

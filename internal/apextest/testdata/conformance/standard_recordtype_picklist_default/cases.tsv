@@ -1,0 +1,7 @@
+id	route	file	api
+x_rt	anonymous	x_rt.apex	-
+x_norecordtype	anonymous	x_none.apex	-
+acct_rt	anonymous	acct_rt.apex	-
+bla_rt	anonymous	bla_rt.apex	-
+bla_nort	anonymous	bla_nort.apex	-
+uom_notype	anonymous	uom.apex	-

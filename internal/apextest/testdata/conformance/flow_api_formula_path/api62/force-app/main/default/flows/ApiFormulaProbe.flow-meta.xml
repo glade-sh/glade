@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>67.0</apiVersion>
+ <formulas><name>SiteOrigin</name><dataType>String</dataType><expression>SUBSTITUTE(LEFT({!$Api.Partner_Server_URL_560}, FIND(&quot;/services&quot;, {!$Api.Partner_Server_URL_560}) - 1), &quot;.salesforce.com&quot;, &quot;.example.test&quot;) + &quot;/probe/path&quot;</expression></formulas>
+ <label>Api Formula Probe</label><processType>AutoLaunchedFlow</processType>
+ <recordUpdates><name>Save</name><label>Save</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Description</field><value><elementReference>Body</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+ <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Save</targetReference></connector><filterLogic>and</filterLogic><filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>Api Formula Probe</stringValue></value></filters><object>Contact</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+ <status>Active</status>
+ <textTemplates><name>Body</name><isViewedAsPlainText>true</isViewedAsPlainText><text>{!SiteOrigin}</text></textTemplates>
+</Flow>

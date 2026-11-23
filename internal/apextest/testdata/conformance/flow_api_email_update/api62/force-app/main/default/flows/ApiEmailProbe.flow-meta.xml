@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <actionCalls><name>Send</name><label>Send</label><locationX>0</locationX><locationY>0</locationY><actionName>emailSimple</actionName><actionType>emailSimple</actionType><connector><targetReference>Save</targetReference></connector><flowTransactionModel>CurrentTransaction</flowTransactionModel><inputParameters><name>emailAddressesArray</name><value><elementReference>Addrs</elementReference></value></inputParameters><inputParameters><name>emailSubject</name><value><stringValue>API probe</stringValue></value></inputParameters><inputParameters><name>emailBody</name><value><elementReference>Body</elementReference></value></inputParameters><inputParameters><name>sendRichBody</name><value><booleanValue>false</booleanValue></value></inputParameters><nameSegment>emailSimple</nameSegment><offset>0</offset></actionCalls>
+ <apiVersion>67.0</apiVersion>
+ <assignments><name>Address</name><label>Address</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>Addrs</assignToReference><operator>Add</operator><value><elementReference>$Record.Email</elementReference></value></assignmentItems><connector><targetReference>Send</targetReference></connector></assignments>
+ <formulas><name>EndpointHost</name><dataType>String</dataType><expression>LEFT({!$Api.Partner_Server_URL_560}, FIND(&quot;/services&quot;, {!$Api.Partner_Server_URL_560}) - 1)</expression></formulas>
+ <label>Api Email Probe</label><processType>AutoLaunchedFlow</processType>
+ <recordCreates><name>Save</name><label>Save</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>LastName</field><value><stringValue>Api Email Marker</stringValue></value></inputAssignments><inputAssignments><field>Description</field><value><elementReference>Body</elementReference></value></inputAssignments><object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+ <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Address</targetReference></connector><filterLogic>and</filterLogic><filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>Api Email Probe</stringValue></value></filters><object>Contact</object><recordTriggerType>Update</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+ <status>Active</status>
+ <textTemplates><name>Body</name><isViewedAsPlainText>true</isViewedAsPlainText><text>direct={!$Api.Partner_Server_URL_560}|host={!EndpointHost}</text></textTemplates>
+ <variables><name>Addrs</name><dataType>String</dataType><isCollection>true</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+</Flow>

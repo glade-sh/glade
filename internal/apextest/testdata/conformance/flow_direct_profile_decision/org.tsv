@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+profile_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=no|yes|no	62.0	n/a	0
+profile_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=no|yes|no	67.0	n/a	0
+profile_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=no|yes|no	62.0	n/a	n/a
+profile_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=no|yes|no	67.0	n/a	n/a

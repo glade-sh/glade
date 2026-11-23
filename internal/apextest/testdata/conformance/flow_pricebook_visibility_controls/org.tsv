@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+all_data	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes	62.0	n/a	n/a
+all_data	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes	67.0	n/a	n/a
+custom	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes	62.0	n/a	n/a
+custom	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes	67.0	n/a	n/a

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+ <apiVersion>67.0</apiVersion>
+ <formulas><name>Endpoint</name><dataType>String</dataType><expression>{!$Api.Partner_Server_URL_560}</expression></formulas>
+ <label>Api Merge Probe</label><processType>AutoLaunchedFlow</processType>
+ <recordUpdates><name>Save</name><label>Save</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Description</field><value><elementReference>Body</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+ <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Save</targetReference></connector><filterLogic>and</filterLogic><filters><field>LastName</field><operator>EqualTo</operator><value><stringValue>Api Merge Probe</stringValue></value></filters><object>Contact</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start>
+ <status>Active</status>
+ <textTemplates><name>Body</name><isViewedAsPlainText>true</isViewedAsPlainText><text>direct={!$Api.Partner_Server_URL_560}|formula={!Endpoint}|enterprise={!$Api.Enterprise_Server_URL_560}</text></textTemplates>
+</Flow>

@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+price_control	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=standard=ok|same=ok|other=STANDARD_PRICE_NOT_DEFINED	62.0	n/a	n/a
+price_control	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=standard=ok|same=ok|other=STANDARD_PRICE_NOT_DEFINED	67.0	n/a	n/a
