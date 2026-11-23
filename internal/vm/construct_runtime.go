@@ -572,6 +572,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			if passiveDTO {
 				bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 				vm.bindPassivePaymentConstructor(&object, ctor, ctorArgs)
+				bindCartValidationOutputRelatedEntity(&object, ctorArgs)
 			}
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", typeName, len(args))
