@@ -1,0 +1,7 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+acct_rt	62.0	anonymous	True	True	R5&#124;acct_rt&#124;Industry=Banking	n/a	n/a	cleaned:1
+acct_rt	67.0	anonymous	True	True	R5&#124;acct_rt&#124;Industry=Banking	n/a	n/a	cleaned:1
+bla_rt	62.0	anonymous	True	True	R5&#124;bla_rt&#124;Category=License	n/a	n/a	cleaned:2
+bla_rt	67.0	anonymous	True	True	R5&#124;bla_rt&#124;Category=License	n/a	n/a	cleaned:2
+bla_nort	62.0	anonymous	True	True	R5&#124;bla_nort&#124;Category=License	n/a	n/a	cleaned:2
+bla_nort	67.0	anonymous	True	True	R5&#124;bla_nort&#124;Category=License	n/a	n/a	cleaned:2

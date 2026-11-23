@@ -229,6 +229,9 @@ func defaultValueForRecordFieldWithOptions(org *storage.OrgState, definition sto
 	if !PersonAccountCustomFieldDefaultAllowed(org, definition, record, field) {
 		return storage.Value{}, false
 	}
+	if value, ok := storage.FeatureInsertDefault(org, definition.APIName, field.APIName); ok && strings.TrimSpace(field.DefaultValue) == "" {
+		return value, true
+	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	options.LineFeedBR = true
 	if strings.EqualFold(rawDefault, "$RecordType.Name") || strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {

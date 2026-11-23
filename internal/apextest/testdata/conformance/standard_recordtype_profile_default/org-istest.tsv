@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+probe	62.0	istest	true	Failed	acct_rt=Fail System.AssertException: Assertion Failed: R5|acct_rt|Industry=Banking; bla_nort=Fail System.AssertException: Assertion Failed: R5|bla_nort|Category=License; bla_rt=Fail System.AssertException: Assertion Failed: R5|bla_rt|Category=License	62.0	n/a	n/a
+probe	67.0	istest	true	Failed	acct_rt=Fail System.AssertException: Assertion Failed: R5|acct_rt|Industry=Banking; bla_nort=Fail System.AssertException: Assertion Failed: R5|bla_nort|Category=License; bla_rt=Fail System.AssertException: Assertion Failed: R5|bla_rt|Category=License	67.0	n/a	n/a

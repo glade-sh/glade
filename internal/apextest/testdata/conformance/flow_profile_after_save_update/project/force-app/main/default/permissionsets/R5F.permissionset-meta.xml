@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>R5F</label><hasActivationRequired>false</hasActivationRequired>
+<fieldPermissions><editable>true</editable><field>FL__c.Tag__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>FX__c.Status__c</field><readable>true</readable></fieldPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>FX__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>FL__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>

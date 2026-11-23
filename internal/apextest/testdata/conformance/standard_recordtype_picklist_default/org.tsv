@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+x_rt	62.0	anonymous	True	True	R5&#124;x_rt&#124;P=B&#124;inMemory=null	n/a	n/a	cleaned:1
+x_rt	67.0	anonymous	True	True	R5&#124;x_rt&#124;P=B&#124;inMemory=null	n/a	n/a	cleaned:1
+x_norecordtype	62.0	anonymous	True	True	R5&#124;x_none&#124;P=B	n/a	n/a	cleaned:1
+x_norecordtype	67.0	anonymous	True	True	R5&#124;x_none&#124;P=B	n/a	n/a	cleaned:1
+acct_rt	62.0	anonymous	True	True	R5&#124;acct_rt&#124;Industry=Banking	n/a	n/a	cleaned:1
+acct_rt	67.0	anonymous	True	True	R5&#124;acct_rt&#124;Industry=Banking	n/a	n/a	cleaned:1
+bla_rt	62.0	anonymous	True	True	R5&#124;bla_rt&#124;Category=License	n/a	n/a	cleaned:2
+bla_rt	67.0	anonymous	True	True	R5&#124;bla_rt&#124;Category=License	n/a	n/a	cleaned:2
+bla_nort	62.0	anonymous	True	True	R5&#124;bla_nort&#124;Category=License	n/a	n/a	cleaned:2
+bla_nort	67.0	anonymous	True	True	R5&#124;bla_nort&#124;Category=License	n/a	n/a	cleaned:2
+uom_notype	62.0	anonymous	True	True	R5&#124;uom&#124;OK Type=Period	n/a	n/a	cleaned:1
+uom_notype	67.0	anonymous	True	True	R5&#124;uom&#124;OK Type=Period	n/a	n/a	cleaned:1

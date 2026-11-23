@@ -1,0 +1,4 @@
+id	route	file	api
+acct_rt	anonymous	acct_rt.apex	-
+bla_rt	anonymous	bla_rt.apex	-
+bla_nort	anonymous	bla_nort.apex	-
