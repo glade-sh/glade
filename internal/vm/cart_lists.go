@@ -368,7 +368,7 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 // or delivery group the Id of that entity as its related entity
 // (commerce_cart_validation_outputs/org.tsv newCvo, API 62.0 and 67.0).
 func bindCartValidationOutputRelatedEntity(object *Value, args []Value) {
-	if object == nil || !strings.EqualFold(object.Type, "CartExtension.CartValidationOutput") || len(args) != 3 || args[2].Kind != ValueObject {
+	if object == nil || len(args) != 3 || args[2].Kind != ValueObject || !strings.EqualFold(object.Type, "CartExtension.CartValidationOutput") {
 		return
 	}
 	if !strings.EqualFold(args[2].Type, "CartExtension.CartItem") && !strings.EqualFold(args[2].Type, "CartExtension.CartDeliveryGroup") {
