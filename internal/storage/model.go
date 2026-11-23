@@ -1702,7 +1702,7 @@ func defaultPicklistValueForRecordType(definition ObjectDefinition, record Recor
 		return Value{}, false
 	}
 	for _, recordType := range definition.RecordTypes {
-		if string(recordType.ID) != recordTypeID {
+		if !IDsEqual(recordType.ID, ID(recordTypeID)) {
 			continue
 		}
 		for name, value := range recordType.PicklistDefaults {
