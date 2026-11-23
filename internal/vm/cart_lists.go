@@ -374,3 +374,31 @@ func bindCartValidationOutputRelatedEntity(object *Value, args []Value) {
 		object.Fields["relatedEntityId"] = id
 	}
 }
+
+// bindCommerceInventoryConstructorAliases exposes the collections two
+// commerce_inventory request classes take in their constructors under the
+// names their getters read (commerce_inventory_request_getters/org.tsv,
+// API 62.0 and 67.0: getItems and getItemInventoryLevelRequests return them).
+func bindCommerceInventoryConstructorAliases(object *Value) {
+	if object == nil || object.Kind != ValueObject || object.Fields == nil {
+		return
+	}
+	var from, to string
+	switch {
+	case strings.EqualFold(object.Type, "commerce_inventory.UpsertItemReservationRequest"):
+		// A null associatedProducts argument reads back as an empty list.
+		if value, ok := object.Fields["associatedProducts"]; !ok || value.Kind == ValueNull {
+			object.Fields["associatedProducts"] = typedList("List<commerce_inventory.UpsertItemReservationRequest>")
+		}
+		return
+	case strings.EqualFold(object.Type, "commerce_inventory.UpsertReservationRequest"):
+		from, to = "upsertItemReservationRequests", "items"
+	case strings.EqualFold(object.Type, "commerce_inventory.InventoryLevelsRequest"):
+		from, to = "inventoryLevelsItemRequests", "itemInventoryLevelRequests"
+	default:
+		return
+	}
+	if value, ok := object.Fields[from]; ok {
+		object.Fields[to] = value
+	}
+}

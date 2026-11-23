@@ -474,6 +474,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 		vm.bindPassivePaymentConstructor(&object, ctor, ctorArgs)
 		bindCartValidationOutputRelatedEntity(&object, ctorArgs)
+		bindCommerceInventoryConstructorAliases(&object)
 		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 			return Null, true, err
 		}
