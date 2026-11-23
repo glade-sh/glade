@@ -25,6 +25,7 @@ class LocalAllTest(unittest.TestCase):
     def test_required_mapping_tracks_workflow(self):
         required = runner.required_jobs((ROOT / '.github/workflows/ci.yml').read_text())
         self.assertEqual(required, set(runner.MAPPING))
+        self.assertEqual(runner.MAPPING['pr-authority-union'], 'scripts tests and full-suite shard validation')
         with self.assertRaisesRegex(ValueError, 'unmapped'):
             runner.check_mapping(required | {'new-required-job'})
 

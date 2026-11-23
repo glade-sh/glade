@@ -23,6 +23,8 @@ MAPPING = {
     'reused-tree-ci': 'scripts tests and full-suite',
     # PR selection is covered by the full suite and scripts tests locally.
     'pr-tests': 'full-suite',
+    # Full-suite shards validate their combined evidence; scripts tests cover the PR union.
+    'pr-authority-union': 'scripts tests and full-suite shard validation',
     'pr-select': 'scripts tests and full-suite',
     'early-guards': 'scripts tests and test-guard',
     'pr-browser-evidence': 'browser',

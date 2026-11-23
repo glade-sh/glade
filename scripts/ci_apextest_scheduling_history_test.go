@@ -78,7 +78,7 @@ func TestCICase319ApexPredecessorBootstrapWorkflow(t *testing.T) {
 		t.Fatal("missing Apex history jobs")
 	}
 	job := text[start:end]
-	for _, required := range []string{"actions: read", "scripts/ci-apex-history-input.sh", "CI_APEXTEST_BENCHMARK_PAIR"} {
+	for _, required := range []string{"actions: read", "scripts/ci-apex-history-input.sh"} {
 		if !strings.Contains(job, required) {
 			t.Errorf("missing predecessor bootstrap contract %q", required)
 		}

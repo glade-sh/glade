@@ -503,7 +503,17 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 	userID := ""
 	principalResolved := false
 	var unrestricted map[string]bool
+	leadScan := strings.EqualFold(record.Object, "Lead")
+	for _, matching := range rule.MatchRules {
+		leadScan = leadScan || strings.EqualFold(matching.Object, "Lead")
+	}
+	if leadScan {
+		defer vm.beginPartnerLeadReadPass()()
+	}
 	return scan.Find(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+		if leadScan && vm.publicLeadReadOutsidePartnerPolicy(existing.Object, existing, "") {
+			return true, true
+		}
 		if !principalResolved {
 			userID = vm.currentUserID()
 			principalResolved = true

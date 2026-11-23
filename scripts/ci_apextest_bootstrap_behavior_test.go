@@ -98,7 +98,7 @@ func runCase319BehaviorRoute(t *testing.T, f case319BehaviorFixture, attempt str
 		cmd.Dir = f.root
 		stage = filepath.Join(f.root, "ci-artifacts", "apextest-history-input")
 	}
-	cmd.Env = append(os.Environ(), "PATH="+f.bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+f.evidence, "FAKE_PROFILE="+f.profile, "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT="+attempt, "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+f.history, "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_BENCHMARK_PAIR=0", "CI_APEXTEST_RETRY_PROFILE_PATH="+filepath.Join(f.root, "no-retry-cache.json"), "RUNNER_TEMP="+f.root)
+	cmd.Env = append(os.Environ(), "PATH="+f.bin+":"+os.Getenv("PATH"), "FAKE_EVIDENCE="+f.evidence, "FAKE_PROFILE="+f.profile, "GITHUB_REPOSITORY=example/repo", "GITHUB_RUN_ID=777", "GITHUB_RUN_ATTEMPT="+attempt, "GITHUB_EVENT_NAME=push", "CI_DURATION_HISTORY_CACHE_REF=abc", "CI_APEXTEST_HISTORY_PATH="+f.history, "CI_APEXTEST_HISTORY_STAGE="+stage, "CI_APEXTEST_RETRY_PROFILE_PATH="+filepath.Join(f.root, "no-retry-cache.json"), "RUNNER_TEMP="+f.root)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("workflow input route failed: %v\n%s", err, out)
 	}

@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v99"
+const SemanticABI = "sema-v100"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v77"
+const PlatformABI = "salesforce-platform-v78"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -63,19 +63,20 @@ const (
 )
 
 type Analyzer struct {
-	known                         map[string]TypeReference
-	namedApexReferenceObjects     bool
-	canonicalNames                *semaCanonicalNames
-	namespace                     string
-	deps                          map[string]bool
-	opaqueDeps                    map[string]bool
-	sourceNamespaces              map[string]bool
-	depSourceNamespaces           map[string]bool
-	includePerformanceDiagnostics bool
-	queryDeclaredObjects          []schema.Object
-	visualforcePageNames          map[string]bool
-	visualforcePagesKnown         bool
-	sources                       *semaSources
+	anonymousCommunityCaseDeleteDenied bool
+	known                              map[string]TypeReference
+	namedApexReferenceObjects          bool
+	canonicalNames                     *semaCanonicalNames
+	namespace                          string
+	deps                               map[string]bool
+	opaqueDeps                         map[string]bool
+	sourceNamespaces                   map[string]bool
+	depSourceNamespaces                map[string]bool
+	includePerformanceDiagnostics      bool
+	queryDeclaredObjects               []schema.Object
+	visualforcePageNames               map[string]bool
+	visualforcePagesKnown              bool
+	sources                            *semaSources
 	// typeMemberState is the member model the last diagnostic analysis built.
 	// A caller that runs a later pass over the same index reads it instead of
 	// building another.

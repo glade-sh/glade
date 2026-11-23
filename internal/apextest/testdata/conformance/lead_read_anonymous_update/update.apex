@@ -1,0 +1,1 @@
+Lead l=[SELECT Id,Company FROM Lead WHERE LastName='Route Lead' LIMIT 1]; String result; try { l.Company='Changed'; update l; result='ok'; } catch(Exception e) {result=e.getTypeName();} System.debug('OBS|update='+result);

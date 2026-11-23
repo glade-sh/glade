@@ -42,6 +42,7 @@ func multiTestHistoryFixture(t *testing.T, packageName string, shardTests [][]fl
 		for j, seconds := range shardTests[i] {
 			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n", packageName, names[i][j], seconds)
 		}
+		fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q}\n", packageName)
 		for file, data := range map[string]string{
 			"discovery.txt": strings.Join(all, "\n") + "\n",
 			"events.json":   events.String(),

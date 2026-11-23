@@ -21,6 +21,14 @@
 - JSON deserialization and parser errors retain the captured missing-value diagnostics and existing typed malformed-input diagnostics with Go 1.27.
 - Captured uncaught direct throws of nested custom exceptions from anonymous Apex retain the caller frame and its call line for the captured API 62.0, 67.0 and 68.0 cases; the supported server endpoints report the captured stack.
 - **Namespaced field maps.** In a namespace owner context, `containsKey` on a custom object field map rejects an unqualified custom text field key written with its declared case at Apex APIs 62.0, 67.0 and 68.0, matching the captured Salesforce results.
+- French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
+- Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
+
+- A Standard User’s denied change to Lead.Company under Read sharing reports the captured DML exception in Apex tests at API 67.0 and in anonymous Apex at API 62.0 and 67.0. Customer Community Case delete describe, test-context delete denial, anonymous compile denial, Visualforce and Apex REST exceptions follow the observed API 62.0 and 67.0 results.
+
+- A Partner Community user’s Lead visibility, Manual Read share and named access rows in anonymous Apex and Visualforce follow the captured private external default.
+
+- In anonymous Apex, the captured administrator-to-Standard-User access queries return read rows for private custom records, including the observed denied projections and Manual Read grant and revoke.
 
 ### Changes
 
@@ -93,6 +101,8 @@
 - **Bulk duplicate matching.** Required custom matching terms reuse candidate groups across a bulk operation, including Last Name match keys, while preserving the existing scores, access checks and outcomes.
 - **Startup and ConnectApi symbol loading.** Setup-advice patterns and fuzzy name dictionaries load on first use. Loading the captured ConnectApi shape avoids a full copy of the inflated archive; a local decode benchmark used about 13.6 MiB instead of 19.9 MiB per operation.
 - **JSON output.** Encoding large parse results and test reports uses less temporary memory while preserving their JSON. A synthetic parse benchmark used about 5.3 MiB instead of 19.2 MiB per operation.
+
+- **Partner Lead sharing.** When two live non-owner shares rule out the captured single-share policy, repeated Lead visibility checks reuse their lookup keys and verify both current rows. Public Lead reads skip the share scan when the reader owns the Lead or its owner and creator differ. A fixed-reader pass evaluates the Partner sharing policy once.
 
 ### CI
 

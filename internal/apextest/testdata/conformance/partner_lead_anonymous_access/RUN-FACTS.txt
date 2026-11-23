@@ -1,0 +1,7 @@
+Captured 2026-11-22 in a fresh 30-day Developer scratch org; deleted and deletion verified.
+Lead internal sharing model ReadWriteTransfer, external model omitted.
+The owner user, records, reader user and permission set were created in separate committed anonymous requests at API 67.0.
+The named Partner reader has a direct Lead read permission set. The observations run as administrator in later anonymous transactions at APIs 62.0 and 67.0.
+A direct Manual Read share to that reader was committed between before and after observations.
+The API 62 and 67 observations ran sequentially in one org; no Salesforce record identifiers are retained.
+Local replay adds local-setup metadata to expose the standard Account.IsPartner field and LeadShare object, and uses dynamic put for IsPartner. These files were not deployed to the org.
