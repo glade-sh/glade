@@ -87,8 +87,7 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 		for id, want := range anonymous[api] {
 			t.Run(api+"/"+id, func(t *testing.T) {
 				if reason, skipped := skip[id]; skipped {
-					t.Log(reason)
-					return
+					t.Skip(reason)
 				}
 				method := strings.TrimSuffix(cases[id], ".apex")
 				if _, ok := cases[id]; !ok {
