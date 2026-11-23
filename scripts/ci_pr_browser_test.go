@@ -48,6 +48,7 @@ func TestCIPRBrowserEvidence(t *testing.T) {
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI68RegistrationRunsInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestL08SalesforceConformance"}`,
 	}
 	for _, tc := range []struct {
@@ -113,6 +114,7 @@ func TestCIPRBrowserEvidenceUsesLatestWorkerAttempt(t *testing.T) {
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI67RegistrationRunsInBrowser"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestLWCAPI68RegistrationRunsInBrowser"}`,
 		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestL08SalesforceConformance"}`,
 	}
 	if err := os.WriteFile(filepath.Join(older, "events.jsonl"), []byte("invalid old attempt\n"), 0600); err != nil {
