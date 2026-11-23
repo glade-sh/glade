@@ -172,3 +172,44 @@ func BenchmarkDuplicateInsertBulkFuzzyAllowReport(b *testing.B) {
 func BenchmarkDuplicateInsertBulkFuzzyFilterAllow(b *testing.B) {
 	runBenchFuzzyInsert(b, storage.DuplicateRule{ActionOnInsert: "Allow"}, "(1 AND 2) OR (3 AND 4)")
 }
+
+// BenchmarkDuplicateInsertBulkIndexedValueAllow inserts 200 contacts against
+// 5000 under an Allow rule with one Exact Title item over 50 stored values, so
+// the statement's value index stays enabled and selects the candidates. Half
+// of the rows match 100 seeds each.
+func BenchmarkDuplicateInsertBulkIndexedValueAllow(b *testing.B) {
+	base, rows := benchDuplicateOrg(b, 5000, 200, storage.DuplicateRule{ActionOnInsert: "Allow"}, false)
+	contacts := base.Objects["Contact"]
+	contacts.Definition.DuplicateRules[0].MatchRules[0].Items = []storage.MatchingRuleItem{{Field: "Title", Method: "Exact", BlankBehavior: "NullNotAllowed"}}
+	seeded := 0
+	for _, record := range contacts.Records {
+		record.Fields["Title"] = storage.StringValue(fmt.Sprintf("Title%d", seeded%50))
+		seeded++
+	}
+	base.Objects["Contact"] = contacts
+	for i := range rows {
+		title := "Unlisted"
+		if i%2 == 0 {
+			title = fmt.Sprintf("Title%d", i%50)
+		}
+		rows[i].Fields["Title"] = storage.StringValue(title)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		org := storage.SnapshotRuntimeOrg(&base)
+		engine := dml.NewEngine(&org)
+		engine.Options.EnforceDuplicateRules = true
+		batch := make([]storage.Record, len(rows))
+		for j := range rows {
+			batch[j] = rows[j].Clone()
+		}
+		b.StartTimer()
+		for _, result := range engine.Insert(batch) {
+			if !result.Success {
+				b.Fatalf("insert: %+v", result)
+			}
+		}
+	}
+}
