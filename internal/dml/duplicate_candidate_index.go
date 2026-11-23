@@ -74,8 +74,14 @@ func (index *duplicateCandidateIndex) readIndexedDuplicateCandidates(object stri
 	fieldKey := duplicateIndexFieldKey{object: object, field: field, nameKey: nameKey}
 	indexed := index.fields[fieldKey]
 	if indexed == nil {
+		// A value index can be disabled after its first distinct values, so
+		// it grows on demand; the name-key index always covers every record.
+		hint := 0
+		if nameKey {
+			hint = len(records)
+		}
 		indexed = &duplicateIndexedField{
-			entries: make(map[storage.ID]duplicateIndexedValue, len(records)),
+			entries: make(map[storage.ID]duplicateIndexedValue, hint),
 			groups:  make(map[string]map[storage.ID]struct{}),
 			unknown: make(map[storage.ID]struct{}),
 		}

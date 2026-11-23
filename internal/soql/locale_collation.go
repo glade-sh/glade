@@ -338,6 +338,10 @@ func (c *textComparator) compare(a, b string, secondary bool) int {
 		return strings.Compare(c.rootKey(a, secondary), c.rootKey(b, secondary))
 	}
 	left, right := c.elementKey(a), c.elementKey(b)
+	return compareElementKeys(&left, &right, secondary)
+}
+
+func compareElementKeys(left, right *elementKey, secondary bool) int {
 	if cmp := bytes.Compare(left.primary, right.primary); cmp != 0 {
 		return cmp
 	}
@@ -348,6 +352,56 @@ func (c *textComparator) compare(a, b string, secondary bool) int {
 		return 0
 	}
 	return bytes.Compare(left.tertiary, right.tertiary)
+}
+
+// textSortKeys holds the ORDER BY key of every row of one text column, so a
+// sort looks each key up once per row instead of twice per comparison. A key
+// is resolved when a comparison first reads its row: a later sort column is
+// only compared on ties, and most of its rows never need a key.
+type textSortKeys struct {
+	comparator *textComparator
+	texts      []string
+	resolved   []bool
+	root       []string
+	elements   []elementKey
+}
+
+// sortKeys prepares the keys compare(a, b, false) would compare. It returns
+// nil for the folded and en_* orders, which compare the texts directly.
+func (c *textComparator) sortKeys(texts []string) *textSortKeys {
+	if c == nil || c.english {
+		return nil
+	}
+	keys := &textSortKeys{comparator: c, texts: texts, resolved: make([]bool, len(texts))}
+	if c.root {
+		keys.root = make([]string, len(texts))
+	} else {
+		keys.elements = make([]elementKey, len(texts))
+	}
+	return keys
+}
+
+// compare orders rows i and j as compare(texts[i], texts[j], false) does.
+func (k *textSortKeys) compare(i, j int) int {
+	if !k.resolved[i] {
+		k.resolve(i)
+	}
+	if !k.resolved[j] {
+		k.resolve(j)
+	}
+	if k.root != nil {
+		return strings.Compare(k.root[i], k.root[j])
+	}
+	return compareElementKeys(&k.elements[i], &k.elements[j], false)
+}
+
+func (k *textSortKeys) resolve(i int) {
+	if k.root != nil {
+		k.root[i] = k.comparator.rootKey(k.texts[i], false)
+	} else {
+		k.elements[i] = k.comparator.elementKey(k.texts[i])
+	}
+	k.resolved[i] = true
 }
 
 func (c *textComparator) groupKey(text string) string {
@@ -367,10 +421,16 @@ func (c *textComparator) groupKey(text string) string {
 }
 
 func compareValuesForCollation(left, right storage.Value, c *textComparator, secondary bool) int {
+	return compareValuesForCollationRef(&left, &right, c, secondary)
+}
+
+// compareValuesForCollationRef is compareValuesForCollation over operands held
+// in place; see compareValuesCollatedRef.
+func compareValuesForCollationRef(left, right *storage.Value, c *textComparator, secondary bool) int {
 	if c != nil && left.Kind == storage.ValueString && right.Kind == storage.ValueString {
 		return c.compare(left.String, right.String, secondary)
 	}
-	return compareValues(left, right)
+	return compareValuesCollatedRef(left, right, false)
 }
 
 func (context ExecutionContext) textComparatorForQuery() *textComparator {

@@ -434,9 +434,13 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		var selected []storage.ID
 		if usePrepared && len(records) >= 256 {
 			terms, count := requiredDuplicateTerms(&prepared)
-			termCount = count
-			for i := 0; i < termCount; i++ {
-				termVerdicts[i] = duplicateTermVerdicts{term: terms[i], values: make(map[string]bool)}
+			// Only fuzzy terms are memoized: an Exact verdict costs no more
+			// than the memo lookup, so Exact terms add no per-record check.
+			for _, term := range terms[:count] {
+				if !prepared.items[term].exact {
+					termVerdicts[termCount] = newDuplicateTermVerdicts(term)
+					termCount++
+				}
 			}
 			if index != nil && among == nil {
 				chosen := -1
@@ -459,6 +463,8 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				}
 			}
 		}
+		// visit scores one indexed candidate; the full scan below inlines the
+		// same body. Change both together.
 		visit := func(existing storage.Record) bool {
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
 				return true
@@ -515,11 +521,60 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				}
 			}
 		} else if scan {
+			// The full scan repeats visit's body inline (keep the two in
+			// step): a closure call per stored record measurably slowed
+			// unindexed bulk inserts. The indexed path visits few records.
 			for _, existing := range records {
-				if !visit(existing) {
-					return result, false
+				if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
+					continue
+				}
+				if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
+					continue
+				}
+				possible := true
+				for i := 0; i < termCount; i++ {
+					if !termVerdicts[i].mayMatch(&prepared, existing) {
+						possible = false
+						break
+					}
+				}
+				if !possible {
+					continue
+				}
+				var matched bool
+				confidence := 100.0
+				if standard {
+					matched, confidence = standardMatch(existing)
+				} else {
+					var supported bool
+					if usePrepared {
+						matched, supported, confidence = prepared.match(existing)
+					} else {
+						matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
+					}
+					if !supported {
+						return result, false
+					}
+				}
+				if matched {
+					detect, disclose := true, true
+					if access != nil {
+						detect, disclose = access(existing)
+					}
+					if !detect {
+						continue
+					}
+					result.Detected = true
+					if !disclose {
+						continue
+					}
+					match.Records = append(match.Records, existing.Clone())
+					match.Confidences = append(match.Confidences, confidence)
 				}
 			}
+		}
+		for i := 0; i < termCount; i++ {
+			termVerdicts[i].release()
 		}
 		sort.Sort(byMatchCreation{&match})
 		// Native account_overflow rows select the earliest 100 for every kind
