@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+assert_999_test	62.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	n/a
+assert_999_test	67.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	n/a
+assign_999_test	62.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	62.0	n/a	n/a
+assign_999_test	67.0	istest	true	Failed	probe=Fail System.LimitException: Maximum stack depth reached: 1001	67.0	n/a	n/a

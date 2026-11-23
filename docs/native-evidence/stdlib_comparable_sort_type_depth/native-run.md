@@ -1,0 +1,3 @@
+Salesforce Developer scratch orgs (30-day, each deleted and verified); captures 2026-11-22 at API 62.0 and 67.0, anonymous and @IsTest routes.
+Fixtures under internal/apextest/testdata/conformance: stdlib_type_depth, stdlib_type_depth_neighbors, stdlib_comparable_interface, stdlib_comparable_inheritance.
+Type.isAssignableFrom(null) throws System.NullPointerException. Direct static integer recursion fails at the 1001 stack limit (anonymous depth 998, test entry depth 999). List.sort rejects objects whose only interface directly extends Comparable (ListException), while classes declaring Comparable or inheriting it from a superclass sort normally.

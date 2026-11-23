@@ -1,0 +1,7 @@
+id	route	file
+extended	anonymous	extended.apex
+extended_test	istest	ExtendedSortTest
+separate	anonymous	separate.apex
+separate_test	istest	SeparateSortTest
+noncomparable	anonymous	noncomparable.apex
+noncomparable_test	istest	NoncomparableSortTest

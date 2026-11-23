@@ -5321,6 +5321,9 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		}
 		return value, true, nil
 	case "isAssignableFrom":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+		}
 		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Type") {
 			return Null, true, fmt.Errorf("Type.isAssignableFrom expects Type")
 		}

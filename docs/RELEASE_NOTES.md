@@ -33,6 +33,8 @@
 
 - In anonymous Apex, the captured administrator-to-Standard-User access queries return read rows for private custom records, including the observed denied projections and Manual Read grant and revoke.
 
+- At Apex API 62.0 and 67.0, object sorting follows captured `Comparable` declaration and rejection rules, `Type.isAssignableFrom` throws the captured null-pointer exception for a null argument, and direct static integer recursion observes the captured anonymous and test-entry stack limits.
+
 ### Changes
 
 - **Conditional SLDS classes in base components (LWC API 59.0, 67.0).** `lightning-input`, `lightning-textarea`, `lightning-combobox`, `lightning-radio-group` and `lightning-button-stateful` no longer render every conditional class at once. As in Lightning Experience, `slds-has-error` appears only after a failed `reportValidity()`, `slds-is-open` only on an open combobox, a radio group has no `slds-combobox`, inputs carry `slds-input` and textareas `slds-textarea`, and a stateful button carries `slds-is-selected` or `slds-not-selected` by state. The LWC engine applies every `classMap` key regardless of its value, so conditional classes now use `className`. Captured at 59.0 and 67.0 (browser).

@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+extended	62.0	anonymous	True	False	System.ListException: One or more of the items in this list is not Comparable.	62.0	n/a	0
+extended	67.0	anonymous	True	False	System.ListException: One or more of the items in this list is not Comparable.	67.0	n/a	0
+extended_test	62.0	istest	true	Failed	probe=Fail System.ListException: One or more of the items in this list is not Comparable.	62.0	n/a	n/a
+extended_test	67.0	istest	true	Failed	probe=Fail System.ListException: One or more of the items in this list is not Comparable.	67.0	n/a	n/a
+separate	62.0	anonymous	True	True	ok	62.0	n/a	0
+separate	67.0	anonymous	True	True	ok	67.0	n/a	0
+separate_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+separate_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
+noncomparable	62.0	anonymous	True	True	ok	62.0	n/a	0
+noncomparable	67.0	anonymous	True	True	ok	67.0	n/a	0
+noncomparable_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+noncomparable_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a

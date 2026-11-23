@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+assert_997_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+assert_997_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
+assert_998_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+assert_998_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
+assign_997_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+assign_997_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
+assign_998_test	62.0	istest	true	Passed	probe=Pass	62.0	n/a	n/a
+assign_998_test	67.0	istest	true	Passed	probe=Pass	67.0	n/a	n/a
