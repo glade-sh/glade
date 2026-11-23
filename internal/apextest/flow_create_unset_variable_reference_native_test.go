@@ -84,7 +84,7 @@ func TestFlowCreateUnsetVariableReferenceNativeConformance(t *testing.T) {
 				if !strings.Contains(want, method+"=Fail System.AssertException: Assertion Failed: ") {
 					t.Fatalf("native row has no %s outcome: %q", method, want)
 				}
-				expected := "R5|pb|" + strings.SplitN(strings.SplitN(want, method+"=Fail System.AssertException: Assertion Failed: R5|pb|", 2)[1], "; ", 2)[0]
+				expected := "R5|pb|" + strings.SplitN(strings.SplitN(want, method+"=Fail System.AssertException: Assertion Failed: R5|pb|", 2)[1], "; touched=", 2)[0]
 				if !strings.Contains(normalize(message), expected) {
 					t.Errorf("NATIVE flow_create_unset_variable_reference/org.tsv %s istest %s: want %q; Glade %q", api, method, expected, message)
 				}
