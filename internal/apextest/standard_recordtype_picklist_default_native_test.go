@@ -96,8 +96,14 @@ func runRecordTypePicklistDefaultFixture(t *testing.T, fixture, gladeYML string,
 				if strings.Contains(istest[api], method+"=") && !strings.Contains(istest[api], "Assertion Failed: "+want) {
 					t.Fatalf("native istest outcome differs from anonymous for %s: %s", id, istest[api])
 				}
-				if got := runAnonymousRouteProbe(t, index, api, read(cases[id])); !strings.Contains(got, want) {
-					t.Fatalf("NATIVE standard_recordtype*/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
+				// glade.yml test.permissionSets grants field access to test
+				// runs only; the anonymous route cannot read the custom field
+				// P__c without it, where the native capture assigned the set
+				// to the running user. The IsTest route below covers x_rt.
+				if !(id == "x_rt" && strings.Contains(gladeYML, "permissionSets")) {
+					if got := runAnonymousRouteProbe(t, index, api, read(cases[id])); !strings.Contains(got, want) {
+						t.Fatalf("NATIVE standard_recordtype*/org.tsv %s anonymous: want %q; Glade %q", api, want, got)
+					}
 				}
 				if strings.Contains(istest[api], method+"=") {
 					if got := runIsTestRouteProbe(t, index, "R5RtProbe", method); !strings.Contains(got, want) {

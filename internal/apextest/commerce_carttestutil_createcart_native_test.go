@@ -75,3 +75,27 @@ func TestCommerceCartTestUtilCreateCartNativeConformance(t *testing.T) {
 		}
 	}
 }
+
+// NATIVE rows: testdata/conformance/commerce_carttestutil_createcart/org-anonymous.tsv.
+// Anonymous Apex cannot call the test utility: Salesforce throws a
+// TypeException ("Cannot call test methods in non-test context") at 62.0 and
+// 67.0. Glade's anonymous route still returns a cart; that difference is
+// recorded, not modelled, because VM unit tests build carts outside a test
+// context.
+func TestCommerceCartTestUtilCreateCartAnonymousRouteRecorded(t *testing.T) {
+	body, err := os.ReadFile("testdata/conformance/commerce_carttestutil_createcart/org-anonymous.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, row := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
+		cols := strings.Split(row, "\t")
+		if len(cols) >= 9 && cols[0] == "cart" && cols[2] == "anonymous" && strings.Contains(cols[5], "System.TypeException&#124;Cannot call test methods in non-test context") {
+			seen[cols[1]] = true
+		}
+	}
+	if !seen["62.0"] || !seen["67.0"] {
+		t.Fatalf("native anonymous rows missing: %v", seen)
+	}
+	t.Skip("Glade's anonymous createCart() returns a cart where Salesforce throws TypeException; not modelled")
+}
