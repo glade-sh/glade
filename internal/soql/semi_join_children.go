@@ -86,11 +86,11 @@ func conjunctiveChildSemiJoinSupported(parent, query Query) bool {
 	}
 	joins := 0
 	for _, condition := range terms {
-		if condition.Not || condition.Parenthesized || condition.Field == "" || strings.Contains(condition.Field, ".") || condition.Range || len(condition.And) != 0 || len(condition.Or) != 0 || condition.Formula != nil {
+		if condition.Not || condition.Parenthesized || condition.Field == "" || condition.Range || len(condition.And) != 0 || len(condition.Or) != 0 || condition.Formula != nil {
 			return false
 		}
 		if condition.Subquery != nil {
-			if !strings.EqualFold(condition.Op, "IN") && !strings.EqualFold(condition.Op, "NOT IN") || len(condition.Subquery.Fields) != 1 {
+			if !strings.EqualFold(condition.Op, "IN") && !strings.EqualFold(condition.Op, "NOT IN") || len(condition.Subquery.Fields) != 1 || strings.Contains(condition.Field, ".") {
 				return false
 			}
 			joins++

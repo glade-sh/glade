@@ -60,7 +60,7 @@ func TestChildSemiJoinSiblingUncapturedModifiersRejected(t *testing.T) {
 	const base = "SELECT Id, (SELECT Id FROM Contacts WHERE Email != null), (SELECT Id, Name FROM Opportunities WHERE StageName = 'Prospecting' AND Id IN (SELECT OpportunityId FROM OpportunityContactRole WHERE Role = 'Decision Maker') LIMIT 1), (SELECT Id FROM Cases LIMIT 1) FROM Account"
 	for _, tc := range []struct{ name, query string }{
 		{"parent_limit", base + " LIMIT 1"},
-		{"anti_join", strings.Replace(base, "Id IN (SELECT OpportunityId", "Id NOT IN (SELECT OpportunityId", 1)},
+		{"dotted_join_field", strings.Replace(base, "Id IN (SELECT OpportunityId", "Account.Id IN (SELECT OpportunityId", 1)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := Parse(tc.query)
@@ -95,5 +95,20 @@ func TestChildSemiJoinSiblingConstructedModifierRejections(t *testing.T) {
 				t.Fatalf("execution = %v", err)
 			}
 		})
+	}
+}
+
+// NATIVE internal/apextest/testdata/conformance/child_semijoin_matrix: Salesforce rejects a
+// child semi-join joined by OR or inside a nested group at 62.0 and 67.0.
+func TestChildSemiJoinMatrixNativeRejectionsStayRejected(t *testing.T) {
+	const join = "Id IN (SELECT OpportunityId FROM OpportunityContactRole)"
+	for _, where := range []string{
+		join + " OR StageName = 'Closed Won'",
+		"(" + join + " OR StageName = 'Closed Won') AND Name != null",
+	} {
+		query := "SELECT Id, (SELECT Id FROM Opportunities WHERE " + where + "), (SELECT Id FROM Contacts) FROM Account"
+		if _, err := Parse(query); err == nil {
+			t.Fatalf("accepted %q", where)
+		}
 	}
 }

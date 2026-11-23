@@ -24,7 +24,7 @@
 - French and German date-time weekday tokens for pre-1583 dates now follow captured hybrid-calendar results at Apex API 62.0 and 67.0.
 - Captured zero-width matcher searches and replacements, split-surrogate regions, and default-limit empty-pattern splitting now follow UTF-16 boundaries at Apex API 62.0 and 67.0.
 
-- Child relationship queries with the captured conjunctive semi-join and sibling query shapes now match the Salesforce results at Apex API 62.0 and 67.0.
+- A child-query WHERE may now hold one or two IN or NOT IN semi-joins beside scalar conditions, with or without a LIMIT, for any number of sibling child queries, as captured at Apex API 62.0 and 67.0. OR and nested-group semi-joins stay rejected, as in Salesforce.
 
 ### Changes
 
