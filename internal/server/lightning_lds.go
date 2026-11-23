@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -45,7 +44,7 @@ func writeLDSRecordResponse(w http.ResponseWriter, data any, wireErr *lwcbrowser
 			"statusText": statusText,
 		}
 	}
-	_ = json.NewEncoder(w).Encode(map[string]any{"data": data, "error": responseError})
+	_ = writeServerJSON(w, map[string]any{"data": data, "error": responseError})
 }
 
 func recordDMLWireError(definition storage.ObjectDefinition, result dml.Result, operation string, inputs ...map[string]any) *lwcbrowser.WireError {

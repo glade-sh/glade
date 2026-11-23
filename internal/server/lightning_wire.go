@@ -471,7 +471,7 @@ func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http
 	// An empty envelope leaves both wire values undefined.
 	if data["apiName"] != req.ObjectAPIName {
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(struct{}{})
+		_ = writeServerJSON(w, struct{}{})
 		return
 	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
@@ -2060,5 +2060,5 @@ func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName stri
 
 func writeWireJSON(w http.ResponseWriter, payload lwcbrowser.WireResponse) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(payload)
+	_ = writeServerJSON(w, payload)
 }

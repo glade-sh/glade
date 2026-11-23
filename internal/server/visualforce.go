@@ -707,7 +707,7 @@ func (s *Server) renderVisualforceAjaxResponse(w http.ResponseWriter, pageURL st
 		response.Redirect = result.RedirectURL
 	}
 	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(response); err != nil {
+	if err := writeServerJSON(&body, response); err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, err.Error())
 		return
 	}
