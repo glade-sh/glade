@@ -28,7 +28,7 @@ func TestFlowRecordLookupParentRefNativeConformance(t *testing.T) {
 	}
 	rows := strings.Split(strings.TrimSpace(read("org.tsv")), "\n")
 	apex := read("run.apex")
-	if !strings.Contains(apex, "System.debug('R5|lookup|' + s);") {
+	if !strings.Contains(apex, "System.debug('R5|lookup|' + String.join(rows, ','));") {
 		t.Fatal("fixture apex changed")
 	}
 	wantByAPI := map[string]string{}
@@ -63,7 +63,7 @@ func TestFlowRecordLookupParentRefNativeConformance(t *testing.T) {
 				t.Fatal(err)
 			}
 			probe := "@IsTest private class FlowLookupProbe { @IsTest static void observe() {\n" +
-				strings.ReplaceAll(apex, "System.debug('R5|lookup|' + s);", "System.assert(false, 'R5|lookup|' + s);") + "\n} }"
+				strings.ReplaceAll(apex, "System.debug('R5|lookup|' + String.join(rows, ','));", "System.assert(false, 'R5|lookup|' + String.join(rows, ','));") + "\n} }"
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/FlowLookupProbe.cls"), probe)
 			index := loadTestIndex(t, root)
 			run := Run(index, Options{SelectedClasses: []string{"FlowLookupProbe"}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
