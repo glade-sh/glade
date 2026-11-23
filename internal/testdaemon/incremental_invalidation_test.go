@@ -125,7 +125,8 @@ func TestDaemonInvalidationMatchesCold(t *testing.T) {
 				apextest.InvalidateRuntimeCaches()
 				warmErr := d.Warm()
 				if strings.HasPrefix(name, "hydration") {
-					if stats := d.semaState.LastStats(); !stats.Incremental || stats.Reused == 0 {
+					// Removing the only provider is settled by a full analysis.
+					if stats := d.semaState.LastStats(); name == "hydration-reader" && (!stats.Incremental || stats.Reused == 0) {
 						t.Fatalf("warm after %s edit did not reuse semantic checks: %+v", name, stats)
 					}
 					if flipped := warmErr != nil && strings.Contains(warmErr.Error(), "InstallDate"); flipped != (name == "hydration-provider") {

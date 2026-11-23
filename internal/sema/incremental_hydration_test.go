@@ -6,8 +6,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // incrementalHydrationProject writes types whose diagnostics depend on what an
@@ -98,12 +96,14 @@ func TestIncrementalHydrationHistoryAcrossTypes(t *testing.T) {
 			}
 			// The only provider stops hydrating Asset: both readers flip.
 			edit("AHydrator.cls", incrementalHydratorSource(false))
+			// The rechecked readers' "unknown" answers name a field a type once
+			// added, which only a full analysis settles.
 			got, stats := analyze("provider removed")
 			if !incrementalHasCode(got, "BReader.cls", missing) || !incrementalHasCode(got, "DReader.cls", missing) {
 				t.Fatalf("provider removed: readers do not report %q: %v", missing, got.Diagnostics)
 			}
-			if !stats.Incremental || stats.Reused == 0 {
-				t.Fatalf("provider removed stats = %+v, want an incremental run that reuses CPlain", stats)
+			if stats.Incremental {
+				t.Fatalf("provider removed stats = %+v, want a full analysis", stats)
 			}
 			// The provider returns: the cached "unknown" answers flip back.
 			edit("AHydrator.cls", incrementalHydratorSource(true))
@@ -138,48 +138,52 @@ func TestIncrementalHydrationHistoryAcrossTypes(t *testing.T) {
 
 func TestSemaValidateHydration(t *testing.T) {
 	record := func(typeIndex int, yes, no, self []string) *semaTypeHydration {
-		rec := &semaTypeHydration{typeIndex: typeIndex, touched: map[string]map[string]typesys.MemberSymbol{}}
+		rec := &semaTypeHydration{typeIndex: typeIndex}
 		for _, name := range yes {
 			semaAddName(&rec.yes, name)
 		}
 		for _, name := range no {
 			semaAddName(&rec.no, name)
 		}
-		fields := map[string]typesys.MemberSymbol{}
 		for _, name := range self {
 			semaAddName(&rec.self, name)
-			fields[name] = typesys.MemberSymbol{}
 		}
-		rec.touched["entry"] = fields
 		return rec
 	}
 	pre := map[string]struct{}{"prefield": {}}
 	// A reused "known" answer needs an earlier source.
 	records := []*semaTypeHydration{record(0, nil, nil, []string{"f"}), record(1, []string{"f", "prefield"}, nil, nil)}
-	if check := semaValidateHydration(records, []bool{false, false}, pre); check.reruns != 0 || check.conflict || check.firstSelf["f"] != 0 {
+	if check := semaValidateHydration(records, []bool{false, false}, pre, nil); check.reruns != 0 || check.conflict || check.firstSelf["f"] != 0 {
 		t.Fatalf("earlier source: %+v", check)
 	}
 	records = []*semaTypeHydration{record(0, []string{"f"}, nil, nil), record(1, nil, nil, []string{"f"})}
-	if check := semaValidateHydration(records, []bool{false, false}, pre); !check.rerun[0] || check.reruns != 1 {
+	if check := semaValidateHydration(records, []bool{false, false}, pre, nil); !check.rerun[0] || check.reruns != 1 {
 		t.Fatalf("later source must not settle an earlier answer: %+v", check)
 	}
-	// A reused "unknown" answer fails once an earlier type touches the field.
+	// A reused "unknown" answer fails once an earlier type provides the field.
 	records = []*semaTypeHydration{record(0, nil, nil, []string{"f"}), record(1, nil, []string{"f"}, nil)}
-	if check := semaValidateHydration(records, []bool{true, false}, pre); !check.rerun[1] || check.conflict {
+	if check := semaValidateHydration(records, []bool{true, false}, pre, nil); !check.rerun[1] || check.conflict {
 		t.Fatalf("contradicted unknown: %+v", check)
 	}
-	// A rechecked "unknown" answer that an earlier type touched but did not
-	// make visible cannot be settled.
+	// An "unknown" answer for a field no type adds stands.
+	records = []*semaTypeHydration{record(0, nil, nil, []string{"g"}), record(1, nil, []string{"f"}, nil)}
+	if check := semaValidateHydration(records, []bool{false, false}, pre, nil); check.reruns != 0 || check.conflict {
+		t.Fatalf("uncontested unknown: %+v", check)
+	}
+	// A rechecked "unknown" answer for a field an earlier generation saw added,
+	// with no earlier source now, cannot be settled.
 	records = []*semaTypeHydration{record(0, nil, nil, nil), record(1, nil, []string{"f"}, nil)}
-	records[0].touched["entry"] = map[string]typesys.MemberSymbol{"f": {}}
-	if check := semaValidateHydration(records, []bool{false, true}, pre); !check.conflict {
+	if check := semaValidateHydration(records, []bool{false, true}, pre, map[string]struct{}{"f": {}}); !check.conflict {
 		t.Fatalf("unsettled rechecked unknown: %+v", check)
 	}
 	// An invalid rechecked type taints later types of its worker and round.
 	records = []*semaTypeHydration{record(0, nil, nil, []string{"f"}), record(1, nil, []string{"f"}, nil), record(2, nil, nil, nil), record(3, nil, nil, nil)}
 	records[3].worker = 1
-	check := semaValidateHydration(records, []bool{false, true, true, true}, pre)
+	check := semaValidateHydration(records, []bool{false, true, true, true}, pre, nil)
 	if !check.rerun[1] || !check.rerun[2] || check.rerun[3] || check.reruns != 2 {
 		t.Fatalf("taint: %+v", check)
+	}
+	if ever := semaEverVisible(map[string]struct{}{"old": {}}, pre, records); len(ever) != 3 {
+		t.Fatalf("ever-visible set = %v", ever)
 	}
 }

@@ -207,22 +207,21 @@ func TestIncrementalDependencyInvalidation(t *testing.T) {
 	if run.digestsOK || run.reason != "missing captured source" {
 		t.Fatalf("missing source: digestsOK=%v reason=%q", run.digestsOK, run.reason)
 	}
-	touched := &semaTypeHydration{touched: map[string]map[string]typesys.MemberSymbol{"asset": {"installdate": {}}}}
-	run = incrementalRun{later: &semaLaterHistory{}, hydration: []*semaTypeHydration{nil, touched}}
+	run = incrementalRun{later: &semaLaterHistory{}, ever: map[string]struct{}{"installdate": {}}}
 	if run.later.answer("installdate") {
 		t.Fatal("later history answered known without a visible source")
 	}
 	run.finish()
 	if !run.fallback {
-		t.Fatal("a later unknown answer for a touched field did not force a full analysis")
+		t.Fatal("a later unknown answer for a field a type can add did not force a full analysis")
 	}
-	run = incrementalRun{later: &semaLaterHistory{visible: map[string]int{"installdate": 1}}, hydration: []*semaTypeHydration{touched}}
+	run = incrementalRun{later: &semaLaterHistory{visible: map[string]int{"installdate": 1}}, ever: map[string]struct{}{"installdate": {}}}
 	if !run.later.answer("installdate") || run.later.answer("nosuchfield") {
 		t.Fatal("later history answers differ from the recorded sources")
 	}
 	run.finish()
 	if run.fallback {
-		t.Fatal("a later unknown answer for an untouched field forced a full analysis")
+		t.Fatal("a later unknown answer for a field no type adds forced a full analysis")
 	}
 }
 

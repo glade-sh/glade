@@ -67,8 +67,10 @@ type incrementalSnapshot struct {
 	indexDigest [sha256.Size]byte
 	typeDigests [][sha256.Size]byte
 	typeDiags   [][]diagnostic.Diagnostic
-	// typeHydration holds each type's body-pass hydration record.
+	// typeHydration holds each type's body-pass hydration record, and ever
+	// every hydrated field any generation so far saw made visible.
 	typeHydration []*semaTypeHydration
+	ever          map[string]struct{}
 }
 
 // incrementalRun is the per-call working state threaded through one analysis.
@@ -96,6 +98,7 @@ type incrementalRun struct {
 	// they make visible; the passes after the body pass answer from both.
 	hydration []*semaTypeHydration
 	visible   map[string]int
+	ever      map[string]struct{}
 	later     *semaLaterHistory
 }
 
@@ -349,9 +352,12 @@ func (r *incrementalRun) armLaterPasses(state *semaTypeMemberState) {
 // finish closes a successful analysis.
 func (r *incrementalRun) finish() {
 	if r.later != nil {
-		if missing := r.later.missingNames(); len(missing) != 0 && semaTouchedAny(r.hydration, missing) {
-			r.fallback = true
-			r.snapshot = nil
+		for name := range r.later.missingNames() {
+			if _, possible := r.ever[name]; possible {
+				r.fallback = true
+				r.snapshot = nil
+				break
+			}
 		}
 	}
 	r.finished = true
@@ -399,6 +405,10 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 	rechecked := make([]bool, typeCount)
 	include := func(typeIndex int) bool { return incr.recheck == nil || incr.recheck[typeIndex] }
 	var oracle map[string]int
+	var ever map[string]struct{}
+	if incr.prev != nil {
+		ever = incr.prev.ever
+	}
 	if incr.recheck != nil {
 		// The reused types' records give the first round its oracle.
 		for typeIndex := range records {
@@ -406,7 +416,7 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 				records[typeIndex] = incr.prev.typeHydration[typeIndex]
 			}
 		}
-		oracle = semaValidateHydration(records, rechecked, preFields).firstSelf
+		oracle = semaValidateHydration(records, rechecked, preFields, ever).firstSelf
 	}
 	workers := semaMethodBodyWorkerCount()
 	var check semaHydrationCheck
@@ -429,7 +439,7 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 				records[typeIndex] = roundRecords[typeIndex]
 			}
 		}
-		check = semaValidateHydration(records, rechecked, preFields)
+		check = semaValidateHydration(records, rechecked, preFields, ever)
 		if check.conflict || (check.reruns != 0 && round == semaIncrementalMaxRounds) {
 			return giveUp()
 		}
@@ -448,6 +458,7 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 		typeDigests:   incr.typeDigests,
 		typeDiags:     make([][]diagnostic.Diagnostic, typeCount),
 		typeHydration: records,
+		ever:          semaEverVisible(ever, preFields, records),
 	}
 	stats := IncrementalStats{Incremental: incr.reuseOK, Reason: incr.reason}
 	byType := make([][]diagnostic.Diagnostic, typeCount)
@@ -473,6 +484,7 @@ func (a *Analyzer) checkMethodBodiesIncremental(index typesys.Index, model *sema
 	incr.snapshot = snapshot
 	incr.hydration = records
 	incr.visible = check.firstSelf
+	incr.ever = snapshot.ever
 	incr.stats = stats
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.MethodBodies, started)

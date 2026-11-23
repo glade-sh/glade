@@ -1,10 +1,6 @@
 package sema
 
-import (
-	"sync"
-
-	"github.com/glade-sh/glade/internal/typesys"
-)
+import "sync"
 
 // A serial body pass carries one member view through every type, so a type
 // can see entries that earlier types hydrated. semaAnyKnownField is the only
@@ -16,7 +12,9 @@ import (
 //
 // Two bounds drive it. A field in the self set of an earlier valid type is
 // visible on the serial history: that type adds it whenever its own answers
-// are unchanged. A field no earlier type touched is not visible. A "known"
+// are unchanged. A field that no type has ever made visible, in this or any
+// earlier generation of the state, is not visible: every hydrated field was
+// first added by some type or by the passes before the bodies. A "known"
 // answer needs the first bound; an "unknown" answer needs the second.
 
 // semaHydrationTrace attributes one worker view's hydration to the type the
@@ -50,9 +48,6 @@ type semaTypeHydration struct {
 	no map[string]struct{}
 	// self holds field names this type made visible first in its view.
 	self map[string]struct{}
-	// touched holds, per hydration key, the field map this type last read or
-	// stored. Entries are replaced, never edited in place.
-	touched map[string]map[string]typesys.MemberSymbol
 }
 
 func newSemaHydrationTrace(pre map[string]struct{}, oracle map[string]int, worker, round int) *semaHydrationTrace {
@@ -60,12 +55,7 @@ func newSemaHydrationTrace(pre map[string]struct{}, oracle map[string]int, worke
 }
 
 func (t *semaHydrationTrace) begin(typeIndex int) *semaTypeHydration {
-	t.cur = &semaTypeHydration{
-		typeIndex: typeIndex,
-		worker:    t.worker,
-		round:     t.round,
-		touched:   make(map[string]map[string]typesys.MemberSymbol),
-	}
+	t.cur = &semaTypeHydration{typeIndex: typeIndex, worker: t.worker, round: t.round}
 	return t.cur
 }
 
@@ -79,13 +69,7 @@ func semaHydratedFieldSet(view *semaTypeMemberView) map[string]struct{} {
 	return out
 }
 
-func (t *semaHydrationTrace) touch(key string, fields map[string]typesys.MemberSymbol) {
-	if t.cur != nil {
-		t.cur.touched[key] = fields
-	}
-}
-
-func (t *semaHydrationTrace) store(key string, previous typeMembers, replaced bool, members typeMembers) {
+func (t *semaHydrationTrace) store(previous typeMembers, replaced bool, members typeMembers) {
 	if replaced {
 		for name := range previous.fields {
 			if _, ok := members.fields[name]; !ok {
@@ -108,7 +92,6 @@ func (t *semaHydrationTrace) store(key string, previous typeMembers, replaced bo
 			t.cur.self[name] = struct{}{}
 		}
 	}
-	t.touch(key, members.fields)
 }
 
 // answer records one semaAnyKnownField answer for the current type and
@@ -168,22 +151,43 @@ type semaHydrationCheck struct {
 }
 
 // semaValidateHydration walks the types in serial order. pre is the hydrated
-// field set the serial body pass starts with. A reused type is valid when its
-// "known" answers have a visible source and its "unknown" answers have none.
-// A rechecked type ran on pre plus earlier types of its own worker, which the
-// serial view also holds, so its "known" view answers stand; its assumed and
-// "unknown" answers are checked like a reused type's. A rechecked type that is
-// not valid may have hydrated what the serial pass does not, so every later
-// type of the same worker and round runs again too.
-func semaValidateHydration(records []*semaTypeHydration, rechecked []bool, pre map[string]struct{}) semaHydrationCheck {
+// field set the serial body pass starts with; ever holds every field an
+// earlier generation saw made visible. A reused type is valid when its
+// "known" answers have a visible source and its "unknown" answers name no
+// field that any type can make visible. A rechecked type ran on pre plus
+// earlier types of its own worker, which the serial view also holds, so its
+// "known" view answers stand; its assumed and "unknown" answers are checked
+// like a reused type's. A rechecked type that is not valid may have hydrated
+// what the serial pass does not, so every later type of the same worker and
+// round runs again too.
+func semaValidateHydration(records []*semaTypeHydration, rechecked []bool, pre, ever map[string]struct{}) semaHydrationCheck {
 	check := semaHydrationCheck{rerun: make([]bool, len(records)), firstSelf: make(map[string]int)}
-	noNames := map[string]bool{}
+	// An "unknown" answer can be wrong only for a field some type adds.
+	possible := func(name string) bool {
+		if _, ok := pre[name]; ok {
+			return true
+		}
+		if _, ok := ever[name]; ok {
+			return true
+		}
+		for _, rec := range records {
+			if rec != nil {
+				if _, ok := rec.self[name]; ok {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	contested := map[string]bool{}
 	for _, rec := range records {
 		if rec == nil {
 			continue
 		}
 		for name := range rec.no {
-			_, noNames[name] = pre[name]
+			if _, done := contested[name]; !done {
+				contested[name] = possible(name)
+			}
 		}
 	}
 	visible := func(name string) bool {
@@ -218,7 +222,7 @@ func semaValidateHydration(records []*semaTypeHydration, rechecked []bool, pre m
 		}
 		if valid {
 			for name := range rec.no {
-				if !noNames[name] {
+				if !contested[name] {
 					continue
 				}
 				if rechecked[typeIndex] && !visible(name) {
@@ -242,24 +246,34 @@ func semaValidateHydration(records []*semaTypeHydration, rechecked []bool, pre m
 				check.firstSelf[name] = typeIndex
 			}
 		}
-		if len(noNames) != 0 {
-			for _, fields := range rec.touched {
-				for name := range noNames {
-					if _, ok := fields[name]; ok {
-						noNames[name] = true
-					}
-				}
+	}
+	return check
+}
+
+// semaEverVisible extends ever with pre and every record's self set.
+func semaEverVisible(ever, pre map[string]struct{}, records []*semaTypeHydration) map[string]struct{} {
+	out := make(map[string]struct{}, len(ever)+len(pre))
+	for name := range ever {
+		out[name] = struct{}{}
+	}
+	for name := range pre {
+		out[name] = struct{}{}
+	}
+	for _, rec := range records {
+		if rec != nil {
+			for name := range rec.self {
+				out[name] = struct{}{}
 			}
 		}
 	}
-	return check
+	return out
 }
 
 // semaLaterHistory answers semaAnyKnownField in the passes after an
 // incremental body pass. The view there holds only the pre-body history; a
 // field some valid type made visible is "known", as on the serial history.
-// Any other "unknown" answer is kept for finish, which accepts it only when
-// no type touched that field.
+// Any other "unknown" answer is kept for finish, which accepts it only for a
+// field no type has made visible.
 type semaLaterHistory struct {
 	visible map[string]int
 	mu      sync.Mutex
@@ -280,22 +294,4 @@ func (h *semaLaterHistory) missingNames() map[string]struct{} {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.missing
-}
-
-// semaTouchedAny reports whether any record touched an entry holding one of
-// names.
-func semaTouchedAny(records []*semaTypeHydration, names map[string]struct{}) bool {
-	for _, rec := range records {
-		if rec == nil {
-			continue
-		}
-		for _, fields := range rec.touched {
-			for name := range names {
-				if _, ok := fields[name]; ok {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }

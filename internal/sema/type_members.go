@@ -251,9 +251,6 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		return members, true
 	}
 	if members, ok := v.hydrated[key]; ok {
-		if v.trace != nil {
-			v.trace.touch(key, members.fields)
-		}
 		return members, true
 	}
 	if v.state.base != nil && v.sourceUnit != "" {
@@ -272,7 +269,7 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			if v.trace != nil {
-				v.trace.store(key, typeMembers{}, false, members)
+				v.trace.store(typeMembers{}, false, members)
 			}
 			v.hydrated[key] = members
 			if v.state.unknownHistory != nil {
@@ -317,7 +314,7 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 	}
 	if v.trace != nil {
 		previous, replaced := v.hydrated[key]
-		v.trace.store(key, previous, replaced, members)
+		v.trace.store(previous, replaced, members)
 	}
 	v.hydrated[key] = members
 	if v.state.unknownHistory != nil {
