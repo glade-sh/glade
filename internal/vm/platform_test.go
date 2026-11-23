@@ -3760,7 +3760,7 @@ func TestExecPlatformHelperTailSafeDefaults(t *testing.T) {
 	cases := []string{`
 CartExtension.PlaceOrderResponse placeOrder =
 	new CartExtension.CheckoutPlaceOrder().validate(
-		new CartExtension.PlaceOrderRequest(CartExtension.CartTestUtil.createCart()),
+		new CartExtension.PlaceOrderRequest(new CartExtension.Cart()),
 		new List<String>()
 	);
 System.assertNotEquals(null, placeOrder);
