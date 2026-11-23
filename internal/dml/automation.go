@@ -4154,6 +4154,9 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 		return false, false
 	}
 	sourceValue, ok := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+	if !ok && frame != nil && frame.saveDecisions {
+		sourceValue, ok = e.flowRefsLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+	}
 	if !ok {
 		return false, false
 	}
