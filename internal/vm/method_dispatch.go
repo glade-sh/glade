@@ -264,6 +264,18 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		strings.EqualFold(apexMethodMemberName(method.Name), "processClientRequest") {
 		return Null, newExceptionError("UnsupportedOperationException", method.Name+" local stub surface")
 	}
+	if method.IsStatic && vm.testContext == nil && len(commerceClassName) == len("CartExtension.CartTestUtil") && strings.EqualFold(commerceClassName, "CartExtension.CartTestUtil") {
+		if name := apexMethodMemberName(method.Name); strings.EqualFold(name, "createCart") || strings.EqualFold(name, "getCart") {
+			// commerce_inventory_request_getters/org.tsv (invanon), commerce_cart_custom_fields/org.tsv (cfanon) and commerce_cartutil_anonymous/org.tsv, API 62.0 and 67.0.
+			return Null, newExceptionError("System.TypeException", "Cannot call test methods in non-test context")
+		}
+	}
+	if vm.testContext != nil && receiver.Kind == ValueObject && strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
+		!strings.EqualFold(receiver.Type, "CartExtension.CheckoutPlaceOrder") && strings.EqualFold(apexMethodMemberName(method.Name), "validate") {
+		// An inherited platform validate on a project subclass fails like super.validate
+		// (commerce_place_order_super_validate/org.tsv deep rows, API 62.0 and 67.0).
+		return Null, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+	}
 	if strings.EqualFold(commerceClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(commerceClassName, apexMethodMemberName(method.Name)) {
 		if method.ClassName == "" {
@@ -792,6 +804,12 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 				return value, true, err
 			}
 			return Null, true, unsupportedCallError(callee)
+		}
+		if strings.HasPrefix(target.ClassName, "CartExtension.") && !strings.HasPrefix(class.SuperClass, "CartExtension.") {
+			// A deeper subclass reaches the platform class through a project parent.
+			if value, handled, err := vm.callCartExtensionCalculatorSuperOf(target.ClassName, receiver, method, args); handled || err != nil {
+				return value, true, err
+			}
 		}
 		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
 			return Null, true, err

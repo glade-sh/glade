@@ -31,6 +31,10 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
 		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
 		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},
+		{dir: "commerce_place_order_super_validate", class: "R5PoProbe", methods: []string{"domains", "withMock"}},
+		{dir: "commerce_inventory_request_getters", class: "R5InvProbe", methods: []string{"sizes"}},
+		{dir: "commerce_place_order_deep_subclass", class: "R5PoDeep", methods: []string{"deep"}},
+		{dir: "commerce_cart_custom_fields", class: "R5OgProbe", methods: []string{"custom"}},
 	}
 	outcome := regexp.MustCompile(`(?:^|; )(\w+)=(?:Fail|Pass) `)
 	for _, f := range fixtures {
@@ -46,6 +50,9 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		}
 		for _, row := range strings.Split(strings.TrimSpace(read("org.tsv")), "\n")[1:] {
 			cols := strings.Split(row, "\t")
+			if len(cols) >= 3 && cols[2] == "anonymous" {
+				continue // asserted through exec in internal/gladecli
+			}
 			if len(cols) < 9 || cols[2] != "istest" || cols[3] != "true" {
 				t.Fatalf("invalid native row in %s: %s", f.dir, row)
 			}
@@ -69,6 +76,9 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 					dir := t.TempDir()
 					writeFile(t, filepath.Join(dir, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 					writeFile(t, filepath.Join(dir, "config/project-scratch-def.json"), read("project-scratch-def.json"))
+					if body, err := os.ReadFile(filepath.Join(root, "assign-permsets.txt")); err == nil {
+						writeFile(t, filepath.Join(dir, "glade.yml"), "test:\n  permissionSets: ["+strings.Join(strings.Fields(string(body)), ", ")+"]\n")
+					}
 					err := filepath.WalkDir(filepath.Join(root, "project/force-app"), func(path string, entry fs.DirEntry, err error) error {
 						if err != nil || entry.IsDir() {
 							return err

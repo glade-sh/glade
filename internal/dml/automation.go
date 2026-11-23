@@ -1994,7 +1994,7 @@ func (e *Engine) executeFlowRecordCreateCollection(create storage.FlowRecordCrea
 	if !ok {
 		return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s references unknown collection %s", create.Name, create.InputReference)
 	}
-	targetName, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
+	targetName, ok := e.flowCreateTargetObjectName(create.ObjectName)
 	if !ok {
 		return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
 	}
@@ -2015,7 +2015,7 @@ func (e *Engine) executeFlowRecordCreateCollection(create storage.FlowRecordCrea
 }
 
 func (e *Engine) executeFlowRecordCreateRecord(create storage.FlowRecordCreate, source storage.Record) (storage.ID, error) {
-	targetName, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
+	targetName, ok := e.flowCreateTargetObjectName(create.ObjectName)
 	if !ok {
 		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
 	}
@@ -3473,7 +3473,7 @@ func (e *Engine) applyFlowRecordLookupStep(lookup storage.FlowRecordLookup, sour
 }
 
 func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition, lookupOutputs map[string]flowLookupOutput, nullFields ...map[string]bool) (storage.ID, error) {
-	targetName, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
+	targetName, ok := e.flowCreateTargetObjectName(create.ObjectName)
 	if !ok {
 		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
 	}
@@ -4373,7 +4373,9 @@ func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCri
 		resolved.targetField, resolved.fieldOK = storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
 		if resolved.fieldOK && resolved.targetField != "" {
 			resolved.value, resolved.valueOK = e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
-			if !resolved.valueOK && frame != nil && strings.EqualFold(frame.afterSaveTrigger, "Create") {
+			if !resolved.valueOK && frame != nil && frame.saveDecisions {
+				// Create and Update after-save frames agree, with a missing parent
+				// reading as null (flow_record_lookup_parent_ref/org.tsv, 62.0 and 67.0).
 				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
 			}
 			if !resolved.valueOK && frame != nil && frame.saveDecisions {
@@ -5084,4 +5086,20 @@ func flowBeforeSaveFault(rule storage.FlowRule, err error) error {
 		return &flowCustomErrorFailure{cause: fault}
 	}
 	return err
+}
+
+// flowCreateTargetObjectName resolves a Create Records target. A known standard
+// object the Apex text never named (PricebookEntry in a flow run from an
+// anonymous script) is materialized on first use; native creates the record
+// (flow_create_unset_variable_reference/org.tsv anonymous row, API 62.0 and 67.0).
+func (e *Engine) flowCreateTargetObjectName(name string) (string, bool) {
+	if resolved, ok := storage.ResolveObjectName(*e.Org, name); ok {
+		return resolved, true
+	}
+	// Only the objects the rows cover; every other object keeps its error.
+	if !strings.EqualFold(name, "PricebookEntry") && !strings.EqualFold(name, "Pricebook2") || !storage.IsKnownStandardObject(name) {
+		return "", false
+	}
+	storage.EnsureStandardObject(e.Org, name)
+	return storage.ResolveObjectName(*e.Org, name)
 }

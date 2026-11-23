@@ -286,6 +286,9 @@ func (vm *VM) callCartLoadedDefaults(receiver Value, method string, args []Value
 			}
 		}
 	}
+	if value, handled, err := vm.callCartCustomField(receiver, method, args); handled || err != nil {
+		return value, handled, err
+	}
 	if len(args) != 0 {
 		return Null, false, nil
 	}
@@ -374,4 +377,98 @@ func bindCartValidationOutputRelatedEntity(object *Value, args []Value) {
 	if _, id, ok := objectFieldValue(args[2], "id"); ok && id.Kind != ValueNull {
 		object.Fields["relatedEntityId"] = id
 	}
+}
+
+// bindCommerceInventoryConstructorAliases exposes the collections two
+// commerce_inventory request classes take in their constructors under the
+// names their getters read (commerce_inventory_request_getters/org.tsv,
+// API 62.0 and 67.0: getItems and getItemInventoryLevelRequests return them).
+func bindCommerceInventoryConstructorAliases(object *Value) {
+	if object == nil || object.Kind != ValueObject || object.Fields == nil {
+		return
+	}
+	var from, to string
+	switch {
+	case strings.EqualFold(object.Type, "commerce_inventory.UpsertItemReservationRequest"):
+		// A null associatedProducts argument reads back as an empty list.
+		if value, ok := object.Fields["associatedProducts"]; !ok || value.Kind == ValueNull {
+			object.Fields["associatedProducts"] = typedList("List<commerce_inventory.UpsertItemReservationRequest>")
+		}
+		return
+	case strings.EqualFold(object.Type, "commerce_inventory.UpsertReservationRequest"):
+		from, to = "upsertItemReservationRequests", "items"
+	case strings.EqualFold(object.Type, "commerce_inventory.InventoryLevelsRequest"):
+		from, to = "inventoryLevelsItemRequests", "itemInventoryLevelRequests"
+	default:
+		return
+	}
+	if value, ok := object.Fields[from]; ok {
+		object.Fields[to] = value
+	}
+}
+
+var cartCustomFieldObjects = map[string]string{
+	"cartextension.cartdeliverygroup": "CartDeliveryGroup",
+	"cartextension.cartitem":          "CartItem",
+}
+
+// callCartCustomField serves getCustomField and setCustomField of a cart item
+// or delivery group (commerce_cart_custom_fields/org.tsv, API 62.0 and 67.0):
+// the name must end in __c or __s and name a field of the backing object, the
+// value is the stored field value, and a set value reads back.
+func (vm *VM) callCartCustomField(receiver Value, method string, args []Value) (Value, bool, error) {
+	object, ok := cartCustomFieldObjects[strings.ToLower(receiver.Type)]
+	if !ok || vm.Org == nil {
+		return Null, false, nil
+	}
+	getter := strings.EqualFold(method, "getCustomField") && len(args) == 1
+	setter := strings.EqualFold(method, "setCustomField") && len(args) == 2
+	if !getter && !setter {
+		return Null, false, nil
+	}
+	if args[0].Kind == ValueNull {
+		return Null, true, newExceptionError("System.IllegalArgumentException", "Name of custom field must not be null.")
+	}
+	name := strings.TrimSpace(args[0].Text)
+	lower := strings.ToLower(name)
+	if !strings.HasSuffix(lower, "__c") && !strings.HasSuffix(lower, "__s") {
+		return Null, true, newExceptionError("System.IllegalArgumentException", "Couldn't access the custom field. Try again with a custom field name ending with '__c' or '__s'.")
+	}
+	state, found := vm.Org.Objects[object]
+	if !found {
+		return Null, false, nil
+	}
+	resolved, known := storage.ResolveFieldName(state.Definition, vm.Org.Namespace, name)
+	if !known && object != "CartDeliveryGroup" {
+		// Only the delivery group's invalid-field message is captured.
+		return Null, false, nil
+	}
+	if !known {
+		return Null, true, newExceptionError("System.SObjectException", "Invalid field "+name+" for "+object)
+	}
+	key := strings.ToLower(resolved[:1]) + resolved[1:]
+	if setter {
+		receiver.Fields[key] = args[1]
+		return Null, true, nil
+	}
+	if value, present := receiver.Fields[key]; present {
+		return value, true, nil
+	}
+	return Null, true, nil
+}
+
+// commerceInventoryOutsideTestError is the failure of building one of the four
+// commerce_inventory request objects outside a test
+// (commerce_inventory_request_getters/org.tsv (invanon), commerce_cart_custom_fields/org.tsv (cfanon) and commerce_cartutil_anonymous/org.tsv, API 62.0 and 67.0). The response
+// classes construct freely.
+func (vm *VM) commerceInventoryOutsideTestError(typeName string) error {
+	if vm.testContext != nil || len(typeName) < len("commerce_inventory.") || !strings.EqualFold(typeName[:len("commerce_inventory.")], "commerce_inventory.") {
+		return nil
+	}
+	short := typeName[len("commerce_inventory."):]
+	switch strings.ToLower(short) {
+	case "upsertitemreservationrequest", "upsertreservationrequest", "inventorylevelsitemrequest", "inventorylevelsrequest":
+		return newExceptionError("System.UnsupportedOperationException", short+" cannot be constructed directly outside of a test")
+	}
+	return nil
 }

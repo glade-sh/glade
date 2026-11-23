@@ -529,7 +529,7 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 		},
 		{
 			name: "commerce inventory upsert reservation",
-			src:  `new commerce_inventory.CommerceInventoryService().upsertReservation(new commerce_inventory.UpsertReservationRequest(0, 'res-local', '001000000000001AAA', new List<commerce_inventory.UpsertItemReservationRequest>()), new commerce_inventory.InventoryReservation(), 'ALL');`,
+			src:  `new commerce_inventory.CommerceInventoryService().upsertReservation(null, new commerce_inventory.InventoryReservation(), 'ALL');`,
 			want: `unsupported call "commerce_inventory.CommerceInventoryService.upsertReservation local commerce inventory mutation surface"`,
 		},
 		{
@@ -3760,7 +3760,7 @@ func TestExecPlatformHelperTailSafeDefaults(t *testing.T) {
 	cases := []string{`
 CartExtension.PlaceOrderResponse placeOrder =
 	new CartExtension.CheckoutPlaceOrder().validate(
-		new CartExtension.PlaceOrderRequest(CartExtension.CartTestUtil.createCart()),
+		new CartExtension.PlaceOrderRequest(new CartExtension.Cart()),
 		new List<String>()
 	);
 System.assertNotEquals(null, placeOrder);
@@ -5405,8 +5405,7 @@ System.assertEquals(false, new CommerceDxSampleapp.CommerceDx_Inventory_Tutorial
 	System.assertEquals('[]', data_mask.DataMaskIntegrationUtil.getJobs());
 System.assertEquals('{}', data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local'));
 commerce_inventory.CommerceInventoryService inventoryService = new commerce_inventory.CommerceInventoryService();
-commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(
-	new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>()));
+commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(null);
 System.assertNotEquals(null, levels);
 System.assertEquals(0, levels.getItemsInventoryLevels().size());
 commerce_inventory.InventoryReservation reservation = inventoryService.getReservation('0aB000000000001AAA');
