@@ -3,22 +3,30 @@ package apextest
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
-func TestOneShotRuntimeDoesNotPublishPatchProof(t *testing.T) {
+func assertOneShotEntriesHaveNoAuthority(t *testing.T) {
+	t.Helper()
+	runtimeCacheMu.RLock()
+	defer runtimeCacheMu.RUnlock()
+	for key, entry := range runtimeCache {
+		if entry.patchAuthority != nil {
+			t.Fatalf("one-shot runtime entry %v kept a patch authority", key)
+		}
+	}
+}
+
+func TestOneShotRuntimeBuildsNoPatchProof(t *testing.T) {
 	_, summary, _ := runOneShotWorkload(t, true)
 	if summary != [2]int{1, 1} {
 		t.Fatalf("summary = %v", summary)
 	}
-	runtimeCacheMu.RLock()
-	count := len(runtimeCache)
-	runtimeCacheMu.RUnlock()
-	if count != 0 {
-		t.Fatalf("one-shot runtime published %d cache entries", count)
-	}
+	assertOneShotEntriesHaveNoAuthority(t)
 }
 
-func TestOneShotPerfRuntimeDoesNotPublishPatchProof(t *testing.T) {
+func TestOneShotPerfRuntimeBuildsNoPatchProof(t *testing.T) {
 	InvalidateRuntimeCaches()
 	t.Cleanup(InvalidateRuntimeCaches)
 	fixture := newRuntimeTransitionFixture(t)
@@ -28,10 +36,16 @@ func TestOneShotPerfRuntimeDoesNotPublishPatchProof(t *testing.T) {
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
 	}
-	runtimeCacheMu.RLock()
-	count := len(runtimeCache)
-	runtimeCacheMu.RUnlock()
-	if count != 0 {
-		t.Fatalf("one-shot perf runtime published %d cache entries", count)
+	assertOneShotEntriesHaveNoAuthority(t)
+}
+
+// A one-shot process makes no later transition, so it builds no patch
+// authority: the payload, index and source-reference proofs are skipped.
+func TestOneShotAuthoritySkipsProofs(t *testing.T) {
+	fixture := newRuntimeTransitionFixture(t)
+	writeFile(t, filepath.Join(fixture.root, "force-app/main/default/classes/OneShotWorkloadTest.cls"), oneShotWorkloadSource)
+	index, digests := fixture.fullIndex(t)
+	if authority := newRuntimePatchAuthority(index, ""), digests, &sourceCache{}, runtimeCacheEntry{}, storage.OrgState{}, true); authority != nil {
+		t.Fatal("one-shot run built a patch authority")
 	}
 }

@@ -264,6 +264,12 @@ func newRuntimePatchAuthority(index typesys.Index, key runtimeCacheKey, digests 
 }
 
 func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState, counters *runPerfCounters, oneShot bool) *runtimePatchAuthority {
+	if oneShot {
+		// A one-shot process makes no later transition, so a nil authority
+		// fails closed exactly as the old fail-closed inputs did. Skip the
+		// payload, index and source-reference proofs (about 39 ms cold).
+		return nil
+	}
 	if digests == nil || !runtimePatchDigestSetsEqual(index, digests.Digest) {
 		return nil
 	}
