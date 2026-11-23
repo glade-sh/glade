@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+community_case_dml	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException	62.0	n/a	n/a
+community_case_dml	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: describe=true,true,true,false|insert=ok|update=ok|delete=System.TypeException	67.0	n/a	n/a

@@ -15,6 +15,20 @@ import (
 // body. The synthetic method keeps diagnostics in the caller's original source
 // offsets, so consumers do not need to compensate for a wrapper class.
 func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
+	return analyzeAnonymous(index, source, apiVersion, false)
+}
+
+// AnalyzeAnonymousWithCommunityCaseDeletePolicy applies the request's captured
+// Community Case delete compile policy without changing shared analyzer state.
+func AnalyzeAnonymousWithCommunityCaseDeletePolicy(index typesys.Index, source, apiVersion string, denied bool) Result {
+	baseline := analyzeAnonymous(index, source, apiVersion, false)
+	if !denied || len(baseline.Diagnostics) != 0 {
+		return baseline
+	}
+	return analyzeAnonymous(index, source, apiVersion, true)
+}
+
+func analyzeAnonymous(index typesys.Index, source, apiVersion string, denied bool) Result {
 	rng := diagnostic.Range{Start: diagnostic.Position{Line: 1, Column: 1, Offset: 0}, End: diagnostic.Position{Line: 1, Column: 1 + len(source), Offset: len(source)}}
 	apiVersion, err := apexversion.PreserveSource(apiVersion)
 	if err != nil {
@@ -66,6 +80,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	}
 	setup := anonymousSetupFor(index, apiVersion)
 	analyzer := setup.analyzer()
+	analyzer.anonymousCommunityCaseDeleteDenied = denied && (major == 62 || major == 67) && len(program.LocalMethods) == 0
 	index = setup.index
 	model := setup.typeMembers.anonymousView()
 	typ, member := anonymousExecuteSymbols(apiVersion, rng)

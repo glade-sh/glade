@@ -1,0 +1,10 @@
+capture: private custom-object Manual Read sharing lifecycle
+apis: 62.0 67.0
+routes: istest anonymous
+org: fresh 30-day scratch org on campaign Dev Hub, deleted after the capture
+shape: private custom object, Standard User with read permission, admin-owned record, direct Manual Read share
+checkpoint: query UserRecordAccess for reader and record as administrator, and run a with-sharing count as the reader
+org.tsv: the deliberately failed test reports all three observations in its assertion message
+committed checkpoints: a second fresh 30-day scratch org; an anonymous setup creates the reader and permission set assignment, a separate anonymous transaction creates the record, then separate anonymous transactions insert and delete the share. ShareCommitTest runs after each commit at each API with SeeAllData and observes both the target UserRecordAccess row and a with-sharing reader query. The org was deleted and verified unavailable.
+anonymous checkpoints: a third fresh 30-day scratch org; setup, record insertion, share grant and revoke commit in separate anonymous transactions. observe.apex runs after each change at both APIs and reports the named UserRecordAccess row and read bit using a deliberately failed assertion. These observation transactions make no changes. The org was deleted and verified unavailable.
+mutation API distinction: the previously described committed checkpoints used API 67 for setup, record creation, share grant and revoke; observations ran at API 62 and 67. A fourth fresh 30-day scratch org repeated those mutations at API 62, with both anonymous and SeeAllData test observations at API 62 and 67 after each commit. It was deleted and verified unavailable.
