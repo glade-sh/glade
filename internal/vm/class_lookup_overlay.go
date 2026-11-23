@@ -190,6 +190,9 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 	from := o.from
 	root := from.rootGeneration()
 	written := sortedNameSet(o.written)
+	// A full build binds a key only from aliases that write it, so each key
+	// considers the written aliases that write it, in the same sorted order.
+	writtenByKey, writtenByTop := vm.indexWrittenClassLookupKeys(written)
 	keys := make(map[string]string, len(o.affected))
 	if from != root {
 		for key, alias := range from.keys {
@@ -198,7 +201,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 	}
 	for key := range o.affected {
 		previous, _ := from.resolve(key)
-		alias, ok := vm.recomputeClassLookupKey(root.contributors[key], written, key, previous)
+		alias, ok := vm.recomputeClassLookupKey(root.contributors[key], writtenByKey[key], key, previous)
 		rootAlias, inRoot := root.keys[key]
 		switch {
 		case ok && inRoot && alias == rootAlias:
@@ -222,7 +225,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 		base:          root,
 		written:       o.written,
 		searchEntries: mergeClassNameSearchEntries(from.searchEntries, o.added),
-		topLevel:      vm.patchTopLevelClassLookup(from.topLevel, root.contributors, written, o.affectedTop),
+		topLevel:      vm.patchTopLevelClassLookup(from.topLevel, root.contributors, writtenByTop, o.affectedTop),
 		copyPlan:      plan,
 	}
 	vm.frozenClassLookup = layer
@@ -234,6 +237,46 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 	vm.resetClassLookupNameCache()
 	vm.classLookup = nil
 	return true
+}
+
+// indexWrittenClassLookupKeys lists, per canonical key, the written aliases
+// whose class can bind that key (byKey: alias, name or namespace.name; byTop:
+// a dotless top-level name), keeping written's order. An alias without a class
+// binds nothing, as recomputeClassLookupKey and patchTopLevelClassLookup skip
+// it. A listed alias is still checked exactly by the caller.
+func (vm *VM) indexWrittenClassLookupKeys(written []string) (byKey, byTop map[string][]string) {
+	byKey = make(map[string][]string, len(written))
+	byTop = make(map[string][]string, len(written))
+	for _, alias := range written {
+		class, ok := vm.classEntryRaw(alias)
+		if !ok {
+			continue
+		}
+		seen := [3]string{}
+		for i, name := range [3]string{alias, class.Name, classLookupQualifiedName(class)} {
+			if i == 2 && class.Namespace == "" {
+				break
+			}
+			key := canonicalClassLookupKey(name)
+			if key == seen[0] && i > 0 || key == seen[1] && i > 1 {
+				continue
+			}
+			seen[i] = key
+			byKey[key] = append(byKey[key], alias)
+		}
+		if name := strings.TrimSpace(class.Name); name != "" && !strings.Contains(name, ".") {
+			key := canonicalClassLookupKey(name)
+			byTop[key] = append(byTop[key], alias)
+		}
+	}
+	return byKey, byTop
+}
+
+func classLookupQualifiedName(class Class) string {
+	if class.Namespace == "" {
+		return ""
+	}
+	return class.Namespace + "." + class.Name
 }
 
 // recomputeClassLookupKey returns the Classes key a full FreezeClassLookup
@@ -346,7 +389,7 @@ func classLookupKeyEquals(name, key string) bool {
 
 // patchTopLevelClassLookup returns base with the affected names recomputed as
 // rebuildTopLevelClassLookup would over vm.Classes. base is not modified.
-func (vm *VM) patchTopLevelClassLookup(base map[string]topLevelClassLookup, contributors map[string][]string, written []string, affected map[string]struct{}) map[string]topLevelClassLookup {
+func (vm *VM) patchTopLevelClassLookup(base map[string]topLevelClassLookup, contributors map[string][]string, written map[string][]string, affected map[string]struct{}) map[string]topLevelClassLookup {
 	if len(affected) == 0 {
 		return base
 	}
@@ -384,7 +427,7 @@ func (vm *VM) patchTopLevelClassLookup(base map[string]topLevelClassLookup, cont
 		for _, alias := range contributors[nameKey] {
 			visit(alias)
 		}
-		for _, alias := range written {
+		for _, alias := range written[nameKey] {
 			visit(alias)
 		}
 		if found {
