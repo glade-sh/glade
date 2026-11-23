@@ -708,14 +708,15 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 			}
 			continue
 		}
+		afterSaveUpdate := flowRuleAfterSaveUpdate(rule)
 		if !strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordBeforeSave") || !strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "CreateAndUpdate") {
 			for _, item := range branch.Criteria {
-				if flowGlobalDecisionReference(item.Field) {
+				if flowGlobalDecisionReference(item.Field) && !(afterSaveUpdate && strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name")) {
 					return storage.FlowBranch{}, false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow decision branch %s has unsupported criteria", branch.Name)
 				}
 			}
 		}
-		matches, ok := e.evaluateFlowBranch(branch, record, definition, flowRuleHasSaveDecisions(rule))
+		matches, ok := e.evaluateFlowBranchMode(branch, record, definition, flowRuleHasSaveDecisions(rule), afterSaveUpdate)
 		if !ok {
 			for _, item := range branch.Criteria {
 				reference := strings.TrimSpace(item.Field)
@@ -825,6 +826,7 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 	frame.saveDecisions, frame.priorDecisions, frame.beforeSaveDecisions = flowSaveDecisionMode(flowName, definition)
 	frame.scalarBeforeSave = flowBeforeSaveScalarUpdateMode(flowName, definition)
 	frame.afterSaveWriteBack = flowAfterSaveScalarWriteBackMode(flowName, definition)
+	frame.afterSaveUpdate = flowAfterSaveUpdateMode(flowName, definition)
 	frame.createDecision = record.ID != "" && record.ID == e.activeCreatedAutomationID
 	frame.recordCreations = e.RecordCreations
 	frame.textTemplates = cloneFlowTextTemplates(textTemplates)
@@ -866,6 +868,7 @@ type flowFrame struct {
 	beforeSaveDecisions     bool
 	scalarBeforeSave        bool
 	afterSaveWriteBack      bool
+	afterSaveUpdate         bool
 	createDecision          bool
 	lookupOutputs           map[string]flowLookupOutput
 	subflowInputs           map[string]flowLookupOutput
@@ -2532,10 +2535,11 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 			}
 			continue
 		}
-		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
+		afterSaveUpdate := frame != nil && frame.afterSaveUpdate && !frame.autolaunched
+		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) && !(afterSaveUpdate && strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name")) {
 			return false, false
 		}
-		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
+		if matches, supported, handled := e.flowGlobalDecisionCriterionMode(item, afterSaveUpdate); handled {
 			if !supported || !matches {
 				return matches, supported
 			}
@@ -4352,6 +4356,10 @@ func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Rec
 }
 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
+	return e.evaluateFlowBranchMode(branch, record, definition, save, false)
+}
+
+func (e *Engine) evaluateFlowBranchMode(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save, afterSaveUpdate bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
 			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID(), e.PermissionUserFields)
@@ -4375,7 +4383,7 @@ func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Re
 	}
 	prior := e.flowPriorRecord(record.ID)
 	for _, item := range branch.Criteria {
-		if matches, supported, handled := e.flowGlobalDecisionCriterion(item); handled {
+		if matches, supported, handled := e.flowGlobalDecisionCriterionMode(item, afterSaveUpdate); handled {
 			if !supported || !matches {
 				return matches, supported
 			}
