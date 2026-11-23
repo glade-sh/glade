@@ -967,12 +967,16 @@ func (vm *VM) lookupExactReceiverField(typeName, fieldName string) (Field, strin
 }
 
 func explicitAliasObjectFieldValue(object Value, name string) (string, Value, bool) {
+	selected, ok := object.Fields[sobjectExplicitFieldsField]
+	if !ok || selected.Kind != ValueMap || len(selected.Map) == 0 {
+		return "", Null, false
+	}
 	stripped := storage.StripAnyNamespaceToken(name)
 	for candidate, value := range object.Fields {
-		if candidate == name || !isExplicitSObjectField(object, candidate) {
+		if candidate == name {
 			continue
 		}
-		if strings.EqualFold(candidate, name) || strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped) {
+		if (strings.EqualFold(candidate, name) || strings.EqualFold(storage.StripAnyNamespaceToken(candidate), stripped)) && isExplicitSObjectField(object, candidate) {
 			return candidate, value, true
 		}
 	}
