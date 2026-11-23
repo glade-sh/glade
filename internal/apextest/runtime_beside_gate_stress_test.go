@@ -143,10 +143,9 @@ func besideGateStressIteration(t *testing.T, p besideGateStressProject, worker, 
 	case 2: // gate panic at a random point
 		index, artifacts, cases := p.load(t, worker, iteration, false)
 		delay := time.Duration(random.Intn(2000)) * time.Microsecond
+		// afterIdentity runs on the run's goroutine; afterAnalysis can run on
+		// a detached semantic-cache leader, where a panic is not the run's.
 		hooks := semanticGateHooks{afterIdentity: func() { time.Sleep(delay); panic("stress gate panic") }}
-		if random.Intn(2) == 0 {
-			hooks = semanticGateHooks{afterAnalysis: func() { time.Sleep(delay); panic("stress gate panic") }}
-		}
 		runCasesContextWithSemanticGateHooks(context.Background(), index, Options{BuildArtifacts: &artifacts, NoDiskCache: noDisk}, cases, hooks)
 		return "gate panic did not propagate"
 	case 3: // abandon: the snapshot no longer matches the files
