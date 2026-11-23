@@ -168,7 +168,17 @@ func (vm *VM) seedCartLists(cart *Value, cartID storage.ID) {
 			for name, value := range record.Fields {
 				element.Fields[strings.ToLower(name[:1])+name[1:]] = vmValueFromStorage(value)
 			}
+			if elementType == "CartExtension.CartDeliveryGroup" {
+				// A loaded group has no selected delivery method until one is set
+				// (commerce_cart_loaded_shapes/org.tsv loaded, API 62.0 and 67.0).
+				element.Fields["selectedCartDeliveryGroupMethod"] = Null
+			}
 			if elementType == "CartExtension.CartItem" {
+				if quantity, ok := element.Fields["quantity"]; ok && quantity.Kind == ValueDecimal {
+					// The loaded quantity keeps the scale it was written with:
+					// Quantity 3 reads 3 and 3 * 2.5 reads 7.5.
+					element.Fields["quantity"] = stripCartQuantityScale(quantity)
+				}
 				kind := "PRODUCT"
 				if record.Fields["Type"].String == "Charge" {
 					kind = "CHARGE"
@@ -202,4 +212,16 @@ var buyerActionFlags = map[string]bool{
 	"isdeliverygroupchanged": true, "isdeliverymethodselected": true,
 	"isevaluateshippingrequested": true, "isevaluatetaxesrequested": true,
 	"isrecalculationrequested": true,
+}
+
+func stripCartQuantityScale(value Value) Value {
+	text := value.Text
+	if !strings.Contains(text, ".") {
+		return value
+	}
+	text = strings.TrimRight(text, "0")
+	text = strings.TrimSuffix(text, ".")
+	out := value
+	out.Text = text
+	return out
 }
