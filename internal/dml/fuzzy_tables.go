@@ -1,6 +1,9 @@
 package dml
 
-import "strings"
+import (
+	"strings"
+	"sync"
+)
 
 // Dictionary tables proven by the native rows in
 // internal/apextest/testdata/conformance/duplicate_fuzzy_matching/org.tsv.
@@ -1401,34 +1404,34 @@ zuri zurih
 zurih zuri
 `
 
-var nameVariants = func() map[string]bool {
-	out := map[string]bool{}
-	for _, line := range strings.Split(strings.TrimSpace(nameVariantTable), "\n") {
-		names := strings.Fields(line)
-		for i := range names {
-			names[i] = strings.ReplaceAll(names[i], "_", " ")
-		}
-		for _, existing := range names[1:] {
-			out[names[0]+"\x00"+existing] = true
-		}
-	}
-	return out
-}()
+var nameVariantOnce sync.Once
+var nameVariants, nameVariantHeads map[string]bool
 
-// nameVariantHeads are the candidate names with a dictionary entry.
-var nameVariantHeads = func() map[string]bool {
-	out := map[string]bool{}
-	for _, line := range strings.Split(strings.TrimSpace(nameVariantTable), "\n") {
-		if names := strings.Fields(line); len(names) > 1 {
-			out[strings.ReplaceAll(names[0], "_", " ")] = true
+func getNameVariantTables() (map[string]bool, map[string]bool) {
+	nameVariantOnce.Do(func() {
+		nameVariants = map[string]bool{}
+		nameVariantHeads = map[string]bool{}
+		for _, line := range strings.Split(strings.TrimSpace(nameVariantTable), "\n") {
+			names := strings.Fields(line)
+			if len(names) < 2 {
+				continue
+			}
+			for i := range names {
+				names[i] = strings.ReplaceAll(names[i], "_", " ")
+			}
+			nameVariantHeads[names[0]] = true
+			for _, existing := range names[1:] {
+				nameVariants[names[0]+"\x00"+existing] = true
+			}
 		}
-	}
-	return out
-}()
+	})
+	return nameVariants, nameVariantHeads
+}
 
 // nameVariantOf reports an existing name the candidate's dictionary entry lists.
 func nameVariantOf(candidate, existing string) bool {
-	return nameVariants[candidate+"\x00"+existing]
+	variants, _ := getNameVariantTables()
+	return variants[candidate+"\x00"+existing]
 }
 
 // nameAliasKeys are dictionary names whose match key comes from an alias and
