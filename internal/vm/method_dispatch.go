@@ -240,8 +240,9 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 	if commerceClassName == "" && receiver.Kind == ValueObject {
 		commerceClassName = receiver.Type
 	}
-	if strings.EqualFold(method.ClassName, "CartExtension.CartCalculateExecutorMock") && !method.IsConstructor &&
-		receiver.Kind == ValueObject && !strings.EqualFold(receiver.Type, "CartExtension.CartCalculateExecutorMock") &&
+	if !method.IsConstructor && receiver.Kind == ValueObject &&
+		len(method.ClassName) == len("CartExtension.CartCalculateExecutorMock") && strings.EqualFold(method.ClassName, "CartExtension.CartCalculateExecutorMock") &&
+		!strings.EqualFold(receiver.Type, "CartExtension.CartCalculateExecutorMock") &&
 		methodHasModifier(method.Modifiers, "passive-generated") {
 		// A project executor that does not override a callback runs nothing
 		// (commerce_calculator_executor_defaults/org.tsv: direct, API 62.0 and 67.0).

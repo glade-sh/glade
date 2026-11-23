@@ -543,7 +543,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			ctor, ctorArgs, ok, ambiguous = vm.matchConstructorWithNamedArgs(class, args, namedArgs)
 		}
 		if ok {
-			if strings.EqualFold(typeName, "CartExtension.CartDeliveryGroupMethod") && len(ctorArgs) == 3 && ctorArgs[2].Kind == ValueNull {
+			if len(ctorArgs) == 3 && ctorArgs[2].Kind == ValueNull && strings.EqualFold(typeName, "CartExtension.CartDeliveryGroupMethod") {
 				// commerce_cart_loaded_shapes/org.tsv groupAddress, API 62.0 and 67.0.
 				return Null, newExceptionError("System.IllegalArgumentException", "ProductId must not be null.")
 			}

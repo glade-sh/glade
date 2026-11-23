@@ -456,7 +456,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		if !ok {
 			return Null, true, fmt.Errorf("%s constructor expects %s", generated.Name, generatedPlatformConstructorSummary(generated.Constructors))
 		}
-		if strings.EqualFold(generated.Name, "CartExtension.CartDeliveryGroupMethod") && len(ctorArgs) == 3 && ctorArgs[2].Kind == ValueNull {
+		if len(ctorArgs) == 3 && ctorArgs[2].Kind == ValueNull && strings.EqualFold(generated.Name, "CartExtension.CartDeliveryGroupMethod") {
 			// commerce_cart_loaded_shapes/org.tsv groupAddress, API 62.0 and 67.0.
 			return Null, true, newExceptionError("System.IllegalArgumentException", "ProductId must not be null.")
 		}
