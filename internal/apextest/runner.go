@@ -50,15 +50,18 @@ type Options struct {
 	// RuntimeRESTAPIVersion selects the test org REST context, independently of
 	// project and component source API versions. Empty retains the default.
 	RuntimeRESTAPIVersion string
-	Filter                string
-	SelectedClasses       []string
-	SelectedMethod        string
-	LimitMode             vm.LimitMode
-	LimitCaps             vm.LimitCaps
-	LimitCapsSet          bool
-	TraceBlocked          bool
-	TraceAll              bool
-	SlowTestThresholdMS   int64
+	// BackgroundDiskPublication writes a freshly built runtime to the startup
+	// cache after the run returns; WaitForRuntimeCacheWork drains those writes.
+	BackgroundDiskPublication bool
+	Filter                    string
+	SelectedClasses           []string
+	SelectedMethod            string
+	LimitMode                 vm.LimitMode
+	LimitCaps                 vm.LimitCaps
+	LimitCapsSet              bool
+	TraceBlocked              bool
+	TraceAll                  bool
+	SlowTestThresholdMS       int64
 	// WorkSink, when set, receives each test's counted work after it runs.
 	// It is advisory and never changes a test outcome.
 	WorkSink        func(class, method string, total vm.WorkCounts, methods []vm.MethodWork)
@@ -429,6 +432,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
 	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
+	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
 	// A matching snapshot selects the already-loaded project graph for runtime
 	// metadata generation and org setup; nil retains disk discovery. This keeps
 	// dependency roots from changing between indexing and generation. Native
@@ -455,20 +459,27 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
+	generation.oneShot = opts.OneShotProcess
+	early := startRuntimeBesideGate(index, opts, sources, generation, runState)
+	// Every exit, a panic included, releases a build the run did not finish.
+	defer early.abandon()
 	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
+		early.abandon()
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
-	generation.oneShot = opts.OneShotProcess
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
+		early.abandon()
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
-	if runState.counters.enabled {
+	if early != nil {
+		runtimeKey, runtime, runtimeErr = early.finish(generation.controllerCompilation)
+	} else if runState.counters.enabled {
 		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
 	} else {
 		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
@@ -1542,6 +1553,10 @@ type runtimeGeneration struct {
 	// generation, offered to the Visualforce controller compile gate so page
 	// registration does not build and analyze the project a second time.
 	controllerCompilation *visualforce.ControllerCompilation
+	// awaitControllerCompilation, when set, supplies controllerCompilation
+	// once the semantic gate finishes, so the project compile can start
+	// beside the gate. ok false abandons the build; see errRuntimeAbandoned.
+	awaitControllerCompilation func() (compilation *visualforce.ControllerCompilation, ok bool)
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -1948,6 +1963,11 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if prepared != nil && prepared.awaitControllerCompilation != nil {
+			if _, ok := prepared.awaitControllerCompilation(); !ok {
+				return "", zero, errRuntimeAbandoned
+			}
+		}
 		if sources != nil && sources.privateRuntime {
 			return "", zero, err
 		}
@@ -1984,8 +2004,20 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	} else {
 		generation = *prepared
 	}
+	// A build started beside the semantic gate touches no shared cache state
+	// until the gate accepts the index: accepted blocks for the gate's result.
+	accepted := func() bool {
+		if generation.awaitControllerCompilation == nil {
+			return true
+		}
+		_, ok := generation.awaitControllerCompilation()
+		return ok
+	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
+		if !accepted() {
+			return key, zero, errRuntimeAbandoned
+		}
 		if !sources.privateRuntime {
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -1994,11 +2026,24 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
 	key := generation.key
-	if !sources.privateRuntime {
-		rememberRuntimeCacheRoot(index, key)
+	// rememberRoot records the cache root once the index is accepted; a build
+	// beside the gate does so when it reaches page registration.
+	rememberRoot := func() {
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+		}
+	}
+	if generation.awaitControllerCompilation == nil {
+		rememberRoot()
 	}
 	if !sources.privateRuntime {
 		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			if !accepted() {
+				return key, zero, errRuntimeAbandoned
+			}
+			if generation.awaitControllerCompilation != nil {
+				rememberRoot()
+			}
 			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
 			if err := sources.validateCapturedSourceGeneration(); err != nil {
 				evictSnapshotCaches(key)
@@ -2014,6 +2059,12 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
+				if !accepted() {
+					return key, zero, errRuntimeAbandoned
+				}
+				if generation.awaitControllerCompilation != nil {
+					rememberRoot()
+				}
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
 				if err := sources.validateCapturedSourceGeneration(); err != nil {
 					evictSnapshotCaches(key)
@@ -2046,7 +2097,15 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+		rememberRoot()
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -2094,8 +2153,15 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
-			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+		publish := func() {
+			if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
+				persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+			}
+		}
+		if sources.backgroundDiskPublication {
+			publishInBackground(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)
+		} else {
+			publish()
 		}
 	}
 	return key, projected, nil
@@ -2219,7 +2285,14 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
@@ -4096,6 +4169,8 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
+	// backgroundDiskPublication is Options.BackgroundDiskPublication.
+	backgroundDiskPublication   bool
 	mu                          sync.RWMutex
 	expectedDigests             *typesys.SourceDigestSet
 	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
@@ -6324,7 +6399,7 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 		seenObjects := make(map[string]bool)
 		var names []string
 		var objectNames []string
-		fieldSetMatches := apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
+		fieldSetMatches := fieldSetConstantMemo.get(source, fieldSetConstantMatches)
 		for _, match := range fieldSetMatches {
 			if len(match) != 3 || hasPrefixFold(match[1], "error") {
 				continue

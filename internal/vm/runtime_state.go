@@ -109,8 +109,11 @@ type VM struct {
 	classNamespaceCache     map[string]string
 	// execNamespaceMemo remembers the namespace of the current class for one
 	// class lookup generation so hot call paths skip the class read.
-	execNamespaceMemo   execNamespaceMemo
-	classForAccessCache map[classForAccessKey]classForAccessLookup
+	execNamespaceMemo execNamespaceMemo
+	// concreteOverrideCandidateMemo caches uniqueConcreteOverride's type
+	// filter; see concreteOverrideCandidateKey.
+	concreteOverrideCandidateMemo map[concreteOverrideCandidateKey][]string
+	classForAccessCache           map[classForAccessKey]classForAccessLookup
 	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
 	// plus the current class and namespace that classForAccess reads, so the
 	// key carries all four. It is reset with the access caches.
@@ -144,6 +147,10 @@ type VM struct {
 	// the frozen copy plan may no longer describe the map's alias values.
 	classMapShared  atomic.Bool
 	classMapWritten bool
+	// classStructureWritten records a write since the last freeze that can add
+	// or replace a Classes key; a static-value writeback of an existing class
+	// (storeClassValue's frozen fast path) does not set it.
+	classStructureWritten bool
 	// classValueOverlay holds the class values this VM wrote while sharing
 	// Classes, keyed by existing Classes keys. Reads go through classEntry and
 	// ClassEntries; prepareClassMapWrite folds it into a private copy.
@@ -1191,6 +1198,8 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	} else {
 		clone.rebuildClassLookup()
 	}
+	// A clone holds its source's classes, pending structural writes included.
+	clone.classStructureWritten = vm.classStructureWritten
 	// triggerMatchCache is computed from Triggers; share the pointer so we
 	// only populate it once across all clones in a run. Concurrent test
 	// methods are protected by the cache's RWMutex.
@@ -1309,6 +1318,7 @@ func (vm *VM) canShareClassMap() bool {
 // other's writes.
 func (vm *VM) prepareClassMapWrite() {
 	vm.classMapWritten = true
+	vm.classStructureWritten = true
 	if !vm.classMapShared.Load() {
 		return
 	}

@@ -6,8 +6,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -18,6 +21,7 @@ func withSourceScanMemo(t *testing.T, fn func()) {
 	was := sourceScanMemoEnabled.Load()
 	standardFieldMatchMemo = sourceScanMemo[*standardFieldSourceMatches]{}
 	recordTypeScanMemo = sourceScanMemo[[]projectRecordTypeReference]{}
+	fieldSetConstantMemo = sourceScanMemo[[][]string]{}
 	sourceScanMemoEnabled.Store(true)
 	defer func() {
 		sourceScanMemoEnabled.Store(was)
@@ -78,6 +82,9 @@ func TestSourceScanMemoMatchesDirectScan(t *testing.T) {
 					got := scanProjectReferencedStandardFieldsFromSource(org, source, nil)
 					if !reflect.DeepEqual(got, direct[i][j].fields) {
 						t.Fatalf("round %d org %d source %d: memoized field scan differs", round, i, j)
+					}
+					if sets := fieldSetConstantMemo.get(source, fieldSetConstantMatches); !reflect.DeepEqual(sets, apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)) {
+						t.Fatalf("round %d source %d: memoized field set scan differs", round, j)
 					}
 					if types := scanRecordTypesFromApexSourceMemo(source); !reflect.DeepEqual(types, direct[i][j].types) {
 						t.Fatalf("round %d source %d: memoized record type scan differs", round, j)
@@ -175,4 +182,52 @@ func TestSourceScanMemoBoundsBytes(t *testing.T) {
 			t.Fatalf("memo holds %d entries and %d bytes past the byte bound", memo.len(), memo.bytes)
 		}
 	})
+}
+
+func TestBackgroundDiskPublicationDrains(t *testing.T) {
+	var order []int
+	var mu sync.Mutex
+	for i := 0; i < 3; i++ {
+		i := i
+		publishInBackground("drain-root-"+strconv.Itoa(i), func() {
+			time.Sleep(5 * time.Millisecond)
+			mu.Lock()
+			order = append(order, i)
+			mu.Unlock()
+		})
+	}
+	WaitForRuntimeCacheWork()
+	mu.Lock()
+	defer mu.Unlock()
+	if len(order) != 3 {
+		t.Fatalf("WaitForRuntimeCacheWork returned before %d publications finished", 3-len(order))
+	}
+}
+
+// TestBackgroundDiskPublicationKeepsNewest pins the order: a write handed off
+// earlier never replaces one handed off later for the same root.
+func TestBackgroundDiskPublicationKeepsNewest(t *testing.T) {
+	var mu sync.Mutex
+	var written []int
+	backgroundPublications.Lock()
+	for i := 1; i <= 4; i++ {
+		i := i
+		publishInBackground("order-root", func() {
+			mu.Lock()
+			written = append(written, i)
+			mu.Unlock()
+		})
+	}
+	backgroundPublications.Unlock()
+	WaitForRuntimeCacheWork()
+	mu.Lock()
+	defer mu.Unlock()
+	for i := 1; i < len(written); i++ {
+		if written[i] < written[i-1] {
+			t.Fatalf("writes ran as %v: an older entry replaced a newer one", written)
+		}
+	}
+	if len(written) == 0 || written[len(written)-1] != 4 {
+		t.Fatalf("writes ran as %v, want the newest last", written)
+	}
 }

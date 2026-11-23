@@ -40,6 +40,11 @@ type frozenClassLookup struct {
 	contributorsReady atomic.Bool
 	contributors      map[string][]string
 
+	// overrideCandidates caches uniqueConcreteOverride's type filter for
+	// clones of this generation whose org is a stamped runtime generation;
+	// see concreteOverrideCandidateKey.
+	overrideCandidates sync.Map
+
 	// namespaceAliases is built lazily, once per namespace, by the first clone
 	// that queries it and then shared by every clone of this generation.
 	namespaceMu      sync.RWMutex
@@ -1283,6 +1288,7 @@ func (vm *VM) FreezeClassLookup() {
 	vm.frozenClassLookup = frozen
 	vm.sharedClassCopyPlan = buildClassCopyPlan(vm.Classes)
 	vm.classMapWritten = false
+	vm.classStructureWritten = false
 	vm.classValuesWritten = false
 	vm.classLookupGeneration = generation
 	// A search cache missing names (one that predates an unregistered alias
@@ -1407,6 +1413,18 @@ func (vm *VM) storeClassLookupAlias(name string, class Class) {
 	vm.classLookup[canonicalClassLookupKey(name)] = class
 }
 func (vm *VM) storeClassValue(class Class) {
+	vm.storeClassValueChecked(class, true)
+}
+
+// storeStaticClassValue is storeClassValue for a class value that the caller
+// derived from the registered class by changing only its static field values,
+// so its structure cannot differ and the structure comparison is skipped.
+// It is called only from writeStaticFieldValue, on a registered or mutable class whose structure does not change.
+func (vm *VM) storeStaticClassValue(class Class) {
+	vm.storeClassValueChecked(class, false)
+}
+
+func (vm *VM) storeClassValueChecked(class Class, checkStructure bool) {
 	// Frozen fast path: static-field writeback updates the value of an
 	// already-registered class. When the shared lookup index is frozen,
 	// lookupClass resolves through vm.Classes by live key, so updating the
@@ -1417,6 +1435,11 @@ func (vm *VM) storeClassValue(class Class) {
 	// copied: the values go to this VM's overlay. Only fall back to the
 	// rebuild path when a name would be newly introduced.
 	vm.classValuesWritten = true
+	if checkStructure && !vm.classStructureWritten {
+		if existing, ok := vm.classEntryRaw(class.Name); !ok || !classStructureEqual(existing, class) {
+			vm.classStructureWritten = true
+		}
+	}
 	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
 		vm.classMapWritten = true
 		return

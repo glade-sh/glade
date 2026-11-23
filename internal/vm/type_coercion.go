@@ -90,12 +90,9 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 	fieldMatchCount := 0
 	var qualifierMatched Method
 	qualifierMatchCount := 0
-	for className, class := range vm.classEntriesRaw() {
-		if strings.EqualFold(className, baseType) || (!vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType)) {
-			continue
-		}
+	consider := func(className string) {
 		if vm.classIsTestScoped(className) && !sameLexicalTopLevel(vm.currentClass, className) {
-			continue
+			return
 		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
 		if (!ok || methodHasModifier(target.Modifiers, "abstract")) && !ambiguous {
@@ -105,7 +102,7 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 			}
 		}
 		if !ok || ambiguous || methodHasModifier(target.Modifiers, "abstract") {
-			continue
+			return
 		}
 		count++
 		found = target
@@ -118,6 +115,9 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 			fieldMatchCount++
 		}
 	}
+	for _, className := range vm.concreteOverrideCandidates(baseType) {
+		consider(className)
+	}
 	if count > 1 {
 		if qualifierMatchCount == 1 {
 			return qualifierMatched, true
@@ -126,6 +126,7 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 	}
 	return found, count == 1
 }
+
 func (vm *VM) staticTypeNameCandidates(typeName string) []string {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {

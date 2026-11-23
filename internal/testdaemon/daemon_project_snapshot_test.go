@@ -16,7 +16,7 @@ import (
 func TestDaemonOptionsUsePublishedProjectSnapshot(t *testing.T) {
 	published := project.Project{Root: "published", SourceAPIVersion: "67.0"}
 	caller := project.Project{Root: "caller"}
-	got := optionsForGeneration(apextest.Options{ProjectSnapshot: &caller}, daemonGeneration{project: published})
+	got := (&Daemon{}).optionsForGeneration(apextest.Options{ProjectSnapshot: &caller}, daemonGeneration{project: published})
 	if got.ProjectSnapshot == nil || !reflect.DeepEqual(*got.ProjectSnapshot, published) {
 		t.Fatalf("runner project = %#v, want published project %#v", got.ProjectSnapshot, published)
 	}

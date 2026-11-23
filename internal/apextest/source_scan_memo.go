@@ -17,6 +17,34 @@ var sourceScanMemoEnabled atomic.Bool
 // org- or configuration-dependent step still runs on each call.
 func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 
+// backgroundPublications serializes startup-cache writes that runs with
+// Options.BackgroundDiskPublication hand off: the memory cache already serves
+// the runtime, and the disk copy only speeds a later process start. Each
+// write takes a sequence number when its run hands it off; a write older than
+// one already written for the same project root is dropped, so a slow write
+// cannot replace a newer entry.
+var (
+	backgroundPublications     sync.Mutex
+	backgroundPublicationsDone sync.WaitGroup
+	backgroundPublicationSeq   atomic.Uint64
+	backgroundPublished        = map[string]uint64{}
+)
+
+func publishInBackground(root string, publish func()) {
+	seq := backgroundPublicationSeq.Add(1)
+	backgroundPublicationsDone.Add(1)
+	go func() {
+		defer backgroundPublicationsDone.Done()
+		backgroundPublications.Lock()
+		defer backgroundPublications.Unlock()
+		if backgroundPublished[root] > seq {
+			return
+		}
+		publish()
+		backgroundPublished[root] = seq
+	}()
+}
+
 // sourceScanMemoLimit and sourceScanMemoByteLimit bound a memo by entries
 // and by the source bytes its entries were computed from (each entry holds
 // data proportional to its source); past either the memo starts over. Every
@@ -109,6 +137,14 @@ func standardFieldMatchesFromSource(source string) *standardFieldSourceMatches {
 		staticFields:  apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
 		variableField: apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
 	}
+}
+
+// fieldSetConstantMemo holds the field set constant matches of one source;
+// most sources have none, and the org-dependent steps run per call.
+var fieldSetConstantMemo sourceScanMemo[[][]string]
+
+func fieldSetConstantMatches(source string) [][]string {
+	return apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
 }
 
 func scanRecordTypesFromApexSourceMemo(source string) []projectRecordTypeReference {
