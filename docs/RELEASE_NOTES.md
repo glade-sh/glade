@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` reads the custom object's `__Share` rows in `USER_MODE` again, as captured, instead of seeing none. The rule that share rows follow their parent record's visibility covers the runAs user, not the Automated Process user the trigger runs as. This regressed earlier in the v0.3.14 cycle and is fixed before release.
+
 - **Site methods without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` return null, as captured, instead of answering from the seeded Site.
 
 - Classes can implement `CommercePayments.PaymentGatewayAdapter` and dispatch its captured `processRequest` method at Apex APIs 62.0 and 67.0.
