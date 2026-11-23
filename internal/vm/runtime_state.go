@@ -109,8 +109,11 @@ type VM struct {
 	classNamespaceCache     map[string]string
 	// execNamespaceMemo remembers the namespace of the current class for one
 	// class lookup generation so hot call paths skip the class read.
-	execNamespaceMemo   execNamespaceMemo
-	classForAccessCache map[classForAccessKey]classForAccessLookup
+	execNamespaceMemo execNamespaceMemo
+	// concreteOverrideCandidateMemo caches uniqueConcreteOverride's type
+	// filter; see concreteOverrideCandidateKey.
+	concreteOverrideCandidateMemo map[concreteOverrideCandidateKey][]string
+	classForAccessCache           map[classForAccessKey]classForAccessLookup
 	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
 	// plus the current class and namespace that classForAccess reads, so the
 	// key carries all four. It is reset with the access caches.
