@@ -27,16 +27,18 @@ func BenchmarkStaticWriteback(b *testing.B) {
 	}
 }
 
-// BenchmarkStoreClassValue measures the writeback entry point alone.
-func BenchmarkStoreClassValue(b *testing.B) {
+// BenchmarkStaticFieldWrite measures writeStaticFieldValue alone, without the
+// interpreter around it.
+func BenchmarkStaticFieldWrite(b *testing.B) {
 	machine := classMapShareBase(b, 2000).CloneRuntimeFrozenShared(nil)
 	class, ok := machine.lookupClass("pkg.Registry")
 	if !ok {
 		b.Fatal("class lookup miss")
 	}
+	field := class.StaticFields["Count"]
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		machine.storeClassValue(class)
+		machine.writeStaticFieldValue("pkg.Registry", "Count", class, field, Int(int64(i)))
 	}
 }
