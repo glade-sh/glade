@@ -22,7 +22,7 @@ func TestDaemonInvalidationMatchesCold(t *testing.T) {
 		if noCache {
 			policy = "no-cache"
 		}
-		for _, name := range []string{"body", "signature", "delete", "rename", "forceignore", "object", "field", "api-version", "class-api-version"} {
+		for _, name := range []string{"body", "signature", "delete", "rename", "forceignore", "object", "field", "api-version", "class-api-version", "hydration-provider", "hydration-reader"} {
 			t.Run(name+"/"+policy, func(t *testing.T) {
 				root := incrementalProject(t)
 				classes := filepath.Join(root, "force-app/main/default/classes")
@@ -33,6 +33,25 @@ func TestDaemonInvalidationMatchesCold(t *testing.T) {
 				fieldXML := `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Score__c</fullName><label>Score</label><type>Number</type><precision>10</precision><scale>0</scale></CustomField>`
 				writeFile(t, object, objectXML)
 				writeFile(t, field, fieldXML)
+				// The hydration cases add a reader whose check depends on what an
+				// earlier type hydrated: Asset's catalog field InstallDate is known
+				// only after some body loads Asset.
+				hydrator := filepath.Join(classes, "AHydrator.cls")
+				reader := filepath.Join(classes, "BReader.cls")
+				hydratorSource := func(statement string) string {
+					return "public class AHydrator { public static void run() { " + statement + " } }"
+				}
+				const loadsAsset = "String n = Schema.Asset.SerialNumber.getDescribe().getName();"
+				readerSource := func(marker string) string {
+					return "public class BReader { public static Object read(ApexPages.StandardSetController ssc) { Integer m = " + marker + "; return ssc.getRecord().InstallDate; } }"
+				}
+				if strings.HasPrefix(name, "hydration") {
+					const meta = `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`
+					writeFile(t, hydrator, hydratorSource(loadsAsset))
+					writeFile(t, hydrator+"-meta.xml", meta)
+					writeFile(t, reader, readerSource("1"))
+					writeFile(t, reader+"-meta.xml", meta)
+				}
 				d, err := New(root)
 				if err != nil {
 					t.Fatal(err)
@@ -89,6 +108,12 @@ func TestDaemonInvalidationMatchesCold(t *testing.T) {
 					}
 					writeFile(t, path, strings.Replace(string(content), "67.0", "62.0", 1))
 					add(path, watch.ChangeModified)
+				case "hydration-provider":
+					writeFile(t, hydrator, hydratorSource("Integer unused = 1;"))
+					add(hydrator, watch.ChangeModified)
+				case "hydration-reader":
+					writeFile(t, reader, readerSource("(1 + 1)"))
+					add(reader, watch.ChangeModified)
 				case "api-version":
 					path := filepath.Join(root, "sfdx-project.json")
 					writeFile(t, path, `{"sourceApiVersion":"62.0","packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -99,6 +124,14 @@ func TestDaemonInvalidationMatchesCold(t *testing.T) {
 				}
 				apextest.InvalidateRuntimeCaches()
 				warmErr := d.Warm()
+				if strings.HasPrefix(name, "hydration") {
+					if stats := d.semaState.LastStats(); !stats.Incremental || stats.Reused == 0 {
+						t.Fatalf("warm after %s edit did not reuse semantic checks: %+v", name, stats)
+					}
+					if flipped := warmErr != nil && strings.Contains(warmErr.Error(), "InstallDate"); flipped != (name == "hydration-provider") {
+						t.Fatalf("warm after %s edit: error %v", name, warmErr)
+					}
+				}
 				updated, err := json.Marshal(d.IndexSnapshot())
 				if err != nil {
 					t.Fatal(err)
