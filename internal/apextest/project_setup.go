@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -846,9 +847,16 @@ func applyProjectProfileRecordTypeAvailability(org *storage.OrgState, p project.
 		}
 	}
 	collect(p, "")
+	// Permission sets the project assigns to the running user add visibility
+	// to objects a System Administrator profile already lists
+	// (record_type_permset_visibility/org.tsv, API 62.0 and 67.0).
+	profileSources := len(sources)
+	for _, file := range assignedPermissionSetFiles(p) {
+		sources = append(sources, profileSource{file, ""})
+	}
 	visible := map[string]map[string]bool{}
 	canonicals := map[string]string{}
-	for _, source := range sources {
+	for index, source := range sources {
 		data, err := readProfileMetadataFile(source.file, readers...)
 		if err != nil {
 			continue
@@ -871,6 +879,9 @@ func applyProjectProfileRecordTypeAvailability(org *storage.OrgState, p project.
 			}
 			key := strings.ToLower(canonical)
 			if visible[key] == nil {
+				if index >= profileSources {
+					continue
+				}
 				visible[key] = map[string]bool{}
 				canonicals[key] = canonical
 			}
@@ -1883,4 +1894,45 @@ func compileProjectInitializer(className, file string, r diagnostic.Range, bodyR
 		Line:       r.Start.Line,
 		Column:     r.Start.Column,
 	}, nil
+}
+
+// assignedPermissionSetFiles lists the project files of the permission sets
+// glade.yml assigns to the test user, directly or through a group.
+func assignedPermissionSetFiles(p project.Project) []string {
+	if len(p.Test.PermissionSets) == 0 && len(p.Test.PermissionSetGroups) == 0 {
+		return nil
+	}
+	byName := map[string]string{}
+	for _, file := range p.PermissionSetFiles {
+		base := filepath.Base(file)
+		for _, suffix := range []string{".permissionset-meta.xml", ".permissionset"} {
+			if strings.HasSuffix(base, suffix) {
+				byName[strings.TrimSuffix(base, suffix)] = file
+				break
+			}
+		}
+	}
+	names := append([]string(nil), p.Test.PermissionSets...)
+	for _, group := range p.Test.PermissionSetGroups {
+		for _, file := range p.PermissionSetGroupFiles {
+			base := filepath.Base(file)
+			if strings.TrimSuffix(strings.TrimSuffix(base, ".permissionsetgroup-meta.xml"), ".permissionsetgroup") != group {
+				continue
+			}
+			if data, err := p.ReadFile(file); err == nil {
+				if members, err := project.PermissionSetGroupGrantingMembers(data); err == nil {
+					names = append(names, members...)
+				}
+			}
+		}
+	}
+	var files []string
+	seen := map[string]bool{}
+	for _, name := range names {
+		if file, ok := byName[name]; ok && !seen[file] {
+			seen[file] = true
+			files = append(files, file)
+		}
+	}
+	return files
 }
