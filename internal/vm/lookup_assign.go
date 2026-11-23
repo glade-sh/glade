@@ -3283,6 +3283,9 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 			}
 		}
 	}
+	if strings.EqualFold(fieldName, "Message") && !current.projectClass && !current.classInstance && vm.replayDescribeStandardEvent(current.Type) && !vm.batchApexErrorEventMessageAssignable() {
+		return newExceptionError("SObjectException", "Field is not writeable: BatchApexErrorEvent.Message")
+	}
 	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueString {
 		// User classes can share names with standard sObjects (for example,
 		// Quip's Folder/FolderRef DTOs). Only apply sObject Id validation when

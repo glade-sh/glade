@@ -52,7 +52,49 @@ func (vm *VM) userModeUnrestrictedObject(objectName, userID string) bool {
 	return vm == nil || vm.soqlObjectHasPublicReadSharing(objectName) || vm.currentUserBypassesRecordSharing() || vm.currentUserObjectRecordGrant(objectName, "PermissionsViewAllRecords", "PermissionsModifyAllRecords") || userID == ""
 }
 
+// generatedShareParentRecord returns the parent record of a row of a custom
+// object's generated share table. A share row is visible to exactly the users
+// who can see its parent record: owner rows of the user's own records and every
+// row of a record shared to the user show, rows of unseen records do not
+// (native rows share_mdt_runas_access and share_table_visibility, API 62.0 and
+// 67.0). A row whose parent is gone keeps the ordinary policy.
+func (vm *VM) generatedShareParentRecord(objectName string, record storage.Record) (string, storage.Record, bool) {
+	if vm == nil || vm.Org == nil || !hasSuffixFold(objectName, "__share") {
+		return "", storage.Record{}, false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return "", storage.Record{}, false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	if !storage.IsGeneratedShareObject(definition) {
+		return "", storage.Record{}, false
+	}
+	parentObject := definition.Metadata["parentObject"]
+	parentID, ok := record.GetField("ParentId")
+	if !ok {
+		// A projection that omits ParentId (SELECT Id) still hides the row.
+		stored, found := vm.findOrgRecord(canonical, record.ID)
+		if !found {
+			return "", storage.Record{}, false
+		}
+		if parentID, ok = stored.GetField("ParentId"); !ok {
+			return "", storage.Record{}, false
+		}
+	}
+	parent, found := vm.findOrgRecord(parentObject, storage.ID(storageValueIDText(parentID)))
+	if !found || parent.System.IsDeleted {
+		return "", storage.Record{}, false
+	}
+	return parentObject, parent, true
+}
+
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
+	if hasSuffixFold(objectName, "__share") {
+		if parentObject, parent, ok := vm.generatedShareParentRecord(objectName, record); ok {
+			return vm.userModeRecordVisible(parentObject, parent, userID)
+		}
+	}
 	if vm.guestUserReadsOnlySelf(objectName) {
 		return storage.IDsEqual(record.ID, storage.ID(userID))
 	}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <custom>true</custom>
+    <userLicense>Salesforce</userLicense>
+    <customMetadataTypeAccesses><enabled>true</enabled><name>Synth__mdt</name></customMetadataTypeAccesses>
+    <userPermissions><enabled>true</enabled><name>ApiEnabled</name></userPermissions>
+</Profile>

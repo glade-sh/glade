@@ -5140,6 +5140,11 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 
 func (vm *VM) objectModelHasPublicRead(canonical string) bool {
 	definition := vm.Org.Objects[canonical].Definition
+	if hasSuffixFold(canonical, "__share") && storage.IsGeneratedShareObject(definition) {
+		// A share table is as open as its parent: rows follow the parent
+		// record's visibility (userModeRecordVisible).
+		return vm.soqlObjectHasPublicReadSharing(definition.Metadata["parentObject"])
+	}
 	model := strings.TrimSpace(definition.SharingModel)
 	// portal_sharing_timing_c4 (APIs 62.0 and 67.0): a Customer Community,
 	// Community Login or Community Plus user reads a declared external model
