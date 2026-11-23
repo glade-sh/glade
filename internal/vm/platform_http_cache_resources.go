@@ -433,6 +433,12 @@ func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method strin
 // NullPointerException. Other shapes keep the existing behavior.
 func (vm *VM) callCartExtensionCalculatorSuper(class Class, receiver Value, method string, args []Value) (Value, bool, error) {
 	superName := vm.resolvedSuperClassName(class)
+	if strings.EqualFold(superName, "CartExtension.CheckoutPlaceOrder") && strings.EqualFold(method, "validate") && len(args) == 2 && vm.testContext != nil {
+		// A project subclass that calls super.validate in a test reaches the
+		// platform implementation, which fails with a NullPointerException
+		// (commerce_place_order_super_validate/org.tsv, API 62.0 and 67.0).
+		return Null, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
+	}
 	if cartExtensionCalculatorDefaultMethod(superName, method) == "" || len(args) != 1 {
 		return Null, false, nil
 	}
