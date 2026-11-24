@@ -26,19 +26,13 @@ var errRuntimeAbandoned = errors.New("runtime build abandoned")
 // result or a panic (runtime.Goexit).
 var errRuntimeBuildIncomplete = errors.New("runtime build beside the semantic gate exited without a result")
 
-// testOnlyRuntimeBesideGateStartHook is a package test seam run on the build
-// goroutine before the build starts. Nothing outside _test.go files sets it.
-var testOnlyRuntimeBesideGateStartHook func()
-
-// testOnlyRuntimeBesideGateStageHook is a package test seam a build beside
-// the gate calls at named points in a partly completed build,
-// including worker items and publication boundaries. Nothing outside _test.go
-// files sets it.
-var testOnlyRuntimeBesideGateStageHook func(stage string)
-
-// testOnlyRuntimeBesideGateLog, when set by a package test, receives the
-// build-panic log line instead of os.Stderr.
-var testOnlyRuntimeBesideGateLog io.Writer
+// Package tests attach hooks to a single run before starting it. The build
+// snapshots the callbacks so concurrent runs have independent observers.
+type runtimeBuildHooks struct {
+	start func()
+	stage func(string)
+	log   io.Writer
+}
 
 // runtimeBesideGateEnv opts in to the build beside the semantic gate. The
 // build is off by default in v0.3.14: runs use the sequential runtime build
@@ -146,14 +140,17 @@ func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Optio
 		receive.Do(func() { received = <-early.hint })
 		return received.compilation, received.ok
 	}
-	work := &runtimeBuildWork{ctx: ctx, stage: testOnlyRuntimeBesideGateStageHook}
+	var hooks runtimeBuildHooks
+	if opts.testBuildHooks != nil {
+		hooks = *opts.testBuildHooks
+	}
+	work := &runtimeBuildWork{ctx: ctx, stage: hooks.stage}
 	// Only runtime assembly consults work. The semantic gate shares the
 	// captured inputs; it owns its own cancellation and never consults work.
 	sources.build = work
-	startHook := testOnlyRuntimeBesideGateStartHook
 	var out io.Writer = os.Stderr
-	if testOnlyRuntimeBesideGateLog != nil {
-		out = testOnlyRuntimeBesideGateLog
+	if hooks.log != nil {
+		out = hooks.log
 	}
 	id := runtimeBesideGateBuildIDs.Add(1)
 	runtimeBesideGateBuilds.Add(1)
@@ -187,8 +184,8 @@ func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Optio
 			InvalidateRuntimeCaches()
 			early.result.discardErr = work.discardErr
 		}()
-		if startHook != nil {
-			startHook()
+		if hooks.start != nil {
+			hooks.start()
 		}
 		early.result.key, early.result.runtime, early.result.err = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
 		completed = true

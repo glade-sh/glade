@@ -46,6 +46,7 @@ import (
 )
 
 type Options struct {
+	testBuildHooks       *runtimeBuildHooks
 	preparedTestMachines map[string]*vm.VM
 	// RuntimeRESTAPIVersion selects the test org REST context, independently of
 	// project and component source API versions. Empty retains the default.

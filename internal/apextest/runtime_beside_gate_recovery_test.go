@@ -71,13 +71,14 @@ func TestRuntimeBesideGateGoexitRetries(t *testing.T) {
 	prev := runtime.GOMAXPROCS(2)
 	defer runtime.GOMAXPROCS(prev)
 	index, artifacts, cases := besideGateProject(t, "System.assert(true);")
-	testOnlyRuntimeBesideGateStageHook = func(stage string) {
+	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts, testBuildHooks: new(runtimeBuildHooks)}
+	opts.testBuildHooks.stage = func(stage string) {
 		if stage == "after_methods" {
 			runtime.Goexit()
 		}
 	}
-	defer func() { testOnlyRuntimeBesideGateStageHook = nil }()
-	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+
+	run := RunCasesContext(context.Background(), index, opts, cases)
 	if run.Summary().Passed != 1 {
 		t.Fatal(firstRunProblem(run))
 	}
@@ -108,8 +109,8 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		iterations = n
 	}
 	log := new(besideGateLogBuffer)
-	testOnlyRuntimeBesideGateLog = log
-	defer func() { testOnlyRuntimeBesideGateLog = nil }()
+	hooks := &runtimeBuildHooks{log: log}
+
 	prefix := sharedStandardRuntimePrefix()
 	var shells []vm.Class
 	for _, c := range prefix.classes {
@@ -136,7 +137,7 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		}
 		go func() {
 			if i%4 == 0 {
-				report := RunCasesContext(context.Background(), badIndex, Options{BuildArtifacts: &badArtifacts, NoDiskCache: true}, badCases)
+				report := RunCasesContext(context.Background(), badIndex, Options{BuildArtifacts: &badArtifacts, NoDiskCache: true, testBuildHooks: hooks}, badCases)
 				if report.Summary().CompileErrors != 1 {
 					t.Errorf("reject: %+v", report.Summary())
 				}
@@ -167,7 +168,7 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 				}
 			}
 		}()
-		run := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+		run := Run(index, Options{SourceDigests: artifacts.SourceDigests, testBuildHooks: hooks})
 		close(stop)
 		rounds := <-done
 		mutationRounds += rounds
@@ -200,20 +201,20 @@ func TestRuntimeBesideGateWorkerRecovery(t *testing.T) {
 		writeFile(t, filepath.Join(filepath.Dir(p.helper), name+".cls"), "public class "+name+" { public static Integer value() { return 1; } }")
 	}
 	index, artifacts, cases := p.load(t, 0, 1, false)
-	opts := Options{BuildArtifacts: &artifacts, NoDiskCache: true}
+	opts := Options{BuildArtifacts: &artifacts, NoDiskCache: true, testBuildHooks: new(runtimeBuildHooks)}
 	for _, stage := range []string{"compile_method", "scan_standard_fields", "scan_record_types"} {
 		t.Run(stage, func(t *testing.T) {
 			InvalidateRuntimeCaches()
 			projectReferencedStandardFieldCache.Clear()
 			log := new(besideGateLogBuffer)
-			testOnlyRuntimeBesideGateLog = log
+			opts.testBuildHooks.log = log
 			var injected atomic.Bool
-			testOnlyRuntimeBesideGateStageHook = func(s string) {
+			opts.testBuildHooks.stage = func(s string) {
 				if stage == s && injected.CompareAndSwap(false, true) {
 					panic("worker")
 				}
 			}
-			defer func() { testOnlyRuntimeBesideGateLog = nil; testOnlyRuntimeBesideGateStageHook = nil }()
+
 			run := RunCasesContext(context.Background(), index, opts, cases)
 			if !injected.Load() || run.Summary().Passed != 1 || strings.Count(log.String(), "panicked") != 1 || !strings.Contains(log.String(), "TestRuntimeBesideGateWorkerRecovery") {
 				t.Fatalf("injected %v: %+v %s", injected.Load(), run.Summary(), log.String())
@@ -225,13 +226,13 @@ func TestRuntimeBesideGateWorkerRecovery(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		var started atomic.Int64
-		testOnlyRuntimeBesideGateStageHook = func(stage string) {
+		opts.testBuildHooks.stage = func(stage string) {
 			if stage == "compile_method" {
 				started.Add(1)
 				cancel()
 			}
 		}
-		defer func() { testOnlyRuntimeBesideGateStageHook = nil }()
+
 		run := RunCasesContext(ctx, index, opts, cases)
 		if n := started.Load(); n < 1 || n > 2 || run.Summary().Passed != 0 {
 			t.Fatalf("started %d methods, summary %+v", n, run.Summary())
@@ -246,18 +247,18 @@ func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
 	defer runtime.GOMAXPROCS(prev)
 	t.Cleanup(InvalidateRuntimeCaches)
 	index, artifacts, cases := besideGateProject(t, "Object o = new MissingBuildType();")
-	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts}
+	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts, testBuildHooks: new(runtimeBuildHooks)}
 	old := sharedStandardRuntimePrefix()
 	arrived := make(chan struct{})
-	testOnlyRuntimeBesideGateStageHook = func(stage string) {
+	opts.testBuildHooks.stage = func(stage string) {
 		if stage == "after_methods" {
 			close(arrived)
 			panic("partial rejected build")
 		}
 	}
 	log := new(besideGateLogBuffer)
-	testOnlyRuntimeBesideGateLog = log
-	defer func() { testOnlyRuntimeBesideGateStageHook = nil; testOnlyRuntimeBesideGateLog = nil }()
+	opts.testBuildHooks.log = log
+
 	run := runCasesContextWithSemanticGateHooks(context.Background(), index, opts, cases, semanticGateHooks{afterIdentity: func() { <-arrived }})
 	if run.Summary().CompileErrors != 1 || !strings.Contains(log.String(), "(abandoned)") {
 		t.Fatalf("summary %+v, %s", run.Summary(), log.String())
