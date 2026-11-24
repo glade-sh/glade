@@ -539,7 +539,7 @@ func TestPersistedVisualforceDigestConcurrentUnsafeRootWarning(t *testing.T) {
 				t.Fatalf("child: %v\n%s", err, out)
 			}
 			if bytes.Contains(out, []byte("SKIP")) {
-				t.Skip(string(out))
+				t.Fatalf("child skipped: %s", out)
 			}
 			count := strings.Count(string(out), "warning: Visualforce digest cache")
 			if mode == "private" {
