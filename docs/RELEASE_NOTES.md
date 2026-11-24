@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-No changes yet.
+- Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
+
 
 ## v0.3.15
 

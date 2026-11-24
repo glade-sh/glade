@@ -308,3 +308,61 @@ func TestValidatorsDetectEditAfterTrustedPass(t *testing.T) {
 		t.Fatal("metadata validation accepted an edited companion")
 	}
 }
+
+// A coarse filesystem can report the same full stamp across a same-size edit.
+func TestRequestFileDigestsRehashesRacyStamp(t *testing.T) {
+	skipWithoutStamps(t)
+	resetFileDigestTrust()
+	oldNow, oldHook, oldStat := fileDigestClock.Load(), fileDigestReadHook.Load(), requestDigestStatHook.Load()
+	t.Cleanup(func() {
+		fileDigestClock.Store(oldNow)
+		fileDigestReadHook.Store(oldHook)
+		requestDigestStatHook.Store(oldStat)
+		resetFileDigestTrust()
+	})
+	path := filepath.Join(t.TempDir(), "A.cls")
+	if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	stamp, ok := filestamp.Stat(path)
+	if !ok {
+		t.Fatal("missing stamp")
+	}
+	setFileDigestClockForTesting(func() time.Time { return time.Unix(0, max(stamp.Mtime, stamp.Ctime)) })
+	var request requestFileDigests
+	first, err := request.digest(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("other"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	stat := func(string) (filestamp.Stamp, bool) { return stamp, true }
+	requestDigestStatHook.Store(&stat)
+	second, err := request.digest(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second != sha256.Sum256([]byte("other")) || first == second {
+		t.Fatalf("digest after same-stamp edit = %x, first = %x", second, first)
+	}
+}
+
+func TestRequestFileDigestsReusesOldStamp(t *testing.T) {
+	skipWithoutStamps(t)
+	trustedClock(t)
+	path := filepath.Join(t.TempDir(), "A.cls")
+	if err := os.WriteFile(path, []byte("source"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	reads := countReads(t, path)
+	var request requestFileDigests
+	for range 2 {
+		if _, err := request.digest(path); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if *reads != 1 {
+		t.Fatalf("old file read %d times, want 1", *reads)
+	}
+}

@@ -33,6 +33,7 @@ func representativeTestCacheHeader(root string, fileCount int) testCacheHeader {
 		RuntimeABI:    "runtime-v1",
 		RuntimeKey:    "runtime-key",
 		Manifest: Manifest{
+			GeneratedAt:      1_800_000_000_000_001_000,
 			SchemaVersion:    manifestSchemaVersion,
 			ProjectRoot:      root,
 			SourceAPIVersion: "65.0",
@@ -200,5 +201,26 @@ func TestSplitCacheHeaderAndPayloadWritesArePrivate(t *testing.T) {
 		if got, want := info.Mode().Perm(), os.FileMode(0o600); got != want {
 			t.Fatalf("%s permissions = %04o, want %04o", filepath.Base(path), got, want)
 		}
+	}
+}
+
+func TestManifestIdentityIgnoresGenerationOnly(t *testing.T) {
+	base := representativeTestCacheHeader(t.TempDir(), 2).Manifest
+	differentTime := cloneManifest(base)
+	differentTime.GeneratedAt++
+	if !equalManifestIdentity(base, differentTime) {
+		t.Fatal("generation time changed manifest identity")
+	}
+	differentFile := cloneManifest(base)
+	differentFile.Files[0].SHA256 = "different"
+	if equalManifestIdentity(base, differentFile) {
+		t.Fatal("source digest change retained manifest identity")
+	}
+	withNil := base
+	withNil.Features = nil
+	withEmpty := withNil
+	withEmpty.Features = []string{}
+	if equalManifestIdentity(withNil, withEmpty) {
+		t.Fatal("nil and empty feature lists compared equal")
 	}
 }

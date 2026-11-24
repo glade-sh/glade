@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -860,5 +861,40 @@ func TestMatchesProjectSourcesGuards(t *testing.T) {
 	writeFile(t, path, "public class Guarded { public void drifted() {} }")
 	if MatchesProjectSources(index, p) {
 		t.Fatal("an index matched after its source changed on disk")
+	}
+}
+
+func TestSourceDigestCaptureTimePreserved(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "First.cls")
+	writeFile(t, path, "public class First {}")
+	before := time.Now()
+	sources := NewWorkspaceSources()
+	source, err := sources.load(SourceMetadata{RequestedPath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	after := time.Now()
+	sources.record(source)
+	set := sources.sourceDigestSet()
+	if set.CapturedAt().Before(before) || set.CapturedAt().After(after) {
+		t.Fatalf("capture %v outside [%v, %v]", set.CapturedAt(), before, after)
+	}
+	adopted := NewWorkspaceSources()
+	adopted.adopt(source, ApexMetadataInput{})
+	if got := adopted.sourceDigestSet().CapturedAt(); !got.Equal(set.CapturedAt()) {
+		t.Fatalf("adopted capture = %v, want %v", got, set.CapturedAt())
+	}
+	if got := set.withoutSource(path).CapturedAt(); !got.Equal(set.CapturedAt()) {
+		t.Fatalf("removed capture = %v, want %v", got, set.CapturedAt())
+	}
+	if got := set.withSourceDigest(path, []byte("overlay")).CapturedAt(); !got.IsZero() {
+		t.Fatalf("overlay capture = %v, want unknown", got)
+	}
+	unknown := source
+	unknown.capturedAt = time.Time{}
+	adopted.adopt(unknown, ApexMetadataInput{})
+	if got := adopted.sourceDigestSet().CapturedAt(); !got.IsZero() {
+		t.Fatalf("unknown adopted capture = %v, want unknown", got)
 	}
 }

@@ -98,7 +98,9 @@ func TestBuildManifestWithSourceDigestsUsesAllOrNothingApexOverlay(t *testing.T)
 	if reads[mainApex] != 0 || reads[dependencyApex] != 0 || reads[objectMetadata] != 1 {
 		t.Fatalf("complete overlay reads = %#v, want Apex 0/0 and non-Apex 1", reads)
 	}
-	if fromDisk := BuildManifest(root, p, index); fmt.Sprintf("%#v", fromSnapshot) != fmt.Sprintf("%#v", fromDisk) {
+	fromDisk := BuildManifest(root, p, index)
+	fromDisk.GeneratedAt = fromSnapshot.GeneratedAt
+	if fmt.Sprintf("%#v", fromSnapshot) != fmt.Sprintf("%#v", fromDisk) {
 		t.Fatalf("snapshot manifest differs from disk manifest:\n snapshot=%#v\n disk=%#v", fromSnapshot, fromDisk)
 	}
 
@@ -110,8 +112,83 @@ func TestBuildManifestWithSourceDigestsUsesAllOrNothingApexOverlay(t *testing.T)
 	if reads[mainApex] != 1 || reads[dependencyApex] != 1 || reads[objectMetadata] != 1 {
 		t.Fatalf("incomplete overlay reads = %#v, want all-disk 1/1/1", reads)
 	}
+	fromFallback.GeneratedAt = fromSnapshot.GeneratedAt
 	if fmt.Sprintf("%#v", fromFallback) != fmt.Sprintf("%#v", fromSnapshot) {
 		t.Fatalf("fallback manifest differs from complete manifest:\n fallback=%#v\n complete=%#v", fromFallback, fromSnapshot)
+	}
+}
+
+func TestFreshManifestRejectsRacySourceDigest(t *testing.T) {
+	for _, coarse := range []bool{false, true} {
+		t.Run(fmt.Sprintf("coarse=%t", coarse), func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
+			writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeStartupCacheTestFile(t, path, "public class First {}\n")
+			if coarse {
+				stamp := time.Now().Truncate(time.Second)
+				if err := os.Chtimes(path, stamp, stamp); err != nil {
+					t.Fatal(err)
+				}
+			}
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+			manifest := BuildManifestWithSourceDigests(root, p, index, artifacts.SourceDigests)
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeStartupCacheTestFile(t, path, "public class Other {}\n")
+			if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+				t.Fatal(err)
+			}
+			if freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, artifacts.SourceDigests, nil) {
+				t.Fatal("stale source digest accepted after same-size edit with unchanged mtime")
+			}
+			proof, err := ValidateInputWithSourceDigests(root, artifacts.SourceDigests)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if freshManifestWithValidatedInput(Version, root, currentPlatformABI(), manifest, root, Version, proof) {
+				t.Fatal("validated input accepted stale source digest")
+			}
+		})
+	}
+}
+
+func TestFreshManifestRejectsDelayedRacySourceDigest(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, path, "public class First {}\n")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStartupCacheTestFile(t, path, "public class Other {}\n")
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	// The later manifest creation must not move the digest's capture time.
+	time.Sleep(sourceDigestTrustAge + time.Second)
+	manifest := BuildManifestWithSourceDigests(root, p, index, artifacts.SourceDigests)
+	if freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, artifacts.SourceDigests, nil) {
+		t.Fatal("stale source digest accepted after delayed manifest construction")
+	}
+	proof, err := ValidateInputWithSourceDigests(root, artifacts.SourceDigests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if freshManifestWithValidatedInput(Version, root, currentPlatformABI(), manifest, root, Version, proof) {
+		t.Fatal("validated input accepted stale delayed source digest")
 	}
 }
 
@@ -129,6 +206,8 @@ func TestFreshManifestWithSourceDigestsUsesExactApexReadCounts(t *testing.T) {
 	index, complete := typesys.BuildWithArtifacts(p, schema.Schema{})
 	_, incomplete := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, schema.Schema{})
 	manifest := BuildManifestWithSourceDigests(root, p, index, complete.SourceDigests)
+	// Model an old, stable stamp without waiting for the filesystem clock.
+	manifest.GeneratedAt = time.Now().Add(3 * time.Second).UnixNano()
 
 	reads := make(map[string]int)
 	readFile := func(path string) ([]byte, error) {
@@ -200,6 +279,8 @@ func TestReadFreshRuntimeWithSourceDigestsValidatesKeyBeforePayload(t *testing.T
 	}
 	index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
 	entry := NewEntryWithSourceDigests(root, p, index, artifacts.SourceDigests, storage.NewOrgState(), CompiledRuntime{})
+	// Model an old, stable stamp for the warm-path read-count assertion.
+	entry.Manifest.GeneratedAt = time.Now().Add(3 * time.Second).UnixNano()
 	entry.RuntimeABI = "runtime-v5"
 	entry.RuntimeKey = "runtime-key"
 	if err := Write(&entry, SubdirTest); err != nil {

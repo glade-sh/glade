@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
@@ -31,6 +32,7 @@ type WorkspaceSource struct {
 	raw        string
 	normalized string
 	digest     [sha256.Size]byte
+	capturedAt time.Time
 	metadata   SourceMetadata
 }
 
@@ -87,10 +89,11 @@ type ApexMetadataInput struct {
 // SourceDigestSet is an immutable, compact snapshot of the exact raw source
 // digests used by one type-index build.
 type SourceDigestSet struct {
-	volatile  bool
-	physical  map[string][sha256.Size]byte
-	requested map[string]string
-	absolute  map[string]string
+	capturedAt time.Time
+	volatile   bool
+	physical   map[string][sha256.Size]byte
+	requested  map[string]string
+	absolute   map[string]string
 }
 
 // SourceSnapshotMismatchError reports that a source generation changed after
@@ -394,6 +397,15 @@ func (s *SourceDigestSet) Digest(path string) ([sha256.Size]byte, bool) {
 	return digest, ok
 }
 
+// CapturedAt is the earliest known physical read in the snapshot. A zero
+// value means one or more digests have no trustworthy capture time.
+func (s *SourceDigestSet) CapturedAt() time.Time {
+	if s == nil {
+		return time.Time{}
+	}
+	return s.capturedAt
+}
+
 // PhysicalCount returns the number of distinct successfully read physical
 // sources represented by the snapshot.
 func (s *SourceDigestSet) PhysicalCount() int {
@@ -440,10 +452,11 @@ func (s *SourceDigestSet) withoutSource(path string) *SourceDigestSet {
 		return nil
 	}
 	copySet := &SourceDigestSet{
-		volatile:  s.volatile,
-		physical:  make(map[string][sha256.Size]byte, len(s.physical)),
-		requested: make(map[string]string, len(s.requested)),
-		absolute:  make(map[string]string, len(s.absolute)),
+		volatile:   s.volatile,
+		capturedAt: s.capturedAt,
+		physical:   make(map[string][sha256.Size]byte, len(s.physical)),
+		requested:  make(map[string]string, len(s.requested)),
+		absolute:   make(map[string]string, len(s.absolute)),
 	}
 	for key, value := range s.physical {
 		copySet.physical[key] = value
@@ -555,6 +568,7 @@ type WorkspaceSources struct {
 	volatile             bool
 	mu                   sync.Mutex
 	readFile             func(string) ([]byte, error)
+	physicalReads        bool
 	physicalDirectories  map[string]string
 	physical             map[string]*physicalSource
 	logical              map[logicalSourceKey]*logicalSource
@@ -565,10 +579,11 @@ type WorkspaceSources struct {
 }
 
 type physicalSource struct {
-	ready  chan struct{}
-	raw    string
-	digest [sha256.Size]byte
-	err    error
+	capturedAt time.Time
+	ready      chan struct{}
+	raw        string
+	digest     [sha256.Size]byte
+	err        error
 }
 
 type logicalSourceKey struct {
@@ -642,7 +657,9 @@ func (s *WorkspaceSources) apexMetadataInputSet() map[sourceOccurrenceKey]ApexMe
 
 // NewWorkspaceSources creates an empty source arena backed by os.ReadFile.
 func NewWorkspaceSources() *WorkspaceSources {
-	return newWorkspaceSources(os.ReadFile)
+	s := newWorkspaceSources(os.ReadFile)
+	s.physicalReads = true
+	return s
 }
 
 // All returns the successful logical source occurrences in build order.
@@ -685,15 +702,28 @@ func (s *WorkspaceSources) sourceDigestSet() *SourceDigestSet {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	digests.physical = make(map[string][sha256.Size]byte, len(s.physical))
+	first := true
+	addCapture := func(captured time.Time) {
+		if first {
+			digests.capturedAt = captured
+			first = false
+		} else if digests.capturedAt.IsZero() || captured.IsZero() {
+			digests.capturedAt = time.Time{}
+		} else if captured.Before(digests.capturedAt) {
+			digests.capturedAt = captured
+		}
+	}
 	for path, source := range s.physical {
 		if source.err != nil {
 			continue
 		}
+		addCapture(source.capturedAt)
 		digests.physical[path] = source.digest
 		digests.absolute[cleanedAbsolutePath(path)] = path
 	}
 	digests.requested = make(map[string]string, len(s.all))
 	for _, source := range s.all {
+		addCapture(source.capturedAt)
 		requestedPath := source.metadata.RequestedPath
 		physicalPath := source.metadata.PhysicalPath
 		digests.requested[requestedPath] = physicalPath
@@ -731,7 +761,7 @@ func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput
 	if _, ok := s.physical[physicalPath]; !ok {
 		ready := make(chan struct{})
 		close(ready)
-		s.physical[physicalPath] = &physicalSource{ready: ready, raw: source.raw, digest: source.digest}
+		s.physical[physicalPath] = &physicalSource{ready: ready, raw: source.raw, digest: source.digest, capturedAt: source.capturedAt}
 	}
 	if _, ok := s.logical[logicalKey]; !ok {
 		ready := make(chan struct{})
@@ -781,6 +811,7 @@ func (s *WorkspaceSources) load(metadata SourceMetadata) (WorkspaceSource, error
 		raw:        physical.raw,
 		normalized: logical.normalized,
 		digest:     physical.digest,
+		capturedAt: physical.capturedAt,
 		metadata:   metadata,
 	}, nil
 }
@@ -816,6 +847,9 @@ func (s *WorkspaceSources) loadPhysical(physicalPath, requestedPath string) (*ph
 	s.mu.Lock()
 	s.physicalReadAttempts++
 	s.mu.Unlock()
+	if s.physicalReads {
+		physical.capturedAt = time.Now()
+	}
 	data, err := s.readFile(physicalPath)
 	if err == nil {
 		physical.raw = string(data)
