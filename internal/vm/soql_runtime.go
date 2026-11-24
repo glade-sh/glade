@@ -4873,6 +4873,29 @@ func (vm *VM) capturedEventSubscriberCount(query soql.Query) bool {
 	if version != "62.0" && version != "67.0" {
 		return false
 	}
+	entry := vm.testExecutionEntry
+	if entry == nil {
+		return false
+	}
+	class, ok := vm.lookupClass(entry.className)
+	if !ok || !class.IsTest || class.APIVersion != version {
+		return false
+	}
+	events := vm.triggerGlobals["Trigger.new"]
+	if events.Kind != ValueList || len(events.List) != 1 {
+		return false
+	}
+	uuid := stringField(events.List[0], "EventUuid")
+	publishedHere := false
+	for _, candidate := range vm.testContext.EventParentPublishUUIDs {
+		if uuid != "" && uuid == candidate {
+			publishedHere = true
+			break
+		}
+	}
+	if !publishedHere {
+		return false
+	}
 	if !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") ||
 		query.Aggregates[0].Field != "" || !eventSubscriberPlainCount(query) ||
 		!strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") {

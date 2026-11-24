@@ -907,6 +907,8 @@ type TestContext struct {
 	// StopTimeEventDelivery is set while Test.stopTest() delivers queued
 	// platform and change events, and cleared by an explicit deliver().
 	StopTimeEventDelivery bool
+	// EventParentPublishUUIDs is local to the currently active runAs block.
+	EventParentPublishUUIDs []string
 }
 
 type eventPublishCallback struct {
