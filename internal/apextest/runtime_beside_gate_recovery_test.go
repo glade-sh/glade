@@ -3,10 +3,13 @@ package apextest
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/startupcache"
@@ -159,4 +162,84 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		t.Fatalf("got %d gated builds, want %d", got, iterations)
 	}
 	t.Logf("%d exact-key builds, GOMAXPROCS=%d GOGC=%s", iterations, runtime.GOMAXPROCS(0), os.Getenv("GOGC"))
+}
+
+// A large project puts all three scans above the real worker-pool threshold.
+func TestRuntimeBesideGateWorkerRecovery(t *testing.T) {
+	enableRuntimeBesideGateForTest(t)
+	t.Cleanup(InvalidateRuntimeCaches)
+	prev := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(prev)
+	p := newBesideGateStressProject(t, 0)
+	for i := range 64 {
+		name := fmt.Sprintf("CompileHelper%d", i)
+		writeFile(t, filepath.Join(filepath.Dir(p.helper), name+".cls"), "public class "+name+" { public static Integer value() { return 1; } }")
+	}
+	index, artifacts, cases := p.load(t, 0, 1, false)
+	opts := Options{BuildArtifacts: &artifacts, NoDiskCache: true}
+	for _, stage := range []string{"compile_method", "scan_standard_fields", "scan_record_types"} {
+		t.Run(stage, func(t *testing.T) {
+			InvalidateRuntimeCaches()
+			projectReferencedStandardFieldCache.Clear()
+			log := new(besideGateLogBuffer)
+			testOnlyRuntimeBesideGateLog = log
+			var injected atomic.Bool
+			testOnlyRuntimeBesideGateStageHook = func(s string) {
+				if stage == s && injected.CompareAndSwap(false, true) {
+					panic("worker")
+				}
+			}
+			defer func() { testOnlyRuntimeBesideGateLog = nil; testOnlyRuntimeBesideGateStageHook = nil }()
+			run := RunCasesContext(context.Background(), index, opts, cases)
+			if !injected.Load() || run.Summary().Passed != 1 || strings.Count(log.String(), "panicked") != 1 || !strings.Contains(log.String(), "TestRuntimeBesideGateWorkerRecovery") {
+				t.Fatalf("injected %v: %+v %s", injected.Load(), run.Summary(), log.String())
+			}
+		})
+	}
+	t.Run("cancel", func(t *testing.T) {
+		InvalidateRuntimeCaches()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		var started atomic.Int64
+		testOnlyRuntimeBesideGateStageHook = func(stage string) {
+			if stage == "compile_method" {
+				started.Add(1)
+				cancel()
+			}
+		}
+		defer func() { testOnlyRuntimeBesideGateStageHook = nil }()
+		run := RunCasesContext(ctx, index, opts, cases)
+		if n := started.Load(); n < 1 || n > 2 || run.Summary().Passed != 0 {
+			t.Fatalf("started %d methods, summary %+v", n, run.Summary())
+		}
+		assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
+	})
+}
+
+func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
+	enableRuntimeBesideGateForTest(t)
+	prev := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(prev)
+	t.Cleanup(InvalidateRuntimeCaches)
+	index, artifacts, cases := besideGateProject(t, "Object o = new MissingBuildType();")
+	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts}
+	old := sharedStandardRuntimePrefix()
+	arrived := make(chan struct{})
+	testOnlyRuntimeBesideGateStageHook = func(stage string) {
+		if stage == "after_methods" {
+			close(arrived)
+			panic("partial rejected build")
+		}
+	}
+	log := new(besideGateLogBuffer)
+	testOnlyRuntimeBesideGateLog = log
+	defer func() { testOnlyRuntimeBesideGateStageHook = nil; testOnlyRuntimeBesideGateLog = nil }()
+	run := runCasesContextWithSemanticGateHooks(context.Background(), index, opts, cases, semanticGateHooks{afterIdentity: func() { <-arrived }})
+	if run.Summary().CompileErrors != 1 || !strings.Contains(log.String(), "(abandoned)") {
+		t.Fatalf("summary %+v, %s", run.Summary(), log.String())
+	}
+	if sharedStandardRuntimePrefix() == old {
+		t.Fatal("failed build retained the shared prefix")
+	}
+	assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
 }
