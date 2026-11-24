@@ -29,6 +29,7 @@ func TestSendEmailOrgWideSenderCatalogBoundary(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.NewOrgState()
+			org.APIVersion = "67.0"
 			storage.EnsureStandardObject(&org, "OrgWideEmailAddress")
 			object := org.Objects["OrgWideEmailAddress"]
 			object.Records = tc.records

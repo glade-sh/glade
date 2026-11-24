@@ -729,7 +729,7 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value, validateOrgW
 		// sender ID shape for the explicit false overload when the local catalog
 		// has a live record to compare against.
 		senderID := emailFieldString(message, "orgWideEmailAddressId")
-		if validateOrgWideSender && strings.HasPrefix(senderID, "0D2") && validateApexID(senderID) == nil {
+		if validateOrgWideSender && vm.capturedOrgWideEmailContext() && strings.HasPrefix(senderID, "0D2") && validateApexID(senderID) == nil {
 			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
 			if !ok {
 				objectName = "OrgWideEmailAddress"
