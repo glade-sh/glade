@@ -724,6 +724,19 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 // Validate against the stored recipient, not a possibly stale caller record.
 func (vm *VM) localSendEmailRecipientValidationError(message Value) Value {
 	if message.Type == "Messaging.SingleEmailMessage" && vm.Org != nil {
+		// Native: absent_org_wide_email/org.tsv. A supplied sender must
+		// refer to an existing org-wide email address; null uses the default.
+		senderID := emailFieldString(message, "orgWideEmailAddressId")
+		if senderID != "" {
+			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
+			if !ok {
+				objectName = "OrgWideEmailAddress"
+			}
+			_, sender, found := storage.LookupRecordByID(vm.Org.Objects[objectName].Records, storage.ID(senderID))
+			if !found || sender.System.IsDeleted {
+				return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+			}
+		}
 		templateID := emailFieldString(message, "templateId")
 		// The default local test org has the EmailTemplate schema but no
 		// template records. An empty local catalog is not evidence that a

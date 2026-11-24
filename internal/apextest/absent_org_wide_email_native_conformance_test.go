@@ -96,7 +96,10 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 							if c.Problem == nil {
 								t.Fatalf("missing assertion: %+v", c)
 							}
-							const prefix = "System.AssertException: Assertion Failed: ROAD548="
+							if c.Problem.Type != "System.AssertException" {
+								t.Fatalf("unexpected assertion type: %q", c.Problem.Type)
+							}
+							const prefix = "Assertion Failed: ROAD548="
 							var ok bool
 							actual[5], ok = strings.CutPrefix(c.Problem.Message, prefix)
 							if !ok {
