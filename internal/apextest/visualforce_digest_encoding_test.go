@@ -44,7 +44,7 @@ func TestVisualforceDigestEntryUsesCompactEncoding(t *testing.T) {
 }
 
 func TestVisualforceDigestEntryRejectsShortDigest(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "input")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)

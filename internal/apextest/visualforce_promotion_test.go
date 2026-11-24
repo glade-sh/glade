@@ -77,7 +77,7 @@ func TestRecentVisualforcePromotionRejectsChangedBytes(t *testing.T) {
 }
 
 func TestAgedVisualforceDigestPersistedAfterRun(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 	writeFile(t, filepath.Join(root, "src", "pages", "Home.page"), `<apex:page/>`)
 	input := filepath.Join(root, "src", "staticresources", "Bundle", "asset.js")

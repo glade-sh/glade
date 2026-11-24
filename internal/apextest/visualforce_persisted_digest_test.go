@@ -15,8 +15,19 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// Persistent digest tables require a project root that is not group-writable.
+// TempDir itself follows the process umask, so create an explicitly private child.
+func privateVisualforceDigestTestRoot(t *testing.T) string {
+	t.Helper()
+	root := filepath.Join(t.TempDir(), "project")
+	if err := os.Mkdir(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
 func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 		t.Fatal(err)
@@ -68,7 +79,7 @@ func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("fresh"), 0600); err != nil {
 		t.Fatal(err)
@@ -118,7 +129,7 @@ func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
 }
 
 func TestVisualforcePersistentDigestScope(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	page, resource := filepath.Join(root, "Home.page"), filepath.Join(root, "asset.js")
 	writeFile(t, page, "<apex:page/>")
 	writeFile(t, resource, "asset")
@@ -149,7 +160,7 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 	}
 
 	for _, withView := range []bool{false, true} {
-		other := t.TempDir()
+		other := privateVisualforceDigestTestRoot(t)
 		page, resource := filepath.Join(other, "Home.page"), filepath.Join(other, "asset.js")
 		writeFile(t, page, "<apex:page/>")
 		writeFile(t, resource, "asset")
@@ -169,7 +180,7 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
 	for _, mutation := range []string{"replacement", "deletion", "symlink"} {
 		t.Run(mutation, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			path := filepath.Join(root, "asset.js")
 			if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 				t.Fatal(err)
@@ -229,7 +240,7 @@ func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("stable"), 0600); err != nil {
 		t.Fatal(err)
@@ -272,7 +283,7 @@ func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -290,7 +301,7 @@ func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestDoesNotReadUnsafeRoot(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -352,7 +363,7 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			page, input := filepath.Join(root, "Home.page"), filepath.Join(root, "input")
 			writeFile(t, page, "<apex:page/>")
 			writeFile(t, input, "before")
@@ -391,7 +402,7 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -409,7 +420,7 @@ func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsChecksumMismatch(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)

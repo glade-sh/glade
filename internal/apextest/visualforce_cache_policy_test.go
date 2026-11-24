@@ -19,7 +19,7 @@ func TestVisualforceDigestCacheRespectsRunPolicy(t *testing.T) {
 		{"parallel bypass", Options{ParallelMethods: true, Parallelism: 2}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 			writeFile(t, filepath.Join(root, "src", "pages", "Home.page"), `<apex:page/>`)
 			writeFile(t, filepath.Join(root, "src", "classes", "CachePolicyTest.cls"), `@IsTest private class CachePolicyTest { @IsTest static void passes() { System.assertEquals(2, 1 + 1); } }`)
@@ -39,7 +39,7 @@ func TestVisualforceDigestCacheRespectsRunPolicy(t *testing.T) {
 }
 
 func TestVisualforceDigestCacheDisabledRunDoesNotReadExistingTable(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 	page := filepath.Join(root, "src", "pages", "Home.page")
 	writeFile(t, page, `<apex:page/>`)
