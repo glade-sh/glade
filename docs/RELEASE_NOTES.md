@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Fix VS Code Test Explorer discovery, selector failures, and excluded tests.
 
 ## v0.3.14
 

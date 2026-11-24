@@ -25,7 +25,9 @@ export function flattenTestCases(run: GladeTestRun): FlatTestCaseResult[] {
         methodName,
         status: testCase.status,
         durationMs: testCase.durationMs || 0,
-        message: testCase.problem?.message,
+        message: testCase.problem?.type === "Selector"
+          ? [testCase.problem.type, testCase.problem.message, testCase.problem.detail].filter(Boolean).join(": ")
+          : testCase.problem?.message,
         file: frame?.file,
         line: frame?.line,
         column: frame?.column,
