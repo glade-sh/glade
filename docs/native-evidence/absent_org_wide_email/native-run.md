@@ -1,5 +1,5 @@
-Salesforce Developer scratch org on a campaign Dev Hub, captured 2026-11-24. The 30-day org was deleted and verified gone.
+Salesforce Developer Edition scratch org, captured 2026-11-24 and deleted after the run. See the fixture's `RUN-FACTS.md` for the requested features and the uncaptured deliverability setting.
 
-At Apex API 62.0 and 65.0, an absent org-wide email address was queried by display name with `WITH SECURITY_ENFORCED`. A caught exception left the newly constructed record's Id null. Anonymous Apex and an `@IsTest` method confirmed the null Id; a second `@IsTest` method asserting a non-null Id failed with the recorded assertion. The cases do not distinguish the caught exception's cause.
+At Apex API 62.0 and 67.0, anonymous Apex and `@IsTest` called `Messaging.sendEmail(messages, false)`. A nonexistent well-formed org-wide sender ID returned `INVALID_CROSS_REFERENCE_KEY: invalid cross reference id`. An empty address lookup supplied a null ID and the call returned success. The test methods intentionally fail assertions to expose their results.
 
-Rows: `internal/apextest/testdata/conformance/absent_org_wide_email/org.tsv`. There were no DML, email or asynchronous operations in these cases.
+Rows and sources: `internal/apextest/testdata/conformance/absent_org_wide_email`.

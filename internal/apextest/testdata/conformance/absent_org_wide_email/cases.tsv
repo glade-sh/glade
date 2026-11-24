@@ -1,4 +1,3 @@
-id	route	file	api
-missing	anonymous	missing.apex	-
-missing_test	istest	AbsentAddressProbe	-
-assertion_test	istest	AbsentAddressAssertion	-
+id	route	file	description
+direct	anonymous,istest	missing.apex,Road548Probe	Nonexistent well-formed org-wide sender ID
+lookup	anonymous,istest	missing.apex,Road548Probe	Missing address lookup supplies null ID
