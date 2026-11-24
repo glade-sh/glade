@@ -12,13 +12,22 @@ import (
 func TestEventParentVisibilityRunAsNeighbor(t *testing.T) {
 	machine := recordSharingControlMachine(t, "Private")
 	machine.currentMethod.APIVersion = "62.0"
-	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Where: &soql.Condition{Field: "Id", Op: "="}}
+	raw := "SELECT COUNT() FROM Widget__c WHERE Id = 'a00000000000001' WITH USER_MODE"
+	query, err := machine.parseSOQLAt(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine.staticSOQLQuery = true
 	if got := machine.soqlSharingUserID(query); got != machine.currentUserID() {
 		t.Fatalf("runAs sharing user = %q, want %q", got, machine.currentUserID())
 	}
-	record := machine.Org.Objects["Widget__c"].Records["a00000000000001"]
-	if machine.userModeRecordVisible("Widget__c", record, machine.currentUserID()) {
-		t.Fatal("runAs user can see another user's unshared private record")
+	result, err := machine.executeSOQL(raw, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	count, ok := aggregateCount(result)
+	if !ok || count.Int != 0 {
+		t.Fatalf("runAs count = %#v, want zero", result)
 	}
 }
 
