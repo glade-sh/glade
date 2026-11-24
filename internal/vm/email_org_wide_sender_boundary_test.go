@@ -21,6 +21,7 @@ func TestSendEmailOrgWideSenderCatalogBoundary(t *testing.T) {
 		{name: "unpopulated", id: string(sender)},
 		{name: "existing", id: string(sender), records: map[storage.ID]storage.Record{sender: {ID: sender}}},
 		{name: "deleted", id: string(sender), records: map[storage.ID]storage.Record{sender: {ID: sender, System: storage.SystemFields{IsDeleted: true}}}},
+		{name: "missing with only unrelated deleted sender", id: string(sender), records: map[storage.ID]storage.Record{other: {ID: other, System: storage.SystemFields{IsDeleted: true}}}},
 		{name: "missing in populated catalog", id: string(sender), records: map[storage.ID]storage.Record{other: {ID: other}}, wantError: true},
 		{name: "other prefix", id: "001000000000001", records: map[storage.ID]storage.Record{other: {ID: other}}},
 		{name: "malformed sender", id: "0D2bad", records: map[storage.ID]storage.Record{other: {ID: other}}},
