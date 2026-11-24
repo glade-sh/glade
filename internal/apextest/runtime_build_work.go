@@ -95,9 +95,6 @@ func runRuntimeBuildJobs(count int, work *runtimeBuildWork, stage string, job fu
 	}
 	group.Wait()
 	if failure := failed.Load(); failure != nil {
-		if work == nil {
-			panic(failure.value)
-		}
 		panic(failure)
 	}
 	work.check()

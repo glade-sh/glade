@@ -84,6 +84,12 @@ type runtimeBuildPanic struct {
 	stack []byte
 }
 
+// A sequential build re-panics on its owner goroutine. Include the worker
+// stack in the Go panic diagnostic, where the owner stack cannot show it.
+func (p *runtimeBuildPanic) Error() string {
+	return fmt.Sprintf("runtime build worker panicked: %v\n%s", p.value, p.stack)
+}
+
 const runtimeBuildPanicStackLimit = 8 << 10
 
 // Preserve the familiar nil-dereference diagnostic without ever calling a
