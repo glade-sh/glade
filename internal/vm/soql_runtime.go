@@ -4881,6 +4881,37 @@ func (vm *VM) capturedEventSubscriberCount(query soql.Query) bool {
 	return vm.capturedEventSubscriberParentCount(query) || vm.capturedEventSubscriberShareCount(query)
 }
 
+// capturedEventParent identifies the single publisher-owned record named by the
+// sole event payload. Ambiguous or unrelated references keep ordinary sharing.
+func (vm *VM) capturedEventParent(object string) (storage.ID, bool) {
+	events := vm.triggerGlobals["Trigger.new"]
+	if events.Kind != ValueList || len(events.List) != 1 || !hasSuffixFold(events.List[0].Type, "__e") {
+		return "", false
+	}
+	event := events.List[0]
+	publisher := stringField(event, "CreatedById")
+	user, ok := vm.findOrgRecord("User", storage.ID(publisher))
+	if publisher == "" || !ok || !strings.EqualFold(vm.currentUserProfileName(vmValueFromRecord(user)), "System Administrator") {
+		return "", false
+	}
+	var parentID storage.ID
+	for name, value := range event.Fields {
+		if !hasSuffixFold(name, "__c") || value.Kind != ValueString || value.Text == "" {
+			continue
+		}
+		record, found := vm.findOrgRecord(object, storage.ID(value.Text))
+		if !found || record.System.IsDeleted || record.System.OwnerID == "" || record.System.CreatedByID == "" ||
+			!storage.IDsEqual(record.System.OwnerID, storage.ID(publisher)) || !storage.IDsEqual(record.System.CreatedByID, storage.ID(publisher)) {
+			continue
+		}
+		if parentID != "" {
+			return "", false
+		}
+		parentID = record.ID
+	}
+	return parentID, parentID != ""
+}
+
 // capturedEventSubscriberParentCount covers the private custom-object COUNT
 // by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
 // source versions retain their existing sharing behavior.
@@ -4892,7 +4923,11 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 		return false
 	}
 	object, ok := vm.resolveObjectName(query.Object)
-	return ok && hasSuffixFold(object, "__c") && strings.EqualFold(strings.TrimSpace(vm.Org.Objects[object].Definition.SharingModel), "Private")
+	if !ok || !hasSuffixFold(object, "__c") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[object].Definition.SharingModel), "Private") {
+		return false
+	}
+	parent, ok := vm.capturedEventParent(object)
+	return ok && storage.IDsEqual(parent, storage.ID(storageValueIDText(where.Value)))
 }
 
 // capturedEventSubscriberShareCount covers the two share COUNT queries in
@@ -4907,7 +4942,18 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 	if !hasSuffixFold(parent, "__c") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[parent].Definition.SharingModel), "Private") {
 		return false
 	}
+	parentID, ok := vm.capturedEventParent(parent)
+	if !ok {
+		return false
+	}
 	if query.Where == nil {
+		// An unfiltered count can bypass sharing only when no share belongs to
+		// a different parent, which was absent from the native capture.
+		for _, row := range vm.Org.Objects[object].Records {
+			if !row.System.IsDeleted && !storage.IDsEqual(storage.ID(storageValueIDText(row.Fields["ParentId"])), parentID) {
+				return false
+			}
+		}
 		return true
 	}
 	where := query.Where
@@ -4918,7 +4964,9 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 	return !first.Not && !first.Range && first.Formula == nil && len(first.And) == 0 && len(first.Or) == 0 && first.Subquery == nil && len(first.Values) == 1 &&
 		!second.Not && !second.Range && second.Formula == nil && len(second.And) == 0 && len(second.Or) == 0 && second.Subquery == nil && len(second.Values) == 1 &&
 		strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
-		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN")
+		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN") &&
+		storage.IDsEqual(storage.ID(storageValueIDText(second.Values[0])), parentID) &&
+		hasSuffixFold(storageValueIDText(first.Values[0]), "__c")
 }
 
 func (vm *VM) soqlSharingUserID(query soql.Query) string {

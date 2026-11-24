@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- **Event subscriber parent visibility (Apex API 62.0, 67.0).** A platform-event trigger can count a private custom parent record by Id in user mode when the event is published inside `System.runAs`.
+- **Event subscriber parent visibility (Apex API 62.0, 67.0).** A platform-event trigger can count the private custom parent referenced by its event in user mode when an administrator publishes it inside `System.runAs`.
 
-- **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` counts the captured private custom object's `__Share` rows in `USER_MODE` as Automated Process instead of seeing none. Other share-query shapes keep their existing visibility rules. This regressed earlier in the v0.3.14 cycle and is fixed before release.
+- **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` counts the captured publisher-owned parent's custom `__Share` rows in `USER_MODE` as Automated Process instead of seeing none. Other share-query shapes keep their existing visibility rules. This regressed earlier in the v0.3.14 cycle and is fixed before release.
 
 - **Site methods without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` return null, as captured, instead of answering from the seeded Site.
 

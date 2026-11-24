@@ -52,7 +52,23 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	machine.staticSOQLQuery = true
 	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}}
-	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "="}}
+	users := machine.Org.Objects["User"]
+	publisher := users.Records["005000000000002"]
+	publisher.Fields["ProfileId"] = storage.IDValue("00e000000000002")
+	users.Records[publisher.ID] = publisher
+	profiles := machine.Org.Objects["Profile"]
+	profile := profiles.Records["00e000000000002"]
+	profile.Fields["Name"] = storage.StringValue("System Administrator")
+	profiles.Records[profile.ID] = profile
+	parents := machine.Org.Objects["Widget__c"]
+	parent := parents.Records["a00000000000002"]
+	parent.System.CreatedByID = "005000000000002"
+	parents.Records[parent.ID] = parent
+	event := Object("Signal__e")
+	event.Fields["ParentRef__c"] = String(string(parent.ID))
+	event.Fields["CreatedById"] = String(string(publisher.ID))
+	machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
+	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue(parent.ID)}}
 	shareQuery := query
 	shareQuery.Object = "Widget__Share"
 	shareQuery.Where = nil
