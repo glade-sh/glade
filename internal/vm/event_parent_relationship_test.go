@@ -67,3 +67,20 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 		t.Fatalf("extra shares sharing user = %q, want %q", got, want)
 	}
 }
+
+// Verify the observable share row, not only the chosen sharing identity.
+func TestEventSubscriberUnrelatedShareRowNeighbor(t *testing.T) {
+	machine := recordSharingControlMachine(t, "Private")
+	machine.currentMethod.APIVersion = "62.0"
+	machine.currentTrigger = true
+	machine.eventSubscriberTriggerDepth = 1
+	machine.eventBusTriggerContext = &eventBusTriggerContext{}
+	machine.testContext.StopTimeEventDelivery = true
+	machine.staticSOQLQuery = true
+	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
+	row := storage.Record{ID: "a10000000000001", Object: "Widget__Share", Fields: map[string]storage.Value{"ParentId": storage.IDValue("a00000000000001")}}
+	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{row.ID: row}}
+	if machine.userModeRecordVisible("Widget__Share", row, machine.currentUserID()) {
+		t.Fatal("unrelated parent share is visible")
+	}
+}
