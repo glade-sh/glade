@@ -2219,7 +2219,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		case sources.backgroundDiskPublication:
 			publishInBackground(root, publish)
 		default:
-			orderedPublication(root, publish)()
+			publishSynchronously(root, publish)
 		}
 	}
 	if work != nil && work.stage != nil {
@@ -2397,12 +2397,15 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		publicationStarted := time.Now()
-		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup)
-		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
-		if ok {
-			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
-		}
+		root := filepath.Clean(strings.TrimSpace(index.Project.Root))
+		publishSynchronously(root, func() {
+			publicationStarted := time.Now()
+			publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup)
+			counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
+			if ok {
+				persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
+			}
+		})
 	}
 	return key, projected, nil
 }

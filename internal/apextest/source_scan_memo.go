@@ -51,25 +51,9 @@ type publicationRoot struct {
 }
 
 func orderedPublication(root string, publish func()) func() {
-	publicationRootsMu.Lock()
-	order := publicationRoots[root]
-	if order == nil {
-		order = new(publicationRoot)
-		publicationRoots[root] = order
-	}
-	order.issued++
-	order.pending++
-	seq := order.issued
-	publicationRootsMu.Unlock()
+	order, seq := claimPublicationRoot(root)
 	return func() {
-		defer func() {
-			publicationRootsMu.Lock()
-			order.pending--
-			if order.pending == 0 {
-				delete(publicationRoots, root)
-			}
-			publicationRootsMu.Unlock()
-		}()
+		defer order.release(root)
 		order.mu.Lock()
 		defer order.mu.Unlock()
 		if order.written > seq {
@@ -77,6 +61,38 @@ func orderedPublication(root string, publish func()) func() {
 		}
 		order.written = seq
 		publish()
+	}
+}
+
+// Direct writers take the rollback lock but never supersede a queued write
+// or skip their own write because another request finished first.
+func publishSynchronously(root string, publish func()) {
+	order, _ := claimPublicationRoot(root)
+	defer order.release(root)
+	order.mu.Lock()
+	defer order.mu.Unlock()
+	publish()
+}
+
+func claimPublicationRoot(root string) (*publicationRoot, uint64) {
+	publicationRootsMu.Lock()
+	defer publicationRootsMu.Unlock()
+	order := publicationRoots[root]
+	if order == nil {
+		order = new(publicationRoot)
+		publicationRoots[root] = order
+	}
+	order.issued++
+	order.pending++
+	return order, order.issued
+}
+
+func (order *publicationRoot) release(root string) {
+	publicationRootsMu.Lock()
+	defer publicationRootsMu.Unlock()
+	order.pending--
+	if order.pending == 0 {
+		delete(publicationRoots, root)
 	}
 }
 
