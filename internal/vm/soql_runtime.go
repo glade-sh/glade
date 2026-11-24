@@ -4932,14 +4932,12 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 		return false
 	}
 	target := storage.ID(storageValueIDText(where.Value))
-	return storage.IDsEqual(parent, target) || vm.capturedSecondEventParent(object, parent, target)
+	return vm.capturedEventParentShape(object, parent, target)
 }
 
-// The second parent count was captured with two publisher-owned records and
-// exactly one owner share and one same-reason Read share on each record.
-// Other record and share sets retain the ordinary user-mode filter.
-func (vm *VM) capturedSecondEventParent(object string, parentID, targetID storage.ID) bool {
-	if targetID == "" || storage.IDsEqual(parentID, targetID) {
+// Captures contain one parent with two shares or two parents with four shares.
+func (vm *VM) capturedEventParentShape(object string, parentID, targetID storage.ID) bool {
+	if targetID == "" {
 		return false
 	}
 	parent, ok := vm.findOrgRecord(object, parentID)
@@ -4947,19 +4945,19 @@ func (vm *VM) capturedSecondEventParent(object string, parentID, targetID storag
 		return false
 	}
 	publisher := parent.System.OwnerID
-	liveParents := 0
+	var parents []storage.ID
+	targetFound := false
 	for _, record := range vm.Org.Objects[object].Records {
 		if record.System.IsDeleted {
 			continue
 		}
-		liveParents++
-		if liveParents > 2 || !storage.IDsEqual(record.System.OwnerID, publisher) ||
-			!storage.IDsEqual(record.System.CreatedByID, publisher) ||
-			(!storage.IDsEqual(record.ID, parentID) && !storage.IDsEqual(record.ID, targetID)) {
+		if len(parents) == 2 || !storage.IDsEqual(record.System.OwnerID, publisher) || !storage.IDsEqual(record.System.CreatedByID, publisher) {
 			return false
 		}
+		parents = append(parents, record.ID)
+		targetFound = targetFound || storage.IDsEqual(record.ID, targetID)
 	}
-	if liveParents != 2 {
+	if len(parents) == 0 || !targetFound {
 		return false
 	}
 	shareName, ok := vm.resolveObjectName(object[:len(object)-3] + "__Share")
@@ -4986,10 +4984,11 @@ func (vm *VM) capturedSecondEventParent(object string, parentID, targetID storag
 		cause := storageValueIDText(causeField)
 		access := storageValueIDText(accessField)
 		index := -1
-		if storage.IDsEqual(rowParent, parentID) {
-			index = 0
-		} else if storage.IDsEqual(rowParent, targetID) {
-			index = 1
+		for i, id := range parents {
+			if storage.IDsEqual(rowParent, id) {
+				index = i
+				break
+			}
 		}
 		if index < 0 || rowRecipient == "" {
 			return false
@@ -5010,7 +5009,12 @@ func (vm *VM) capturedSecondEventParent(object string, parentID, targetID storag
 			return false
 		}
 	}
-	if owners != [2]int{1, 1} || custom != [2]int{1, 1} || recipient == "" {
+	for i := range parents {
+		if owners[i] != 1 || custom[i] != 1 {
+			return false
+		}
+	}
+	if recipient == "" {
 		return false
 	}
 	user, ok := vm.findOrgRecord("User", recipient)
