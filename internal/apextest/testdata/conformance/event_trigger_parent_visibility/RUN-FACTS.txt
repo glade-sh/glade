@@ -25,3 +25,5 @@ counts as EventBus.publish. The relevant runAs and test delivery are only
 available in an Apex test context.
 The extraOwner and extraOther rows publish the same event with Extra__c = 'x';
 both return the same subscriber counts as the single-field event.
+
+Review follow-up capture (2026-11-24): fresh 30-day scratch org, deleted after use. Class and trigger API 62.0 and 67.0; test route only. USER_MODE, multiple text fields, a checkbox field, and two-parent cases with extra payload or SYSTEM_MODE returned parent1. The three-argument null callback cases returned the hosted UnexpectedException before delivery.

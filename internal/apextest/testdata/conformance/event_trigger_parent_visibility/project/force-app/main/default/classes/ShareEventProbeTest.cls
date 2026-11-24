@@ -40,4 +40,45 @@ private class ShareEventProbeTest {
     @IsTest static void accessOther() { System.assert(false, 'OUT:' + run(false, true)); }
     @IsTest static void ownerShare() { System.assert(false, 'OUT:' + run(true)); }
     @IsTest static void otherShare() { System.assert(false, 'OUT:' + run(false)); }
+    private static User mk(String alias) {
+        return mk('System Administrator', alias);
+    }
+
+    private static String run(String route, Boolean two) {
+        User u = mk('adm');
+        User other = mk('oth');
+        String out;
+        System.runAs(u) {
+            Doc__c d = new Doc__c(Name = 'd');
+            insert d;
+            if (two) {
+                Doc__c d2 = new Doc__c(Name = 'd2');
+                insert d2;
+                insert new Doc__Share(ParentId = d2.Id, UserOrGroupId = other.Id, AccessLevel = 'Read', RowCause = Schema.Doc__Share.RowCause.Rsn__c);
+            }
+            insert new Doc__Share(ParentId = d.Id, UserOrGroupId = other.Id, AccessLevel = 'Read', RowCause = Schema.Doc__Share.RowCause.Rsn__c);
+            Test.startTest();
+            Evt__e e = new Evt__e(DocId__c = String.valueOf(d.Id));
+            if (route == 'many') { e.Extra__c = 'x'; e.ExtraTwo__c = 'y'; }
+            if (route == 'flag') e.Flag__c = true;
+            if (route == 'extra') e.Extra__c = 'x';
+            if (route == 'user') EventBus.publishWithAccessLevel(e, AccessLevel.USER_MODE);
+            else if (route == 'nullsys') EventBus.publishWithAccessLevel(e, null, AccessLevel.SYSTEM_MODE);
+            else if (route == 'nulluser') EventBus.publishWithAccessLevel(e, null, AccessLevel.USER_MODE);
+            else if (route == 'system') EventBus.publishWithAccessLevel(e, AccessLevel.SYSTEM_MODE);
+            else EventBus.publish(e);
+            Test.stopTest();
+            List<Res__c> res = [SELECT Name FROM Res__c];
+            out = res.isEmpty() ? 'none' : res[0].Name;
+        }
+        return out;
+    }
+
+    @IsTest static void userMode() { System.assert(false, 'OUT:' + run('user', false)); }
+    @IsTest static void nullSystem() { System.assert(false, 'OUT:' + run('nullsys', false)); }
+    @IsTest static void nullUser() { System.assert(false, 'OUT:' + run('nulluser', false)); }
+    @IsTest static void manyFields() { System.assert(false, 'OUT:' + run('many', false)); }
+    @IsTest static void otherType() { System.assert(false, 'OUT:' + run('flag', false)); }
+    @IsTest static void twoExtra() { System.assert(false, 'OUT:' + run('extra', true)); }
+    @IsTest static void twoSystem() { System.assert(false, 'OUT:' + run('system', true)); }
 }

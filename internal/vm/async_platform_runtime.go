@@ -440,8 +440,11 @@ func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Valu
 		if !isDatabaseAccessLevelValue(args[2]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}
-		if args[1].Kind == ValueNull {
-			return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
+		version := vm.currentSourceExecutionPolicy().APIVersion
+		if args[1].Kind == ValueNull && args[0].Kind == ValueObject && vm.testContext != nil &&
+			vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && (version == "62.0" || version == "67.0") {
+			// Native scalar publication from runAs fails before enqueueing.
+			return Null, newExceptionError("System.UnexpectedException", "Something went wrong while attempting to publish events with a callback. Try again later.")
 		}
 		return vm.eventBusPublishWithNamedSource([]Value{args[0], args[1]}, result, true, false)
 	default:
