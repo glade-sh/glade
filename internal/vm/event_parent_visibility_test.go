@@ -64,6 +64,12 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	parent := parents.Records["a00000000000002"]
 	parent.System.CreatedByID = "005000000000002"
 	parents.Records[parent.ID] = parent
+	shares := machine.Org.Objects["Widget__Share"]
+	shares.Records = map[storage.ID]storage.Record{
+		"a10000000000001": {ID: "a10000000000001", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Owner")}},
+		"a10000000000002": {ID: "a10000000000002", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Reason__c")}},
+	}
+	machine.Org.Objects["Widget__Share"] = shares
 	event := Object("Signal__e")
 	event.Fields["ParentRef__c"] = String(string(parent.ID))
 	event.Fields["CreatedById"] = String(string(publisher.ID))

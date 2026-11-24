@@ -4946,14 +4946,37 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 	if !ok {
 		return false
 	}
-	if query.Where == nil {
-		// An unfiltered count can bypass sharing only when no share belongs to
-		// a different parent, which was absent from the native capture.
-		for _, row := range vm.Org.Objects[object].Records {
-			if !row.System.IsDeleted && !storage.IDsEqual(storage.ID(storageValueIDText(row.Fields["ParentId"])), parentID) {
-				return false
-			}
+	// Both captured counts had exactly an owner row and one custom-reason
+	// row for the referenced parent. Extra rows keep the ordinary filter.
+	ownerRows, customRows := 0, 0
+	customReason := ""
+	for _, row := range vm.Org.Objects[object].Records {
+		if row.System.IsDeleted {
+			continue
 		}
+		parentField, _ := row.GetField("ParentId")
+		causeField, _ := row.GetField("RowCause")
+		if !storage.IDsEqual(storage.ID(storageValueIDText(parentField)), parentID) {
+			return false
+		}
+		cause := storageValueIDText(causeField)
+		switch {
+		case strings.EqualFold(cause, "Owner"):
+			ownerRows++
+		case hasSuffixFold(cause, "__c"):
+			customRows++
+			customReason = cause
+		default:
+			return false
+		}
+		if ownerRows > 1 || customRows > 1 {
+			return false
+		}
+	}
+	if ownerRows != 1 || customRows != 1 {
+		return false
+	}
+	if query.Where == nil {
 		return true
 	}
 	where := query.Where
@@ -4966,7 +4989,7 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 		strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
 		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN") &&
 		storage.IDsEqual(storage.ID(storageValueIDText(second.Values[0])), parentID) &&
-		hasSuffixFold(storageValueIDText(first.Values[0]), "__c")
+		strings.EqualFold(storageValueIDText(first.Values[0]), customReason)
 }
 
 func (vm *VM) soqlSharingUserID(query soql.Query) string {
