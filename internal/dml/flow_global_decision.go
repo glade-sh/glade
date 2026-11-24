@@ -58,7 +58,7 @@ func (e *Engine) flowGlobalDecisionCriterion(item storage.WorkflowCriteriaItem) 
 // flow_profile_record_normalization and flow_criteria_shapes (org.tsv). Other
 // operators, non-ASCII or padded text and other operands are not handled.
 // After-create equality also handles a one-parent text reference, captured in
-// flow_profile_parent_rhs at API 62.0 and 67.0 on both routes.
+// flow_profile_parent_rhs at APIs 62.0 through 67.0 on both routes.
 func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, allowParent bool) (bool, bool, bool) {
 	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") {
 		return false, false, false

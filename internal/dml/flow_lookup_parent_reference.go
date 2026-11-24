@@ -42,7 +42,8 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		}
 		parentID := idFromStorageValue(id)
 		record, found := parent.Records[parentID]
-		// The captured 18-character input can refer to a 15-character key.
+		// The captured 18-character input can refer to a 15-character key
+		// at APIs 62.0 through 67.0 (flow_parent_reference_id_forms).
 		// Keep exact-key behavior for all other, uncaptured storage forms.
 		if !found && len(parentID) == 18 {
 			short := parentID[:15]

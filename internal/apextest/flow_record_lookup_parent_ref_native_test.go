@@ -51,8 +51,8 @@ func TestFlowRecordLookupParentRefNativeConformance(t *testing.T) {
 	}
 	forms := map[string]string{}
 	formRows := strings.Split(strings.TrimSpace(string(formsData)), "\n")
-	if len(formRows) != 9 {
-		t.Fatalf("native ID-form row count = %d, want 8", len(formRows)-1)
+	if len(formRows) != 25 {
+		t.Fatalf("native ID-form row count = %d, want 24", len(formRows)-1)
 	}
 	for _, row := range formRows[1:] {
 		cols := strings.Split(row, "\t")
@@ -65,19 +65,16 @@ func TestFlowRecordLookupParentRefNativeConformance(t *testing.T) {
 		}
 		forms[key] = cols[5]
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
 		for _, digits := range []int{15, 18} {
 			t.Run(fmt.Sprintf("%s/id%d", api, digits), func(t *testing.T) {
-				legacy, ok := wantByAPI[api]
-				if !ok {
-					t.Fatalf("no original native row for %s", api)
-				}
+				legacy, hasLegacy := wantByAPI[api]
 				want, ok := forms[fmt.Sprintf("%s/lookup_%d_istest", api, digits)]
 				if !ok {
 					t.Fatalf("missing test-route ID-form row")
 				}
 				wantAnonymous, ok := forms[fmt.Sprintf("%s/lookup_%d_anonymous", api, digits)]
-				if !ok || want != legacy || wantAnonymous != legacy {
+				if !ok || wantAnonymous != want || (hasLegacy && want != legacy) {
 					t.Fatalf("ID-form native rows disagree with the original observation")
 				}
 				root := t.TempDir()
