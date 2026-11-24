@@ -29,8 +29,12 @@ func TestCanceledRuntimeBuildMatchesSequentialReport(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			var events []TestProgress
 			opts := Options{NoDiskCache: true, CodeCoverage: true, Progress: func(p TestProgress) {
-				p.DurationMS = 0
-				events = append(events, p)
+				// Setup progress describes work the sequential path reached.
+				// Compare the compile outcome and every selected case's outcome.
+				if p.Event == "compile_start" || p.Event == "compile_done" || p.Event == "test_done" {
+					p.DurationMS = 0
+					events = append(events, p)
+				}
 			}}
 			var gate semanticGateHooks
 			if setting == "0" {
