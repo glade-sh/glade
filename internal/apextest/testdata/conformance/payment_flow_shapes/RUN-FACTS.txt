@@ -8,6 +8,9 @@ cli: @salesforce/cli/2.159.7
 mode: live; class API version set in deployed metadata to match each row
 rows: 30; 10 passing test methods, 10 passing anonymous response cases, 10 anonymous constructor exceptions
 inputs: project-owned synthetic values; no DML, callouts or asynchronous work
-org.tsv sha256: 8687362c750be306681593a28ae32863c37d1fccc78918f64ed89463a20c4f65
+original org.tsv sha256: 8687362c750be306681593a28ae32863c37d1fccc78918f64ed89463a20c4f65
 cleanup: scratch org deleted; CLI org list verified no matching scratch alias
 fixture formatting: trailing whitespace normalized after capture; executable statements unchanged
+
+Additional capture: Integer and Decimal arguments, API 62.0 and 67.0, anonymous and @IsTest, all five request constructors. Integer: 10 anonymous UnsupportedOperationExceptions and 10 passing test methods. Decimal: all 10 anonymous compilations and both test classes rejected with constructor not defined. Synthetic inputs; fresh developer scratch org deleted after capture.
+current org.tsv sha256: 8043caad92e701d79fc512196411cf23bead32f91909159ad2d2fa2c8d7cdd7c

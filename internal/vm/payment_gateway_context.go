@@ -18,6 +18,17 @@ func (vm *VM) paymentRequestDeclarationError(inst ir.Instruction) error {
 			return nil
 		}
 	}
+	if len(e.Args) == 0 {
+		return nil
+	}
+	amountName, found := vm.lookupGlobalName(e.Args[0].Name)
+	if !found {
+		return nil
+	}
+	amountType := canonicalRuntimePlatformType(vm.VarTypes[amountName])
+	if !strings.EqualFold(amountType, "Double") && !strings.EqualFold(amountType, "Integer") {
+		return nil
+	}
 	return vm.paymentRequestOutsideTestError(inst.Type, make([]Value, len(e.Args)), nil)
 }
 

@@ -70,3 +70,27 @@ func TestPaymentRequestUncapturedDeclarationRemainsUnchanged(t *testing.T) {
 		}
 	}
 }
+
+// Decimal constructor arguments retain the base VM behavior; native rejects
+// these declarations during compilation at APIs 62 and 67.
+func TestPaymentRequestDecimalArgumentPreservesBaseBehavior(t *testing.T) {
+	requests := []string{
+		"AuthorizationRequest(amount)", "CaptureRequest(amount, ref)", "SaleRequest(amount)",
+		"ReferencedRefundRequest(amount, ref)", "AuthorizationReversalRequest(amount, ref)",
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, request := range requests {
+			t.Run(api+"/"+request, func(t *testing.T) {
+				typ := strings.Split(request, "(")[0]
+				source := "Decimal amount=3.5; String ref='ref'; commercepayments." + typ + " req=new commercepayments." + request + ";"
+				body, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err = New(nil).Execute(body); err != nil {
+					t.Fatalf("base VM succeeds: %v", err)
+				}
+			})
+		}
+	}
+}
