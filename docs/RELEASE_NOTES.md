@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
 
 ## v0.3.14
 
