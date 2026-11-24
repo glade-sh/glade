@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, matching captured Salesforce results at API 62.0 and 67.0.
 
 ## v0.3.14
 

@@ -1,0 +1,8 @@
+capture: profile comparison with related record field
+observation window: 2026-11-24T14:34:30Z to 2026-11-24T14:34:59Z
+apis: 62.0 67.0 (Flow metadata, Apex class metadata, and anonymous execution API)
+routes: anonymous Apex and synchronous @IsTest
+sf: @salesforce/cli/2.159.7
+mode: live Salesforce scratch org; Developer edition; 30-day duration; deletion succeeded after capture
+metadata: synthetic Contact after-save Flow; each API version deployed before its observations
+observations: matching parent, nonmatching parent, no parent; anonymous assertion rolled back its transaction; tests rolled back

@@ -2366,7 +2366,10 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 						strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") &&
 						(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Update")) &&
 						len(right) > len(recordPrefix) && strings.EqualFold(right[:len(recordPrefix)], recordPrefix) &&
-						!strings.Contains(right[len(recordPrefix):], ".")
+						(!strings.Contains(right[len(recordPrefix):], ".") ||
+							(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") &&
+								strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") &&
+								strings.Count(right[len(recordPrefix):], ".") == 1))
 					if strings.EqualFold(field, "$User.Id") || profileRecordOperand {
 						item.Value = flowDecisionRightValue(condition.RightValue)
 					}

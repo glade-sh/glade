@@ -57,7 +57,9 @@ func (e *Engine) flowGlobalDecisionCriterion(item storage.WorkflowCriteriaItem) 
 // routes in flow_direct_profile_decision, flow_profile_comparison_boundaries,
 // flow_profile_record_normalization and flow_criteria_shapes (org.tsv). Other
 // operators, non-ASCII or padded text and other operands are not handled.
-func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition) (bool, bool, bool) {
+// After-create equality also handles a one-parent text reference, captured in
+// flow_profile_parent_rhs at API 62.0 and 67.0 on both routes.
+func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, allowParent bool) (bool, bool, bool) {
 	if e.Org == nil || !strings.EqualFold(strings.TrimSpace(item.Field), "$Profile.Name") {
 		return false, false, false
 	}
@@ -68,6 +70,8 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 	}
 	reference := flowCriteriaResourceReference(item)
 	name := ""
+	var related storage.Value
+	parent := false
 	if reference != "" {
 		const prefix = "$Record."
 		if len(reference) <= len(prefix) || !strings.EqualFold(reference[:len(prefix)], prefix) {
@@ -75,13 +79,31 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 		}
 		field := reference[len(prefix):]
 		if strings.Contains(field, ".") {
-			return false, false, false
+			parts := strings.Split(field, ".")
+			if !allowParent || !equals || len(parts) != 2 {
+				return false, false, false
+			}
+			lookup, ok := relationshipLookupField(definition, e.Org.Namespace, parts[0])
+			// Setup-user relationships have no native rows for this comparison.
+			if !ok || len(lookup.ReferenceTo) != 1 || strings.EqualFold(lookup.ReferenceTo[0], "User") {
+				return false, false, false
+			}
+			parentField, _, ok := formulaRelationshipFieldDefinition(*e.Org, lookup, parts[1:], e.Org.Namespace)
+			if !ok || parentField.Type != storage.FieldString || !strings.EqualFold(parentField.DisplayType, "STRING") || parentField.Formula != "" {
+				return false, false, false
+			}
+			related, ok = e.flowRefsRelationshipValue(field, record, definition)
+			if !ok {
+				return false, false, false
+			}
+			parent = true
+		} else {
+			resolved, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+			if !ok || definition.Fields[resolved].Type != storage.FieldString || !strings.EqualFold(definition.Fields[resolved].DisplayType, "STRING") {
+				return false, false, false
+			}
+			name = resolved
 		}
-		resolved, ok := storage.ResolveFieldName(definition, e.Org.Namespace, field)
-		if !ok || definition.Fields[resolved].Type != storage.FieldString || !strings.EqualFold(definition.Fields[resolved].DisplayType, "STRING") {
-			return false, false, false
-		}
-		name = resolved
 	} else if item.Value == "" || !flowProfileComparableText(item.Value) {
 		return false, false, false
 	}
@@ -95,8 +117,11 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 		return false, false, false
 	}
 	text := item.Value
-	if name != "" {
-		value, present := sourceRecordFieldValue(record, name)
+	if name != "" || parent {
+		value, present := related, parent
+		if !parent {
+			value, present = sourceRecordFieldValue(record, name)
+		}
 		if !present || value.Kind == storage.ValueNull {
 			return !equals, true, true
 		}
@@ -107,6 +132,9 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 			return false, false, false
 		}
 		text = value.String
+	}
+	if parent && strings.EqualFold(profileName, text) && profileName != text {
+		return false, false, false
 	}
 	return strings.EqualFold(profileName, text) == equals, true, true
 }
