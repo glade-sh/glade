@@ -40,6 +40,7 @@ var shareMdtFixtures = []shareMdtFixture{
 	{dir: "share_mdt_profile_grant", classes: map[string]string{"t_prof": "ProfProbeTest"}},
 	{dir: "share_mdt_event_runas", classes: map[string]string{"t_evt": "EvtProbeTest"}},
 	{dir: "share_event_trigger_visibility", classes: map[string]string{"t_evt": "ShareEventProbeTest"}},
+	{dir: "event_trigger_parent_visibility", classes: map[string]string{"t_parent": "ShareEventProbeTest"}},
 }
 
 var (

@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+t_parent	62.0	istest	true	Failed	otherShare=Fail System.AssertException: Assertion Failed: OUT:direct1;trig=parent1;rsn1;all2; ownerShare=Fail System.AssertException: Assertion Failed: OUT:direct1;trig=parent1;rsn1;all2	62.0	62.0	n/a
+t_parent	67.0	istest	true	Failed	otherShare=Fail System.AssertException: Assertion Failed: OUT:direct1;trig=parent1;rsn1;all2; ownerShare=Fail System.AssertException: Assertion Failed: OUT:direct1;trig=parent1;rsn1;all2	67.0	67.0	n/a
