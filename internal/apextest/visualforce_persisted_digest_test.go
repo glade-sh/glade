@@ -499,7 +499,7 @@ func TestPersistedVisualforceDigestConcurrentUnsafeRootWarning(t *testing.T) {
 				t.Fatal(err)
 			}
 			if info.Mode().Perm()&0020 == 0 {
-				t.Skip("group write permission unavailable")
+				t.Fatalf("chmod 0775 left %s without group write (mode %v)", root, info.Mode().Perm())
 			}
 		}
 		if mode == "save" {
