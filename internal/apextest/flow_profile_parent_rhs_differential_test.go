@@ -22,6 +22,7 @@ func TestFlowProfileParentRHSDifferential(t *testing.T) {
 		{name: "inequality", old: "<operator>EqualTo</operator><rightValue>", replacement: "<operator>NotEqualTo</operator><rightValue>"},
 		{name: "two_parents", old: "$Record.Account.Name", replacement: "$Record.Account.Parent.Name"},
 		{name: "setup_parent", old: "$Record.Account.Name", replacement: "$Record.Owner.Name"},
+		{name: "other_parent_field", old: "$Record.Account.Name", replacement: "$Record.Account.AccountNumber", apexOld: "new Account(Name=p)", apexNew: "new Account(Name=p, AccountNumber=p)"},
 		{name: "case_difference", apexOld: "new Account(Name=p)", apexNew: "new Account(Name=p.toLowerCase())"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
