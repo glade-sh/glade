@@ -29,6 +29,7 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 		{dir: "commerce_calculator_executor_defaults", class: "R5ExecProbe", methods: []string{"viaDefault", "viaOverride"}},
 		{dir: "commerce_cart_loaded_shapes", class: "R5CartProbe3", methods: []string{"loaded", "groupAddress", "superCalc"}},
 		{dir: "commerce_tax_missing_prices", class: "SyntheticTaxProbe", methods: []string{"observe"}},
+		{dir: "commerce_tax_price_controls", class: "SyntheticTaxControls", methods: []string{"totalPrice", "netAndTotal", "absentAddress"}},
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
 		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
 		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},
