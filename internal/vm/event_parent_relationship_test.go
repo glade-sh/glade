@@ -55,4 +55,15 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 	if got, want := machine.soqlSharingUserID(query), machine.currentUserID(); got != want {
 		t.Fatalf("unrelated filtered share sharing user = %q, want %q", got, want)
 	}
+	shares := machine.Org.Objects["Widget__Share"]
+	shares.Records = map[storage.ID]storage.Record{
+		"a10000000000001": {ID: "a10000000000001", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Owner")}},
+		"a10000000000002": {ID: "a10000000000002", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Reason__c")}},
+		"a10000000000003": {ID: "a10000000000003", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Other__c")}},
+	}
+	machine.Org.Objects["Widget__Share"] = shares
+	query.Where = nil
+	if got, want := machine.soqlSharingUserID(query), machine.currentUserID(); got != want {
+		t.Fatalf("extra shares sharing user = %q, want %q", got, want)
+	}
 }
