@@ -100,9 +100,7 @@ func New(root string) (*Daemon, error) {
 // sema.IncrementalState.SkipMentionRechecks.
 func newDaemonSemaState() *sema.IncrementalState {
 	state := sema.NewIncrementalState()
-	if apextest.ExperimentalRuntimeBesideGate() {
-		state.SkipMentionRechecks()
-	}
+	state.SkipMentionRechecks()
 	return state
 }
 

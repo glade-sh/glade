@@ -132,7 +132,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 		return nil, err
 	}
 	// Server.Close drains these writes through WaitForRuntimeCacheWork.
-	daemon.backgroundDiskPublication = apextest.ExperimentalRuntimeBesideGate()
+	daemon.backgroundDiskPublication = true
 
 	s := &Server{
 		daemon:        daemon,
