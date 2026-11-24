@@ -6,5 +6,10 @@
   "nested_if": "if (true) { insert new BatchApexErrorEvent(); }",
   "nested_try": "try { insert new BatchApexErrorEvent(); } catch (Exception e) {}",
   "nested_loop": "for (Integer i=0;i<1;i++) { insert new BatchApexErrorEvent(); }",
-  "nested_while": "while (false) { insert new BatchApexErrorEvent(); }"
+  "nested_while": "while (false) { insert new BatchApexErrorEvent(); }",
+  "do_loop": "do { insert new BatchApexErrorEvent(); } while (false);",
+  "else_branch": "if (true) {} else { insert new BatchApexErrorEvent(); }",
+  "catch_body": "try {} catch (Exception e) { insert new BatchApexErrorEvent(); }",
+  "finally_body": "try {} finally { insert new BatchApexErrorEvent(); }",
+  "switch_body": "switch on 1 { when 2 { insert new BatchApexErrorEvent(); } when else {} }"
 }

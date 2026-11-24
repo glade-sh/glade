@@ -6,3 +6,5 @@ The object metadata deployed at API 67.0. Each case class deployment succeeded. 
 Nested if, try, and for insert probes were captured separately at both source versions on 2026-11-24. Anonymous execution rejected all six at compile time. All six matching @IsTest classes deployed; the try cases passed after catching the DML exception, and the if and loop cases failed with the DML exception recorded in org.tsv.
 
 The while (false) insert was captured at API 62.0 and 67.0 on 2026-11-24. Anonymous compilation rejected both; the matching @IsTest class deployed and its test passed at both versions. The disposable scratch org was deleted after capture.
+
+The do, else, catch, finally, and switch bodies were captured at API 62.0 and 67.0 on 2026-11-24. Anonymous compilation rejected all ten. The matching @IsTest classes deployed; the do and finally methods failed with the DML exception and the other methods passed. The disposable scratch org was deleted after capture.
