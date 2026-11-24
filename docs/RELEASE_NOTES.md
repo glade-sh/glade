@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Runtime build beside the semantic gate never outlives its run.** When the gate rejects an index or a run panics, the run now waits for the runtime build it started, which stops at its next compile phase, so an abandoned build no longer keeps compiling beside later runs, cache invalidations or test cleanups. A panic in the build is raised again with its original value and stack instead of a bare nil dereference, and a build goroutine that exits without a result is a run error, not an empty runtime.
+- **Runtime build beside the semantic gate never outlives its run.** When the gate rejects an index or a run panics, the run now waits for the runtime build it started, which stops at its next compile phase, so an abandoned build no longer keeps compiling beside later runs, cache invalidations or test cleanups. A panic in that build no longer fails the run: it is logged to stderr on one line with the build id, the panic value and its original stack, and the run builds its runtime sequentially, with the same outcome as a run without the beside-gate build. A build goroutine that exits without a result is a run error, not an empty runtime.
 
 - **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` reads the custom object's `__Share` rows in `USER_MODE` again, as captured, instead of seeing none. The rule that share rows follow their parent record's visibility covers the runAs user, not the Automated Process user the trigger runs as.
 

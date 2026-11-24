@@ -477,12 +477,19 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
+	var besideGatePanic *runtimeBuildPanic
 	if early != nil {
-		runtimeKey, runtime, runtimeErr = early.finish(generation.controllerCompilation)
-	} else if runState.counters.enabled {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
-	} else {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
+		runtimeKey, runtime, runtimeErr, besideGatePanic = early.finish(generation.controllerCompilation)
+	}
+	// A build beside the gate that panicked (logged with its stack) is
+	// replaced by the sequential build, exactly as a run without the build
+	// beside the gate does; a panic there fails the run as it always has.
+	if early == nil || besideGatePanic != nil {
+		if runState.counters.enabled {
+			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
+		} else {
+			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
+		}
 	}
 	if runtimeErr != nil {
 		return compileErrorRun(cases, runtimeErr, started, opts)

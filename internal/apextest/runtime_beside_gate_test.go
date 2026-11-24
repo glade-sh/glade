@@ -1,8 +1,11 @@
 package apextest
 
 import (
+	"bytes"
 	"context"
-	"errors"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -143,11 +146,11 @@ func TestRuntimeBesideGateRunWaitsForAbandonedBuild(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
-	runtimeBesideGateStartHook = func() {
+	testOnlyRuntimeBesideGateStartHook = func() {
 		once.Do(func() { close(started) })
 		<-release
 	}
-	t.Cleanup(func() { runtimeBesideGateStartHook = nil })
+	t.Cleanup(func() { testOnlyRuntimeBesideGateStartHook = nil })
 	runDone := make(chan testreport.Run, 1)
 	go func() {
 		runDone <- RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
@@ -167,36 +170,101 @@ func TestRuntimeBesideGateRunWaitsForAbandonedBuild(t *testing.T) {
 	assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
 }
 
-// TestRuntimeBesideGateFinishKeepsBuildPanicStack pins the re-raise of a
-// build panic: finish raises the original value with the stack captured on
-// the build goroutine, never a bare value without its origin.
-func TestRuntimeBesideGateFinishKeepsBuildPanicStack(t *testing.T) {
-	t.Cleanup(InvalidateRuntimeCaches)
-	previous := runtime.GOMAXPROCS(4)
-	defer runtime.GOMAXPROCS(previous)
-	index, artifacts, cases := besideGateProject(t, "System.assertEquals(1, 1);")
-	runtimeBesideGateStartHook = func() {
-		var missing *struct{ value int }
-		_ = missing.value
+// besideGateOutcomeDigest hashes a run's report without its durations.
+func besideGateOutcomeDigest(t *testing.T, run testreport.Run) string {
+	t.Helper()
+	run.DurationMS = 0
+	for suiteIndex := range run.Suites {
+		run.Suites[suiteIndex].DurationMS = 0
+		for caseIndex := range run.Suites[suiteIndex].Cases {
+			run.Suites[suiteIndex].Cases[caseIndex].DurationMS = 0
+		}
 	}
-	t.Cleanup(func() { runtimeBesideGateStartHook = nil })
-	var recovered any
-	func() {
-		defer func() { recovered = recover() }()
-		RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
-	}()
-	buildPanic, ok := recovered.(*runtimeBuildPanic)
-	if !ok {
-		t.Fatalf("recovered %T %v, want *runtimeBuildPanic", recovered, recovered)
+	data, err := json.Marshal(run)
+	if err != nil {
+		t.Fatal(err)
 	}
-	var runtimeErr runtime.Error
-	if !errors.As(buildPanic, &runtimeErr) || !strings.Contains(runtimeErr.Error(), "nil pointer dereference") {
-		t.Fatalf("panic value = %v, want the original nil dereference", buildPanic.value)
-	}
-	if !strings.Contains(string(buildPanic.stack), "TestRuntimeBesideGateFinishKeepsBuildPanicStack") {
-		t.Fatalf("stack does not show the build goroutine's origin:\n%s", buildPanic.stack)
-	}
-	if !strings.Contains(buildPanic.Error(), "original stack:") {
-		t.Fatalf("Error() = %q", buildPanic.Error())
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+type besideGateLogBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *besideGateLogBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *besideGateLogBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
+// TestRuntimeBesideGateBuildPanicIsFailSafe forces a nil dereference inside
+// the build beside the gate, for an accepted and a rejected gate. The run
+// never panics: an accepted run falls back to the sequential build and a
+// rejected run reports its compile error, each with the same outcome as a
+// run without the build beside the gate, and the panic is logged once with
+// its value, build id and original stack.
+func TestRuntimeBesideGateBuildPanicIsFailSafe(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		body  string
+		state string
+	}{
+		{name: "accepted", body: "System.assertEquals(1, 1);", state: "(accepted; the run falls back to the sequential build)"},
+		{name: "rejected", body: "Object value = new MissingBesideGateType();", state: "(abandoned)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Cleanup(InvalidateRuntimeCaches)
+			index, artifacts, cases := besideGateProject(t, tc.body)
+			opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts}
+
+			InvalidateRuntimeCaches()
+			previous := runtime.GOMAXPROCS(1)
+			sequential := RunCasesContext(context.Background(), index, opts, cases)
+			runtime.GOMAXPROCS(4)
+			defer runtime.GOMAXPROCS(previous)
+
+			log := &besideGateLogBuffer{}
+			testOnlyRuntimeBesideGateLog = log
+			testOnlyRuntimeBesideGateStartHook = func() {
+				var missing *struct{ value int }
+				_ = missing.value
+			}
+			t.Cleanup(func() {
+				testOnlyRuntimeBesideGateStartHook = nil
+				testOnlyRuntimeBesideGateLog = nil
+			})
+			InvalidateRuntimeCaches()
+			var besideGate testreport.Run
+			func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						t.Fatalf("the run panicked: %v", recovered)
+					}
+				}()
+				besideGate = RunCasesContext(context.Background(), index, opts, cases)
+			}()
+			if got, want := besideGateOutcomeDigest(t, besideGate), besideGateOutcomeDigest(t, sequential); got != want {
+				t.Fatalf("outcome digest %s, want the sequential run's %s\n beside gate: %#v\n sequential: %#v", got, want, besideGate.Summary(), sequential.Summary())
+			}
+			if tc.name == "accepted" && sequential.Summary().Passed != 1 {
+				t.Fatalf("sequential summary = %#v", sequential.Summary())
+			}
+			if tc.name == "rejected" && sequential.Summary().CompileErrors != 1 {
+				t.Fatalf("sequential summary = %#v", sequential.Summary())
+			}
+			line := log.String()
+			if strings.Count(line, "\n") != 1 || !strings.HasPrefix(line, "glade: runtime build ") || !strings.Contains(line, tc.state) ||
+				!strings.Contains(line, "nil pointer dereference") || !strings.Contains(line, "TestRuntimeBesideGateBuildPanicIsFailSafe") {
+				t.Fatalf("panic log = %q", line)
+			}
+		})
 	}
 }

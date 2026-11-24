@@ -3,6 +3,8 @@ package apextest
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"runtime"
 	"runtime/debug"
 	"sync"
@@ -21,9 +23,16 @@ var errRuntimeAbandoned = errors.New("runtime build abandoned")
 // result or a panic (runtime.Goexit).
 var errRuntimeBuildIncomplete = errors.New("runtime build beside the semantic gate exited without a result")
 
-// runtimeBesideGateStartHook is a test seam run on the build goroutine before
-// the build starts.
-var runtimeBesideGateStartHook func()
+// testOnlyRuntimeBesideGateStartHook is a package test seam run on the build
+// goroutine before the build starts. Nothing outside _test.go files sets it.
+var testOnlyRuntimeBesideGateStartHook func()
+
+// testOnlyRuntimeBesideGateLog, when set by a package test, receives the
+// build-panic log line instead of os.Stderr.
+var testOnlyRuntimeBesideGateLog io.Writer
+
+// runtimeBesideGateBuildIDs numbers builds for the panic log line.
+var runtimeBesideGateBuildIDs atomic.Uint64
 
 // runtimeBesideGate is a project runtime build started before the semantic
 // gate finishes. The build runs exactly as the sequential path does; only
@@ -52,21 +61,32 @@ type runtimeBesideGateResult struct {
 	key     runtimeCacheKey
 	runtime runtimeExecutionView
 	err     error
-	// panicked holds a panic the build raised; finish raises it again on the
-	// run's goroutine, where the sequential build would have raised it.
+	// panicked holds a panic the build raised. It is logged on the build
+	// goroutine; finish reports it so the run falls back to the sequential
+	// build instead of failing.
 	panicked *runtimeBuildPanic
 }
 
-// runtimeBuildPanic is a panic recovered on the build goroutine. It keeps
-// the original value and the stack captured at recover time, which the
-// re-raise on the run's goroutine would otherwise lose.
+// runtimeBuildPanic is a panic recovered on the build goroutine, with the
+// original value and the stack captured at recover time.
 type runtimeBuildPanic struct {
+	build uint64
 	value any
 	stack []byte
 }
 
 func (p *runtimeBuildPanic) Error() string {
-	return fmt.Sprintf("runtime build beside the semantic gate panicked: %v\n\noriginal stack:\n%s", p.value, p.stack)
+	return fmt.Sprintf("runtime build %d beside the semantic gate panicked: %v\n\noriginal stack:\n%s", p.build, p.value, p.stack)
+}
+
+// logRuntimeBuildPanic writes one line: the build id, whether the gate
+// accepted the build, the panic value and the quoted original stack.
+func logRuntimeBuildPanic(out io.Writer, p *runtimeBuildPanic, abandoned bool) {
+	state := "accepted; the run falls back to the sequential build"
+	if abandoned {
+		state = "abandoned"
+	}
+	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate panicked (%s): %v stack=%q\n", p.build, state, p.value, p.stack)
 }
 
 // Unwrap exposes an error panic value, such as a runtime.Error, to errors.As.
@@ -96,7 +116,12 @@ func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCa
 	generation.besideGateRejected = early.rejected.Load
 	// The seam is read here, on the run's goroutine, so a test that restores
 	// it cannot race the build.
-	startHook := runtimeBesideGateStartHook
+	startHook := testOnlyRuntimeBesideGateStartHook
+	var logOut io.Writer = os.Stderr
+	if testOnlyRuntimeBesideGateLog != nil {
+		logOut = testOnlyRuntimeBesideGateLog
+	}
+	buildID := runtimeBesideGateBuildIDs.Add(1)
 	runtimeBesideGateBuilds.Add(1)
 	go func() {
 		defer runtimeBesideGateBuilds.Done()
@@ -105,7 +130,13 @@ func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCa
 		completed := false
 		defer func() {
 			if recovered := recover(); recovered != nil {
-				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: &runtimeBuildPanic{value: recovered, stack: debug.Stack()}}
+				buildPanic := &runtimeBuildPanic{build: buildID, value: recovered, stack: debug.Stack()}
+				// Never dropped: an abandoned build's panic is logged too.
+				// A rejected hint may not have arrived yet; wait for the
+				// gate's decision so the line says which case this was.
+				_, accepted := generation.awaitControllerCompilation()
+				logRuntimeBuildPanic(logOut, buildPanic, !accepted)
+				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: buildPanic}
 			} else if !completed {
 				// runtime.Goexit: the build returned no result. Never hand
 				// finish a zero runtime as a success.
@@ -146,12 +177,14 @@ func (e *runtimeBesideGate) abandon() {
 }
 
 // finish hands the build the gate's controller compilation and returns its
-// result.
-func (e *runtimeBesideGate) finish(compilation *visualforce.ControllerCompilation) (runtimeCacheKey, runtimeExecutionView, error) {
+// result. A build that panicked returns its logged panic and no result; the
+// caller then runs the sequential build, so the run is the same as one
+// without the build beside the gate.
+func (e *runtimeBesideGate) finish(compilation *visualforce.ControllerCompilation) (runtimeCacheKey, runtimeExecutionView, error, *runtimeBuildPanic) {
 	e.send(runtimeGateHint{compilation: compilation, ok: true})
 	result := <-e.result
 	if result.panicked != nil {
-		panic(result.panicked)
+		return "", runtimeExecutionView{}, nil, result.panicked
 	}
-	return result.key, result.runtime, result.err
+	return result.key, result.runtime, result.err, nil
 }
