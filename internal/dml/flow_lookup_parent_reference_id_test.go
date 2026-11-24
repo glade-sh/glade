@@ -87,7 +87,8 @@ func TestFlowLookupParentReferenceUncapturedVersionMatchesMain(t *testing.T) {
 	org.Objects["Parent__c"] = storage.ObjectState{Definition: parentDef, Records: map[storage.ID]storage.Record{parentID: {ID: parentID, Fields: map[string]storage.Value{"Ref__c": storage.IDValue(storage.ID("b00000000000001"))}}}}
 	childDef := storage.ObjectDefinition{APIName: "Child__c", Fields: map[string]storage.Field{"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, RelationshipName: "Parent__r", ReferenceTo: []string{"Parent__c"}}}}
 	source := storage.Record{Fields: map[string]storage.Value{"Parent__c": storage.IDValue(storage.ID(storage.ID18(string(parentID))))}}
-	if _, ok := NewEngine(&org).flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef); ok {
+	engine := NewEngine(&org)
+	if _, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef); ok {
 		t.Fatal("uncaptured API version differs from main exact-key lookup")
 	}
 }
