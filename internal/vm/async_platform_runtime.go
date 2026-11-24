@@ -238,8 +238,8 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 		}
 		stored.Fields["ReplayId"] = storage.StringValue(vm.nextEventBusReplayID())
 		stored.Fields["EventUuid"] = storage.StringValue(eventUUID)
-		if vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && namedSource && len(args) == 1 && args[0].Kind == ValueObject {
-			vm.testContext.EventParentPublishUUIDs = append(vm.testContext.EventParentPublishUUIDs, eventUUID)
+		if vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && namedSource && len(args) == 1 && args[0].Kind == ValueObject && stored.ID != "" {
+			vm.testContext.eventParentPublishedIDs = append(vm.testContext.eventParentPublishedIDs, stored.ID)
 		}
 		triggerRecords = append(triggerRecords, stored)
 		resultID := stored.ID

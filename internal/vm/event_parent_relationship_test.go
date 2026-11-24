@@ -11,8 +11,8 @@ import (
 func qualifyEventParentUnit(machine *VM, event Value, version string) {
 	machine.Classes["EventParentUnit"] = Class{Name: "EventParentUnit", IsTest: true, APIVersion: version}
 	machine.testExecutionEntry = &testExecutionEntry{className: "EventParentUnit"}
-	event.Fields["EventUuid"] = String("event-unit")
-	machine.testContext.EventParentPublishUUIDs = []string{"event-unit"}
+	event.Fields["Id"] = String("e00000000000001")
+	machine.testContext.eventParentPublishedIDs = []storage.ID{"e00000000000001"}
 }
 
 // The native event carries the publisher-owned parent's ID. Unrelated records

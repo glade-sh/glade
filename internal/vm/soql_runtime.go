@@ -4885,10 +4885,10 @@ func (vm *VM) capturedEventSubscriberCount(query soql.Query) bool {
 	if events.Kind != ValueList || len(events.List) != 1 {
 		return false
 	}
-	uuid := stringField(events.List[0], "EventUuid")
+	eventID := storage.ID(stringField(events.List[0], "Id"))
 	publishedHere := false
-	for _, candidate := range vm.testContext.EventParentPublishUUIDs {
-		if uuid != "" && uuid == candidate {
+	for _, candidate := range vm.testContext.eventParentPublishedIDs {
+		if eventID != "" && storage.IDsEqual(eventID, candidate) {
 			publishedHere = true
 			break
 		}

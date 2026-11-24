@@ -1837,8 +1837,8 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	if changesUser {
 		defer vm.beginRunAsPermissionFrame(runnerBefore)()
 	}
-	previousEventParentPublishes := vm.testContext.EventParentPublishUUIDs
-	vm.testContext.EventParentPublishUUIDs = nil
+	previousEventParentPublishes := vm.testContext.eventParentPublishedIDs
+	vm.testContext.eventParentPublishedIDs = nil
 	vm.testContext.RunAsDepth++
 	if changesUser {
 		vm.runAsFrameDepths = append(vm.runAsFrameDepths, len(vm.callStack))
@@ -1859,7 +1859,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			vm.testContext.CurrentPackageVersion = previousPackageVersion
 		}
 		vm.testContext.RunAsDepth--
-		vm.testContext.EventParentPublishUUIDs = previousEventParentPublishes
+		vm.testContext.eventParentPublishedIDs = previousEventParentPublishes
 		if changesUser {
 			vm.runAsFrameDepths = vm.runAsFrameDepths[:len(vm.runAsFrameDepths)-1]
 			if isRunAsDescribe != nil {
