@@ -50,6 +50,7 @@ func assertNoBesideGateTrace(t *testing.T, key runtimeCacheKey) {
 // stops without storing a runtime or compiled tests.
 func TestRuntimeBesideGateLeavesNoTraceWhenGateRejects(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
+	enableRuntimeBesideGateForTest(t)
 	previous := runtime.GOMAXPROCS(4)
 	defer runtime.GOMAXPROCS(previous)
 	index, artifacts, cases := besideGateProject(t, "Object value = new MissingBesideGateType();")
@@ -64,6 +65,7 @@ func TestRuntimeBesideGateLeavesNoTraceWhenGateRejects(t *testing.T) {
 // starting the build and handing it the gate's result.
 func TestRuntimeBesideGateLeavesNoTraceWhenGatePanics(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
+	enableRuntimeBesideGateForTest(t)
 	previous := runtime.GOMAXPROCS(4)
 	defer runtime.GOMAXPROCS(previous)
 	index, artifacts, cases := besideGateProject(t, "System.assertEquals(1, 1);")
@@ -143,6 +145,7 @@ func TestBackgroundDiskPublicationBesideConcurrentRuns(t *testing.T) {
 // test cleanups, and any panic it raised was dropped.
 func TestRuntimeBesideGateRunWaitsForAbandonedBuild(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
+	enableRuntimeBesideGateForTest(t)
 	previous := runtime.GOMAXPROCS(4)
 	defer runtime.GOMAXPROCS(previous)
 	index, artifacts, cases := besideGateProject(t, "Object value = new MissingBesideGateType();")
@@ -225,6 +228,7 @@ func TestRuntimeBesideGateBuildPanicIsFailSafe(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(InvalidateRuntimeCaches)
+			enableRuntimeBesideGateForTest(t)
 			index, artifacts, cases := besideGateProject(t, tc.body)
 			opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts}
 
@@ -292,6 +296,7 @@ func runtimeCacheMethodIdentities() map[string]bool {
 // build published survives: the cached runtime and the startup payload are
 // the sequential build's.
 func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
+	enableRuntimeBesideGateForTest(t)
 	restoreDisk := EnableDiskCacheForTesting()
 	t.Cleanup(restoreDisk)
 	t.Cleanup(InvalidateRuntimeCaches)
@@ -406,5 +411,43 @@ func TestRuntimeBuildPanicLogIsBounded(t *testing.T) {
 	if strings.Count(line, "\n") != 1 || strings.Contains(line, "Secret") || !strings.Contains(line, "(abandoned)") ||
 		!strings.Contains(line, "...(truncated)") || len(line) > runtimeBuildPanicStackLimit*2+1024 {
 		t.Fatalf("log line (%d bytes) = %.300q", len(line), line)
+	}
+}
+
+// enableRuntimeBesideGateForTest opts the package in to the build beside the
+// semantic gate for one test.
+func enableRuntimeBesideGateForTest(t *testing.T) {
+	t.Helper()
+	previous := testOnlyRuntimeBesideGateEnabled.Swap(true)
+	t.Cleanup(func() { testOnlyRuntimeBesideGateEnabled.Store(previous) })
+}
+
+// TestRuntimeBesideGateOffByDefault pins the v0.3.14 default: with more than
+// one processor and no opt-in, a run starts no build beside the gate, and
+// its outcome, for an accepted and a rejected gate, equals the GOMAXPROCS=1
+// run's.
+func TestRuntimeBesideGateOffByDefault(t *testing.T) {
+	t.Setenv(runtimeBesideGateEnv, "")
+	if testOnlyRuntimeBesideGateEnabled.Load() {
+		t.Fatal("a test left the beside-gate opt-in set")
+	}
+	for _, body := range []string{"System.assertEquals(1, 1);", "Object value = new MissingBesideGateType();"} {
+		t.Cleanup(InvalidateRuntimeCaches)
+		index, artifacts, cases := besideGateProject(t, body)
+		opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts}
+		InvalidateRuntimeCaches()
+		previous := runtime.GOMAXPROCS(1)
+		sequential := RunCasesContext(context.Background(), index, opts, cases)
+		runtime.GOMAXPROCS(4)
+		InvalidateRuntimeCaches()
+		started := runtimeBesideGateBuildIDs.Load()
+		run := RunCasesContext(context.Background(), index, opts, cases)
+		runtime.GOMAXPROCS(previous)
+		if got := runtimeBesideGateBuildIDs.Load(); got != started {
+			t.Fatalf("default run started %d builds beside the gate", got-started)
+		}
+		if got, want := besideGateOutcomeDigest(t, run), besideGateOutcomeDigest(t, sequential); got != want {
+			t.Fatalf("default outcome %s, want the GOMAXPROCS=1 run's %s: %#v / %#v", got, want, run.Summary(), sequential.Summary())
+		}
 	}
 }

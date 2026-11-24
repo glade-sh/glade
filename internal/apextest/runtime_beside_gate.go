@@ -41,11 +41,24 @@ var testOnlyRuntimeBesideGateStageHook func(stage string)
 // build-panic log line instead of os.Stderr.
 var testOnlyRuntimeBesideGateLog io.Writer
 
+// runtimeBesideGateEnv opts in to the build beside the semantic gate. The
+// build is off by default in v0.3.14: runs use the sequential runtime build
+// (the v0.3.13 path) unless this is exactly "1".
+const runtimeBesideGateEnv = "GLADE_EXPERIMENTAL_BESIDE_GATE"
+
+// testOnlyRuntimeBesideGateEnabled lets package tests opt in without the
+// environment. Nothing outside _test.go files sets it.
+var testOnlyRuntimeBesideGateEnabled atomic.Bool
+
+func runtimeBesideGateEnabled() bool {
+	return testOnlyRuntimeBesideGateEnabled.Load() || os.Getenv(runtimeBesideGateEnv) == "1"
+}
+
 // runtimeBesideGateBuildIDs numbers builds for the panic log line.
 var runtimeBesideGateBuildIDs atomic.Uint64
 
 // runtimeBesideGate is a project runtime build started before the semantic
-// gate finishes. The build runs exactly as the sequential path does; only
+// gate finishes. It runs only when runtimeBesideGateEnabled. The build runs exactly as the sequential path does; only
 // Visualforce page registration, the one step that reads the gate's result,
 // waits for it.
 //
@@ -132,7 +145,7 @@ var runtimeBesideGateBuilds sync.WaitGroup
 // it. Perf-counter runs stay sequential so their phase timings keep their
 // meaning.
 func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCache, generation runtimeGeneration, runState *runExecution) *runtimeBesideGate {
-	if runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 {
+	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 {
 		return nil
 	}
 	early := &runtimeBesideGate{hint: make(chan runtimeGateHint, 1), result: make(chan runtimeBesideGateResult, 1), done: make(chan struct{})}

@@ -68,6 +68,7 @@ func TestRuntimeBesideGateStress(t *testing.T) {
 	t.Cleanup(restoreDisk)
 	t.Cleanup(InvalidateRuntimeCaches)
 	t.Cleanup(WaitForRuntimeCacheWork)
+	enableRuntimeBesideGateForTest(t)
 	previous := runtime.GOMAXPROCS(4)
 	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
 	iterations := 4
