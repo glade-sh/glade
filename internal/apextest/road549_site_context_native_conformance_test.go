@@ -68,7 +68,7 @@ func TestSiteContextRoutesNativeConformance(t *testing.T) {
 						t.Fatalf("unsupported native observation %q", expected)
 					}
 				}
-				runStandardFieldEvidenceRoutes(t, root, api, body)
+				runStandardFieldEvidenceRoutesWithNamed(t, root, api, body, false)
 			})
 		}
 	}
