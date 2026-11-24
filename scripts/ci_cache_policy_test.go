@@ -70,7 +70,7 @@ func TestCIGoCachesAreReadOnlyOnPullRequests(t *testing.T) {
 		}
 	}
 	for name, job := range jobs {
-		if strings.Contains(job, combined) && !strings.Contains(job, "benchmark npm cache") {
+		if strings.Contains(job, combined) {
 			t.Errorf("%s uses the combined cache action, which saves on pull requests", name)
 		}
 	}
