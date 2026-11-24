@@ -1,0 +1,12 @@
+capture: payment-flow constructor, context and response shapes
+started: 2026-11-24T15:09:25.960656+00:00
+finished: 2026-11-24T15:14:41.861912+00:00
+apis: 62.0 67.0
+routes: anonymous istest
+org: fresh developer scratch org; payment types verified by successful native deployment and execution
+cli: @salesforce/cli/2.159.7
+mode: live; class API version set in deployed metadata to match each row
+rows: 30; 10 passing test methods, 10 passing anonymous response cases, 10 anonymous constructor exceptions
+inputs: project-owned synthetic values; no DML, callouts or asynchronous work
+org.tsv sha256: 8687362c750be306681593a28ae32863c37d1fccc78918f64ed89463a20c4f65
+cleanup: scratch org deleted; CLI org list verified no matching scratch alias

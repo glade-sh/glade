@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Payment adapters can use the captured sale and authorization reversal request and response shapes, and the captured authorize, capture, sale, refund and reversal request constructors match Salesforce in tests and anonymous Apex.
 
 ## v0.3.14
 
