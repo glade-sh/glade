@@ -115,6 +115,40 @@ func TestBuildManifestWithSourceDigestsUsesAllOrNothingApexOverlay(t *testing.T)
 	}
 }
 
+func TestFreshManifestRejectsRacySourceDigest(t *testing.T) {
+	for _, coarse := range []bool{false, true} {
+		t.Run(fmt.Sprintf("coarse=%t", coarse), func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
+			writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeStartupCacheTestFile(t, path, "public class First {}\n")
+			if coarse {
+				stamp := time.Now().Truncate(time.Second)
+				if err := os.Chtimes(path, stamp, stamp); err != nil {
+					t.Fatal(err)
+				}
+			}
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+			manifest := BuildManifestWithSourceDigests(root, p, index, artifacts.SourceDigests)
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeStartupCacheTestFile(t, path, "public class Other {}\n")
+			if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+				t.Fatal(err)
+			}
+			if freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, artifacts.SourceDigests, nil) {
+				t.Fatal("stale source digest accepted after same-size edit with unchanged mtime")
+			}
+		})
+	}
+}
+
 func TestFreshManifestWithSourceDigestsUsesExactApexReadCounts(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
