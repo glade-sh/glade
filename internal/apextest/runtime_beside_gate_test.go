@@ -314,17 +314,16 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	payload := func() os.FileInfo {
+	payloadPath := func() string {
 		matches, _ := filepath.Glob(filepath.Join(root, ".glade", "test", "startup.payload.*"))
 		if len(matches) != 1 {
-			return nil
+			return ""
 		}
-		info, err := os.Stat(matches[0])
-		if err != nil {
-			return nil
-		}
-		return info
+		return matches[0]
 	}
+	// The failed build's payload is marked with this modification time; inode
+	// numbers can be reused, timestamps set here cannot recur.
+	failedMark := time.Date(2001, 2, 3, 4, 5, 6, 0, time.UTC)
 
 	cold()
 	previous := runtime.GOMAXPROCS(1)
@@ -341,14 +340,18 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 			cold()
 			log := &besideGateLogBuffer{}
 			var failedMethods map[string]bool
-			var failedPayload os.FileInfo
+			failedPayload := ""
 			testOnlyRuntimeBesideGateLog = log
 			testOnlyRuntimeBesideGateStageHook = func(stage string) {
 				if stage != at {
 					return
 				}
 				failedMethods = runtimeCacheMethodIdentities()
-				failedPayload = payload()
+				if failedPayload = payloadPath(); failedPayload != "" {
+					if err := os.Chtimes(failedPayload, failedMark, failedMark); err != nil {
+						failedPayload = ""
+					}
+				}
 				panic("partial build panic at " + stage)
 			}
 			t.Cleanup(func() {
@@ -375,7 +378,7 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 			if at != "after_publish" {
 				return
 			}
-			if len(failedMethods) == 0 || failedPayload == nil {
+			if len(failedMethods) == 0 || failedPayload == "" {
 				t.Fatalf("the failed build published nothing to discard: methods=%v payload=%v", failedMethods, failedPayload)
 			}
 			for identity := range runtimeCacheMethodIdentities() {
@@ -384,8 +387,10 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 				}
 			}
 			WaitForRuntimeCacheWork()
-			if current := payload(); current == nil || os.SameFile(current, failedPayload) {
-				t.Fatalf("startup payload = %v, want the sequential build's, not the failed build's", current)
+			current := payloadPath()
+			info, statErr := os.Stat(current)
+			if current == "" || statErr != nil || info.ModTime().Equal(failedMark) {
+				t.Fatalf("startup payload %q (%v), want the sequential build's, not the failed build's", current, statErr)
 			}
 		})
 	}
