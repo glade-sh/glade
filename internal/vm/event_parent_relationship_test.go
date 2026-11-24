@@ -68,7 +68,8 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 	}
 }
 
-// Verify the observable share row, not only the chosen sharing identity.
+// Native event_subscriber_unrelated_visibility rows 2-3 and released main
+// expose a share row for a second private parent.
 func TestEventSubscriberUnrelatedShareRowNeighbor(t *testing.T) {
 	machine := recordSharingControlMachine(t, "Private")
 	machine.currentMethod.APIVersion = "62.0"
@@ -80,7 +81,7 @@ func TestEventSubscriberUnrelatedShareRowNeighbor(t *testing.T) {
 	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
 	row := storage.Record{ID: "a10000000000001", Object: "Widget__Share", Fields: map[string]storage.Value{"ParentId": storage.IDValue("a00000000000001")}}
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{row.ID: row}}
-	if machine.userModeRecordVisible("Widget__Share", row, machine.currentUserID()) {
-		t.Fatal("unrelated parent share is visible")
+	if !machine.userModeRecordVisible("Widget__Share", row, machine.currentUserID()) {
+		t.Fatal("unrelated parent share is hidden")
 	}
 }
