@@ -1958,6 +1958,17 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 			return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, "DML requires SObject or SObject list type: "+operandTypes[i])}
 		}
 		if strings.EqualFold(inst.Name, "insert") {
+			// ROAD-547: only the captured direct anonymous constructor at
+			// these source versions has this compile-time rejection.
+			if scope.anonymous && (typ.EffectiveAPIVersion == "62.0" || typ.EffectiveAPIVersion == "67.0") &&
+				inst.DMLMode == ir.DMLModeDefault && operand.Kind == ir.ExprCall &&
+				strings.EqualFold(operand.Callee, "new:BatchApexErrorEvent") && len(operand.Args) == 0 && len(operand.NamedArgs) == 0 &&
+				!semaProjectTypeShadowsPlatform(model, "BatchApexErrorEvent") && semaDMLRecordType(operandTypes[i], model) {
+				message := "DML operation Insert not allowed on BatchApexErrorEvent"
+				d := irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, message)
+				d.NativeMessage = message
+				return []diagnostic.Diagnostic{d}
+			}
 			if message := semaNamedApexReferenceInsertMessage(semaDMLObjectType(operandTypes[i]), model); message != "" {
 				d := irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, message)
 				d.NativeMessage = message

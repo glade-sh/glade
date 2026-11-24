@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Match Salesforce compilation for direct anonymous BatchApexErrorEvent inserts at API 62.0 and 67.0.
 
 ## v0.3.14
 
