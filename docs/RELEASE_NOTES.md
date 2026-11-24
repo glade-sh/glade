@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **The runtime build beside the semantic gate is off by default.** `glade test` builds the project runtime after the semantic gate again, as in v0.3.13; `GLADE_EXPERIMENTAL_BESIDE_GATE=1` opts in to the concurrent build. With the opt-in, a rejected or failed run waits for the build it started, which stops at its next compile phase, and a panic in that build no longer fails the run: it is logged to stderr on one bounded line with the build id, the panic type and its original stack (the value only for a runtime error), the run discards every cache and startup-cache entry that build could have written, and it builds its runtime sequentially from a clean state.
+- **The runtime build beside the semantic gate is off by default.** `glade test` builds the project runtime after the semantic gate again, as in v0.3.13; `GLADE_EXPERIMENTAL_BESIDE_GATE=1` opts in to the concurrent build. The opt-in now joins its compile and scan workers before returning, stops between work items on cancellation, and retries an interrupted build after discarding its partial state. Projects with Visualforce pages use the sequential builder.
 
 - **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` reads the custom object's `__Share` rows in `USER_MODE` again, as captured, instead of seeing none. The rule that share rows follow their parent record's visibility covers the runAs user, not the Automated Process user the trigger runs as.
 

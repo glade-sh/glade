@@ -560,12 +560,27 @@ func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index ty
 	if childRelationshipLookup == nil {
 		childRelationshipLookup = projectReferencedChildRelationshipLookup(*org)
 	}
-	collected := make([]standardFieldScanResult, len(files))
+	if compileWorkers(len(files)) <= 1 {
+		var merged standardFieldScanResult
+		for _, file := range files {
+			cache.build.at("scan_standard_fields")
+			if source, err := cache.read(file); err == nil {
+				merged = mergeStandardFieldScanResults([]standardFieldScanResult{merged, scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)})
+			}
+		}
+		return merged
+	}
+	results := make(chan standardFieldScanResult, len(files))
 	runRuntimeBuildJobs(len(files), cache.build, "scan_standard_fields", func(i int) {
 		if source, err := cache.read(files[i]); err == nil {
-			collected[i] = scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)
+			results <- scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)
 		}
 	})
+	close(results)
+	collected := make([]standardFieldScanResult, 0, len(files))
+	for r := range results {
+		collected = append(collected, r)
+	}
 	return mergeStandardFieldScanResults(collected)
 }
 

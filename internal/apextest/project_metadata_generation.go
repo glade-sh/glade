@@ -103,6 +103,7 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 	for _, q := range projects {
 		hasPages = hasPages || len(q.VisualforcePageFiles) != 0
 	}
+	generation.hasVisualforcePages = hasPages
 	if !hasPages {
 		return nil
 	}

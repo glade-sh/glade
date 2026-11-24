@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"weak"
 
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
@@ -96,6 +97,8 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 	p := newBesideGateStressProject(t, 0)
 	index, artifacts, _ := p.load(t, 0, 1, false)
 	want := RuntimeContentKey(index, artifacts.SourceDigests)
+	rejected := newBesideGateStressProject(t, 1)
+	badIndex, badArtifacts, badCases := rejected.load(t, 1, 0, true)
 	iterations := 2
 	if s := os.Getenv("GLADE_BESIDE_GATE_STRESS_ITERATIONS"); s != "" {
 		n, err := strconv.Atoi(s)
@@ -118,6 +121,7 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		t.Fatal("no platform shells")
 	}
 	started := runtimeBesideGateBuildIDs.Load()
+	var rejectedBuilds, mutationRounds int
 	for i := range iterations {
 		if i%4 == 0 {
 			if err := startupcache.Clear(p.root, startupcache.SubdirTest); err != nil {
@@ -127,12 +131,30 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		InvalidateRuntimeCaches()
 		stop := make(chan struct{})
 		done := make(chan int, 1)
+		if i%4 == 0 {
+			rejectedBuilds++
+		}
 		go func() {
+			if i%4 == 0 {
+				report := RunCasesContext(context.Background(), badIndex, Options{BuildArtifacts: &badArtifacts, NoDiskCache: true}, badCases)
+				if report.Summary().CompileErrors != 1 {
+					t.Errorf("reject: %+v", report.Summary())
+				}
+			}
 			for n := 0; ; n++ {
 				undo := SetFileDigestReadHookForTesting(func(string) {})
 				restore := setSnapshotValidationHookForTesting(func(string) {})
 				InvalidateRuntimeCaches()
+				// Exercise the same nil-prefix fallback as the prefix neighbor.
+				standardRuntimeBase.mu.Lock()
+				saved, failed := standardRuntimeBase.prefix, standardRuntimeBase.failed
+				standardRuntimeBase.prefix, standardRuntimeBase.failed = weak.Pointer[standardRuntimePrefix]{}, true
+				standardRuntimeBase.mu.Unlock()
 				clone := prefix.machine.CloneRuntimeFrozenShared(nil)
+				_ = clone.RegisterClass(vm.Class{Name: "NeighborOwned"})
+				standardRuntimeBase.mu.Lock()
+				standardRuntimeBase.prefix, standardRuntimeBase.failed = saved, failed
+				standardRuntimeBase.mu.Unlock()
 				shells[(i+n)%len(shells)].BuiltClass()
 				runtime.KeepAlive(clone)
 				restore()
@@ -147,7 +169,9 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 		}()
 		run := Run(index, Options{SourceDigests: artifacts.SourceDigests})
 		close(stop)
-		if <-done < 1 || run.Summary().Passed != 1 {
+		rounds := <-done
+		mutationRounds += rounds
+		if rounds < 1 || run.Summary().Passed != 1 {
 			t.Fatal(firstRunProblem(run))
 		}
 		entry, err := startupcache.Read(p.root, startupcache.SubdirTest)
@@ -158,10 +182,10 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 			t.Fatal(s)
 		}
 	}
-	if got := runtimeBesideGateBuildIDs.Load() - started; got != uint64(iterations) {
-		t.Fatalf("got %d gated builds, want %d", got, iterations)
+	if got := runtimeBesideGateBuildIDs.Load() - started; got != uint64(iterations+rejectedBuilds) {
+		t.Fatalf("got %d gated builds, want %d", got, iterations+rejectedBuilds)
 	}
-	t.Logf("%d exact-key builds, GOMAXPROCS=%d GOGC=%s", iterations, runtime.GOMAXPROCS(0), os.Getenv("GOGC"))
+	t.Logf("%d exact-key builds, %d rejected neighbors, %d mutation rounds, GOMAXPROCS=%d GOGC=%s", iterations, rejectedBuilds, mutationRounds, runtime.GOMAXPROCS(0), os.Getenv("GOGC"))
 }
 
 // A large project puts all three scans above the real worker-pool threshold.

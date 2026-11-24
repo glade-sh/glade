@@ -5,15 +5,17 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
+
+	"github.com/glade-sh/glade/internal/startupcache"
 )
 
 // Only a build owned by the semantic gate has a work scope. The private
 // sentinel unwinds partially built values through compiler and scanner APIs
 // that also serve callers without a cancellation or error return.
 type runtimeBuildWork struct {
-	ctx             context.Context
-	stage           func(string)
-	diskPublication bool
+	ctx        context.Context
+	stage      func(string)
+	discardErr error
 }
 
 type runtimeBuildCanceled struct{}
@@ -32,11 +34,28 @@ func (w *runtimeBuildWork) at(name string) {
 	w.check()
 }
 
+// Keep rollback inside the root's publication lock. A later run can never
+// have its completed write removed by cleanup of this attempt.
+func (w *runtimeBuildWork) publish(root string, write func()) {
+	completed := false
+	defer func() {
+		if !completed {
+			w.discardErr = startupcache.Clear(root, startupcache.SubdirTest)
+		}
+	}()
+	write()
+	if w.stage != nil {
+		w.stage("after_publish")
+	}
+	completed = true
+}
+
 // Each job owns an index. No worker blocks on a producer after a sibling
 // exits. Capture the original worker stack, join all workers, and unwind on
 // the owning goroutine, whose result is delivered to the run.
 func runRuntimeBuildJobs(count int, work *runtimeBuildWork, stage string, job func(int)) {
-	if workers := compileWorkers(count); workers <= 1 {
+	workers := compileWorkers(count)
+	if workers <= 1 {
 		for i := range count {
 			work.at(stage)
 			job(i)
@@ -46,7 +65,7 @@ func runRuntimeBuildJobs(count int, work *runtimeBuildWork, stage string, job fu
 	var next atomic.Int64
 	var failed atomic.Pointer[runtimeBuildPanic]
 	var group sync.WaitGroup
-	for range compileWorkers(count) {
+	for range workers {
 		group.Add(1)
 		go func() {
 			defer group.Done()
@@ -54,6 +73,9 @@ func runRuntimeBuildJobs(count int, work *runtimeBuildWork, stage string, job fu
 			defer func() {
 				if !completed {
 					value := recover()
+					if _, canceled := value.(runtimeBuildCanceled); canceled {
+						return
+					}
 					if value == nil {
 						value = errRuntimeBuildIncomplete
 					}
@@ -73,9 +95,10 @@ func runRuntimeBuildJobs(count int, work *runtimeBuildWork, stage string, job fu
 	}
 	group.Wait()
 	if failure := failed.Load(); failure != nil {
-		if _, canceled := failure.value.(runtimeBuildCanceled); canceled || work == nil {
+		if work == nil {
 			panic(failure.value)
 		}
 		panic(failure)
 	}
+	work.check()
 }

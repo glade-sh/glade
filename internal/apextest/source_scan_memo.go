@@ -26,8 +26,8 @@ func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 var (
 	backgroundPublications     sync.Mutex
 	backgroundPublicationsDone sync.WaitGroup
-	backgroundPublicationSeq   atomic.Uint64
-	backgroundPublished        = map[string]uint64{}
+	publicationRootsMu         sync.Mutex
+	publicationRoots           = map[string]*publicationRoot{}
 )
 
 func publishInBackground(root string, publish func()) {
@@ -35,19 +35,47 @@ func publishInBackground(root string, publish func()) {
 	backgroundPublicationsDone.Add(1)
 	go func() {
 		defer backgroundPublicationsDone.Done()
+		// Keep detached disk I/O serialized across projects.
+		backgroundPublications.Lock()
+		defer backgroundPublications.Unlock()
 		write()
 	}()
 }
 
+// A root retains ordering state only while a write is queued or running.
+// issued and pending belong to publicationRootsMu; written belongs to mu.
+type publicationRoot struct {
+	mu              sync.Mutex
+	issued, written uint64
+	pending         int
+}
+
 func orderedPublication(root string, publish func()) func() {
-	seq := backgroundPublicationSeq.Add(1)
+	publicationRootsMu.Lock()
+	order := publicationRoots[root]
+	if order == nil {
+		order = new(publicationRoot)
+		publicationRoots[root] = order
+	}
+	order.issued++
+	order.pending++
+	seq := order.issued
+	publicationRootsMu.Unlock()
 	return func() {
-		backgroundPublications.Lock()
-		defer backgroundPublications.Unlock()
-		if backgroundPublished[root] > seq {
+		defer func() {
+			publicationRootsMu.Lock()
+			order.pending--
+			if order.pending == 0 {
+				delete(publicationRoots, root)
+			}
+			publicationRootsMu.Unlock()
+		}()
+		order.mu.Lock()
+		defer order.mu.Unlock()
+		if order.written > seq {
 			return
 		}
-		backgroundPublished[root] = seq
+		order.written = seq
 		publish()
 	}
 }

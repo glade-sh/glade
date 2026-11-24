@@ -1522,6 +1522,7 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
+	hasVisualforcePages         bool // controller fallback can launch its own index and semantic workers
 	standardDuplicateRules      bool
 	authority                   runtimeMetadataAuthority
 	inputs                      map[string]typesys.ApexMetadataInput
@@ -1822,6 +1823,7 @@ func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.Sou
 func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
 	seen := make(map[string]bool)
 	preload := func(file string) error {
+		sources.build.check()
 		if file == "" || seen[file] {
 			return nil
 		}
@@ -2033,8 +2035,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	} else {
 		generation = *prepared
 	}
-	// A build started beside the semantic gate touches no shared cache state
-	// until the gate accepts the index: accepted blocks for the gate's result.
+	// Runtime publication requires the semantic gate's acceptance.
 	accepted := func() bool {
 		if generation.awaitControllerCompilation == nil {
 			return true
@@ -2122,7 +2123,6 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	work.check()
 	methods := compileProjectMethods(index, sources)
 	work.at("after_methods")
-	work.check()
 	classRuntime := prepareProjectClassRuntime(index, methods, sources)
 	classes := classRuntime.classes
 	work.check()
@@ -2139,6 +2139,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
 			return key, zero, errRuntimeAbandoned
 		}
+		work.check()
 		rememberRoot()
 	}
 	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
@@ -2150,7 +2151,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
-	baseErr := registerBaseRuntime(baseMachine, methods, classRuntime.unregistered, triggers)
+	baseErr := work.registerBaseRuntime(baseMachine, methods, classRuntime.unregistered, triggers)
 	if err := sources.sourceSnapshotError(); err != nil {
 		return key, zero, err
 	}
@@ -2177,6 +2178,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		}
 		return key, zero, err
 	}
+	work.check()
 	if !sources.privateRuntime {
 		runtimeCacheMu.Lock()
 		evicted := storeRuntimeCacheEntryLocked(key, entry)
@@ -2194,13 +2196,15 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 				persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
 			}
 		}
-		if work != nil {
-			work.diskPublication = true
-			orderedPublication(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)()
-		} else if sources.backgroundDiskPublication {
-			publishInBackground(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)
-		} else {
-			publish()
+		root := filepath.Clean(strings.TrimSpace(index.Project.Root))
+		switch {
+		case work != nil && strings.TrimSpace(index.Project.Root) != "":
+			orderedPublication(root, func() { work.publish(root, publish) })()
+			return key, projected, nil
+		case sources.backgroundDiskPublication:
+			publishInBackground(root, publish)
+		default:
+			orderedPublication(root, publish)()
 		}
 	}
 	work.at("after_publish")
@@ -3817,17 +3821,24 @@ func canceledCase(testCase TestCase, err error) testreport.Case {
 }
 
 func registerBaseRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.Class, triggers []vm.Trigger) error {
+	return (*runtimeBuildWork)(nil).registerBaseRuntime(machine, methods, classes, triggers)
+}
+
+func (work *runtimeBuildWork) registerBaseRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.Class, triggers []vm.Trigger) error {
 	for _, class := range classes {
+		work.check()
 		if err := machine.RegisterClass(class); err != nil {
 			return err
 		}
 	}
 	for _, trigger := range triggers {
+		work.check()
 		if err := machine.RegisterTrigger(trigger); err != nil {
 			return err
 		}
 	}
 	for _, method := range methods {
+		work.check()
 		if err := machine.RegisterMethod(method); err != nil {
 			return err
 		}
@@ -4775,15 +4786,21 @@ func sourceCacheKey(file string, remaps []namespaceremap.Rule) string {
 }
 
 func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
+	return (*runtimeBuildWork)(nil).passiveStandardRuntimeClasses(indexTypes, existing)
+}
+
+func (work *runtimeBuildWork) passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
 	seen := make(map[string]bool, len(indexTypes)+len(existing))
 	for _, typ := range indexTypes {
+		work.check()
 		seen[strings.ToLower(typeSymbolRuntimeName(typ))] = true
 	}
 	for _, class := range existing {
 		seen[strings.ToLower(class.Name)] = true
 	}
 	var out []vm.Class
-	for _, template := range passiveStandardRuntimeClassTemplates() {
+	for _, template := range work.passiveStandardRuntimeClassTemplates() {
+		work.check()
 		if seen[template.key] {
 			continue
 		}
@@ -4825,17 +4842,26 @@ var passiveStandardRuntimeClassCache struct {
 // per symbol view, in symbol-view order with the first spelling of each runtime
 // name. Callers filter by project names and register through registrable.
 func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
+	return (*runtimeBuildWork)(nil).passiveStandardRuntimeClassTemplates()
+}
+
+func (work *runtimeBuildWork) passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
 	return passiveStandardRuntimeClassCache.templates.Get(func(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 		passiveStandardRuntimeClassCache.builds++
-		return buildPassiveStandardRuntimeClassTemplates(view)
+		return work.buildPassiveStandardRuntimeClassTemplates(view)
 	})
 }
 
 func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
+	return (*runtimeBuildWork)(nil).buildPassiveStandardRuntimeClassTemplates(view)
+}
+
+func (work *runtimeBuildWork) buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 	seen := make(map[string]bool)
 	set := vm.NewLazyClassSet(len(view))
 	var out []passiveStandardRuntimeClassTemplate
 	for i, typ := range view {
+		work.check()
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
@@ -7010,18 +7036,28 @@ func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache
 	if len(files) == 0 {
 		return nil
 	}
-	chunks := make([][]projectRecordTypeReference, len(files))
-	runRuntimeBuildJobs(len(files), cache.build, "scan_record_types", func(i int) {
-		if source, err := cache.read(files[i]); err == nil {
-			chunks[i] = scanRecordTypesFromApexSourceMemo(source)
-		}
-	})
 	if compileWorkers(len(files)) <= 1 {
 		var merged []projectRecordTypeReference
-		for _, chunk := range chunks {
-			merged = append(merged, chunk...)
+		for _, file := range files {
+			cache.build.at("scan_record_types")
+			if source, err := cache.read(file); err == nil {
+				merged = append(merged, scanRecordTypesFromApexSourceMemo(source)...)
+			}
 		}
 		return merged
+	}
+	results := make(chan []projectRecordTypeReference, len(files))
+	runRuntimeBuildJobs(len(files), cache.build, "scan_record_types", func(i int) {
+		if source, err := cache.read(files[i]); err == nil {
+			results <- scanRecordTypesFromApexSourceMemo(source)
+		}
+	})
+	close(results)
+	var chunks [][]projectRecordTypeReference
+	for chunk := range results {
+		if len(chunk) > 0 {
+			chunks = append(chunks, chunk)
+		}
 	}
 	return mergeProjectRecordTypeReferences(chunks...)
 }

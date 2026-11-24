@@ -194,7 +194,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		out = append(out, class)
 	}
 	if include == nil {
-		out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
+		out = append(out, sources.build.passiveStandardRuntimeClasses(index.Types, out)...)
 	}
 	return out
 }
@@ -586,6 +586,7 @@ func projectReferencedStandardFieldCacheKey(index typesys.Index, cache *sourceCa
 	write(fmt.Sprint(len(index.Types)))
 	seenFiles := make(map[string]bool)
 	for _, typ := range index.Types {
+		cache.build.check()
 		if !typ.HasSourceSnapshot() || typ.File == "" || typ.Dependency || seenFiles[typ.File] {
 			continue
 		}

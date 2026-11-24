@@ -47,6 +47,9 @@ func resetFailedRuntimePlatform() {
 }
 
 func sharedStandardRuntimePrefix() *standardRuntimePrefix {
+	return (*runtimeBuildWork)(nil).sharedStandardRuntimePrefix()
+}
+func (work *runtimeBuildWork) sharedStandardRuntimePrefix() *standardRuntimePrefix {
 	standardRuntimeBase.mu.Lock()
 	defer standardRuntimeBase.mu.Unlock()
 	generation := typesys.StandardPlatformSymbolGeneration()
@@ -57,8 +60,8 @@ func sharedStandardRuntimePrefix() *standardRuntimePrefix {
 		return nil
 	}
 	machine := vm.New(nil)
-	classes := passiveStandardRuntimeClasses(nil, nil)
-	if err := registerBaseRuntime(machine, nil, classes, nil); err != nil {
+	classes := work.passiveStandardRuntimeClasses(nil, nil)
+	if err := work.registerBaseRuntime(machine, nil, classes, nil); err != nil {
 		// Keep the legacy error path if the platform prefix cannot be
 		// registered. No partially prepared prefix may be published.
 		standardRuntimeBase.failed = true
@@ -89,10 +92,10 @@ func prepareProjectClassRuntime(index typesys.Index, methods map[string]vm.Metho
 	// prefix for repeated projects or source generations.
 	if !standardRuntimeBase.used.Swap(true) {
 		classes := compileProjectClassesWhere(index, methods, func(typesys.TypeSymbol) bool { return true }, sources)
-		classes = append(classes, ownedPassiveStandardRuntimeClasses(index.Types, classes)...)
+		classes = append(classes, sources.build.ownedPassiveStandardRuntimeClasses(index.Types, classes)...)
 		return projectClassRuntime{classes: classes, unregistered: classes}
 	}
-	prefix := sharedStandardRuntimePrefix()
+	prefix := sources.build.sharedStandardRuntimePrefix()
 	canReuse := prefix != nil
 	for _, typ := range index.Types {
 		if !canReuse {
@@ -126,7 +129,7 @@ func prepareProjectClassRuntime(index typesys.Index, methods map[string]vm.Metho
 // The first runtime takes ownership of freshly built passive declarations.
 // Keep the same name exclusions and symbol-view order as the cached path, but
 // do not publish or clone templates that a one-project process cannot reuse.
-func ownedPassiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
+func (work *runtimeBuildWork) ownedPassiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
 	seen := make(map[string]bool, len(indexTypes)+len(existing))
 	for _, typ := range indexTypes {
 		seen[strings.ToLower(typeSymbolRuntimeName(typ))] = true
@@ -135,7 +138,7 @@ func ownedPassiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existin
 		seen[strings.ToLower(class.Name)] = true
 	}
 	var out []vm.Class
-	for _, template := range buildPassiveStandardRuntimeClassTemplates(typesys.StandardPlatformSymbolView()) {
+	for _, template := range work.buildPassiveStandardRuntimeClassTemplates(typesys.StandardPlatformSymbolView()) {
 		if !seen[template.key] {
 			out = append(out, template.class)
 		}

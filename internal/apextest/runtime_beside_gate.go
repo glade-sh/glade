@@ -6,16 +6,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"reflect"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"unicode/utf8"
 
-	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 )
@@ -34,8 +31,8 @@ var errRuntimeBuildIncomplete = errors.New("runtime build beside the semantic ga
 var testOnlyRuntimeBesideGateStartHook func()
 
 // testOnlyRuntimeBesideGateStageHook is a package test seam a build beside
-// the gate calls at named points of a partly completed build
-// ("after_methods", "after_org", "after_publish"). Nothing outside _test.go
+// the gate calls at named points in a partly completed build,
+// including worker items and publication boundaries. Nothing outside _test.go
 // files sets it.
 var testOnlyRuntimeBesideGateStageHook func(stage string)
 
@@ -63,15 +60,7 @@ func runtimeBesideGateEnabled() bool {
 var runtimeBesideGateBuildIDs atomic.Uint64
 
 // runtimeBesideGate is a project runtime build started before the semantic
-// gate finishes. It runs only when runtimeBesideGateEnabled. The build runs exactly as the sequential path does; only
-// Visualforce page registration, the one step that reads the gate's result,
-// waits for it.
-//
-// The build never outlives its run. abandon waits for the goroutine to exit,
-// so an abandoned build cannot overlap a later run, a cache invalidation or
-// a test's cleanup of process-global seams, and a panic it raises cannot be
-// lost while it leaves shared state behind for the next build. A rejected
-// build checks rejected between compile phases and stops at the next one.
+// gate finishes. The run owns the build until all its workers have joined.
 type runtimeBesideGate struct {
 	once   sync.Once
 	hint   chan runtimeGateHint
@@ -117,7 +106,12 @@ func logRuntimeBuildPanic(out io.Writer, p *runtimeBuildPanic, abandoned bool) {
 		value = nilFault
 	}
 	stack := truncateRuntimeBuildPanicText(string(p.stack), runtimeBuildPanicStackLimit)
-	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate panicked (%s): type=%T value=%q stack=%q\n", p.build, state, p.value, value, stack)
+	kind := "panicked"
+	if p.value == errRuntimeBuildIncomplete {
+		kind = "exited without a result"
+	}
+	typeName := truncateRuntimeBuildPanicText(fmt.Sprintf("%T", p.value), 256)
+	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate %s (%s): type=%s value=%q stack=%q\n", p.build, kind, state, typeName, value, stack)
 }
 
 func truncateRuntimeBuildPanicText(text string, limit int) string {
@@ -139,7 +133,9 @@ var runtimeBesideGateBuilds sync.WaitGroup
 // it. Perf-counter runs stay sequential so their phase timings keep their
 // meaning.
 func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Options, sources *sourceCache, generation runtimeGeneration, runState *runExecution) *runtimeBesideGate {
-	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 {
+	// The Visualforce controller fallback can launch an independent type index
+	// and semantic worker pool. Keep that graph on its normal runner.
+	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 || generation.metadata.hasVisualforcePages {
 		return nil
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -187,7 +183,9 @@ func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Optio
 			failure.build = id
 			logRuntimeBuildPanic(out, failure, !accepted)
 			early.result.retry = true
-			early.result.discardErr = discardFailedBesideGateBuild(index, work.diskPublication)
+			resetFailedRuntimePlatform()
+			InvalidateRuntimeCaches()
+			early.result.discardErr = work.discardErr
 		}()
 		if startHook != nil {
 			startHook()
@@ -213,17 +211,3 @@ func (e *runtimeBesideGate) decide(hint runtimeGateHint) runtimeBesideGateResult
 }
 
 func (e *runtimeBesideGate) abandon() runtimeBesideGateResult { return e.decide(runtimeGateHint{}) }
-
-// A gated build publishes synchronously. Fence any older queued writes
-// before removing a disk publication this build actually attempted.
-func discardFailedBesideGateBuild(index typesys.Index, wroteDisk bool) error {
-	resetFailedRuntimePlatform()
-	InvalidateRuntimeCaches()
-	if root := strings.TrimSpace(index.Project.Root); wroteDisk && root != "" {
-		root = filepath.Clean(root)
-		var err error
-		orderedPublication(root, func() { err = startupcache.Clear(root, startupcache.SubdirTest) })()
-		return err
-	}
-	return nil
-}
