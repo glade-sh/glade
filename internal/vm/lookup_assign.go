@@ -3147,7 +3147,7 @@ func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field
 	}
 	fieldKey := vm.staticFieldWritebackKey(owner, memberName, field)
 	class.StaticFields[fieldKey] = field
-	vm.storeClassValue(class)
+	vm.storeStaticClassValue(class)
 	location := canonicalStaticFieldLocationForClass(class, owner, fieldKey)
 	vm.replaceStaticValueRefsInField(previous, value, location)
 }

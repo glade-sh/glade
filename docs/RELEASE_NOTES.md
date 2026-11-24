@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **The runtime build beside the semantic gate is off by default.** `glade test` builds the project runtime after the semantic gate again, as in v0.3.13; `GLADE_EXPERIMENTAL_BESIDE_GATE=1` opts in to the concurrent build. With the opt-in, a rejected or failed run waits for the build it started, which stops at its next compile phase, and a panic in that build no longer fails the run: it is logged to stderr on one bounded line with the build id, the panic type and its original stack (the value only for a runtime error), the run discards every cache and startup-cache entry that build could have written, and it builds its runtime sequentially from a clean state.
+
+- **Share rows in a platform event trigger (Apex API 62.0, 67.0).** An after-insert event trigger that a test publishes from inside `System.runAs` reads the custom object's `__Share` rows in `USER_MODE` again, as captured, instead of seeing none. The rule that share rows follow their parent record's visibility covers the runAs user, not the Automated Process user the trigger runs as.
+
 - **Site methods without a Site request context (Apex API 62.0, 67.0).** `Site.getPathPrefix()` returns the empty string in anonymous Apex and in tests, whether or not `org.features` declares Sites, instead of the seeded local Site's `local`. A project whose test built a URL from the prefix now sees `/SiteLogin...` as in Salesforce. Captured at 62.0 and 67.0 in a plain org and an org with Communities and no Site, both routes. `Site.getSiteId`, `getMasterLabel`, `getAdminEmail`, `getOriginalUrl` and `getAnalyticsTrackingCode` return null, as captured, instead of answering from the seeded Site.
 
 - Classes can implement `CommercePayments.PaymentGatewayAdapter` and dispatch its captured `processRequest` method at Apex APIs 62.0 and 67.0.
@@ -48,7 +52,10 @@
 
 - A child-query WHERE may now hold one or two IN or NOT IN semi-joins beside up to two text, boolean, bind or null comparisons, with or without a literal LIMIT, and beside any number of sibling child queries, as captured at Apex API 62.0 and 67.0. OR and nested-group semi-joins stay rejected, as in Salesforce.
 
-- **Test daemon edits.** A method-body edit refreshes the reference graph and rechecks only the types it can affect, including types whose checks read fields that other types loaded. A save that a request already applied no longer triggers a second update and warm. Project-wide source scans and Visualforce expression parsing reuse per-file results for unchanged files.
+- **Test daemon edits.** A method-body edit refreshes the reference graph and rechecks only the types it can affect, including types whose checks read fields that other types loaded. A save that a request already applied no longer triggers a second update and warm. Project-wide source scans and Visualforce expression parsing reuse per-file results for unchanged files. A body edit rechecks the edited class and its subclasses, and a served daemon writes the startup cache after returning results.
+
+- **Faster bulk inserts under Exact duplicate rules.** A custom duplicate rule whose items are all Exact now checks whether a stored record was inserted by the same statement only when that record matches, instead of for every stored record, and no longer builds a candidate index over highly distinct values only to switch it off. Bulk inserts under such rules are up to about 12% faster than v0.3.12 and use v0.3.12's memory; fuzzy and standard rules are unchanged. Duplicate outcomes are unchanged. The 2-5% slower plain text-equality `WHERE` scan reported for v0.3.13 does not appear in a benchmark binary built from product code only, where the hot functions are the same machine code as v0.3.12; it is attributed to test-binary layout, and its exact cause is not identified. (local contract, benchstat against v0.3.12)
+
 
 
 ## v0.3.13

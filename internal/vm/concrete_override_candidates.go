@@ -1,0 +1,140 @@
+package vm
+
+import "strings"
+
+// concreteOverrideCandidateKey names everything the candidate filter of
+// uniqueConcreteOverride reads: the class lookup generation and size, the
+// org metadata lifetime, and the frame state that class and object name
+// resolution consult. The candidate list holds only the type filter; every
+// per-call check (test scope, overload resolution, receiver fields) still
+// runs on each call. The order of candidates does not matter: the result
+// depends only on how many candidates match and which one matches alone.
+type concreteOverrideCandidateKey struct {
+	baseType   string
+	generation uint64
+	classes    int
+	lifetime   metadataCacheLifetime
+	// shared keys leave out the org pointer: a stamped org's runtime
+	// generation identifies every clone with the same schema and metadata.
+	orgGeneration uint64
+	orgSchema     uint64
+	orgObjects    int
+	orgNamespace  string
+	class         string
+	namespace     string
+	execution     string
+	caller        string
+	trigger       bool
+}
+
+// verifyConcreteOverrideCandidates, set by the package tests, recomputes
+// every cached candidate list and panics on a difference.
+var verifyConcreteOverrideCandidates bool
+
+// concreteOverrideCandidates lists the classes that are, or extend, baseType
+// without being it.
+func (vm *VM) concreteOverrideCandidates(baseType string) []string {
+	cacheable := vm.classOverlay == nil && !vm.classStructureWritten && vm.frozenClassLookup != nil && vm.classLookupGeneration != 0
+	if !cacheable {
+		return vm.concreteOverrideCandidatesDirect(baseType)
+	}
+	key := concreteOverrideCandidateKey{
+		baseType:   baseType,
+		generation: vm.classLookupGeneration,
+		classes:    len(vm.Classes),
+		class:      vm.currentClass,
+		namespace:  vm.currentNamespace,
+		execution:  vm.currentExecutionNamespace(),
+		caller:     vm.currentCallerNamespace(),
+		trigger:    vm.currentTrigger,
+	}
+	shared := vm.Org != nil && strings.TrimSpace(vm.Org.RuntimeSchemaStamp) != ""
+	if shared {
+		key.orgGeneration = vm.Org.RuntimeGenerationID()
+		key.orgSchema = vm.Org.SchemaGeneration()
+		key.orgObjects = len(vm.Org.Objects)
+		key.orgNamespace = vm.Org.Namespace
+	} else {
+		key.lifetime = metadataLifetimeForOrg(vm.Org)
+	}
+	verify := func(names []string) []string {
+		if verifyConcreteOverrideCandidates {
+			if direct := vm.concreteOverrideCandidatesDirect(baseType); !sameNameSet(direct, names) {
+				panic("concrete override candidates changed under an unchanged key: " + baseType)
+			}
+		}
+		return names
+	}
+	if shared {
+		if names, ok := vm.frozenClassLookup.overrideCandidates.Load(key); ok {
+			return verify(names.([]string))
+		}
+	} else if names, ok := vm.concreteOverrideCandidateMemo[key]; ok {
+		return verify(names)
+	}
+	names := vm.concreteOverrideCandidatesDirect(baseType)
+	if shared {
+		vm.frozenClassLookup.overrideCandidates.Store(key, names)
+		return names
+	}
+	if vm.concreteOverrideCandidateMemo == nil || len(vm.concreteOverrideCandidateMemo) >= 4096 {
+		vm.concreteOverrideCandidateMemo = make(map[concreteOverrideCandidateKey][]string)
+	}
+	vm.concreteOverrideCandidateMemo[key] = names
+	return names
+}
+
+func (vm *VM) concreteOverrideCandidatesDirect(baseType string) []string {
+	var names []string
+	for className, class := range vm.classEntriesRaw() {
+		if strings.EqualFold(className, baseType) || (!vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType)) {
+			continue
+		}
+		names = append(names, className)
+	}
+	return names
+}
+
+func sameNameSet(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	seen := make(map[string]int, len(left))
+	for _, name := range left {
+		seen[name]++
+	}
+	for _, name := range right {
+		if seen[name] == 0 {
+			return false
+		}
+		seen[name]--
+	}
+	return true
+}
+
+// classStructureEqual reports whether two values of one class agree on
+// everything the candidate filter and class lookup read: identity,
+// hierarchy, kind and modifiers. Field values may differ.
+func classStructureEqual(a, b Class) bool {
+	if (a.lazy == nil) != (b.lazy == nil) {
+		return false
+	}
+	return a.Name == b.Name && a.Namespace == b.Namespace && a.SuperClass == b.SuperClass &&
+		a.PlatformType == b.PlatformType && a.SourceUnit == b.SourceUnit && a.APIVersion == b.APIVersion &&
+		a.Access == b.Access && a.IsAbstract == b.IsAbstract && a.IsInterface == b.IsInterface &&
+		a.IsTest == b.IsTest && a.Nested == b.Nested && a.Dependency == b.Dependency &&
+		equalStringSlices(a.Interfaces, b.Interfaces) && equalStringSlices(a.Modifiers, b.Modifiers) &&
+		equalStringSlices(a.EnumValues, b.EnumValues)
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

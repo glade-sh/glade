@@ -463,10 +463,16 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				}
 			}
 		}
+		// An Exact-only custom rule tests exclude after scoring: an Exact
+		// verdict costs about what the exclude lookup does, and most stored
+		// records do not match, so the lookup runs only for matches (and for
+		// an unsupported verdict, which an excluded record never reports).
+		// Scoring has no side effect on the outcome, so the order is free.
+		lateExclude := usePrepared && !fuzzy
 		// visit scores one indexed candidate; the full scan below inlines the
 		// same body. Change both together.
 		visit := func(existing storage.Record) bool {
-			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
+			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (!lateExclude && exclude != nil && exclude(existing.ID)) {
 				return true
 			}
 			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
@@ -494,8 +500,14 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 					matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
 				}
 				if !supported {
+					if lateExclude && exclude != nil && exclude(existing.ID) {
+						return true
+					}
 					return false
 				}
+			}
+			if matched && lateExclude && exclude != nil && exclude(existing.ID) {
+				return true
 			}
 			if matched {
 				detect, disclose := true, true
@@ -525,7 +537,7 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 			// step): a closure call per stored record measurably slowed
 			// unindexed bulk inserts. The indexed path visits few records.
 			for _, existing := range records {
-				if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
+				if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (!lateExclude && exclude != nil && exclude(existing.ID)) {
 					continue
 				}
 				if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
@@ -553,8 +565,14 @@ func findDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 						matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
 					}
 					if !supported {
+						if lateExclude && exclude != nil && exclude(existing.ID) {
+							continue
+						}
 						return result, false
 					}
+				}
+				if matched && lateExclude && exclude != nil && exclude(existing.ID) {
+					continue
 				}
 				if matched {
 					detect, disclose := true, true

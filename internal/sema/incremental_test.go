@@ -323,77 +323,82 @@ func TestIncrementalAnalysisEqualsFullAnalysis(t *testing.T) {
 			build func(t *testing.T, root string)
 		}{rel, func(t *testing.T, root string) { incrementalCopyTree(t, filepath.Join("..", "..", rel), root) }})
 	}
-	for _, procs := range []int{1, 4} {
-		procs := procs
-		t.Run(fmt.Sprintf("gomaxprocs%d", procs), func(t *testing.T) {
-			previous := runtime.GOMAXPROCS(procs)
-			defer runtime.GOMAXPROCS(previous)
-			var edits, incremental, reused int
-			for pi, proj := range projects {
-				root := t.TempDir()
-				proj.build(t, root)
-				files := incrementalClassFiles(t, root)
-				if len(files) == 0 {
-					continue
-				}
-				original := map[string]string{}
-				for _, file := range files {
-					data, err := os.ReadFile(file)
-					if err != nil {
-						t.Fatal(err)
+	for _, mode := range []string{"mentions", "skip-mentions"} {
+		for _, procs := range []int{1, 4} {
+			procs, mode := procs, mode
+			t.Run(fmt.Sprintf("%s/gomaxprocs%d", mode, procs), func(t *testing.T) {
+				previous := runtime.GOMAXPROCS(procs)
+				defer runtime.GOMAXPROCS(previous)
+				var edits, incremental, reused int
+				for pi, proj := range projects {
+					root := t.TempDir()
+					proj.build(t, root)
+					files := incrementalClassFiles(t, root)
+					if len(files) == 0 {
+						continue
 					}
-					original[file] = string(data)
-				}
-				rng := rand.New(rand.NewSource(int64(1000*procs + pi)))
-				state := NewIncrementalState()
-				check := func(label string) IncrementalStats {
-					t.Helper()
-					generation := incrementalLoad(t, root)
-					got, stats := state.Analyze(generation.index, incrementalOptions(&generation.artifacts))
-					want := AnalyzeWithOptions(generation.index, incrementalOptions(&generation.artifacts))
-					if !reflect.DeepEqual(got, want) {
-						t.Fatalf("%s %s: incremental result differs from full analysis (stats %+v)\n got diagnostics: %v\nwant diagnostics: %v", proj.name, label, stats, got.Diagnostics, want.Diagnostics)
-					}
-					return stats
-				}
-				check("baseline")
-				rounds := incrementalRounds
-				for round := 0; round < rounds; round++ {
-					file := files[rng.Intn(len(files))]
-					label := fmt.Sprintf("round %d %s", round, filepath.Base(file))
-					current, err := os.ReadFile(file)
-					if err != nil {
-						t.Fatal(err)
-					}
-					source := string(current)
-					if rng.Intn(4) == 0 {
-						source = original[file]
-						label += " revert"
-					} else {
-						edit := incrementalEdits[rng.Intn(len(incrementalEdits))]
-						next, ok := edit.apply(source, rng)
-						if !ok {
-							continue
+					original := map[string]string{}
+					for _, file := range files {
+						data, err := os.ReadFile(file)
+						if err != nil {
+							t.Fatal(err)
 						}
-						source = next
-						label += " " + edit.name
+						original[file] = string(data)
 					}
-					if err := os.WriteFile(file, []byte(source), 0o644); err != nil {
-						t.Fatal(err)
+					rng := rand.New(rand.NewSource(int64(1000*procs + pi)))
+					state := NewIncrementalState()
+					if mode == "skip-mentions" {
+						state.SkipMentionRechecks()
 					}
-					stats := check(label)
-					edits++
-					if stats.Incremental {
-						incremental++
-						reused += stats.Reused
+					check := func(label string) IncrementalStats {
+						t.Helper()
+						generation := incrementalLoad(t, root)
+						got, stats := state.Analyze(generation.index, incrementalOptions(&generation.artifacts))
+						want := AnalyzeWithOptions(generation.index, incrementalOptions(&generation.artifacts))
+						if !reflect.DeepEqual(got, want) {
+							t.Fatalf("%s %s: incremental result differs from full analysis (stats %+v)\n got diagnostics: %v\nwant diagnostics: %v", proj.name, label, stats, got.Diagnostics, want.Diagnostics)
+						}
+						return stats
+					}
+					check("baseline")
+					rounds := incrementalRounds
+					for round := 0; round < rounds; round++ {
+						file := files[rng.Intn(len(files))]
+						label := fmt.Sprintf("round %d %s", round, filepath.Base(file))
+						current, err := os.ReadFile(file)
+						if err != nil {
+							t.Fatal(err)
+						}
+						source := string(current)
+						if rng.Intn(4) == 0 {
+							source = original[file]
+							label += " revert"
+						} else {
+							edit := incrementalEdits[rng.Intn(len(incrementalEdits))]
+							next, ok := edit.apply(source, rng)
+							if !ok {
+								continue
+							}
+							source = next
+							label += " " + edit.name
+						}
+						if err := os.WriteFile(file, []byte(source), 0o644); err != nil {
+							t.Fatal(err)
+						}
+						stats := check(label)
+						edits++
+						if stats.Incremental {
+							incremental++
+							reused += stats.Reused
+						}
 					}
 				}
-			}
-			t.Logf("gomaxprocs=%d edits=%d incremental=%d reusedTypes=%d", procs, edits, incremental, reused)
-			if incremental == 0 || reused == 0 {
-				t.Fatalf("no edit ran incrementally (edits=%d); the equality check proved nothing", edits)
-			}
-		})
+				t.Logf("gomaxprocs=%d edits=%d incremental=%d reusedTypes=%d", procs, edits, incremental, reused)
+				if incremental == 0 || reused == 0 {
+					t.Fatalf("no edit ran incrementally (edits=%d); the equality check proved nothing", edits)
+				}
+			})
+		}
 	}
 }
 
