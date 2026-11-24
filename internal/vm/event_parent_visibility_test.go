@@ -18,3 +18,14 @@ func TestEventParentVisibilityRunAsNeighbor(t *testing.T) {
 		t.Fatal("runAs user can see another user's unshared private record")
 	}
 }
+
+// A runAs user inside an event trigger retains the parent-based share rule.
+func TestEventShareVisibilityRunAsNeighbor(t *testing.T) {
+	machine := recordSharingControlMachine(t, "Private")
+	machine.currentMethod.APIVersion = "62.0"
+	machine.currentTrigger = true
+	machine.eventSubscriberTriggerDepth = 1
+	if !machine.shareTableFollowsParent() {
+		t.Fatal("runAs user inside subscriber lost parent-based share visibility")
+	}
+}

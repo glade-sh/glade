@@ -95,7 +95,13 @@ func (vm *VM) generatedShareParentRecord(objectName string, record storage.Recor
 // reads every share row there (share_event_trigger_visibility), so the rule
 // does not apply to it.
 func (vm *VM) shareTableFollowsParent() bool {
-	return vm.testContext != nil && vm.testContext.RunAsDepth > 0 && vm.eventSubscriberTriggerDepth == 0
+	if vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
+		return false
+	}
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	return vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger ||
+		!strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") ||
+		(version != "62.0" && version != "67.0")
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
