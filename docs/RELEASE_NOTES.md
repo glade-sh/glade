@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Event subscriber parent visibility (Apex API 62.0, 67.0).** A platform-event trigger can count the private custom record referenced by its event in user mode when an administrator publishes it inside `System.runAs`. In the captured two-record, four-share shape it also sees the publisher-owned second record.
+- **Event subscriber parent visibility (Apex API 62.0, 67.0).** In the captured one-record/two-share and two-record/four-share shapes, a platform-event trigger can count the private custom record referenced by its event in user mode, and the second publisher-owned record in the two-record shape. The test class and trigger have matching API versions, and an administrator publishes and delivers the event inside the same `System.runAs` block.
 
 ## v0.3.14
 
