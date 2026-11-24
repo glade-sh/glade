@@ -2106,9 +2106,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 					evictSnapshotCaches(key)
 					return key, zero, err
 				}
-				runtimeCacheMu.Lock()
-				evicted := storeRuntimeCacheEntryLocked(key, diskEntry)
-				runtimeCacheMu.Unlock()
+				evicted := storeRuntimeCacheEntry(key, diskEntry)
 				dropEvictedRuntimeCacheCompanions(evicted)
 				return key, projected, nil
 			}
@@ -2181,9 +2179,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	work.check()
 	if !sources.privateRuntime {
-		runtimeCacheMu.Lock()
-		evicted := storeRuntimeCacheEntryLocked(key, entry)
-		runtimeCacheMu.Unlock()
+		evicted := storeRuntimeCacheEntry(key, entry)
 		dropEvictedRuntimeCacheCompanions(evicted)
 	}
 	if diskCacheAllowed {
@@ -2208,7 +2204,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			orderedPublication(root, publish)()
 		}
 	}
-	work.at("after_publish")
+	if work != nil && work.stage != nil {
+		work.stage("after_publish")
+	}
 	return key, projected, nil
 }
 
@@ -2296,9 +2294,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 					evictSnapshotCaches(key)
 					return key, zero, err
 				}
-				runtimeCacheMu.Lock()
-				evicted := storeRuntimeCacheEntryLocked(key, diskEntry)
-				runtimeCacheMu.Unlock()
+				evicted := storeRuntimeCacheEntry(key, diskEntry)
 				dropEvictedRuntimeCacheCompanions(evicted)
 				counters.phases.diskCacheHits.Add(1)
 				return key, projected, nil
@@ -2375,9 +2371,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		evictSnapshotCaches(key)
 		return key, zero, err
 	}
-	runtimeCacheMu.Lock()
-	evicted := storeRuntimeCacheEntryLocked(key, entry)
-	runtimeCacheMu.Unlock()
+	evicted := storeRuntimeCacheEntry(key, entry)
 	dropEvictedRuntimeCacheCompanions(evicted)
 	if diskCacheAllowed {
 		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")

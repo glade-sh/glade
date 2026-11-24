@@ -15,6 +15,9 @@ func TestDaemonStartupPublicationFollowsOptIn(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if err := s.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if got := s.daemon.backgroundDiskPublication; got != (optIn == "1") {
 			t.Errorf("opt-in %q: background publication %t", optIn, got)
 		}

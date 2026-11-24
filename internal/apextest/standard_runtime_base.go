@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"weak"
 
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -44,6 +45,16 @@ func resetFailedRuntimePlatform() {
 	standardRuntimeBase.used.Store(false)
 	standardRuntimeBase.failed = false
 	passiveStandardRuntimeClassCache.templates.Reset()
+	vm.DiscardRuntimePlatformIndexes()
+	projectReferencedStandardFieldCache.Clear()
+	shapedStandardApexTestOrgCache.mu.Lock()
+	shapedStandardApexTestOrgCache.key = ""
+	shapedStandardApexTestOrgCache.org = storage.OrgState{}
+	shapedStandardApexTestOrgCache.mu.Unlock()
+	standardApexTestOrgCache.mu.Lock()
+	standardApexTestOrgCache.built = false
+	standardApexTestOrgCache.org = storage.OrgState{}
+	standardApexTestOrgCache.mu.Unlock()
 }
 
 func sharedStandardRuntimePrefix() *standardRuntimePrefix {

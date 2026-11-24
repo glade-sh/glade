@@ -202,7 +202,7 @@ func TestRuntimeBesideGateWorkerRecovery(t *testing.T) {
 	}
 	index, artifacts, cases := p.load(t, 0, 1, false)
 	opts := Options{BuildArtifacts: &artifacts, NoDiskCache: true, testBuildHooks: new(runtimeBuildHooks)}
-	for _, stage := range []string{"compile_method", "scan_standard_fields", "scan_record_types"} {
+	for _, stage := range []string{"compile_method", "scan_standard_fields", "scan_record_types", "worker_exit"} {
 		t.Run(stage, func(t *testing.T) {
 			InvalidateRuntimeCaches()
 			projectReferencedStandardFieldCache.Clear()
@@ -210,35 +210,45 @@ func TestRuntimeBesideGateWorkerRecovery(t *testing.T) {
 			opts.testBuildHooks.log = log
 			var injected atomic.Bool
 			opts.testBuildHooks.stage = func(s string) {
+				if stage == "worker_exit" && s == "compile_method" && injected.CompareAndSwap(false, true) {
+					runtime.Goexit()
+				}
 				if stage == s && injected.CompareAndSwap(false, true) {
 					panic("worker")
 				}
 			}
 
 			run := RunCasesContext(context.Background(), index, opts, cases)
-			if !injected.Load() || run.Summary().Passed != 1 || strings.Count(log.String(), "panicked") != 1 || !strings.Contains(log.String(), "TestRuntimeBesideGateWorkerRecovery") {
+			event := "panicked"
+			if stage == "worker_exit" {
+				event = "exited without a result"
+			}
+			if !injected.Load() || run.Summary().Passed != 1 || strings.Count(log.String(), event) != 1 || !strings.Contains(log.String(), "TestRuntimeBesideGateWorkerRecovery") {
 				t.Fatalf("injected %v: %+v %s", injected.Load(), run.Summary(), log.String())
 			}
 		})
 	}
-	t.Run("cancel", func(t *testing.T) {
-		InvalidateRuntimeCaches()
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		var started atomic.Int64
-		opts.testBuildHooks.stage = func(stage string) {
-			if stage == "compile_method" {
-				started.Add(1)
-				cancel()
+	for _, at := range []string{"compile_method", "scan_standard_fields", "scan_record_types"} {
+		t.Run("cancel_"+at, func(t *testing.T) {
+			projectReferencedStandardFieldCache.Clear()
+			InvalidateRuntimeCaches()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			var started atomic.Int64
+			opts.testBuildHooks.stage = func(stage string) {
+				if stage == at {
+					started.Add(1)
+					cancel()
+				}
 			}
-		}
 
-		run := RunCasesContext(ctx, index, opts, cases)
-		if n := started.Load(); n < 1 || n > 2 || run.Summary().Passed != 0 {
-			t.Fatalf("started %d methods, summary %+v", n, run.Summary())
-		}
-		assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
-	})
+			run := RunCasesContext(ctx, index, opts, cases)
+			if n := started.Load(); n < 1 || n > 2 || run.Summary().Passed != 0 {
+				t.Fatalf("started %d work items, summary %+v", n, run.Summary())
+			}
+			assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
+		})
+	}
 }
 
 func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
@@ -249,6 +259,7 @@ func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
 	index, artifacts, cases := besideGateProject(t, "Object o = new MissingBuildType();")
 	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts, testBuildHooks: new(runtimeBuildHooks)}
 	old := sharedStandardRuntimePrefix()
+	oldTemplates := passiveStandardRuntimeClassTemplates()
 	arrived := make(chan struct{})
 	opts.testBuildHooks.stage = func(stage string) {
 		if stage == "after_methods" {
@@ -262,6 +273,10 @@ func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
 	run := runCasesContextWithSemanticGateHooks(context.Background(), index, opts, cases, semanticGateHooks{afterIdentity: func() { <-arrived }})
 	if run.Summary().CompileErrors != 1 || !strings.Contains(log.String(), "(abandoned)") {
 		t.Fatalf("summary %+v, %s", run.Summary(), log.String())
+	}
+	fresh := passiveStandardRuntimeClassTemplates()
+	if len(fresh) != len(oldTemplates) || &fresh[0] == &oldTemplates[0] {
+		t.Fatal("failed build retained platform templates")
 	}
 	if sharedStandardRuntimePrefix() == old {
 		t.Fatal("failed build retained the shared prefix")
@@ -283,5 +298,48 @@ func TestRuntimeBesideGateControllerProjectUsesSequentialBuilder(t *testing.T) {
 	r := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts, NoDiskCache: true}, cases)
 	if runtimeBesideGateBuildIDs.Load() != start || r.Summary().Passed != 1 {
 		t.Fatalf("build count changed %t: %+v", runtimeBesideGateBuildIDs.Load() != start, r.Summary())
+	}
+}
+
+func TestGatedPublicationRollbackErrorReachesRun(t *testing.T) {
+	enableRuntimeBesideGateForTest(t)
+	prev := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(prev)
+	t.Cleanup(EnableDiskCacheForTesting())
+	t.Cleanup(InvalidateRuntimeCaches)
+	p := newBesideGateStressProject(t, 0)
+	index, artifacts, cases := p.load(t, 0, 1, false)
+	cacheDir := filepath.Join(p.root, ".glade", startupcache.SubdirTest)
+	var injectErr error
+	hooks := runtimeBuildHooks{stage: func(stage string) {
+		if stage != "after_publish" {
+			return
+		}
+		// Keep the complete payload in this test's temporary directory. A
+		// regular file in its place makes cleanup fail even for privileged users.
+		if injectErr = os.Rename(cacheDir, cacheDir+"-saved"); injectErr == nil {
+			injectErr = os.WriteFile(cacheDir, []byte("closed"), 0600)
+		}
+		panic("interrupted disk publication")
+	}}
+	r := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts, testBuildHooks: &hooks}, cases)
+	if injectErr != nil || r.Summary().CompileErrors != 1 || firstRunProblem(r) == "" {
+		t.Fatalf("injection %v: %+v %s", injectErr, r.Summary(), firstRunProblem(r))
+	}
+}
+
+func TestRuntimePublicationOrderingExpiresWithLastWriter(t *testing.T) {
+	var writes []string
+	old := orderedPublication("first", func() { writes = append(writes, "old") })
+	orderedPublication("second", func() { writes = append(writes, "other") })()
+	orderedPublication("first", func() { writes = append(writes, "new") })()
+	old()
+	if strings.Join(writes, ",") != "other,new" {
+		t.Fatal(writes)
+	}
+	publicationRootsMu.Lock()
+	defer publicationRootsMu.Unlock()
+	if publicationRoots["first"] != nil || publicationRoots["second"] != nil {
+		t.Fatal("completed roots retained publication state")
 	}
 }
