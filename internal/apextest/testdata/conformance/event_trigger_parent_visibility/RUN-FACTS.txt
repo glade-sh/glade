@@ -2,7 +2,7 @@ capture: event-parent-capture
 started: 2026-11-24T01:41:00Z
 finished: 2026-11-24T01:41:59Z
 apis: 62.0 67.0
-routes: istest 
+routes: istest
 cases: 1
 sf: @salesforce/cli/2.159.7
 hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
