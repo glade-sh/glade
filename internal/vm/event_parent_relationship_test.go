@@ -139,8 +139,12 @@ func TestEventSecondParentCapturedScope(t *testing.T) {
 			}
 			machine.Org.Objects["Widget__Share"] = shares
 			query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000002")}}
-			if got, want := machine.capturedEventSubscriberCount(query), change == "captured"; got != want {
-				t.Fatalf("second parent scope = %t, want %t", got, want)
+			for version := 50; version <= 68; version++ {
+				machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
+				want := change == "captured" && (version == 62 || version == 67)
+				if got := machine.capturedEventSubscriberCount(query); got != want {
+					t.Errorf("API %d: second parent scope = %t, want %t", version, got, want)
+				}
 			}
 		})
 	}

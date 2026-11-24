@@ -89,9 +89,9 @@ func (vm *VM) generatedShareParentRecord(objectName string, record storage.Recor
 	return parentObject, parent, true
 }
 
-// Share rows follow their parent for ordinary runAs visibility.
+// Preserve the released runAs and event-subscriber share visibility path.
 func (vm *VM) shareTableFollowsParent() bool {
-	return vm.testContext != nil && vm.testContext.RunAsDepth > 0
+	return vm.testContext != nil && vm.testContext.RunAsDepth > 0 && vm.eventSubscriberTriggerDepth == 0
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {

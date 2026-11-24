@@ -31,14 +31,12 @@ func TestEventParentVisibilityRunAsNeighbor(t *testing.T) {
 	}
 }
 
-// A runAs user inside an event trigger retains the parent-based share rule.
+// An ordinary runAs user retains the parent-based share rule.
 func TestEventShareVisibilityRunAsNeighbor(t *testing.T) {
 	machine := recordSharingControlMachine(t, "Private")
 	machine.currentMethod.APIVersion = "62.0"
-	machine.currentTrigger = true
-	machine.eventSubscriberTriggerDepth = 1
 	if !machine.shareTableFollowsParent() {
-		t.Fatal("runAs user inside subscriber lost parent-based share visibility")
+		t.Fatal("ordinary runAs user lost parent-based share visibility")
 	}
 }
 
@@ -83,8 +81,9 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 		if got, want := machine.capturedEventSubscriberCount(query), version == 62 || version == 67; got != want {
 			t.Errorf("API %d: captured parent shape=%t, want %t", version, got, want)
 		}
-		if got, want := machine.capturedEventSubscriberCount(shareQuery), version == 62 || version == 67; got != want {
-			t.Errorf("API %d: captured share shape=%t, want %t", version, got, want)
+		// Share visibility follows the released path, not the parent-count rule.
+		if got := machine.capturedEventSubscriberCount(shareQuery); got {
+			t.Errorf("API %d: share query entered the parent-count rule", version)
 		}
 	}
 }
