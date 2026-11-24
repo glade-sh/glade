@@ -128,6 +128,7 @@ func TestRoad547NativeConformance(t *testing.T) {
 func TestRoad547NeighborBaseline(t *testing.T) {
 	cases := []string{
 		`insert new Account();`,
+		`void probe() { insert new BatchApexErrorEvent(); } probe();`,
 		`insert new BatchApexErrorEvent(Message='x');`,
 		`BatchApexErrorEvent e = new BatchApexErrorEvent(); insert e;`,
 		`delete new BatchApexErrorEvent();`,
