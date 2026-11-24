@@ -4856,7 +4856,7 @@ func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string
 // by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
 // source versions retain their existing sharing behavior.
 func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil || query.Where == nil {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil || query.HasLimit || query.HasOffset || query.AllRows || query.Where == nil {
 		return false
 	}
 	version := vm.currentSourceExecutionPolicy().APIVersion
@@ -4864,7 +4864,7 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 		return false
 	}
 	where := query.Where
-	if where.Not || len(where.And) != 0 || len(where.Or) != 0 || !strings.EqualFold(where.Field, "Id") || where.Op != "=" {
+	if where.Not || len(where.And) != 0 || len(where.Or) != 0 || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Range || where.Subquery != nil {
 		return false
 	}
 	object, ok := vm.resolveObjectName(query.Object)
@@ -4875,7 +4875,7 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 // share_event_trigger_visibility/org.tsv:2-3. Other share queries keep their
 // parent-based runAs visibility.
 func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil || query.HasLimit || query.HasOffset || query.AllRows {
 		return false
 	}
 	version := vm.currentSourceExecutionPolicy().APIVersion
@@ -4898,7 +4898,9 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 		return false
 	}
 	first, second := where.And[0], where.And[1]
-	return strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
+	return !first.Not && len(first.And) == 0 && len(first.Or) == 0 && first.Subquery == nil &&
+		!second.Not && len(second.And) == 0 && len(second.Or) == 0 && second.Subquery == nil &&
+		strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
 		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN")
 }
 
