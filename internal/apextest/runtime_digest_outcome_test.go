@@ -82,7 +82,15 @@ func TestExactDigestRunnerNeighborOutcome(t *testing.T) {
 			t.Fatal(err)
 		}
 		data = []byte(strings.ReplaceAll(string(data), index.Project.Root, "<project>"))
-		t.Logf("rejected=%t report=%x", rejected, sha256.Sum256(data))
+		// Same fixture on the sequential origin/main control. Durations and
+		// the temporary project root are the only normalized fields.
+		want := "2df387055d80d65136a5d2370df5c808dff3fbf1bb08355df4b695f1bf329c05"
+		if rejected {
+			want = "49ebfbe3a0ea5b3e53e7683a93f25219aaa8f1b8f29526fb1ebdaa3583cb466e"
+		}
+		if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != want {
+			t.Fatalf("rejected=%t report=%s, want %s: %s", rejected, got, want, data)
+		}
 	}
 }
 

@@ -243,3 +243,20 @@ func TestRuntimeBesideGateRejectedPartialBuild(t *testing.T) {
 	}
 	assertNoCompiledGenerationCaches(t, buildArtifactRuntimeKey(t, index, &artifacts))
 }
+
+// Controller fallback can launch its own index and analyzer pools. A project
+// with pages stays on the sequential path until those pools can join a build.
+func TestRuntimeBesideGateControllerProjectUsesSequentialBuilder(t *testing.T) {
+	enableRuntimeBesideGateForTest(t)
+	prev := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(prev)
+	t.Cleanup(InvalidateRuntimeCaches)
+	p := newBesideGateStressProject(t, 0)
+	writeFile(t, filepath.Join(p.root, "force-app", "main", "default", "pages", "Hello.page"), "<apex:page>Hello</apex:page>")
+	index, artifacts, cases := p.load(t, 0, 1, false)
+	start := runtimeBesideGateBuildIDs.Load()
+	r := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts, NoDiskCache: true}, cases)
+	if runtimeBesideGateBuildIDs.Load() != start || r.Summary().Passed != 1 {
+		t.Fatalf("build count changed %t: %+v", runtimeBesideGateBuildIDs.Load() != start, r.Summary())
+	}
+}
