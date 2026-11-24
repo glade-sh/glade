@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, matching captured Salesforce results at API 62.0 and 67.0.
+- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0.
 
 ## v0.3.14
 

@@ -40,7 +40,19 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		if !present || id.Kind == storage.ValueNull {
 			return storage.NullValue(), true
 		}
-		record, found := parent.Records[idFromStorageValue(id)]
+		parentID := idFromStorageValue(id)
+		// Parent maps normally use 15-character keys. Avoid the shared
+		// lookup's linear equivalent-ID scan for the common 18-character form
+		// without changing exact-key precedence or the fallback semantics.
+		if len(parentID) == 18 {
+			if _, exact := parent.Records[parentID]; !exact {
+				short := parentID[:15]
+				if _, present := parent.Records[short]; present {
+					parentID = short
+				}
+			}
+		}
+		_, record, found := storage.LookupRecordByID(parent.Records, parentID)
 		if !found {
 			return storage.Value{}, false
 		}
