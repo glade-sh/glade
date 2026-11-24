@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestCanceledRuntimeBuildMatchesSequentialReport(t *testing.T) {
@@ -126,4 +130,45 @@ func TestRuntimeBuildPanicLogIncludesBoundsError(t *testing.T) {
 	}()
 	var empty []int
 	_ = empty[0]
+}
+
+// Index diagnostics are already part of the semantic gate. Overlapping
+// compilation cannot help a run whose index already contains a parse error.
+func TestRuntimeBuildSkipsKnownIndexErrors(t *testing.T) {
+	previous := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(previous)
+	t.Cleanup(InvalidateRuntimeCaches)
+	index, _ := digestProject(t, 1, false)
+	root := index.Project.Root
+	service := filepath.Join(root, "force-app", "main", "default", "classes", "DigestService0.cls")
+	writeFile(t, service, "public class DigestService0 { public static String label() { return \"invalid\"; } }")
+	loaded, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(loaded, gladeschema.Schema{})
+	if !index.HasErrors() {
+		t.Fatal("fixture did not produce an index diagnostic")
+	}
+	opts := Options{BuildArtifacts: &artifacts, NoDiskCache: true}
+	t.Setenv(runtimeBesideGateEnv, "0")
+	control := Run(index, opts)
+	t.Setenv(runtimeBesideGateEnv, "1")
+	started := runtimeBesideGateBuildIDs.Load()
+	got := Run(index, opts)
+	if got.Summary().CompileErrors != 1 || besideGateOutcomeDigest(t, got) != besideGateOutcomeDigest(t, control) {
+		t.Fatalf("index error report changed: %+v", got.Summary())
+	}
+	if runtimeBesideGateBuildIDs.Load() != started {
+		t.Error("started a speculative runtime build for an index with a known error")
+	}
+
+	// With the parse error fixed, the same project is eligible again.
+	writeFile(t, service, "public class DigestService0 { public static Integer offset7(Integer v) { return v + 7; } }")
+	index, artifacts = typesys.BuildWithArtifacts(loaded, gladeschema.Schema{})
+	started = runtimeBesideGateBuildIDs.Load()
+	got = Run(index, opts)
+	if got.Summary().Passed != 1 || runtimeBesideGateBuildIDs.Load()-started != 1 {
+		t.Fatalf("corrected project did not run with an overlapping build: %+v", got.Summary())
+	}
 }
