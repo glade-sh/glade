@@ -366,3 +366,36 @@ func TestRequestFileDigestsReusesOldStamp(t *testing.T) {
 		t.Fatalf("old file read %d times, want 1", *reads)
 	}
 }
+
+func TestRequestDigestStatHookRestoreDuringRead(t *testing.T) {
+	skipWithoutStamps(t)
+	trustedClock(t)
+	path := filepath.Join(t.TempDir(), "A.cls")
+	if err := os.WriteFile(path, []byte("source"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	previous := requestDigestStatHook.Load()
+	t.Cleanup(func() { requestDigestStatHook.Store(previous) })
+	var request requestFileDigests
+	if _, err := request.digest(path); err != nil {
+		t.Fatal(err)
+	}
+	start, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		<-start
+		stat := func(path string) (filestamp.Stamp, bool) { return filestamp.Stat(path) }
+		for range 1000 {
+			old := requestDigestStatHook.Swap(&stat)
+			requestDigestStatHook.Store(old)
+		}
+	}()
+	close(start)
+	for range 50 {
+		if _, err := request.digest(path); err != nil {
+			<-done
+			t.Fatal(err)
+		}
+	}
+	<-done
+}
