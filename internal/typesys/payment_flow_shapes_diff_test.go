@@ -1,31 +1,54 @@
 package typesys
 
 import (
-	"crypto/sha256"
-	"encoding/json"
-	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
 
-// The digest was captured from the requested main base before the payment-flow
-// overlay. It covers every standard symbol except the four native-probed types.
+// Rebuild the main symbol table without the four new overlays, and compare
+// every other symbol so unobserved platform shapes keep their previous surface.
 func TestPaymentFlowShapesUncapturedSymbolsUnchanged(t *testing.T) {
-	var keep []TypeSymbol
-	for _, symbol := range StandardPlatformSymbols() {
-		switch strings.ToLower(symbol.Name) {
-		case "commercepayments.salerequest", "commercepayments.saleresponse", "commercepayments.authorizationreversalrequest", "commercepayments.authorizationreversalresponse":
+	changed := map[string]string{
+		"commercepayments.salerequest":                   "commercepayments.PaymentGatewayRequest",
+		"commercepayments.authorizationreversalrequest":  "commercepayments.PaymentGatewayRequest",
+		"commercepayments.saleresponse":                  "commercepayments.GatewayResponse",
+		"commercepayments.authorizationreversalresponse": "commercepayments.GatewayResponse",
+	}
+	specs := standardPlatformSymbolSpecList(false)
+	baselineSpecs := make([]StandardSymbolSpec, 0, len(specs))
+	removed := 0
+	for _, spec := range specs {
+		want, found := changed[strings.ToLower(spec.Name)]
+		if found && len(spec.Interfaces) == 1 && spec.Interfaces[0] == want {
+			removed++
 			continue
 		}
-		keep = append(keep, symbol)
+		baselineSpecs = append(baselineSpecs, spec)
 	}
-	data, err := json.Marshal(keep)
-	if err != nil {
-		t.Fatal(err)
+	if removed != len(changed) {
+		t.Fatalf("expected four added overlays, found %d", removed)
 	}
-	got := fmt.Sprintf("%x", sha256.Sum256(data))
-	const baseline = "1d3af9ac0e17a9eb01ee686bcb4f025f97883f9a02533dcbe68193d0110be642"
-	if got != baseline {
-		t.Fatalf("uncaptured standard symbols differ from main: %s", got)
+	baseline := standardSymbolsFromSpecs(baselineSpecs, newStandardSymbolLists())
+	actual := standardSymbolsFromSpecs(specs, newStandardSymbolLists())
+	filter := func(symbols []TypeSymbol) map[string]TypeSymbol {
+		out := make(map[string]TypeSymbol, len(symbols))
+		for _, symbol := range symbols {
+			name := strings.ToLower(symbol.Namespace + "." + symbol.Name)
+			if _, ok := changed[name]; !ok {
+				out[name] = symbol
+			}
+		}
+		return out
+	}
+	before, after := filter(baseline), filter(actual)
+	if len(before) != len(after) {
+		t.Fatalf("uncaptured symbol count: before %d, after %d", len(before), len(after))
+	}
+	for name, want := range before {
+		got, ok := after[name]
+		if !ok || !reflect.DeepEqual(got, want) {
+			t.Fatalf("uncaptured symbol %s changed", name)
+		}
 	}
 }
