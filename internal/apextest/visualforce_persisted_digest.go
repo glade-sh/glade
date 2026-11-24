@@ -45,7 +45,7 @@ func visualforceDigestRootIsPrivate(root string) bool {
 		return true
 	}
 	visualforceDigestUnsafeRootWarning.Do(func() {
-		fmt.Fprintf(os.Stderr, "warning: Visualforce digest cache disabled: project root %q is not a private directory owned by the current user (it may be group or world writable); use a private project directory or remove group and other write permission with chmod go-w\n", root)
+		fmt.Fprintf(os.Stderr, "warning: Visualforce digest cache disabled: cannot verify project root %q is a private directory owned by the current user (it may be group or world writable); use a private project directory, or on POSIX remove group and other write permission with chmod go-w\n", root)
 	})
 	return false
 }
