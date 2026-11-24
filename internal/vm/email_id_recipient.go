@@ -89,8 +89,7 @@ func (vm *VM) plainSingleEmailTestObservation(message Value) bool {
 // A current-User target with the default activity flag has a distinct native
 // error from the accepted current-User ID in toAddresses.
 func (vm *VM) currentUserTargetActivityValidation(message Value) Value {
-	if !vm.plainSingleEmailTestObservation(message) || len(message.Fields["toAddresses"].List) != 0 ||
-		!emailFieldBool(message, "saveAsActivity") || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
+	if !emailFieldBool(message, "saveAsActivity") || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
 		return Null
 	}
 	target := storage.ID(emailFieldString(message, "targetObjectId"))

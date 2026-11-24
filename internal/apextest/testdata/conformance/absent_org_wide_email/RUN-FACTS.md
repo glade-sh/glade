@@ -7,3 +7,5 @@ Anonymous Apex ran through `sf apex run` with each API version. The class was de
 Additional capture on 2026-11-24 used a second temporary Developer Edition scratch org, deleted after the run. Anonymous and test class probes ran at API 63.0. An Account before-insert trigger at APIs 62.0, 63.0, and 67.0 sent the direct missing ID; anonymous Apex and a test class inserted and queried the record at the matching API version. The test assertion intentionally failed to expose the outcome. Residue was not measured.
 
 Additional capture on 2026-11-24 used a temporary Developer Edition scratch org, deleted after the run. The direct and lookup probes ran in anonymous Apex and test classes at APIs 64.0, 65.0, and 66.0. The test assertions deliberately failed to expose results. Residue was not measured.
+
+The same scratch org was used for the four shapes in shapes.apex and Road548Shapes at APIs 62.0 through 67.0, in anonymous Apex and test methods. The test assertions deliberately failed to expose results. The template case uses a missing template ID. Residue was not measured.

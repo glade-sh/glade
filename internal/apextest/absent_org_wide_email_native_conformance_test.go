@@ -30,13 +30,13 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	header := []string{"id", "api", "route", "compiled", "success", "outcome", "class_api", "trigger_api", "residue"}
-	if len(rows) != 31 || !reflect.DeepEqual(rows[0], header) {
+	if len(rows) != 79 || !reflect.DeepEqual(rows[0], header) {
 		t.Fatalf("invalid table: %q", rows)
 	}
 	seen := map[string]bool{}
 	for _, row := range rows[1:] {
 		id, api, route := row[0], row[1], row[2]
-		if strings.HasPrefix(route, "trigger_") {
+		if strings.HasPrefix(route, "trigger_") || strings.HasPrefix(id, "shape") {
 			continue
 		}
 		key := id + "/" + api + "/" + route
@@ -140,6 +140,136 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
 		for _, route := range []string{"anonymous", "istest"} {
 			for _, id := range []string{"direct", "lookup"} {
+				key := id + "/" + api + "/" + route
+				if !seen[key] {
+					t.Fatalf("missing row %s", key)
+				}
+			}
+		}
+	}
+}
+
+func TestAbsentOrgWideEmailShapesNativeConformance(t *testing.T) {
+	const fixture = "testdata/conformance/absent_org_wide_email"
+	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	header := []string{"id", "api", "route", "compiled", "success", "outcome", "class_api", "trigger_api", "residue"}
+	if len(rows) != 79 || !reflect.DeepEqual(rows[0], header) {
+		t.Fatalf("invalid table: %q", rows)
+	}
+	seen := map[string]bool{}
+	for _, row := range rows[1:] {
+		id, api, route := row[0], row[1], row[2]
+		if !strings.HasPrefix(id, "shape") {
+			continue
+		}
+		key := id + "/" + api + "/" + route
+		if seen[key] {
+			t.Fatalf("duplicate row %s", key)
+		}
+		seen[key] = true
+		if (id != "shape0" && id != "shape1" && id != "shape2" && id != "shape3") || (api != "62.0" && api != "63.0" && api != "64.0" && api != "65.0" && api != "66.0" && api != "67.0") || (route != "anonymous" && route != "istest") {
+			t.Fatalf("unexpected row: %q", row)
+		}
+		t.Run(key, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
+			actual := []string{id, api, route, "true", "", "", "n/a", "n/a", "n/a"}
+			if route == "anonymous" {
+				source, err := os.ReadFile(filepath.Join(fixture, "shapes.apex"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				index := loadTestIndex(t, root)
+				program, err := vm.CompileAnonymousWithOptions(string(source), vm.CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				org := orgFromIndex(index)
+				org.APIVersion = api
+				seedOrgWideEmailCatalog(&org)
+				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				result, err := runner.newMachine().Execute(program)
+				if err != nil {
+					t.Fatal(err)
+				}
+				actual[4] = "true"
+				if len(result.Debug) != 4 {
+					t.Fatalf("debug = %q", result.Debug)
+				}
+				pos := int(id[5] - '0')
+				prefix := fmt.Sprintf("ROAD548_SHAPE_%d=", pos)
+				var ok bool
+				actual[5], ok = strings.CutPrefix(result.Debug[pos], prefix)
+				if !ok {
+					t.Fatalf("debug = %q", result.Debug)
+				}
+			} else {
+				source, err := os.ReadFile(filepath.Join(fixture, "force-app/main/default/classes/Road548Shapes.cls"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/Road548Shapes.cls"), string(source))
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/Road548Shapes.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
+				index := loadTestIndex(t, root)
+				if result := sema.Analyze(index); result.HasErrors() {
+					t.Fatalf("class semantics: %v", result.Diagnostics)
+				}
+				org := orgFromIndex(index)
+				org.APIVersion = api
+				seedOrgWideEmailCatalog(&org)
+				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				cases := Discover(index, Options{SelectedClasses: []string{"Road548Shapes"}})
+				methods, methodErrors := compileTestMethods(cases)
+				programs, programErrors := compileTestInvokePrograms(cases)
+				runtimeMethods := indexTestRuntimeMethods(methods)
+				count := 0
+				for _, testCase := range cases {
+					if !strings.EqualFold(testCase.MethodName, id) {
+						continue
+					}
+					count++
+					key := testCaseKey(testCase)
+					result := runCase(context.Background(), testCase, methods[key], runtimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)], methodErrors[key], programs[key], programErrors[key], runner.base, nil, nil, nil, org, 0, Options{NoDiskCache: true, Parallelism: 1}, true, nil, newRunPerfCounters(false))
+					actual[4] = string(result.Status)
+					if actual[4] == "fail" {
+						actual[4] = "Failed"
+					}
+					if result.Problem == nil {
+						t.Fatalf("missing assertion: %+v", result)
+					}
+					if result.Problem.Type != "System.AssertException" {
+						t.Fatalf("unexpected assertion type: %q", result.Problem.Type)
+					}
+					const prefix = "Assertion Failed: ROAD548="
+					var ok bool
+					actual[5], ok = strings.CutPrefix(result.Problem.Message, prefix)
+					if !ok {
+						t.Fatalf("unexpected assertion message: %q", result.Problem.Message)
+					}
+				}
+				if count != 1 {
+					t.Fatalf("found %d cases for %s", count, id)
+				}
+				actual[6] = api
+			}
+			if !reflect.DeepEqual(actual, row) {
+				t.Fatalf("got  %q\nwant %q", actual, row)
+			}
+		})
+	}
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
+		for _, route := range []string{"anonymous", "istest"} {
+			for _, id := range []string{"shape0", "shape1", "shape2", "shape3"} {
 				key := id + "/" + api + "/" + route
 				if !seen[key] {
 					t.Fatalf("missing row %s", key)

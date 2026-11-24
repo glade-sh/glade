@@ -29,3 +29,51 @@ direct	66.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:
 lookup	66.0	anonymous	true	true	success=true	n/a	n/a	n/a
 direct	66.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	66.0	n/a	n/a
 lookup	66.0	istest	true	Failed	success=true	66.0	n/a	n/a
+shape0	62.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	62.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	62.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	62.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	62.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	62.0	n/a	n/a
+shape1	62.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	62.0	n/a	n/a
+shape2	62.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	62.0	n/a	n/a
+shape3	62.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	62.0	n/a	n/a
+shape0	63.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	63.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	63.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	63.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	63.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	63.0	n/a	n/a
+shape1	63.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	63.0	n/a	n/a
+shape2	63.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	63.0	n/a	n/a
+shape3	63.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	63.0	n/a	n/a
+shape0	64.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	64.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	64.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	64.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	64.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	64.0	n/a	n/a
+shape1	64.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	64.0	n/a	n/a
+shape2	64.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	64.0	n/a	n/a
+shape3	64.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	64.0	n/a	n/a
+shape0	65.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	65.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	65.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	65.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	65.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	65.0	n/a	n/a
+shape1	65.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	65.0	n/a	n/a
+shape2	65.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	65.0	n/a	n/a
+shape3	65.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	65.0	n/a	n/a
+shape0	66.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	66.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	66.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	66.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	66.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	66.0	n/a	n/a
+shape1	66.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	66.0	n/a	n/a
+shape2	66.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	66.0	n/a	n/a
+shape3	66.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	66.0	n/a	n/a
+shape0	67.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape1	67.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	n/a	n/a	n/a
+shape2	67.0	anonymous	true	true	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	n/a	n/a	n/a
+shape3	67.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+shape0	67.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	67.0	n/a	n/a
+shape1	67.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id/success=true	67.0	n/a	n/a
+shape2	67.0	istest	true	Failed	success=false;error=INVALID_SAVE_AS_ACTIVITY_FLAG:saveAsActivity must be false when sending mail to users.	67.0	n/a	n/a
+shape3	67.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	67.0	n/a	n/a
