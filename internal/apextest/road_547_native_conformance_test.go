@@ -31,7 +31,7 @@ func TestRoad547NativeConformance(t *testing.T) {
 	reader := csv.NewReader(f)
 	reader.Comma = '\t'
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 17 {
+	if err != nil || len(rows) != 29 {
 		t.Fatalf("incomplete native rows: %v", err)
 	}
 	seen := map[string]bool{}

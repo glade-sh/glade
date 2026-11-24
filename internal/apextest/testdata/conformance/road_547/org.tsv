@@ -15,3 +15,15 @@ api	route	case	outcome	observation
 67.0	istest	publish	passed	-
 67.0	anonymous	insert	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
 67.0	istest	insert	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
+62.0	anonymous	nested_if	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+62.0	istest	nested_if	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
+62.0	anonymous	nested_try	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+62.0	istest	nested_try	passed	-
+62.0	anonymous	nested_loop	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+62.0	istest	nested_loop	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
+67.0	anonymous	nested_if	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+67.0	istest	nested_if	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
+67.0	anonymous	nested_try	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+67.0	istest	nested_try	passed	-
+67.0	anonymous	nested_loop	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+67.0	istest	nested_loop	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
