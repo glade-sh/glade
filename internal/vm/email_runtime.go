@@ -727,7 +727,7 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value, validateOrgW
 	if message.Type == "Messaging.SingleEmailMessage" && vm.Org != nil {
 		// Native: absent_org_wide_email/org.tsv. Only validate the captured
 		// sender ID shape for the explicit false overload when the local catalog
-		// has records to compare against.
+		// has a live record to compare against.
 		senderID := emailFieldString(message, "orgWideEmailAddressId")
 		if validateOrgWideSender && strings.HasPrefix(senderID, "0D2") && validateApexID(senderID) == nil {
 			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
@@ -735,9 +735,11 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value, validateOrgW
 				objectName = "OrgWideEmailAddress"
 			}
 			records := vm.Org.Objects[objectName].Records
-			if len(records) > 0 {
-				if _, _, found := storage.LookupRecordByID(records, storage.ID(senderID)); !found {
-					return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+			if _, _, found := storage.LookupRecordByID(records, storage.ID(senderID)); !found {
+				for _, record := range records {
+					if !record.System.IsDeleted {
+						return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+					}
 				}
 			}
 		}
