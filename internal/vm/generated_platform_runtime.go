@@ -456,6 +456,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 		if !ok {
 			return Null, true, fmt.Errorf("%s constructor expects %s", generated.Name, generatedPlatformConstructorSummary(generated.Constructors))
 		}
+		if err := vm.paymentRequestOutsideTestError(generated.Name, ctorArgs, namedArgs); err != nil {
+			return Null, true, err
+		}
 		if err := vm.commerceInventoryOutsideTestError(generated.Name); err != nil {
 			return Null, true, err
 		}
