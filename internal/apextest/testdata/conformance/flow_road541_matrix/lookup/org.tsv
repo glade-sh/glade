@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+metadata_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=yes|no|no	62.0	n/a	0
+metadata_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes|no|no	62.0	n/a	n/a
+book_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=yes	62.0	n/a	0
+book_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=no	62.0	n/a	n/a
+metadata_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=yes|no|no	67.0	n/a	0
+metadata_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=yes|no|no	67.0	n/a	n/a
+book_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=yes	67.0	n/a	0
+book_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=no	67.0	n/a	n/a

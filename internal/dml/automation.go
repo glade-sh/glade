@@ -713,7 +713,7 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 			for _, item := range branch.Criteria {
 				if flowGlobalDecisionReference(item.Field) {
 					if flowAfterSaveProfileRule(rule) {
-						if _, _, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+						if _, _, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition, strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create")); handled {
 							profileAfterCreate = true
 							continue
 						}
@@ -722,7 +722,7 @@ func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, 
 				}
 			}
 		}
-		matches, ok := e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, flowRuleHasSaveDecisions(rule), profileAfterCreate)
+		matches, ok := e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, flowRuleHasSaveDecisions(rule), profileAfterCreate, strings.EqualFold(strings.TrimSpace(rule.RecordTriggerType), "Create"))
 		if !ok {
 			for _, item := range branch.Criteria {
 				reference := strings.TrimSpace(item.Field)
@@ -2589,7 +2589,7 @@ func (e *Engine) evaluateFlowFrameBranch(branch storage.FlowBranch, source stora
 		}
 		if flowGlobalDecisionReference(item.Field) && (frame == nil || !frame.beforeSaveDecisions || frame.autolaunched) {
 			if frame != nil && (frame.capturedAfterCreate || frame.afterSaveTrigger != "") {
-				if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, source, definition); handled {
+				if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, source, definition, frame.capturedAfterCreate); handled {
 					if !supported || !matches {
 						return matches, supported
 					}
@@ -4587,10 +4587,10 @@ func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Rec
 }
 
 func (e *Engine) evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save bool) (bool, bool) {
-	return e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, save, false)
+	return e.evaluateFlowBranchWithProfileAfterCreate(branch, record, definition, save, false, false)
 }
 
-func (e *Engine) evaluateFlowBranchWithProfileAfterCreate(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save, profileAfterCreate bool) (bool, bool) {
+func (e *Engine) evaluateFlowBranchWithProfileAfterCreate(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, save, profileAfterCreate, allowParent bool) (bool, bool) {
 	if strings.TrimSpace(branch.Formula) != "" {
 		if e.Org != nil {
 			matches, ok := evaluateRecordFormulaInOrgWithNamespace(branch.Formula, "", e.Org, definition, record, e.flowPriorRecord(record.ID), false, e.systemUserID(), e.PermissionUserFields)
@@ -4615,7 +4615,7 @@ func (e *Engine) evaluateFlowBranchWithProfileAfterCreate(branch storage.FlowBra
 	prior := e.flowPriorRecord(record.ID)
 	for _, item := range branch.Criteria {
 		if profileAfterCreate {
-			if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition); handled {
+			if matches, supported, handled := e.flowAfterCreateProfileRecordCriterion(item, record, definition, allowParent); handled {
 				if !supported || !matches {
 					return matches, supported
 				}

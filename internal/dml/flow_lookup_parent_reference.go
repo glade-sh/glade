@@ -40,7 +40,19 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		if !present || id.Kind == storage.ValueNull {
 			return storage.NullValue(), true
 		}
-		record, found := parent.Records[idFromStorageValue(id)]
+		parentID := idFromStorageValue(id)
+		record, found := parent.Records[parentID]
+		// The captured 18-character input can refer to a 15-character key
+		// at APIs 62.0 through 67.0 (flow_parent_reference_id_forms).
+		// Keep exact-key behavior for all other, uncaptured storage forms.
+		if !found && len(parentID) == 18 {
+			short := parentID[:15]
+			if storage.ID18(string(short)) == string(parentID) {
+				if candidate, present := parent.Records[short]; present && !candidate.System.IsDeleted {
+					_, record, found = storage.LookupRecordByID(parent.Records, short)
+				}
+			}
+		}
 		if !found {
 			return storage.Value{}, false
 		}

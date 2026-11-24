@@ -1,0 +1,12 @@
+Contact c = new Contact(LastName='cn'); insert c;
+Pv__c p1 = new Pv__c(Name='p1', Ct__c=c.Id); insert p1;
+Pv__c p2 = new Pv__c(Name='p2'); insert p2;
+insert new Tg__c(Name='t1', Rf__c=c.Id);
+List<Ca__c> cs = new List<Ca__c>{ new Ca__c(Name='ca1', Pv__c=Id.valueOf(String.valueOf(p1.Id).substring(0,15))), new Ca__c(Name='ca2', Pv__c=Id.valueOf(String.valueOf(p2.Id).substring(0,15))), new Ca__c(Name='ca3') };
+insert cs;
+for (Ca__c x : cs) x.Name = x.Name + 'u';
+update cs;
+List<String> rows = new List<String>();
+for (FL__c l : [SELECT Name, Tag__c FROM FL__c]) rows.add(l.Name + ':' + l.Tag__c);
+rows.sort();
+System.assert(false, 'R5|lookup|' + String.join(rows, ','));
