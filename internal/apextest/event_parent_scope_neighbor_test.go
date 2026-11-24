@@ -41,10 +41,10 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 				}
 				text := string(raw)
 				if strings.HasSuffix(name, "ShareEventProbeTest.cls-meta.xml") {
-					text = strings.ReplaceAll(text, "62.0", tc.classAPI)
+					text = strings.ReplaceAll(text, "67.0", tc.classAPI)
 				}
 				if strings.HasSuffix(name, "EvtTrigger.trigger-meta.xml") {
-					text = strings.ReplaceAll(text, "62.0", tc.triggerAPI)
+					text = strings.ReplaceAll(text, "67.0", tc.triggerAPI)
 				}
 				if strings.HasSuffix(name, "ShareEventProbeTest.cls") && (tc.route == "outside" || tc.route == "different") {
 					text = strings.Replace(text, "String out;", "String out; Doc__c d; Integer direct;", 1)
