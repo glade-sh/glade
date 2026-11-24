@@ -162,6 +162,14 @@ func lookupGeneratedPlatformMethods(classKey string) map[string][]Method {
 	return slot.methods
 }
 
+// DiscardRuntimePlatformIndexes drops generated lookup slots and their lazy
+// initializers after an interrupted runtime build. Existing readers keep their
+// immutable view; subsequent lookups acquire fresh slots.
+func DiscardRuntimePlatformIndexes() {
+	generatedPlatformTypeIndexCache.Reset()
+	generatedPlatformMethodIndexCache.Reset()
+}
+
 func warmGeneratedPlatformRuntimeIndexes() {
 	_ = CommonSObjectTypeNames()
 	_ = generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)

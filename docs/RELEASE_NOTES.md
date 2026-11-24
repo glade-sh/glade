@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-No changes yet.
+- The experimental runtime build uses the sequential path for Visualforce projects. Cancellation joins compile and scan workers, and cache publication is coordinated with recovery.
+
+- Added native conformance coverage for locale-specific SOQL text ordering at API 62.0 and 67.0.
+
+- DAP startup detects changes to dependency artifacts and Flow metadata while validating the frontend cache, and retries with consistent inputs.
+
+- **Visualforce digest cache.** When the project root is not private, Glade warns once that persistent digest caching is disabled and explains how to make the directory private.
 
 ## v0.3.14
 

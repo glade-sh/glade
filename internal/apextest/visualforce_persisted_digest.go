@@ -4,10 +4,12 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/semanticcache"
@@ -34,9 +36,23 @@ func visualforceDigestCachePath(root string) string {
 	return filepath.Join(root, startupcache.SubdirTest, "visualforce-input-digests.json")
 }
 
+var visualforceDigestUnsafeRootWarning sync.Once
+
+// An unsafe root cannot authenticate a persistent table. Warn once even when
+// both the read and write paths encounter it in the same process.
+func visualforceDigestRootIsPrivate(root string) bool {
+	if semanticcache.DigestDirectoryIsPrivate(root) {
+		return true
+	}
+	visualforceDigestUnsafeRootWarning.Do(func() {
+		fmt.Fprintf(os.Stderr, "warning: Visualforce digest cache disabled: cannot verify project root %q is a private directory owned by the current user (it may be group or world writable); use a private project directory, or on POSIX remove group and other write permission with chmod go-w\n", root)
+	})
+	return false
+}
+
 func loadVisualforceDigestCache(root string, paths []string) error {
 	path := visualforceDigestCachePath(root)
-	if !semanticcache.DigestDirectoryIsPrivate(root) || !semanticcache.DigestDirectoryIsPrivate(filepath.Dir(path)) {
+	if !visualforceDigestRootIsPrivate(root) || !semanticcache.DigestDirectoryIsPrivate(filepath.Dir(path)) {
 		return nil
 	}
 	info, err := os.Lstat(path)
@@ -100,7 +116,7 @@ func loadVisualforceDigestCache(root string, paths []string) error {
 func saveVisualforceDigestCache(root string, paths []string) error {
 	// The project root and cache directory must be owned by this user and not
 	// writable by other accounts, as for executable digest entries.
-	if !semanticcache.DigestDirectoryIsPrivate(root) {
+	if !visualforceDigestRootIsPrivate(root) {
 		return nil
 	}
 	path := visualforceDigestCachePath(root)

@@ -19,7 +19,7 @@ func TestVisualforceDigestCacheRespectsRunPolicy(t *testing.T) {
 		{"parallel bypass", Options{ParallelMethods: true, Parallelism: 2}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 			writeFile(t, filepath.Join(root, "src", "pages", "Home.page"), `<apex:page/>`)
 			writeFile(t, filepath.Join(root, "src", "classes", "CachePolicyTest.cls"), `@IsTest private class CachePolicyTest { @IsTest static void passes() { System.assertEquals(2, 1 + 1); } }`)
@@ -39,16 +39,16 @@ func TestVisualforceDigestCacheRespectsRunPolicy(t *testing.T) {
 }
 
 func TestVisualforceDigestCacheDisabledRunDoesNotReadExistingTable(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 	page := filepath.Join(root, "src", "pages", "Home.page")
 	writeFile(t, page, `<apex:page/>`)
 	writeFile(t, filepath.Join(root, "src", "classes", "CachePolicyTest.cls"), `@IsTest private class CachePolicyTest { @IsTest static void passes() { System.assertEquals(2, 1 + 1); } }`)
 	restore := EnableDiskCacheForTesting()
 	defer restore()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	index := loadTestIndex(t, root)
 	first := Run(index, Options{Parallelism: 1})
@@ -61,11 +61,11 @@ func TestVisualforceDigestCacheDisabledRunDoesNotReadExistingTable(t *testing.T)
 	}
 	resetFileDigestTrust()
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == page {
 			reads++
 		}
-	}
+	})
 	second := Run(index, Options{NoDiskCache: true, Parallelism: 1})
 	if len(second.Suites) != 1 || len(second.Suites[0].Cases) != 1 || second.Suites[0].Cases[0].Status != testreport.StatusPass {
 		t.Fatal("disabled-cache test run did not pass")

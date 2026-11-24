@@ -1,19 +1,18 @@
 package apextest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"reflect"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"unicode/utf8"
 
-	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 )
@@ -27,19 +26,13 @@ var errRuntimeAbandoned = errors.New("runtime build abandoned")
 // result or a panic (runtime.Goexit).
 var errRuntimeBuildIncomplete = errors.New("runtime build beside the semantic gate exited without a result")
 
-// testOnlyRuntimeBesideGateStartHook is a package test seam run on the build
-// goroutine before the build starts. Nothing outside _test.go files sets it.
-var testOnlyRuntimeBesideGateStartHook func()
-
-// testOnlyRuntimeBesideGateStageHook is a package test seam a build beside
-// the gate calls at named points of a partly completed build
-// ("after_methods", "after_org", "after_publish"). Nothing outside _test.go
-// files sets it.
-var testOnlyRuntimeBesideGateStageHook func(stage string)
-
-// testOnlyRuntimeBesideGateLog, when set by a package test, receives the
-// build-panic log line instead of os.Stderr.
-var testOnlyRuntimeBesideGateLog io.Writer
+// Package tests attach hooks to a single run before starting it. The build
+// snapshots the callbacks so concurrent runs have independent observers.
+type runtimeBuildHooks struct {
+	start func()
+	stage func(string)
+	log   io.Writer
+}
 
 // runtimeBesideGateEnv opts in to the build beside the semantic gate. The
 // build is off by default in v0.3.14: runs use the sequential runtime build
@@ -58,21 +51,13 @@ func runtimeBesideGateEnabled() bool {
 var runtimeBesideGateBuildIDs atomic.Uint64
 
 // runtimeBesideGate is a project runtime build started before the semantic
-// gate finishes. It runs only when runtimeBesideGateEnabled. The build runs exactly as the sequential path does; only
-// Visualforce page registration, the one step that reads the gate's result,
-// waits for it.
-//
-// The build never outlives its run. abandon waits for the goroutine to exit,
-// so an abandoned build cannot overlap a later run, a cache invalidation or
-// a test's cleanup of process-global seams, and a panic it raises cannot be
-// lost while it leaves shared state behind for the next build. A rejected
-// build checks rejected between compile phases and stops at the next one.
+// gate finishes. The run owns the build until all its workers have joined.
 type runtimeBesideGate struct {
-	once     sync.Once
-	hint     chan runtimeGateHint
-	result   chan runtimeBesideGateResult
-	done     chan struct{}
-	rejected atomic.Bool
+	once   sync.Once
+	hint   chan runtimeGateHint
+	done   chan struct{}
+	cancel context.CancelFunc
+	result runtimeBesideGateResult // read only after done closes
 }
 
 type runtimeGateHint struct {
@@ -81,13 +66,11 @@ type runtimeGateHint struct {
 }
 
 type runtimeBesideGateResult struct {
-	key     runtimeCacheKey
-	runtime runtimeExecutionView
-	err     error
-	// panicked holds a panic the build raised. It is logged on the build
-	// goroutine; finish reports it so the run falls back to the sequential
-	// build instead of failing.
-	panicked *runtimeBuildPanic
+	key        runtimeCacheKey
+	runtime    runtimeExecutionView
+	err        error
+	retry      bool
+	discardErr error
 }
 
 // runtimeBuildPanic is a panic recovered on the build goroutine, with the
@@ -98,32 +81,35 @@ type runtimeBuildPanic struct {
 	stack []byte
 }
 
+// A sequential build re-panics on its owner goroutine. Include the worker
+// stack in the Go panic diagnostic, where the owner stack cannot show it.
 func (p *runtimeBuildPanic) Error() string {
-	return fmt.Sprintf("runtime build %d beside the semantic gate panicked: %v\n\noriginal stack:\n%s", p.build, p.value, p.stack)
+	return fmt.Sprintf("runtime build worker panicked: %v\n%s", p.value, p.stack)
 }
 
-// Bounds of the build-panic log line.
 const (
 	runtimeBuildPanicValueLimit = 256
 	runtimeBuildPanicStackLimit = 8 << 10
 )
 
-// logRuntimeBuildPanic writes one bounded line: the build id, whether the
-// gate accepted the build, the panic's type, its message only when it is a
-// runtime error (an arbitrary panic value can carry Apex source text, so it
-// is never printed), and the original stack, which holds only function
-// names, files and lines. Both are truncated and quoted onto one line.
+// Only the Go runtime's own error types may supply text for the log. A
+// user-defined Error or String method can itself panic or print source.
 func logRuntimeBuildPanic(out io.Writer, p *runtimeBuildPanic, abandoned bool) {
 	state := "accepted; the run falls back to the sequential build"
 	if abandoned {
 		state = "abandoned"
 	}
 	value := "<not shown>"
-	if err, ok := p.value.(runtime.Error); ok {
+	if err, ok := p.value.(error); ok && reflect.TypeOf(err).PkgPath() == "runtime" {
 		value = truncateRuntimeBuildPanicText(err.Error(), runtimeBuildPanicValueLimit)
 	}
 	stack := truncateRuntimeBuildPanicText(string(p.stack), runtimeBuildPanicStackLimit)
-	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate panicked (%s): type=%T value=%q stack=%q\n", p.build, state, p.value, value, stack)
+	kind := "panicked"
+	if p.value == errRuntimeBuildIncomplete {
+		kind = "exited without a result"
+	}
+	typeName := truncateRuntimeBuildPanicText(fmt.Sprintf("%T", p.value), 256)
+	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate %s (%s): type=%s value=%q stack=%q\n", p.build, kind, state, typeName, value, stack)
 }
 
 func truncateRuntimeBuildPanicText(text string, limit int) string {
@@ -144,114 +130,85 @@ var runtimeBesideGateBuilds sync.WaitGroup
 // startRuntimeBesideGate starts the build when another processor can take
 // it. Perf-counter runs stay sequential so their phase timings keep their
 // meaning.
-func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCache, generation runtimeGeneration, runState *runExecution) *runtimeBesideGate {
-	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 {
+func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Options, sources *sourceCache, generation runtimeGeneration, runState *runExecution) *runtimeBesideGate {
+	// The Visualforce controller fallback has its own workers. Index errors
+	// already feed the gate, so let it report them before building a runtime.
+	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 || generation.metadata.hasVisualforcePages || index.HasErrors() {
 		return nil
 	}
-	early := &runtimeBesideGate{hint: make(chan runtimeGateHint, 1), result: make(chan runtimeBesideGateResult, 1), done: make(chan struct{})}
+	ctx, cancel := context.WithCancel(ctx)
+	early := &runtimeBesideGate{hint: make(chan runtimeGateHint, 1), done: make(chan struct{}), cancel: cancel}
 	var received runtimeGateHint
 	var receive sync.Once
 	generation.awaitControllerCompilation = func() (*visualforce.ControllerCompilation, bool) {
 		receive.Do(func() { received = <-early.hint })
 		return received.compilation, received.ok
 	}
-	generation.besideGateRejected = early.rejected.Load
-	generation.besideGateStageHook = testOnlyRuntimeBesideGateStageHook
-	// The seam is read here, on the run's goroutine, so a test that restores
-	// it cannot race the build.
-	startHook := testOnlyRuntimeBesideGateStartHook
-	var logOut io.Writer = os.Stderr
-	if testOnlyRuntimeBesideGateLog != nil {
-		logOut = testOnlyRuntimeBesideGateLog
+	var hooks runtimeBuildHooks
+	if opts.testBuildHooks != nil {
+		hooks = *opts.testBuildHooks
 	}
-	buildID := runtimeBesideGateBuildIDs.Add(1)
+	work := &runtimeBuildWork{ctx: ctx, stage: hooks.stage}
+	// Only runtime assembly consults work. The semantic gate shares the
+	// captured inputs; it owns its own cancellation and never consults work.
+	sources.build = work
+	var out io.Writer = os.Stderr
+	if hooks.log != nil {
+		out = hooks.log
+	}
+	id := runtimeBesideGateBuildIDs.Add(1)
 	runtimeBesideGateBuilds.Add(1)
 	go func() {
 		defer runtimeBesideGateBuilds.Done()
 		defer close(early.done)
-		var result runtimeBesideGateResult
+		defer cancel()
+		defer func() { sources.build = nil }()
 		completed := false
 		defer func() {
-			if recovered := recover(); recovered != nil {
-				buildPanic := &runtimeBuildPanic{build: buildID, value: recovered, stack: debug.Stack()}
-				// Never dropped: an abandoned build's panic is logged too.
-				// A rejected hint may not have arrived yet; wait for the
-				// gate's decision so the line says which case this was.
-				_, accepted := generation.awaitControllerCompilation()
-				logRuntimeBuildPanic(logOut, buildPanic, !accepted)
-				result = runtimeBesideGateResult{err: errRuntimeAbandoned, panicked: buildPanic}
-			} else if !completed {
-				// runtime.Goexit: the build returned no result. Never hand
-				// finish a zero runtime as a success.
-				result = runtimeBesideGateResult{err: errRuntimeBuildIncomplete}
+			if completed {
+				return
 			}
-			early.result <- result
+			recovered := recover()
+			if _, stopped := recovered.(runtimeBuildCanceled); stopped {
+				early.result.err = ctx.Err()
+				return
+			}
+			_, accepted := generation.awaitControllerCompilation()
+			failure, worker := recovered.(*runtimeBuildPanic)
+			if !worker {
+				failure = &runtimeBuildPanic{value: recovered, stack: debug.Stack()}
+			}
+			if recovered == nil {
+				failure.value = errRuntimeBuildIncomplete
+			}
+			failure.build = id
+			logRuntimeBuildPanic(out, failure, !accepted)
+			early.result.retry = true
+			resetFailedRuntimePlatform()
+			InvalidateRuntimeCaches()
+			early.result.discardErr = work.discardErr
 		}()
-		if startHook != nil {
-			startHook()
+		if hooks.start != nil {
+			hooks.start()
 		}
-		key, view, err := runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
-		result = runtimeBesideGateResult{key: key, runtime: view, err: err}
+		early.result.key, early.result.runtime, early.result.err = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
 		completed = true
 	}()
 	return early
 }
 
-func (e *runtimeBesideGate) send(hint runtimeGateHint) {
+func (e *runtimeBesideGate) decide(hint runtimeGateHint) runtimeBesideGateResult {
+	if e == nil {
+		return runtimeBesideGateResult{}
+	}
 	e.once.Do(func() {
 		if !hint.ok {
-			e.rejected.Store(true)
+			e.cancel()
 		}
 		e.hint <- hint
 	})
-}
-
-// abandon releases a build the run no longer needs and waits for it to
-// exit. The build stores nothing: it stops at its next compile phase or at
-// page registration. After finish, abandon returns at once. A panic of an
-// abandoned build is dropped, as the sequential path never built a rejected
-// index.
-func (e *runtimeBesideGate) abandon() {
-	if e == nil {
-		return
-	}
-	e.send(runtimeGateHint{})
 	<-e.done
+	return e.result
 }
 
-// finish hands the build the gate's controller compilation and returns its
-// result. A build that panicked returns its logged panic and no result; the
-// caller then runs the sequential build, so the run is the same as one
-// without the build beside the gate.
-func (e *runtimeBesideGate) finish(compilation *visualforce.ControllerCompilation) (runtimeCacheKey, runtimeExecutionView, error, *runtimeBuildPanic) {
-	e.send(runtimeGateHint{compilation: compilation, ok: true})
-	result := <-e.result
-	if result.panicked != nil {
-		return "", runtimeExecutionView{}, nil, result.panicked
-	}
-	return result.key, result.runtime, result.err, nil
-}
-
-// discardFailedBesideGateBuild removes every effect a panicked build beside
-// the gate could have left for this request, so the sequential build that
-// replaces it starts from the state a run without the beside-gate build
-// sees. The build has exited (finish returned), so nothing it started is
-// still writing except a background disk publication, which is drained
-// first. Then the project's startup cache, the root mapping and every
-// in-process runtime, setup, test and semantic cache are dropped, and the
-// request's source cache and runtime generation are rebuilt.
-func discardFailedBesideGateBuild(index typesys.Index, opts Options, runState *runExecution, failed runtimeGeneration) (*sourceCache, runtimeGeneration, error) {
-	backgroundPublicationsDone.Wait()
-	evictSnapshotCaches(failed.key)
-	if root := strings.TrimSpace(index.Project.Root); root != "" {
-		_ = startupcache.Clear(filepath.Clean(root), startupcache.SubdirTest)
-	}
-	InvalidateRuntimeCaches()
-	sources, generation, _, err := prepareRunSources(index, opts, runState)
-	if err != nil {
-		return nil, runtimeGeneration{}, err
-	}
-	generation.oneShot = failed.oneShot
-	generation.controllerCompilation = failed.controllerCompilation
-	return sources, generation, nil
-}
+func (e *runtimeBesideGate) abandon() runtimeBesideGateResult { return e.decide(runtimeGateHint{}) }

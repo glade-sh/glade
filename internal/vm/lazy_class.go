@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // LazyClassSet indexes passive platform classes whose members are built on first
@@ -27,8 +28,8 @@ type lazyClass struct {
 	key   string
 	build func() Class
 
-	once  sync.Once
-	built *builtLazyClass
+	mu    sync.Mutex
+	built atomic.Pointer[builtLazyClass]
 }
 
 // builtLazyClass is a lazy class once its members exist.
@@ -122,16 +123,25 @@ func (lc *lazyClass) materialized() Class {
 }
 
 func (lc *lazyClass) builtClass() *builtLazyClass {
-	lc.once.Do(func() {
-		class := lc.build()
-		class.lazy = nil
-		initializeReportsRuntimeClass(&class)
-		prepareRegisteredClass(&class)
-		ownerName := runtimeClassName(class)
-		registrations := stampRegisteredMethods(&class, ownerName, true)
-		lc.built = &builtLazyClass{class: class, registrations: registrations, index: newLazyMethodIndex(registrations)}
-	})
-	return lc.built
+	// Publish only a complete class. A failed builder leaves even shells
+	// retained by other runtimes usable on the next lookup.
+	if built := lc.built.Load(); built != nil {
+		return built
+	}
+	lc.mu.Lock()
+	defer lc.mu.Unlock()
+	if built := lc.built.Load(); built != nil {
+		return built
+	}
+	class := lc.build()
+	class.lazy = nil
+	initializeReportsRuntimeClass(&class)
+	prepareRegisteredClass(&class)
+	ownerName := runtimeClassName(class)
+	registrations := stampRegisteredMethods(&class, ownerName, true)
+	built := &builtLazyClass{class: class, registrations: registrations, index: newLazyMethodIndex(registrations)}
+	lc.built.Store(built)
+	return built
 }
 
 func newLazyMethodIndex(registrations []Method) lazyMethodIndex {
