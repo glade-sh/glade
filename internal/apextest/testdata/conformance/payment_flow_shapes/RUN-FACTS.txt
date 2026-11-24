@@ -10,3 +10,4 @@ rows: 30; 10 passing test methods, 10 passing anonymous response cases, 10 anony
 inputs: project-owned synthetic values; no DML, callouts or asynchronous work
 org.tsv sha256: 8687362c750be306681593a28ae32863c37d1fccc78918f64ed89463a20c4f65
 cleanup: scratch org deleted; CLI org list verified no matching scratch alias
+fixture formatting: trailing whitespace normalized after capture; executable statements unchanged
