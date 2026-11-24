@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -480,5 +482,59 @@ func TestPersistedVisualforceDigestGenerationAdmission(t *testing.T) {
 	resetFileDigestTrust()
 	if !firstVisualforceDigestGeneration("project") {
 		t.Fatal("reset did not permit a fresh generation")
+	}
+}
+
+// The subprocess gives each case a fresh process-wide warning state.
+func TestPersistedVisualforceDigestUnsafeRootWarning(t *testing.T) {
+	if mode := os.Getenv("GLADE_TEST_DIGEST_WARNING"); mode != "" {
+		root := privateVisualforceDigestTestRoot(t)
+		if mode != "private" {
+			if err := os.Chmod(root, 0775); err != nil {
+				t.Fatal(err)
+			}
+			info, err := os.Stat(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if info.Mode().Perm()&0020 == 0 {
+				t.Skip("group write permission unavailable")
+			}
+		}
+		if mode == "save" {
+			if err := saveVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for i := 0; i < 2; i++ {
+			if err := loadVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+			if err := saveVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return
+	}
+	for _, mode := range []string{"load", "save", "private"} {
+		t.Run(mode, func(t *testing.T) {
+			cmd := exec.Command(os.Args[0], "-test.run=^TestPersistedVisualforceDigestUnsafeRootWarning$")
+			cmd.Env = append(os.Environ(), "GLADE_TEST_DIGEST_WARNING="+mode)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("child: %v\n%s", err, out)
+			}
+			if bytes.Contains(out, []byte("SKIP")) {
+				t.Skip(string(out))
+			}
+			count := strings.Count(string(out), "warning: Visualforce digest cache")
+			if mode == "private" {
+				if count != 0 {
+					t.Fatalf("private root warning: %s", out)
+				}
+			} else if count != 1 || !bytes.Contains(out, []byte("chmod")) || !bytes.Contains(out, []byte("group")) {
+				t.Fatalf("expected one warning with reason and remedy: %s", out)
+			}
+		})
 	}
 }
