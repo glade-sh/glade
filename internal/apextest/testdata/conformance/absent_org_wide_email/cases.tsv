@@ -1,3 +1,4 @@
 id	route	file	description
 direct	anonymous,istest	missing.apex,Road548Probe	Nonexistent well-formed org-wide sender ID
 lookup	anonymous,istest	missing.apex,Road548Probe	Missing address lookup supplies null ID
+direct	trigger_anonymous,trigger_istest	trigger.apex,Road548Trigger,Road548TriggerTest	Nonexistent well-formed sender ID in an Account trigger

@@ -7,3 +7,13 @@ direct	67.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:
 lookup	67.0	anonymous	true	true	success=true	n/a	n/a	n/a
 direct	67.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	67.0	n/a	n/a
 lookup	67.0	istest	true	Failed	success=true	67.0	n/a	n/a
+direct	63.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+lookup	63.0	anonymous	true	true	success=true	n/a	n/a	n/a
+direct	63.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	63.0	n/a	n/a
+lookup	63.0	istest	true	Failed	success=true	63.0	n/a	n/a
+direct	62.0	trigger_anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	62.0	n/a
+direct	62.0	trigger_istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	62.0	62.0	n/a
+direct	63.0	trigger_anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	63.0	n/a
+direct	63.0	trigger_istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	63.0	63.0	n/a
+direct	67.0	trigger_anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	67.0	n/a
+direct	67.0	trigger_istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	67.0	67.0	n/a
