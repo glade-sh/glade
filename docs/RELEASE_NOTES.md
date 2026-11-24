@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Visualforce digest cache.** When the project root is not private, Glade warns once that persistent digest caching is disabled and explains how to make the directory private.
 
 ## v0.3.14
 

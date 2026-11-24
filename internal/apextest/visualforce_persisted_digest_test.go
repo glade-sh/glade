@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,8 +17,19 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// Persistent digest tables require a project root that is not group-writable.
+// TempDir itself follows the process umask, so create an explicitly private child.
+func privateVisualforceDigestTestRoot(t *testing.T) string {
+	t.Helper()
+	root := filepath.Join(t.TempDir(), "project")
+	if err := os.Mkdir(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
 func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 		t.Fatal(err)
@@ -68,7 +81,7 @@ func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("fresh"), 0600); err != nil {
 		t.Fatal(err)
@@ -118,7 +131,7 @@ func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
 }
 
 func TestVisualforcePersistentDigestScope(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	page, resource := filepath.Join(root, "Home.page"), filepath.Join(root, "asset.js")
 	writeFile(t, page, "<apex:page/>")
 	writeFile(t, resource, "asset")
@@ -149,7 +162,7 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 	}
 
 	for _, withView := range []bool{false, true} {
-		other := t.TempDir()
+		other := privateVisualforceDigestTestRoot(t)
 		page, resource := filepath.Join(other, "Home.page"), filepath.Join(other, "asset.js")
 		writeFile(t, page, "<apex:page/>")
 		writeFile(t, resource, "asset")
@@ -169,7 +182,7 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
 	for _, mutation := range []string{"replacement", "deletion", "symlink"} {
 		t.Run(mutation, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			path := filepath.Join(root, "asset.js")
 			if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 				t.Fatal(err)
@@ -229,7 +242,7 @@ func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("stable"), 0600); err != nil {
 		t.Fatal(err)
@@ -272,7 +285,7 @@ func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -290,7 +303,7 @@ func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestDoesNotReadUnsafeRoot(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -352,7 +365,7 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			root := t.TempDir()
+			root := privateVisualforceDigestTestRoot(t)
 			page, input := filepath.Join(root, "Home.page"), filepath.Join(root, "input")
 			writeFile(t, page, "<apex:page/>")
 			writeFile(t, input, "before")
@@ -391,7 +404,7 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -409,7 +422,7 @@ func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
 }
 
 func TestPersistedVisualforceDigestRejectsChecksumMismatch(t *testing.T) {
-	root := t.TempDir()
+	root := privateVisualforceDigestTestRoot(t)
 	path := filepath.Join(root, "asset.js")
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
@@ -469,5 +482,72 @@ func TestPersistedVisualforceDigestGenerationAdmission(t *testing.T) {
 	resetFileDigestTrust()
 	if !firstVisualforceDigestGeneration("project") {
 		t.Fatal("reset did not permit a fresh generation")
+	}
+}
+
+// The subprocess gives each case a fresh process-wide warning state.
+func TestPersistedVisualforceDigestConcurrentUnsafeRootWarning(t *testing.T) {
+	if mode := os.Getenv("GLADE_TEST_DIGEST_WARNING"); mode != "" {
+		root := privateVisualforceDigestTestRoot(t)
+		if mode != "private" {
+			if err := os.Chmod(root, 0775); err != nil {
+				t.Fatal(err)
+			}
+			info, err := os.Stat(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if info.Mode().Perm()&0020 == 0 {
+				t.Skip("group write permission unavailable")
+			}
+		}
+		if mode == "save" {
+			if err := saveVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if mode == "load" {
+			var wg sync.WaitGroup
+			for i := 0; i < 8; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := loadVisualforceDigestCache(root, nil); err != nil {
+						t.Error(err)
+					}
+				}()
+			}
+			wg.Wait()
+		}
+		for i := 0; i < 2; i++ {
+			if err := loadVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+			if err := saveVisualforceDigestCache(root, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return
+	}
+	for _, mode := range []string{"load", "save", "private"} {
+		t.Run(mode, func(t *testing.T) {
+			cmd := exec.Command(os.Args[0], "-test.run=^TestPersistedVisualforceDigestConcurrentUnsafeRootWarning$")
+			cmd.Env = append(os.Environ(), "GLADE_TEST_DIGEST_WARNING="+mode)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("child: %v\n%s", err, out)
+			}
+			if bytes.Contains(out, []byte("SKIP")) {
+				t.Skip(string(out))
+			}
+			count := strings.Count(string(out), "warning: Visualforce digest cache")
+			if mode == "private" {
+				if count != 0 {
+					t.Fatalf("private root warning: %s", out)
+				}
+			} else if count != 1 || !bytes.Contains(out, []byte("chmod")) || !bytes.Contains(out, []byte("group")) {
+				t.Fatalf("expected one warning with reason and remedy: %s", out)
+			}
+		})
 	}
 }
