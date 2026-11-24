@@ -37,3 +37,36 @@ func TestEventShareMultiValueQuerySharingNeighbor(t *testing.T) {
 		t.Fatalf("multi-value query sharing user = %q, want %q", got, want)
 	}
 }
+
+func TestEventParentCountContextNeighbors(t *testing.T) {
+	for _, name := range []string{"record trigger", "explicit delivery", "dynamic query"} {
+		t.Run(name, func(t *testing.T) {
+			machine := recordSharingControlMachine(t, "Private")
+			machine.currentMethod.APIVersion = "62.0"
+			machine.currentTrigger = true
+			machine.eventSubscriberTriggerDepth = 1
+			machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
+			machine.eventBusTriggerContext = &eventBusTriggerContext{}
+			machine.testContext.StopTimeEventDelivery = true
+			machine.staticSOQLQuery = true
+			switch name {
+			case "record trigger":
+				machine.eventBusTriggerContext = nil
+			case "explicit delivery":
+				machine.testContext.StopTimeEventDelivery = false
+			case "dynamic query":
+				machine.staticSOQLQuery = false
+			}
+			query := soql.Query{
+				Object:       "Widget__c",
+				Count:        true,
+				SecurityMode: "USER_MODE",
+				Aggregates:   []soql.Aggregate{{Func: "COUNT"}},
+				Where:        &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000001")},
+			}
+			if got, want := machine.soqlSharingUserID(query), machine.currentUserID(); got != want {
+				t.Fatalf("sharing user = %q, want %q", got, want)
+			}
+		})
+	}
+}
