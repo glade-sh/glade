@@ -35,6 +35,7 @@ var (
 	// Test seams.
 	fileDigestNow      = time.Now
 	fileDigestReadHook func(path string)
+	requestDigestStat  = filestamp.Stat
 )
 
 // SetFileDigestReadHookForTesting observes every physical read a source
@@ -166,10 +167,9 @@ func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.
 // requestFileDigests remembers, for one request, the stat stamp and digest of
 // every source file already validated. Repeated validation boundaries inside
 // one request reuse the recorded digest while the stamp still matches, so a
-// racily clean file is read and hashed once per request instead of once per
-// boundary. A save between boundaries changes the stamp and forces a fresh
-// read, so mid-request edits are detected exactly as before, and entries
-// never outlive the request that recorded them.
+// file safely older than its digest generation can be reused. Recent files
+// are rehashed at each boundary because a save can share the same timestamp
+// tick. Entries never outlive the request that recorded them.
 type requestFileDigests struct {
 	mu      sync.Mutex
 	entries map[string]requestFileDigestEntry
@@ -190,12 +190,13 @@ func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
 	entry, hit := r.entries[path]
 	r.mu.Unlock()
 	if hit {
-		if stamp, ok := filestamp.Stat(path); ok && entry.stamp == stamp {
+		if stamp, ok := requestDigestStat(path); ok && entry.stamp == stamp {
 			return entry.digest, nil
 		}
 	}
+	generation := fileDigestNow()
 	digest, err, stamp, stamped := currentFileDigestStamped(path)
-	if stamped && err == nil {
+	if stamped && err == nil && stamp.OlderThan(generation, fileDigestTrustAge) {
 		r.mu.Lock()
 		if r.entries == nil {
 			r.entries = make(map[string]requestFileDigestEntry)
