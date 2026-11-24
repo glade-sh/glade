@@ -1,0 +1,5 @@
+id	route	file
+metadata_anonymous	anonymous	metadata.apex
+metadata_test	istest	MetaCaptureTest
+book_anonymous	anonymous	book.apex
+book_test	istest	BookCaptureTest

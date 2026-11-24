@@ -1,0 +1,31 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+pl_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=eq,n,n,n|eq,n,n,y|eq,n,n,y	62.0	n/a	0
+rv_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	62.0	n/a	0
+mv_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=T-Alpha|T-Beta||	62.0	n/a	0
+pb_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,entries=1,std=true	62.0	n/a	0
+ea_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ERR:INVALID_ARGUMENT_TYPE:We can't save this record because the “CritEA” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: Org-Wide Email provided is not valid. Please fix and try again.,emails=0	62.0	n/a	0
+eb_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	62.0	n/a	0
+ec_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	62.0	n/a	0
+pl_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=eq,n,n,n|eq,n,n,y|eq,n,n,y	62.0	n/a	n/a
+rv_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	62.0	n/a	n/a
+mv_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=T-Alpha|T-Beta||	62.0	n/a	n/a
+pb_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:REQUIRED_FIELD_MISSING:We can't save this record because the “CritPB” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Pricebook2Id]. You can look up ExceptionCode values in the SOAP API Developer Guide.	62.0	n/a	n/a
+pbcustom_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:STANDARD_PRICE_NOT_DEFINED:We can't save this record because the “CritPB” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: STANDARD_PRICE_NOT_DEFINED: Before creating a custom price, create a standard price.. You can look up ExceptionCode values in the SOAP API Developer Guide.	62.0	n/a	n/a
+ea_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:INVALID_ARGUMENT_TYPE:We can't save this record because the “CritEA” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: Org-Wide Email provided is not valid. Please fix and try again.,emails=0	62.0	n/a	n/a
+eb_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	62.0	n/a	n/a
+ec_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	62.0	n/a	n/a
+pl_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=eq,n,n,n|eq,n,n,y|eq,n,n,y	67.0	n/a	0
+rv_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	67.0	n/a	0
+mv_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=T-Alpha|T-Beta||	67.0	n/a	0
+pb_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,entries=1,std=true	67.0	n/a	0
+ea_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ERR:INVALID_ARGUMENT_TYPE:We can't save this record because the “CritEA” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: Org-Wide Email provided is not valid. Please fix and try again.,emails=0	67.0	n/a	0
+eb_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	0
+ec_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	0
+pl_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=eq,n,n,n|eq,n,n,y|eq,n,n,y	67.0	n/a	n/a
+rv_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	67.0	n/a	n/a
+mv_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=T-Alpha|T-Beta||	67.0	n/a	n/a
+pb_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:REQUIRED_FIELD_MISSING:We can't save this record because the “CritPB” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Pricebook2Id]. You can look up ExceptionCode values in the <a href='<org-url> API Developer Guide</a>.	67.0	n/a	n/a
+pbcustom_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:STANDARD_PRICE_NOT_DEFINED:We can't save this record because the “CritPB” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: This error occurred when the flow tried to create records: STANDARD_PRICE_NOT_DEFINED: Before creating a custom price, create a standard price.. You can look up ExceptionCode values in the <a href='<org-url> API Developer Guide</a>.	67.0	n/a	n/a
+ea_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:INVALID_ARGUMENT_TYPE:We can't save this record because the “CritEA” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: Org-Wide Email provided is not valid. Please fix and try again.,emails=0	67.0	n/a	n/a
+eb_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	n/a
+ec_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	n/a
