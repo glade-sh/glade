@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove obsolete benchmark cache references from CI checks.
+- Report a missing org-wide sender when sending email with partial success enabled.
 - After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0.
 - Match Salesforce compilation for direct anonymous BatchApexErrorEvent inserts at API 62.0 and 67.0.
 - Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
