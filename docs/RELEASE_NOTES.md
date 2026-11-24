@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- The runtime build beside the semantic gate is off by default. Set `GLADE_EXPERIMENTAL_BESIDE_GATE=1` to overlap runtime construction and semantic checks on projects without Visualforce pages. Cancellation joins workers, and a build panic discards partial state before a sequential retry when cleanup succeeds.
+- The experimental runtime build uses the sequential path for Visualforce projects. Cancellation joins compile and scan workers, and cache publication is coordinated with recovery.
 
 - Added native conformance coverage for locale-specific SOQL text ordering at API 62.0 and 67.0.
 
