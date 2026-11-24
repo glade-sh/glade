@@ -4909,8 +4909,8 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 		return false
 	}
 	first, second := where.And[0], where.And[1]
-	return !first.Not && !first.Range && first.Formula == nil && len(first.And) == 0 && len(first.Or) == 0 && first.Subquery == nil &&
-		!second.Not && !second.Range && second.Formula == nil && len(second.And) == 0 && len(second.Or) == 0 && second.Subquery == nil &&
+	return !first.Not && !first.Range && first.Formula == nil && len(first.And) == 0 && len(first.Or) == 0 && first.Subquery == nil && len(first.Values) == 1 &&
+		!second.Not && !second.Range && second.Formula == nil && len(second.And) == 0 && len(second.Or) == 0 && second.Subquery == nil && len(second.Values) == 1 &&
 		strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
 		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN")
 }
