@@ -2,7 +2,7 @@ capture: req
 started: 2026-11-23T19:43:28Z
 finished: 2026-11-23T19:44:15Z
 apis: 62.0 67.0
-routes: istest 
+routes: istest
 cases: 1
 sf: @salesforce/cli/2.159.7
 hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
