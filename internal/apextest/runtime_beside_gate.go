@@ -131,9 +131,9 @@ var runtimeBesideGateBuilds sync.WaitGroup
 // it. Perf-counter runs stay sequential so their phase timings keep their
 // meaning.
 func startRuntimeBesideGate(ctx context.Context, index typesys.Index, opts Options, sources *sourceCache, generation runtimeGeneration, runState *runExecution) *runtimeBesideGate {
-	// The Visualforce controller fallback can launch an independent type index
-	// and semantic worker pool. Keep that graph on its normal runner.
-	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 || generation.metadata.hasVisualforcePages {
+	// The Visualforce controller fallback has its own workers. Index errors
+	// already feed the gate, so let it report them before building a runtime.
+	if !runtimeBesideGateEnabled() || runState.counters.enabled || runtime.GOMAXPROCS(0) < 2 || generation.metadata.hasVisualforcePages || index.HasErrors() {
 		return nil
 	}
 	ctx, cancel := context.WithCancel(ctx)
