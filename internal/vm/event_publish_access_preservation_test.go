@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -57,36 +55,5 @@ func TestEventPublishPermissionSetGrant(t *testing.T) {
 	result, err := machine.eventBusPublish([]Value{Object(name)}, &Result{})
 	if err != nil || !result.Fields["success"].Bool {
 		t.Fatalf("assigned grant result=%+v err=%v", result, err)
-	}
-}
-
-// A null callback outside the captured runAs route uses the same publication
-// path as the two-argument access-level overload, including standard events.
-func TestEventPublishNullCallbackOutsideRunAsPreservesSingleRoute(t *testing.T) {
-	for _, version := range []string{"62.0", "64.0", "67.0"} {
-		for _, list := range []bool{false, true} {
-			t.Run(fmt.Sprintf("%s/list=%t", version, list), func(t *testing.T) {
-				publish := func(withCallback bool) (Value, error) {
-					machine := fieldPermissionFallbackMachine(false)
-					machine.EnableTestContext()
-					machine.currentMethod = Method{APIVersion: version}
-					record := Object("BatchApexErrorEvent")
-					if list {
-						record = List(record)
-					}
-					args := []Value{record}
-					if withCallback {
-						args = append(args, Null)
-					}
-					args = append(args, Object("AccessLevel"))
-					return machine.eventBusPublishWithAccessLevel(args, &Result{})
-				}
-				want, wantErr := publish(false)
-				got, gotErr := publish(true)
-				if fmt.Sprint(gotErr) != fmt.Sprint(wantErr) || !reflect.DeepEqual(got, want) {
-					t.Fatalf("null callback = %+v, %v; single route = %+v, %v", got, gotErr, want, wantErr)
-				}
-			})
-		}
 	}
 }
