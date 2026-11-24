@@ -73,3 +73,34 @@ func semaPaymentFlowContextShape(typ typesys.TypeSymbol, member typesys.MemberSy
 	requestType, ok := model.lookup(normalizeName(args[0]))
 	return ok && requestType.platform
 }
+
+// Native rejects Decimal amount variables for these request signatures.
+func semaPaymentDecimalConstructorMessage(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView, name string, args []string, named int) string {
+	if !semaPaymentFlowRoute(typ, member, model) || named != 0 || len(args) == 0 || !strings.EqualFold(args[0], "Decimal") {
+		return ""
+	}
+	canonical := ""
+	arity := 1
+	switch strings.ToLower(name) {
+	case "commercepayments.authorizationrequest":
+		canonical = "commercepayments.AuthorizationRequest"
+	case "commercepayments.salerequest":
+		canonical = "commercepayments.SaleRequest"
+	case "commercepayments.capturerequest":
+		canonical, arity = "commercepayments.CaptureRequest", 2
+	case "commercepayments.referencedrefundrequest":
+		canonical, arity = "commercepayments.ReferencedRefundRequest", 2
+	case "commercepayments.authorizationreversalrequest":
+		canonical, arity = "commercepayments.AuthorizationReversalRequest", 2
+	default:
+		return ""
+	}
+	if len(args) != arity || (arity == 2 && !strings.EqualFold(args[1], "String")) {
+		return ""
+	}
+	target, ok := model.lookup(normalizeName(name))
+	if !ok || !target.platform {
+		return ""
+	}
+	return "Constructor not defined: [" + canonical + "].<Constructor>(" + strings.Join(args, ", ") + ")"
+}

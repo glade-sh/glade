@@ -4000,6 +4000,11 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	if d, rejected := receiverDependencyConstructionDiagnostic(typ, typeName, resolvedTypeName, len(expr.Args)+len(expr.NamedArgs), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source, model); rejected {
 		return []diagnostic.Diagnostic{d}
 	}
+	if len(expr.Args) > 0 && expr.Args[0].Kind == ir.ExprVariable && simpleIdentifierPattern.MatchString(expr.Args[0].Name) {
+		if message := semaPaymentDecimalConstructorMessage(typ, member, model, resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), len(expr.NamedArgs)); message != "" {
+			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+		}
+	}
 	if message := semaPlatformEventConstructorMessage(resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), len(expr.NamedArgs), model); message != "" {
 		return []diagnostic.Diagnostic{semaPlatformEventDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}

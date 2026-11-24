@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,5 +82,38 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 				t.Fatalf("native %s; Glade: %v", row[6], err)
 			}
 		})
+	}
+}
+
+// RUN-FACTS.txt records rejected Decimal constructors on both routes and APIs.
+func TestPaymentFlowDecimalConstructorNativeConformance(t *testing.T) {
+	requests := map[string]string{
+		"AuthorizationRequest": "amount", "CaptureRequest": "amount, ref", "SaleRequest": "amount",
+		"ReferencedRefundRequest": "amount, ref", "AuthorizationReversalRequest": "amount, ref",
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		for name, args := range requests {
+			body := fmt.Sprintf("Decimal amount=3.5; String ref='ref'; commercepayments.%s req = new commercepayments.%s(%s);", name, name, args)
+			for _, route := range []string{"anonymous", "istest"} {
+				t.Run(api+"/"+route+"/"+name, func(t *testing.T) {
+					var diagnostics []diagnostic.Diagnostic
+					if route == "anonymous" {
+						index := nativeBoundaryIndex(t, api, nil, nil)
+						diagnostics = innerShapePrepareAnonymous(t, api, index, body).diagnostics
+					} else {
+						source := "@IsTest private class DecimalProbe { @IsTest static void run() { " + body + " } }"
+						index := nativeBoundaryIndex(t, api, map[string]string{"DecimalProbe": source}, nil)
+						diagnostics = sema.Analyze(index).Diagnostics
+					}
+					want := "Constructor not defined: [commercepayments." + name + "].<Constructor>(Decimal"
+					for _, d := range diagnostics {
+						if d.Severity == diagnostic.Error && strings.Contains(d.Message, want) {
+							return
+						}
+					}
+					t.Fatalf("missing native constructor rejection %q: %v", want, diagnostics)
+				})
+			}
+		}
 	}
 }
