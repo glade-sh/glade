@@ -38,6 +38,24 @@ func TestBuildWithArtifactsMatchesBuild(t *testing.T) {
 	}
 }
 
+func TestIndexDigestIdentityDoesNotDiscardArtifactCaptureTime(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "First.cls")
+	writeFile(t, path, "public class First {}")
+	index, artifacts := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if artifacts.SourceDigests.CapturedAt().IsZero() {
+		t.Fatal("artifact lost the physical read time")
+	}
+	if !index.sourceDigests.CapturedAt().IsZero() {
+		t.Fatal("index identity retained a transient physical read time")
+	}
+	indexDigest, indexOK := index.sourceDigests.Digest(path)
+	artifactDigest, artifactOK := artifacts.SourceDigests.Digest(path)
+	if !indexOK || !artifactOK || indexDigest != artifactDigest {
+		t.Fatal("index and artifact digest identities differ")
+	}
+}
+
 func TestRefreshBuildArtifactsReusesOnlyExactUnchangedOccurrences(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "First.cls")

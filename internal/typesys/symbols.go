@@ -326,7 +326,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
 	artifacts.SourceDigests = sources.sourceDigestSet()
 	artifacts.ApexMetadataInputs = capturedApexMetadataInputs(idx, sources)
-	idx.sourceDigests = artifacts.SourceDigests
+	idx.sourceDigests = artifacts.SourceDigests.indexDigestSet()
 	idx.apexMetadataInputs = sources.apexMetadataInputSet()
 
 	// Order by namespace and name; equal keys retain their append order.

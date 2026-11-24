@@ -406,6 +406,17 @@ func (s *SourceDigestSet) CapturedAt() time.Time {
 	return s.capturedAt
 }
 
+// indexDigestSet retains the digest identity without the transient read time.
+// The separate build artifacts retain that time for startup-cache validation.
+func (s *SourceDigestSet) indexDigestSet() *SourceDigestSet {
+	if s == nil {
+		return nil
+	}
+	copySet := *s
+	copySet.capturedAt = time.Time{}
+	return &copySet
+}
+
 // PhysicalCount returns the number of distinct successfully read physical
 // sources represented by the snapshot.
 func (s *SourceDigestSet) PhysicalCount() int {

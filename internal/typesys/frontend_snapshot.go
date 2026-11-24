@@ -609,7 +609,7 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		sources.adopt(source, occurrence.ApexMetadata)
 	}
 	artifacts := BuildArtifacts{Sources: sources, SourceDigests: sources.sourceDigestSet(), ApexMetadataInputs: capturedApexMetadataInputs(idx, sources)}
-	idx.sourceDigests = artifacts.SourceDigests
+	idx.sourceDigests = artifacts.SourceDigests.indexDigestSet()
 	idx.apexMetadataInputs = sources.apexMetadataInputSet()
 	// Exact logical membership includes rejected parser inputs, which need not
 	// have produced a TypeSymbol. Do not validate only successful declarations.
