@@ -114,6 +114,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 					return execOutcome{}, err
 				}
 				value = plainNull(evaluated)
+				if err := vm.paymentRequestDeclarationError(inst); err != nil {
+					return execOutcome{}, err
+				}
 			}
 			coerced, err := vm.coerceAssignable(inst.Type, value)
 			if err != nil && inst.Expr.Kind == ir.ExprVariable && !strings.Contains(inst.Expr.Name, ".") && strings.EqualFold(inst.Type, "commercepayments.GatewayResponse") && strings.EqualFold(vm.paymentFlowCapturedInterface(value.Type), inst.Type) {

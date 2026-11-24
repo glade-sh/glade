@@ -1,6 +1,25 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/ir"
+)
+
+// Restrict the fallback to the declaration and argument shapes in the native
+// observations until further scratch-org captures establish a broader rule.
+func (vm *VM) paymentRequestDeclarationError(inst ir.Instruction) error {
+	e := inst.Expr
+	if !hasTypePrefixFold(inst.Type, "commercepayments") || e.Kind != ir.ExprCall || !strings.HasPrefix(e.Callee, "new:") || e.Left != nil || len(e.NamedArgs) != 0 || !strings.EqualFold(inst.Type, strings.TrimPrefix(e.Callee, "new:")) {
+		return nil
+	}
+	for _, arg := range e.Args {
+		if arg.Kind != ir.ExprVariable || arg.Name == "" || strings.Contains(arg.Name, ".") {
+			return nil
+		}
+	}
+	return vm.paymentRequestOutsideTestError(inst.Type, make([]Value, len(e.Args)), nil)
+}
 
 // These constructor shapes were observed in anonymous Apex at APIs 62 and 67.
 // Linked user classes do not inherit this platform-only restriction.

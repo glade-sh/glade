@@ -7,18 +7,19 @@ import (
 
 func TestPaymentRequestConstructorCapturedScope(t *testing.T) {
 	requests := []string{
-		"commercepayments.AuthorizationRequest(3.5)",
-		"commercepayments.CaptureRequest(3.5, 'ref')",
-		"commercepayments.SaleRequest(3.5)",
-		"commercepayments.ReferencedRefundRequest(3.5, 'ref')",
-		"commercepayments.AuthorizationReversalRequest(3.5, 'ref')",
+		"commercepayments.AuthorizationRequest(amount)",
+		"commercepayments.CaptureRequest(amount, ref)",
+		"commercepayments.SaleRequest(amount)",
+		"commercepayments.ReferencedRefundRequest(amount, ref)",
+		"commercepayments.AuthorizationReversalRequest(amount, ref)",
 	}
 	for _, api := range []string{"61.0", "62.0", "63.0", "67.0", "68.0"} {
 		for _, route := range []string{"anonymous", "named", "test"} {
 			for _, request := range requests {
 				t.Run(api+"/"+route+"/"+request, func(t *testing.T) {
 					machine := New(nil)
-					body, err := CompileAnonymousWithOptions("Object request = new "+request+";", CompileOptions{APIVersion: api})
+					requestType := strings.Split(request, "(")[0]
+					body, err := CompileAnonymousWithOptions("Double amount=3.5; String ref='ref'; "+requestType+" request = new "+request+";", CompileOptions{APIVersion: api})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -44,6 +45,28 @@ func TestPaymentRequestConstructorCapturedScope(t *testing.T) {
 					}
 				})
 			}
+		}
+	}
+}
+
+// These uncaptured declarations retain the base behavior.
+func TestPaymentRequestUncapturedDeclarationRemainsUnchanged(t *testing.T) {
+	shapes := []string{
+		"Object request = new commercepayments.SaleRequest(3.5);",
+		"Double amount=3.5; Object request = new commercepayments.SaleRequest(amount);",
+		"commercepayments.SaleRequest request = new commercepayments.SaleRequest(3.5);",
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, source := range shapes {
+			t.Run(api+"/"+source, func(t *testing.T) {
+				body, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := New(nil).Execute(body); err != nil {
+					t.Fatal(err)
+				}
+			})
 		}
 	}
 }

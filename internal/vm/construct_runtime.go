@@ -548,9 +548,6 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			ctor, ctorArgs, ok, ambiguous = vm.matchConstructorWithNamedArgs(class, args, namedArgs)
 		}
 		if ok {
-			if err := vm.paymentRequestOutsideTestError(typeName, ctorArgs, namedArgs); err != nil {
-				return Null, err
-			}
 			if err := vm.commerceInventoryOutsideTestError(typeName); err != nil {
 				return Null, err
 			}
