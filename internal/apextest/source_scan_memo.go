@@ -31,18 +31,25 @@ var (
 )
 
 func publishInBackground(root string, publish func()) {
-	seq := backgroundPublicationSeq.Add(1)
+	write := orderedPublication(root, publish)
 	backgroundPublicationsDone.Add(1)
 	go func() {
 		defer backgroundPublicationsDone.Done()
+		write()
+	}()
+}
+
+func orderedPublication(root string, publish func()) func() {
+	seq := backgroundPublicationSeq.Add(1)
+	return func() {
 		backgroundPublications.Lock()
 		defer backgroundPublications.Unlock()
 		if backgroundPublished[root] > seq {
 			return
 		}
-		publish()
 		backgroundPublished[root] = seq
-	}()
+		publish()
+	}
 }
 
 // sourceScanMemoLimit and sourceScanMemoByteLimit bound a memo by entries

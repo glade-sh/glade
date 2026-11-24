@@ -471,41 +471,43 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
 	generation.oneShot = opts.OneShotProcess
-	early := startRuntimeBesideGate(index, opts, sources, generation, runState)
+	early := startRuntimeBesideGate(ctx, index, opts, sources, generation, runState)
 	// Every exit, a panic included, releases a build the run did not finish.
 	defer early.abandon()
 	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
-		early.abandon()
+		result := early.abandon()
+		if result.discardErr != nil {
+			gateErr = errors.Join(gateErr, result.discardErr)
+		}
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
-	if compileErr := indexCompileError(diagnostics); compileErr != nil {
-		early.abandon()
+	compileErr := indexCompileError(diagnostics)
+	var result runtimeBesideGateResult
+	if compileErr != nil {
+		result = early.abandon()
+	} else {
+		result = early.decide(runtimeGateHint{compilation: generation.controllerCompilation, ok: true})
+	}
+	if result.discardErr != nil {
+		return compileErrorRun(cases, result.discardErr, started, opts)
+	}
+	if result.retry {
+		fresh, freshGeneration, _, err := prepareRunSources(index, opts, runState)
+		if err != nil {
+			return compileErrorRun(cases, err, started, opts)
+		}
+		freshGeneration.oneShot = generation.oneShot
+		freshGeneration.controllerCompilation = generation.controllerCompilation
+		sources, generation = fresh, freshGeneration
+	}
+	if compileErr != nil {
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
-	var runtimeKey runtimeCacheKey
-	var runtime runtimeExecutionView
-	var runtimeErr error
-	var besideGatePanic *runtimeBuildPanic
-	if early != nil {
-		runtimeKey, runtime, runtimeErr, besideGatePanic = early.finish(generation.controllerCompilation)
-	}
-	// A build beside the gate that panicked (logged with its stack) is
-	// replaced by the sequential build, exactly as a run without the build
-	// beside the gate does; a panic there fails the run as it always has.
-	if besideGatePanic != nil {
-		// Discard everything the failed build could have written for this
-		// request, then build from a clean state. Correctness over speed on
-		// this rare path.
-		var discardErr error
-		sources, generation, discardErr = discardFailedBesideGateBuild(index, opts, runState, generation)
-		if discardErr != nil {
-			return compileErrorRun(cases, discardErr, started, opts)
-		}
-	}
-	if early == nil || besideGatePanic != nil {
+	runtimeKey, runtime, runtimeErr := result.key, result.runtime, result.err
+	if early == nil || result.retry {
 		if runState.counters.enabled {
 			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
 		} else {
@@ -1585,12 +1587,6 @@ type runtimeGeneration struct {
 	// once the semantic gate finishes, so the project compile can start
 	// beside the gate. ok false abandons the build; see errRuntimeAbandoned.
 	awaitControllerCompilation func() (compilation *visualforce.ControllerCompilation, ok bool)
-	// besideGateRejected, when set, reports without blocking that the gate
-	// rejected the index, so the build stops at its next compile phase.
-	besideGateRejected func() bool
-	// besideGateStageHook is testOnlyRuntimeBesideGateStageHook captured for
-	// a build beside the gate; nil outside package tests.
-	besideGateStageHook func(stage string)
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -2116,43 +2112,27 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			}
 		}
 	}
-	// rejected stops a build beside the gate between compile phases once the
-	// gate has rejected the index; the sequential build never compiled one.
-	rejected := func() bool {
-		return generation.besideGateRejected != nil && generation.besideGateRejected()
-	}
-	stage := func(name string) {
-		if generation.besideGateStageHook != nil {
-			generation.besideGateStageHook(name)
-		}
-	}
+	work := sources.build
+	work.check()
 	if digests != nil {
 		if err := preloadRuntimeSources(index, sources); err != nil {
 			return key, zero, err
 		}
 	}
-	if rejected() {
-		return key, zero, errRuntimeAbandoned
-	}
+	work.check()
 	methods := compileProjectMethods(index, sources)
-	stage("after_methods")
-	if rejected() {
-		return key, zero, errRuntimeAbandoned
-	}
+	work.at("after_methods")
+	work.check()
 	classRuntime := prepareProjectClassRuntime(index, methods, sources)
 	classes := classRuntime.classes
-	if rejected() {
-		return key, zero, errRuntimeAbandoned
-	}
+	work.check()
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
-	if rejected() {
-		return key, zero, errRuntimeAbandoned
-	}
+	work.check()
 	org, orgErr := orgFromIndexWithError(index, sources)
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	stage("after_org")
+	work.at("after_org")
 	controllerCompilation := generation.controllerCompilation
 	if generation.awaitControllerCompilation != nil {
 		var ok bool
@@ -2214,13 +2194,16 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 				persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
 			}
 		}
-		if sources.backgroundDiskPublication {
+		if work != nil {
+			work.diskPublication = true
+			orderedPublication(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)()
+		} else if sources.backgroundDiskPublication {
 			publishInBackground(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)
 		} else {
 			publish()
 		}
 	}
-	stage("after_publish")
+	work.at("after_publish")
 	return key, projected, nil
 }
 
@@ -4226,6 +4209,7 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
+	build *runtimeBuildWork // only the runtime builder and its joined workers read this field
 	// backgroundDiskPublication is Options.BackgroundDiskPublication.
 	backgroundDiskPublication   bool
 	mu                          sync.RWMutex
@@ -5614,6 +5598,12 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	caches = []*sourceCache{sources}
+	work := sources.build
+	work.check()
+	readMetadata := sources.readCapturedProjectMetadata
+	if work != nil {
+		readMetadata = func(path string) ([]byte, error) { work.check(); return sources.readCapturedProjectMetadata(path) }
+	}
 	// Runtime construction validates config before building or returning caches.
 	// The legacy OrgFromIndex API has no error return; only a validated seed is
 	// installed here, and empty remains unset until the VM resolves its fallback.
@@ -5661,8 +5651,10 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	if org.DomainURL == "" {
 		org.DomainURL = domainURL
 	}
+	work.check()
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
+		work.check()
 		org.MarkExplicitSpreadObject(name)
 		org.Objects[name] = storage.ObjectState{
 			Definition: sobject.ToObjectDefinition(describe),
@@ -5676,10 +5668,11 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	foldPersonAccountObjectIntoAccount(&org)
 	if index.Project.Root != "" {
 		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
-			applyProjectProfileRecordTypes(&org, p, sources.readCapturedProjectMetadata)
+			applyProjectProfileRecordTypes(&org, p, readMetadata)
 		}
 	}
 	for name := range registry.Objects {
+		work.check()
 		if storage.IsKnownStandardObject(name) {
 			storage.EnsureStandardObject(&org, name)
 		}
@@ -5687,6 +5680,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	if index.Project.Root != "" && !shapedSeed {
 		storage.ApplyProjectOrgShape(&org, features)
 	}
+	work.check()
 	applyProjectReferencedStandardFields(&org, index, caches...)
 	// Standard preparation and the org shape can replace the folded person
 	// record types with the catalog placeholder. Fold the project declaration
@@ -5695,6 +5689,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		org.Objects["PersonAccount"] = personAccountObject
 	}
 	foldPersonAccountObjectIntoAccount(&org)
+	work.check()
 	applyApexClassRecords(&org, index, caches...)
 	applyApexTriggerRecords(&org, index, caches...)
 	if err := resource.ApplyProjectEventSubscribers(&org, index, func(path string) ([]byte, error) {
@@ -5705,6 +5700,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	metadataRecords := append([]schema.CustomMetadataRecord(nil), index.CustomMetadataRecords...)
 	for i := range metadataRecords {
+		work.check()
 		unit := sources.runtimeSourceUnit(metadataRecords[i].File)
 		if strings.HasPrefix(unit, "sfdx:") {
 			metadataRecords[i].SourceUnit = unit
@@ -5716,21 +5712,21 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	if index.Project.Root != "" {
 		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
 			loadedProject = &p
-			if err := vm.LoadListViewMetadata(&org, p.ListViewFiles, sources.readCapturedProjectMetadata); err != nil {
+			if err := vm.LoadListViewMetadata(&org, p.ListViewFiles, readMetadata); err != nil {
 				return org, err
 			}
-			declarations, err := automation.LoadFlowDeclarations(p.FlowFiles, sources.readCapturedProjectMetadata)
+			declarations, err := automation.LoadFlowDeclarations(p.FlowFiles, readMetadata)
 			if err != nil {
 				return org, err
 			}
 			applyCustomApplicationRecords(&org, p.ApplicationFiles, p.ReadFile)
 			applyCustomNotificationTypeRecords(&org, p.Root, p.ReadFile)
-			rejections, err := resource.ApplyProjectTolerant(&org, p, sources.readCapturedProjectMetadata)
+			rejections, err := resource.ApplyProjectTolerant(&org, p, readMetadata)
 			if err != nil {
 				if len(project.EmailServiceMetadataFiles(p)) > 0 {
 					return org, err
 				}
-				if err := resource.LoadFeatureParameterMetadata(&org, resource.FeatureParameterMetadataFiles(p), sources.readCapturedProjectMetadata); err != nil {
+				if err := resource.LoadFeatureParameterMetadata(&org, resource.FeatureParameterMetadataFiles(p), readMetadata); err != nil {
 					return org, err
 				}
 			}
@@ -5740,7 +5736,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 				// see the native rejection.
 				emailErr = &emailServiceRejectionError{Rejections: rejections}
 			}
-			if automationIndex, err := automation.LoadProject(p, sources.readCapturedProjectMetadata); err == nil {
+			if automationIndex, err := automation.LoadProject(p, readMetadata); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
 			}
 			// Bind discovery to the captured metadata generation, including when
@@ -5751,6 +5747,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			applyProjectDataRelationshipReferences(&org, p)
 		}
 	}
+	work.check()
 	storage.EnsureDeterministicPlatformData(&org)
 	if len(features) > 0 {
 		storage.ApplyProjectOrgShape(&org, features)
@@ -5761,22 +5758,24 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		_ = resource.ApplyProjectQueues(&org, *loadedProject)
 		_ = resource.ApplyProjectOwnerSharingRules(&org, *loadedProject)
 		permissionSetMetadataCache := make(map[string]permissionSetMetadataCacheEntry)
-		if err := applyProjectProfileMetadata(&org, *loadedProject, permissionSetMetadataCache, sources.readCapturedProjectMetadata); err != nil {
+		if err := applyProjectProfileMetadata(&org, *loadedProject, permissionSetMetadataCache, readMetadata); err != nil {
 			return org, err
 		}
-		if err := resource.ApplyProjectNetworks(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
+		if err := resource.ApplyProjectNetworks(&org, *loadedProject, readMetadata); err != nil {
 			return org, err
 		}
 		applyProjectPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
 		applyManagedDependencyPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
+		work.check()
 		storage.EnsureDeterministicPlatformData(&org)
 		applyProjectAdminSecurityDefaults(&org, index.Objects)
-		applyProjectPermissionSetGroupRecords(&org, *loadedProject, sources.readCapturedProjectMetadata)
-		if err := applyProjectPermissionSetGroupComponents(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
+		applyProjectPermissionSetGroupRecords(&org, *loadedProject, readMetadata)
+		if err := applyProjectPermissionSetGroupComponents(&org, *loadedProject, readMetadata); err != nil {
 			return org, err
 		}
 		applyProjectPermissionSetGroupGrants(&org)
 	}
+	work.check()
 	applyReferencedSyntheticFieldSets(&org, index, caches...)
 	normalizeOrgKeyPrefixes(&org)
 	applyApexTypeImplementorRecords(&org, index)
@@ -6837,25 +6836,24 @@ func (l *childRelationshipLookup) spreadDefinition(org storage.OrgState, name st
 	return l.clone.Objects[installed].Definition, true
 }
 
-var childRelationshipTableIndex struct {
-	once  sync.Once
-	names map[string][]storage.StandardChildRelationship
-}
+var childRelationshipTableIndex atomic.Pointer[map[string][]storage.StandardChildRelationship]
 
 // childRelationshipTableCandidates lists the catalog children the generated
 // relationship table names for a child relationship: those it lists with
 // parent, and those it lists with several parents, whose shaped definitions
 // can add more.
 func childRelationshipTableCandidates(name, parent string) []string {
-	childRelationshipTableIndex.once.Do(func() {
+	table := childRelationshipTableIndex.Load()
+	if table == nil {
 		names := make(map[string][]storage.StandardChildRelationship)
 		for _, relation := range storage.StandardChildRelationships() {
 			key := strings.ToLower(relation.Name)
 			names[key] = append(names[key], relation)
 		}
-		childRelationshipTableIndex.names = names
-	})
-	relations := childRelationshipTableIndex.names[strings.ToLower(name)]
+		childRelationshipTableIndex.CompareAndSwap(nil, &names)
+		table = childRelationshipTableIndex.Load()
+	}
+	relations := (*table)[strings.ToLower(name)]
 	if len(relations) == 0 {
 		return nil
 	}
@@ -7012,47 +7010,18 @@ func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache
 	if len(files) == 0 {
 		return nil
 	}
-	workers := compileWorkers(len(files))
-	if workers <= 1 {
+	chunks := make([][]projectRecordTypeReference, len(files))
+	runRuntimeBuildJobs(len(files), cache.build, "scan_record_types", func(i int) {
+		if source, err := cache.read(files[i]); err == nil {
+			chunks[i] = scanRecordTypesFromApexSourceMemo(source)
+		}
+	})
+	if compileWorkers(len(files)) <= 1 {
 		var merged []projectRecordTypeReference
-		for _, file := range files {
-			source, err := cache.read(file)
-			if err != nil {
-				continue
-			}
-			merged = append(merged, scanRecordTypesFromApexSourceMemo(source)...)
+		for _, chunk := range chunks {
+			merged = append(merged, chunk...)
 		}
 		return merged
-	}
-	jobs := make(chan string)
-	results := make(chan []projectRecordTypeReference, len(files))
-	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for file := range jobs {
-				source, err := cache.read(file)
-				if err != nil {
-					continue
-				}
-				results <- scanRecordTypesFromApexSourceMemo(source)
-			}
-		}()
-	}
-	go func() {
-		for _, file := range files {
-			jobs <- file
-		}
-		close(jobs)
-		wg.Wait()
-		close(results)
-	}()
-	var chunks [][]projectRecordTypeReference
-	for chunk := range results {
-		if len(chunk) > 0 {
-			chunks = append(chunks, chunk)
-		}
 	}
 	return mergeProjectRecordTypeReferences(chunks...)
 }

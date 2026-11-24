@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -33,6 +32,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 	initializerUnits := make(map[string]string)
 	separateInitializers := make(map[string]bool)
 	for _, typ := range index.Types {
+		sources.build.check()
 		if typ.Kind != apexast.DeclarationClass || !typ.HasSourceSnapshot() {
 			continue
 		}
@@ -47,6 +47,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		initializerUnits[key] = unit
 	}
 	for _, typ := range index.Types {
+		sources.build.check()
 		if include != nil && !include(typ) {
 			continue
 		}
@@ -76,6 +77,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
 			for _, member := range typ.Members {
+				sources.build.check()
 				if member.Kind == apexast.DeclarationConstructor && !sourceBackedRuntimeMemberProvided(sourceMembers, typ, member) {
 					class.Constructors = append(class.Constructors, artifactUnsupportedConstructor(typ, member))
 				}
@@ -123,6 +125,7 @@ func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Metho
 		}
 		sourceBoundLiterals := separateInitializers[strings.ToLower(typ.Namespace+"\x00"+typ.Name)]
 		for _, member := range typ.Members {
+			sources.build.check()
 			switch member.Kind {
 			case apexast.DeclarationField, apexast.DeclarationProperty:
 				field := vm.Field{
@@ -222,6 +225,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 	var jobs []methodCompileJob
 	var syntheticResults []methodCompileResult
 	for _, typ := range index.Types {
+		sources.build.check()
 		if include != nil && !include(typ) {
 			continue
 		}
@@ -233,6 +237,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 				continue
 			}
 			for _, member := range typ.Members {
+				sources.build.check()
 				if member.Kind != apexast.DeclarationMethod || sourceBackedRuntimeMemberProvided(sourceMembers, typ, member) {
 					continue
 				}
@@ -257,6 +262,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		source := ""
 		sourceLoaded := false
 		for _, member := range typ.Members {
+			sources.build.check()
 			// Setup methods are also callable helpers, including from a selected
 			// test class whose helper owner is not selected. Automatic setup
 			// execution remains scoped by compileTestSetupMethodsForClasses.
@@ -313,29 +319,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		method.APIVersion = job.APIVersion
 		results[i] = methodCompileResult{Key: projectMethodMapKey(method), Method: method}
 	}
-	workers := compileWorkers(len(jobs))
-	if workers <= 1 {
-		for i := range jobs {
-			compile(i)
-		}
-	} else {
-		work := make(chan int)
-		var wg sync.WaitGroup
-		for i := 0; i < workers; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for index := range work {
-					compile(index)
-				}
-			}()
-		}
-		for i := range jobs {
-			work <- i
-		}
-		close(work)
-		wg.Wait()
-	}
+	runRuntimeBuildJobs(len(jobs), sources.build, "compile_method", compile)
 
 	out := make(map[string]vm.Method, len(results)+len(syntheticResults))
 	for _, result := range syntheticResults {
@@ -349,6 +333,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 		}
 	}
 	for key, method := range out {
+		sources.build.check()
 		method.SourceUnit = sources.runtimeSourceUnit(method.File)
 		out[key] = method
 	}
@@ -508,6 +493,7 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	for _, trigger := range index.Triggers {
+		sources.build.check()
 		if !trigger.HasSourceSnapshot() {
 			continue
 		}

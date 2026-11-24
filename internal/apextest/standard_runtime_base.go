@@ -35,6 +35,17 @@ var standardRuntimeBase struct {
 	prefix weak.Pointer[standardRuntimePrefix]
 }
 
+// Drop the registered machine and the templates it came from together. A
+// live owner of an older shell can safely retry its own failed initialization.
+func resetFailedRuntimePlatform() {
+	standardRuntimeBase.mu.Lock()
+	defer standardRuntimeBase.mu.Unlock()
+	standardRuntimeBase.prefix = weak.Pointer[standardRuntimePrefix]{}
+	standardRuntimeBase.used.Store(false)
+	standardRuntimeBase.failed = false
+	passiveStandardRuntimeClassCache.templates.Reset()
+}
+
 func sharedStandardRuntimePrefix() *standardRuntimePrefix {
 	standardRuntimeBase.mu.Lock()
 	defer standardRuntimeBase.mu.Unlock()

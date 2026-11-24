@@ -198,6 +198,14 @@ func (c *PlatformViewCache[T]) GetWithExcluded(build func(view []TypeSymbol, exc
 	return entry.value
 }
 
+// Reset drops a derivation even if the symbol generation is unchanged.
+// Readers already holding the old value retain it.
+func (c *PlatformViewCache[T]) Reset() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.current.Store(nil)
+}
+
 // Cached returns the value built for the current view without building one.
 func (c *PlatformViewCache[T]) Cached() (T, bool) {
 	entry := c.current.Load()
