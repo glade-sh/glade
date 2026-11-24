@@ -46,6 +46,13 @@ func TestSiteContextRoutesNativeConformance(t *testing.T) {
 					count = 1
 				}
 				body := fmt.Sprintf("System.assertEquals(%d, [SELECT COUNT() FROM Site]);\n", count)
+				if state == "present" {
+					body += "Site captured = [SELECT MasterLabel, SiteType, IsActive, UrlPathPrefix FROM Site LIMIT 1];" +
+						"System.assertEquals('Synthetic Site', captured.MasterLabel);" +
+						"System.assertEquals('Visualforce', captured.SiteType);" +
+						"System.assertEquals(false, captured.IsActive);" +
+						"System.assertEquals('synthetic', captured.UrlPathPrefix);\n"
+				}
 				for _, method := range []string{"getPathPrefix", "getBaseUrl", "getSiteId"} {
 					var expected string
 					for _, route := range []string{"anonymous", "istest"} {
@@ -95,14 +102,30 @@ func runSiteContextRoutes(t *testing.T, root, api, state, body string) {
 	if !org.HasFeature("Sites") {
 		t.Fatal("Sites feature is not enabled")
 	}
-	if state == "absent" {
-		site := org.Objects["Site"]
-		site.SetRecords(map[storage.ID]storage.Record{})
-		site.Indexes = nil
-		site.RecordsShared = false
-		site.IndexesShared = false
-		org.Objects["Site"] = site
+	site := org.Objects["Site"]
+	if len(site.Records) != 1 {
+		t.Fatalf("seed Site records = %d, want 1", len(site.Records))
 	}
+	records := map[storage.ID]storage.Record{}
+	if state == "present" {
+		// The captured CustomSite metadata is inactive and Visualforce, with
+		// the label and prefix below (see RUN-FACTS.txt). Do not use the
+		// unrelated active ChatterNetwork defaults of the local seed.
+		for id := range site.Records {
+			records[id] = storage.Record{ID: id, Object: "Site", Fields: map[string]storage.Value{
+				"Name":          storage.StringValue("Synthetic"),
+				"MasterLabel":   storage.StringValue("Synthetic Site"),
+				"SiteType":      storage.StringValue("Visualforce"),
+				"IsActive":      storage.BooleanValue(false),
+				"UrlPathPrefix": storage.StringValue("synthetic"),
+			}}
+		}
+	}
+	site.SetRecords(records)
+	site.Indexes = nil
+	site.RecordsShared = false
+	site.IndexesShared = false
+	org.Objects["Site"] = site
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 	program, err := vm.CompileAnonymousWithOptions(anonymous, vm.CompileOptions{APIVersion: api})
 	if err != nil {
