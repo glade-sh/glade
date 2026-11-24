@@ -486,7 +486,7 @@ func TestPersistedVisualforceDigestGenerationAdmission(t *testing.T) {
 }
 
 // The subprocess gives each case a fresh process-wide warning state.
-func TestPersistedVisualforceDigestUnsafeRootWarning(t *testing.T) {
+func TestPersistedVisualforceDigestConcurrentUnsafeRootWarning(t *testing.T) {
 	if mode := os.Getenv("GLADE_TEST_DIGEST_WARNING"); mode != "" {
 		root := privateVisualforceDigestTestRoot(t)
 		if mode != "private" {
@@ -531,7 +531,7 @@ func TestPersistedVisualforceDigestUnsafeRootWarning(t *testing.T) {
 	}
 	for _, mode := range []string{"load", "save", "private"} {
 		t.Run(mode, func(t *testing.T) {
-			cmd := exec.Command(os.Args[0], "-test.run=^TestPersistedVisualforceDigestUnsafeRootWarning$")
+			cmd := exec.Command(os.Args[0], "-test.run=^TestPersistedVisualforceDigestConcurrentUnsafeRootWarning$")
 			cmd.Env = append(os.Environ(), "GLADE_TEST_DIGEST_WARNING="+mode)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
