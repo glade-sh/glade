@@ -506,6 +506,19 @@ func TestPersistedVisualforceDigestUnsafeRootWarning(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
+		if mode == "load" {
+			var wg sync.WaitGroup
+			for i := 0; i < 8; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := loadVisualforceDigestCache(root, nil); err != nil {
+						t.Error(err)
+					}
+				}()
+			}
+			wg.Wait()
+		}
 		for i := 0; i < 2; i++ {
 			if err := loadVisualforceDigestCache(root, nil); err != nil {
 				t.Fatal(err)
