@@ -12,7 +12,7 @@ func qualifyEventParentUnit(machine *VM, event Value, version string) {
 	machine.Classes["EventParentUnit"] = Class{Name: "EventParentUnit", IsTest: true, APIVersion: version}
 	machine.testExecutionEntry = &testExecutionEntry{className: "EventParentUnit"}
 	event.Fields["Id"] = String("e00000000000001")
-	machine.testContext.eventParentPublishedIDs = []storage.ID{"e00000000000001"}
+	machine.testContext.eventParentPublishedIDs = []eventParentPublication{{ID: "e00000000000001"}}
 }
 
 // The native event carries the publisher-owned parent's ID. Unrelated records
@@ -103,7 +103,7 @@ func TestEventSubscriberUnrelatedShareRowNeighbor(t *testing.T) {
 // Native event_subscriber_unrelated_visibility rows 2-3 count the second
 // publisher-owned parent when both parents have the captured share set.
 func TestEventSecondParentCapturedScope(t *testing.T) {
-	for _, change := range []string{"captured", "extra parent", "different owner", "extra share"} {
+	for _, change := range []string{"captured", "extra parent", "different owner", "extra share", "extra payload", "access level"} {
 		t.Run(change, func(t *testing.T) {
 			machine := recordSharingControlMachine(t, "Private")
 			machine.currentMethod.APIVersion = "62.0"
@@ -129,6 +129,9 @@ func TestEventSecondParentCapturedScope(t *testing.T) {
 			event.Fields["ParentRef__c"] = String("a00000000000001")
 			event.Fields["CreatedById"] = String(string(publisher.ID))
 			qualifyEventParentUnit(machine, event, "62.0")
+			if change == "extra payload" {
+				event.Fields["Other__c"] = String("extra")
+			}
 			machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
 			shares := storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{}}
 			for i, parent := range []storage.ID{"a00000000000001", "a00000000000002"} {
@@ -156,6 +159,9 @@ func TestEventSecondParentCapturedScope(t *testing.T) {
 			for version := 50; version <= 68; version++ {
 				machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
 				qualifyEventParentUnit(machine, event, machine.currentMethod.APIVersion)
+				if change == "access level" {
+					machine.testContext.eventParentPublishedIDs[0].AccessLevelRoute = true
+				}
 				want := change == "captured" && (version == 62 || version == 67)
 				if got := machine.capturedEventSubscriberCount(query); got != want {
 					t.Errorf("API %d: second parent scope = %t, want %t", version, got, want)

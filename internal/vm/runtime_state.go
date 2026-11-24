@@ -908,7 +908,12 @@ type TestContext struct {
 	// platform and change events, and cleared by an explicit deliver().
 	StopTimeEventDelivery bool
 	// eventParentPublishedIDs is local to the currently active runAs block.
-	eventParentPublishedIDs []storage.ID
+	eventParentPublishedIDs []eventParentPublication
+}
+
+type eventParentPublication struct {
+	ID               storage.ID
+	AccessLevelRoute bool
 }
 
 type eventPublishCallback struct {

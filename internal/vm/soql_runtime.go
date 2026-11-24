@@ -4888,7 +4888,7 @@ func (vm *VM) capturedEventSubscriberCount(query soql.Query) bool {
 	eventID := storage.ID(stringField(events.List[0], "Id"))
 	publishedHere := false
 	for _, candidate := range vm.testContext.eventParentPublishedIDs {
-		if eventID != "" && storage.IDsEqual(eventID, candidate) {
+		if eventID != "" && storage.IDsEqual(eventID, candidate.ID) {
 			publishedHere = true
 			break
 		}
@@ -4955,6 +4955,21 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 		return false
 	}
 	target := storage.ID(storageValueIDText(where.Value))
+	if !storage.IDsEqual(parent, target) {
+		event := vm.triggerGlobals["Trigger.new"].List[0]
+		for _, publication := range vm.testContext.eventParentPublishedIDs {
+			if storage.IDsEqual(publication.ID, storage.ID(stringField(event, "Id"))) && publication.AccessLevelRoute {
+				return false
+			}
+		}
+		// Extra payload fields combined with a second parent have no capture.
+		for name, value := range event.Fields {
+			if hasSuffixFold(name, "__c") && value.Kind != ValueNull &&
+				!(value.Kind == ValueString && storage.IDsEqual(storage.ID(value.Text), parent)) {
+				return false
+			}
+		}
+	}
 	return vm.capturedEventParentShape(object, parent, target)
 }
 
