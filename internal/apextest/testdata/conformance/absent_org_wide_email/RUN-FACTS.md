@@ -9,3 +9,7 @@ Additional capture on 2026-11-24 used a second temporary Developer Edition scrat
 Additional capture on 2026-11-24 used a temporary Developer Edition scratch org, deleted after the run. The direct and lookup probes ran in anonymous Apex and test classes at APIs 64.0, 65.0, and 66.0. The test assertions deliberately failed to expose results. Residue was not measured.
 
 The same scratch org was used for the four shapes in shapes.apex and Road548Shapes at APIs 62.0 through 67.0, in anonymous Apex and test methods. The test assertions deliberately failed to expose results. The template case uses a missing template ID. Residue was not measured.
+
+The same org captured sends using a newly inserted active email template and current-user target in anonymous Apex and test methods at APIs 62.0 through 67.0. Queueable jobs at those APIs were enqueued from anonymous Apex and test methods; their results were observed on an owned Account after execution. The anonymous Account name included the API version; queue.apex contains the final run. The test assertions deliberately failed to expose results. Residue was not measured.
+
+A second temporary Developer Edition scratch org captured the trigger at APIs 64.0, 65.0, and 66.0, from anonymous Apex and test methods. It was deleted after the run. The test assertions deliberately failed to expose results. Residue was not measured.

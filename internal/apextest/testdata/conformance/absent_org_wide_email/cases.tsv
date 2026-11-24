@@ -6,3 +6,5 @@ shape0	anonymous,istest	shapes.apex,Road548Shapes	18-character missing sender ID
 shape1	anonymous,istest	shapes.apex,Road548Shapes	Two-message send
 shape2	anonymous,istest	shapes.apex,Road548Shapes	Current user target with saveAsActivity enabled
 shape3	anonymous,istest	shapes.apex,Road548Shapes	Missing template and sender IDs
+template	anonymous,istest	template.apex,Road548Template	Existing template and user target
+queue	queue_anonymous,queue_istest	queue.apex,Road548Queue,Road548QueueTest	Queueable missing sender

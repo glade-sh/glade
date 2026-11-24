@@ -30,13 +30,13 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	header := []string{"id", "api", "route", "compiled", "success", "outcome", "class_api", "trigger_api", "residue"}
-	if len(rows) != 79 || !reflect.DeepEqual(rows[0], header) {
+	if len(rows) != 109 || !reflect.DeepEqual(rows[0], header) {
 		t.Fatalf("invalid table: %q", rows)
 	}
 	seen := map[string]bool{}
 	for _, row := range rows[1:] {
 		id, api, route := row[0], row[1], row[2]
-		if strings.HasPrefix(route, "trigger_") || strings.HasPrefix(id, "shape") {
+		if (id != "direct" && id != "lookup") || strings.HasPrefix(route, "trigger_") {
 			continue
 		}
 		key := id + "/" + api + "/" + route
@@ -163,7 +163,7 @@ func TestAbsentOrgWideEmailShapesNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	header := []string{"id", "api", "route", "compiled", "success", "outcome", "class_api", "trigger_api", "residue"}
-	if len(rows) != 79 || !reflect.DeepEqual(rows[0], header) {
+	if len(rows) != 109 || !reflect.DeepEqual(rows[0], header) {
 		t.Fatalf("invalid table: %q", rows)
 	}
 	seen := map[string]bool{}
@@ -311,7 +311,7 @@ func TestAbsentOrgWideEmailTriggerNativeConformance(t *testing.T) {
 			continue
 		}
 		key := api + "/" + route
-		if seen[key] || row[0] != "direct" || (api != "62.0" && api != "63.0" && api != "67.0") {
+		if seen[key] || row[0] != "direct" || (api != "62.0" && api != "63.0" && api != "64.0" && api != "65.0" && api != "66.0" && api != "67.0") {
 			t.Fatalf("unexpected row: %q", row)
 		}
 		seen[key] = true
@@ -397,7 +397,7 @@ func TestAbsentOrgWideEmailTriggerNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	for _, api := range []string{"62.0", "63.0", "67.0"} {
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
 		for _, route := range []string{"trigger_anonymous", "trigger_istest"} {
 			if !seen[api+"/"+route] {
 				t.Fatalf("missing %s/%s", api, route)
