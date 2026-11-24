@@ -13,6 +13,9 @@ func TestEventParentModifiedQuerySharingNeighbor(t *testing.T) {
 	machine.currentMethod.APIVersion = "62.0"
 	machine.currentTrigger = true
 	machine.eventSubscriberTriggerDepth = 1
+	machine.eventBusTriggerContext = &eventBusTriggerContext{}
+	machine.testContext.StopTimeEventDelivery = true
+	machine.staticSOQLQuery = true
 	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
 	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "="}}
 	query.ForView = true
@@ -27,6 +30,9 @@ func TestEventShareMultiValueQuerySharingNeighbor(t *testing.T) {
 	machine.currentMethod.APIVersion = "62.0"
 	machine.currentTrigger = true
 	machine.eventSubscriberTriggerDepth = 1
+	machine.eventBusTriggerContext = &eventBusTriggerContext{}
+	machine.testContext.StopTimeEventDelivery = true
+	machine.staticSOQLQuery = true
 	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}}
 	query := soql.Query{Object: "Widget__Share", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{And: []soql.Condition{

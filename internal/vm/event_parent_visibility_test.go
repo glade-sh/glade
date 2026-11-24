@@ -38,6 +38,9 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	machine := recordSharingControlMachine(t, "Private")
 	machine.currentTrigger = true
 	machine.eventSubscriberTriggerDepth = 1
+	machine.eventBusTriggerContext = &eventBusTriggerContext{}
+	machine.testContext.StopTimeEventDelivery = true
+	machine.staticSOQLQuery = true
 	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}}
 	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "="}}
@@ -46,10 +49,10 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	shareQuery.Where = nil
 	for version := 50; version <= 68; version++ {
 		machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
-		if got, want := machine.capturedEventSubscriberParentCount(query), version == 62 || version == 67; got != want {
+		if got, want := machine.capturedEventSubscriberCount(query), version == 62 || version == 67; got != want {
 			t.Errorf("API %d: captured parent shape=%t, want %t", version, got, want)
 		}
-		if got, want := machine.capturedEventSubscriberShareCount(shareQuery), version == 62 || version == 67; got != want {
+		if got, want := machine.capturedEventSubscriberCount(shareQuery), version == 62 || version == 67; got != want {
 			t.Errorf("API %d: captured share shape=%t, want %t", version, got, want)
 		}
 	}

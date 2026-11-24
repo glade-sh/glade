@@ -4856,26 +4856,39 @@ func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string
 func eventSubscriberPlainCount(query soql.Query) bool {
 	return len(query.ChildQueries) == 0 && len(query.Typeofs) == 0 &&
 		query.OrderBy == "" && len(query.Order) == 0 && !query.OrderDesc &&
-		!query.HasLimit && query.LimitBind == "" && !query.HasOffset && query.OffsetBind == "" &&
+		!soqlHasRowWindow(query) &&
 		!query.ForUpdate && !query.ForView && !query.ForReference && !query.AllRows &&
 		query.UsingScope == "" && query.OptionsBind == "" && query.DataCategoryGroup == "" &&
 		query.DataCategoryOperator == "" && query.DataCategoryName == "" &&
 		len(query.GroupBy) == 0 && query.GroupMode == "" && query.Having == nil && len(query.HavingAggregates) == 0
 }
 
-// capturedEventSubscriberParentCount covers the private custom-object COUNT
-// by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
-// source versions retain their existing sharing behavior.
-func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || !eventSubscriberPlainCount(query) || query.Where == nil {
+func (vm *VM) capturedEventSubscriberCount(query soql.Query) bool {
+	if vm == nil || vm.Org == nil || !vm.inEventSubscriberTrigger() || vm.testContext.RunAsDepth == 0 ||
+		!vm.currentTrigger || vm.eventBusTriggerContext == nil || !vm.staticSOQLQuery ||
+		vm.dynamicSOQLBindRoute != "" {
 		return false
 	}
 	version := vm.currentSourceExecutionPolicy().APIVersion
 	if version != "62.0" && version != "67.0" {
 		return false
 	}
+	if !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") ||
+		query.Aggregates[0].Field != "" || !eventSubscriberPlainCount(query) ||
+		!strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") {
+		return false
+	}
+	return vm.capturedEventSubscriberParentCount(query) || vm.capturedEventSubscriberShareCount(query)
+}
+
+// capturedEventSubscriberParentCount covers the private custom-object COUNT
+// by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
+// source versions retain their existing sharing behavior.
+func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 	where := query.Where
-	if where.Not || len(where.And) != 0 || len(where.Or) != 0 || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Range || where.Formula != nil || where.Subquery != nil {
+	if where == nil || where.Not || len(where.And) != 0 || len(where.Or) != 0 ||
+		!strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Range ||
+		where.Formula != nil || where.Subquery != nil {
 		return false
 	}
 	object, ok := vm.resolveObjectName(query.Object)
@@ -4886,13 +4899,6 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 // share_event_trigger_visibility/org.tsv:2-3. Other share queries keep their
 // parent-based runAs visibility.
 func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || !eventSubscriberPlainCount(query) {
-		return false
-	}
-	version := vm.currentSourceExecutionPolicy().APIVersion
-	if version != "62.0" && version != "67.0" {
-		return false
-	}
 	object, ok := vm.resolveObjectName(query.Object)
 	if !ok || !storage.IsGeneratedShareObject(vm.Org.Objects[object].Definition) {
 		return false
@@ -4917,7 +4923,7 @@ func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
 
 func (vm *VM) soqlSharingUserID(query soql.Query) string {
 	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
-	if userMode && (vm.capturedEventSubscriberParentCount(query) || vm.capturedEventSubscriberShareCount(query)) {
+	if userMode && vm.capturedEventSubscriberCount(query) {
 		return ""
 	}
 	// An AutomatedProcess success callback sees the captured private
