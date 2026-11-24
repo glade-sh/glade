@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	testCacheHeaderEncodingVersion = 1
+	testCacheHeaderEncodingVersion = 2
 	maxTestCacheHeaderBytes        = 16 << 20
 	maxTestCacheHeaderStringBytes  = 1 << 20
 	maxTestCacheHeaderPathBytes    = 64 << 10
@@ -77,6 +77,7 @@ func testCacheHeaderBodyCapacity(header testCacheHeader) int {
 
 func (w *testCacheHeaderWriter) manifest(manifest Manifest) {
 	w.signed(int64(manifest.SchemaVersion))
+	w.signed(manifest.GeneratedAt)
 	w.path(manifest.ProjectRoot)
 	w.string(manifest.SourceAPIVersion)
 	w.string(manifest.Namespace)
@@ -355,6 +356,10 @@ func (r *testCacheHeaderReader) manifest() (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
+	generatedAt, err := r.signed()
+	if err != nil {
+		return Manifest{}, err
+	}
 	projectRoot, err := r.path()
 	if err != nil {
 		return Manifest{}, err
@@ -393,6 +398,7 @@ func (r *testCacheHeaderReader) manifest() (Manifest, error) {
 	}
 	return Manifest{
 		SchemaVersion:    int(schemaVersion),
+		GeneratedAt:      generatedAt,
 		ProjectRoot:      projectRoot,
 		SourceAPIVersion: sourceAPIVersion,
 		Namespace:        namespace,

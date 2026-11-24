@@ -33,6 +33,7 @@ func representativeTestCacheHeader(root string, fileCount int) testCacheHeader {
 		RuntimeABI:    "runtime-v1",
 		RuntimeKey:    "runtime-key",
 		Manifest: Manifest{
+			GeneratedAt:      1_800_000_000_000_001_000,
 			SchemaVersion:    manifestSchemaVersion,
 			ProjectRoot:      root,
 			SourceAPIVersion: "65.0",

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
@@ -25,7 +26,9 @@ import (
 // Version 16 rejects org snapshots without component-tab bundle identities.
 const Version = 16
 
-const manifestSchemaVersion = 1
+const manifestSchemaVersion = 2
+
+const sourceDigestTrustAge = 2 * time.Second
 
 // DAPCacheVersion rejects debugger snapshots without component-tab bundle identities.
 const DAPCacheVersion = 6
@@ -62,6 +65,7 @@ type Entry struct {
 }
 
 type Manifest struct {
+	GeneratedAt      int64       `json:"generatedAt"`
 	SchemaVersion    int         `json:"schemaVersion"`
 	ProjectRoot      string      `json:"projectRoot"`
 	SourceAPIVersion string      `json:"sourceApiVersion,omitempty"`
@@ -145,7 +149,9 @@ func validateInputWithSourceDigestsAndScope(projectRoot string, digests *typesys
 	if !manifest.Complete {
 		return nil, errors.New("startup cache validated input manifest is incomplete")
 	}
-	encoded, err := json.Marshal(manifest)
+	identity := manifest
+	identity.GeneratedAt = 0
+	encoded, err := json.Marshal(identity)
 	if err != nil {
 		return nil, err
 	}
@@ -439,8 +445,21 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 		fp.ModTime = currentFiles[i].ModTime
 		absPath := filepath.Clean(filepath.Join(root, filepath.FromSlash(fp.Path)))
 		digest, isApex := apexDigests[absPath]
-		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, useSnapshot && isApex && sameGeneration, readFile) {
+		var stamp filestamp.Stamp
+		trustDigest := false
+		if useSnapshot && isApex && sameGeneration && manifest.GeneratedAt != 0 {
+			var ok bool
+			stamp, ok = filestamp.Stat(absPath)
+			trustDigest = ok && stamp.OlderThan(time.Unix(0, manifest.GeneratedAt), sourceDigestTrustAge)
+		}
+		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, trustDigest, readFile) {
 			return false
+		}
+		if trustDigest {
+			after, ok := filestamp.Stat(absPath)
+			if !ok || after != stamp {
+				return false
+			}
 		}
 	}
 	return true
@@ -458,8 +477,20 @@ func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatfor
 	if filepath.Clean(entryProjectRoot) != root || input.projectRoot != root {
 		return false
 	}
-	if reflect.DeepEqual(manifest, input.manifest) {
-		return true
+	savedIdentity, currentIdentity := manifest, input.manifest
+	savedIdentity.GeneratedAt, currentIdentity.GeneratedAt = 0, 0
+	if reflect.DeepEqual(savedIdentity, currentIdentity) {
+		safe := manifest.GeneratedAt != 0
+		for _, fp := range manifest.Files {
+			stamp, ok := filestamp.Stat(filepath.Join(root, filepath.FromSlash(fp.Path)))
+			if !ok || !stamp.OlderThan(time.Unix(0, manifest.GeneratedAt), sourceDigestTrustAge) {
+				safe = false
+				break
+			}
+		}
+		if safe {
+			return true
+		}
 	}
 	// A supplied source-digest snapshot can predate a timestamp change.
 	// Validate against live bytes before relaxing cross-generation timestamps.
@@ -518,6 +549,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 }
 
 func buildManifestWithSourceDigestsAndScope(projectRoot string, p project.Project, includeHashes bool, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), eligible func(string) bool, lookups ...func(string) ([sha256.Size]byte, bool)) (Manifest, error) {
+	generatedAt := time.Now().UnixNano()
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return Manifest{}, err
@@ -622,6 +654,7 @@ func buildManifestWithSourceDigestsAndScope(projectRoot string, p project.Projec
 		return incompleteManifest(root, p), err
 	}
 	return Manifest{
+		GeneratedAt:      generatedAt,
 		SchemaVersion:    manifestSchemaVersion,
 		ProjectRoot:      root,
 		SourceAPIVersion: p.SourceAPIVersion,

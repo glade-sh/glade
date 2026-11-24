@@ -32,7 +32,9 @@ func ValidateLoadedInput(projectRoot string, p project.Project, digests *typesys
 	if !manifest.Complete {
 		return nil, errors.New("startup cache validated input manifest is incomplete")
 	}
-	encoded, err := json.Marshal(manifest)
+	identity := manifest
+	identity.GeneratedAt = 0
+	encoded, err := json.Marshal(identity)
 	if err != nil {
 		return nil, err
 	}
