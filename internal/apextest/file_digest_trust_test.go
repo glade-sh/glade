@@ -18,10 +18,11 @@ import (
 func trustedClock(t *testing.T) {
 	t.Helper()
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
 	t.Cleanup(func() {
-		fileDigestNow, fileDigestReadHook = oldNow, oldHook
+		fileDigestNow = oldNow
+		fileDigestReadHook.Store(oldHook)
 		resetFileDigestTrust()
 	})
 }
@@ -29,11 +30,11 @@ func trustedClock(t *testing.T) {
 func countReads(t *testing.T, path string) *int {
 	t.Helper()
 	reads := new(int)
-	fileDigestReadHook = func(p string) {
+	SetFileDigestReadHookForTesting(func(p string) {
 		if p == path {
 			*reads++
 		}
-	}
+	})
 	return reads
 }
 
@@ -104,8 +105,8 @@ func TestCurrentFileDigestSkipsRereadOfUnchangedOldFile(t *testing.T) {
 func TestCurrentFileDigestRehashesRecentlyModifiedFile(t *testing.T) {
 	resetFileDigestTrust()
 	t.Cleanup(resetFileDigestTrust)
-	oldHook := fileDigestReadHook
-	t.Cleanup(func() { fileDigestReadHook = oldHook })
+	oldHook := fileDigestReadHook.Load()
+	t.Cleanup(func() { fileDigestReadHook.Store(oldHook) })
 	path := filepath.Join(t.TempDir(), "A.cls")
 	if err := os.WriteFile(path, []byte("public class A {}"), 0o600); err != nil {
 		t.Fatal(err)

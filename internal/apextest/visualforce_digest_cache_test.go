@@ -22,15 +22,15 @@ func TestVisualforceInputDigestReusesStableFiles(t *testing.T) {
 	writeFile(t, resource, "first")
 	p := project.Project{Root: root, VisualforcePageFiles: []string{page}, StaticResourceFiles: []string{resource}}
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == resource {
 			reads++
 		}
-	}
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	})
+	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	capture := func() typesys.ApexMetadataInput {
 		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
 		if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {

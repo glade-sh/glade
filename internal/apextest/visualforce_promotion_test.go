@@ -18,16 +18,16 @@ func TestRecentVisualforceDigestPromotesAfterAge(t *testing.T) {
 	writeFile(t, page, "<apex:page/>")
 	writeFile(t, input, "first")
 	p := project.Project{Root: root, VisualforcePageFiles: []string{page}, StaticResourceFiles: []string{input}}
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	now := time.Now()
 	fileDigestNow = func() time.Time { return now }
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == input {
 			reads++
 		}
-	}
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	})
+	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	capture := func() typesys.ApexMetadataInput {
 		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
@@ -86,19 +86,19 @@ func TestAgedVisualforceDigestPersistedAfterRun(t *testing.T) {
 	writeFile(t, filepath.Join(root, "src", "classes", "PromotionTest.cls"), `@IsTest private class PromotionTest { @IsTest static void passes() { System.assertEquals(2, 1 + 1); } }`)
 	restore := EnableDiskCacheForTesting()
 	defer restore()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	now := time.Now()
 	fileDigestNow = func() time.Time { return now }
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == input {
 			reads++
 			if reads == 1 {
 				now = now.Add(fileDigestTrustAge + time.Second)
 			}
 		}
-	}
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	})
+	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
 	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Status != testreport.StatusPass {

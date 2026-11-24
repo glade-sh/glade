@@ -117,9 +117,9 @@ func TestRequestFileDigestLargeProjectIdentity(t *testing.T) {
 
 func TestRequestFileDigestRereadsMidRequestEdit(t *testing.T) {
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	fileDigestNow = time.Now
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	path := filepath.Join(t.TempDir(), "A.cls")
 	first := []byte("public class A {}")
 	second := []byte("public class B {}")

@@ -130,15 +130,15 @@ func TestRecentVisualforceInputsAvoidRepeatedHashing(t *testing.T) {
 	}
 	index := loadTestIndex(t, root)
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 	fileDigestNow = time.Now
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == resource {
 			reads++
 		}
-	}
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	})
+	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	sources := newSourceCache()
 	sources.seedProjectSnapshot(&p)
 	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
@@ -193,14 +193,14 @@ func TestRecentVisualforceInputValidationDetectsChanges(t *testing.T) {
 			index := loadTestIndex(t, root)
 			resetFileDigestTrust()
 			reads := 0
-			oldNow, oldHook := fileDigestNow, fileDigestReadHook
+			oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
 			fileDigestNow = time.Now
-			fileDigestReadHook = func(path string) {
+			SetFileDigestReadHookForTesting(func(path string) {
 				if path == resource {
 					reads++
 				}
-			}
-			t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+			})
+			t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 			sources := newSourceCache()
 			sources.seedProjectSnapshot(&p)
 			generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}

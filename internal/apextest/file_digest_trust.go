@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/filestamp"
@@ -34,16 +35,19 @@ var (
 
 	// Test seams.
 	fileDigestNow      = time.Now
-	fileDigestReadHook func(path string)
+	fileDigestReadHook atomic.Pointer[func(string)]
 )
 
 // SetFileDigestReadHookForTesting observes every physical read a source
 // digest validation performs. The returned function restores the previous
 // hook. Cross-package tests use it to prove per-request read counts.
 func SetFileDigestReadHookForTesting(hook func(path string)) func() {
-	previous := fileDigestReadHook
-	fileDigestReadHook = hook
-	return func() { fileDigestReadHook = previous }
+	var next *func(string)
+	if hook != nil {
+		next = &hook
+	}
+	previous := fileDigestReadHook.Swap(next)
+	return func() { fileDigestReadHook.Store(previous) }
 }
 
 func resetFileDigestTrust() {
@@ -137,8 +141,8 @@ func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.
 		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
 	}
 	defer file.Close()
-	if fileDigestReadHook != nil {
-		fileDigestReadHook(path)
+	if hook := fileDigestReadHook.Load(); hook != nil {
+		(*hook)(path)
 	}
 	hashedAt := fileDigestNow()
 	before, beforeOK := filestamp.Fstat(file)
