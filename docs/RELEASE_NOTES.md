@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
 - Fix VS Code Test Explorer discovery, selector failures, and excluded tests.
 - Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
 
