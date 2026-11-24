@@ -17,3 +17,15 @@ direct	63.0	trigger_anonymous	true	true	success=false;error=INVALID_CROSS_REFERE
 direct	63.0	trigger_istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	63.0	63.0	n/a
 direct	67.0	trigger_anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	67.0	n/a
 direct	67.0	trigger_istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	67.0	67.0	n/a
+direct	64.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+lookup	64.0	anonymous	true	true	success=true	n/a	n/a	n/a
+direct	64.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	64.0	n/a	n/a
+lookup	64.0	istest	true	Failed	success=true	64.0	n/a	n/a
+direct	65.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+lookup	65.0	anonymous	true	true	success=true	n/a	n/a	n/a
+direct	65.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	65.0	n/a	n/a
+lookup	65.0	istest	true	Failed	success=true	65.0	n/a	n/a
+direct	66.0	anonymous	true	true	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	n/a	n/a	n/a
+lookup	66.0	anonymous	true	true	success=true	n/a	n/a	n/a
+direct	66.0	istest	true	Failed	success=false;error=INVALID_CROSS_REFERENCE_KEY:invalid cross reference id	66.0	n/a	n/a
+lookup	66.0	istest	true	Failed	success=true	66.0	n/a	n/a

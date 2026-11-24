@@ -30,7 +30,7 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	header := []string{"id", "api", "route", "compiled", "success", "outcome", "class_api", "trigger_api", "residue"}
-	if len(rows) != 19 || !reflect.DeepEqual(rows[0], header) {
+	if len(rows) != 31 || !reflect.DeepEqual(rows[0], header) {
 		t.Fatalf("invalid table: %q", rows)
 	}
 	seen := map[string]bool{}
@@ -44,7 +44,7 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 			t.Fatalf("duplicate row %s", key)
 		}
 		seen[key] = true
-		if (id != "direct" && id != "lookup") || (api != "62.0" && api != "63.0" && api != "67.0") || (route != "anonymous" && route != "istest") {
+		if (id != "direct" && id != "lookup") || (api != "62.0" && api != "63.0" && api != "64.0" && api != "65.0" && api != "66.0" && api != "67.0") || (route != "anonymous" && route != "istest") {
 			t.Fatalf("unexpected row: %q", row)
 		}
 		t.Run(key, func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	for _, api := range []string{"62.0", "63.0", "67.0"} {
+	for _, api := range []string{"62.0", "63.0", "64.0", "65.0", "66.0", "67.0"} {
 		for _, route := range []string{"anonymous", "istest"} {
 			for _, id := range []string{"direct", "lookup"} {
 				key := id + "/" + api + "/" + route
