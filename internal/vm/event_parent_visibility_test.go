@@ -1,8 +1,10 @@
 package vm
 
 import (
-	"github.com/glade-sh/glade/internal/soql"
+	"fmt"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/soql"
 )
 
 // A runAs user's query is a neighbor of the subscriber query, not a subscriber.
@@ -27,5 +29,20 @@ func TestEventShareVisibilityRunAsNeighbor(t *testing.T) {
 	machine.eventSubscriberTriggerDepth = 1
 	if !machine.shareTableFollowsParent() {
 		t.Fatal("runAs user inside subscriber lost parent-based share visibility")
+	}
+}
+
+// Versions without a captured row keep the prior sharing path.
+func TestEventParentVisibilityVersionScope(t *testing.T) {
+	machine := recordSharingControlMachine(t, "Private")
+	machine.currentTrigger = true
+	machine.eventSubscriberTriggerDepth = 1
+	machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
+	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "="}}
+	for version := 50; version <= 68; version++ {
+		machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
+		if got, want := machine.capturedEventSubscriberParentCount(query), version == 62 || version == 67; got != want {
+			t.Errorf("API %d: captured shape=%t, want %t", version, got, want)
+		}
 	}
 }
