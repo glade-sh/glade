@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/soql"
@@ -83,5 +84,64 @@ func TestEventSubscriberUnrelatedShareRowNeighbor(t *testing.T) {
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{row.ID: row}}
 	if !machine.userModeRecordVisible("Widget__Share", row, machine.currentUserID()) {
 		t.Fatal("unrelated parent share is hidden")
+	}
+}
+
+// Native event_subscriber_unrelated_visibility rows 2-3 count the second
+// publisher-owned parent when both parents have the captured share set.
+func TestEventSecondParentCapturedScope(t *testing.T) {
+	for _, change := range []string{"captured", "extra parent", "different owner", "extra share"} {
+		t.Run(change, func(t *testing.T) {
+			machine := recordSharingControlMachine(t, "Private")
+			machine.currentMethod.APIVersion = "62.0"
+			machine.currentTrigger = true
+			machine.eventSubscriberTriggerDepth = 1
+			machine.eventBusTriggerContext = &eventBusTriggerContext{}
+			machine.testContext.StopTimeEventDelivery = true
+			machine.staticSOQLQuery = true
+			machine.testContext.CurrentUser.Fields["UserType"] = String("AutomatedProcess")
+			users := machine.Org.Objects["User"]
+			publisher := users.Records["005000000000001"]
+			publisher.Fields["ProfileId"] = storage.IDValue("00e000000000001")
+			users.Records[publisher.ID] = publisher
+			profiles := machine.Org.Objects["Profile"]
+			profiles.Records["00e000000000001"] = storage.Record{ID: "00e000000000001", Object: "Profile", Fields: map[string]storage.Value{"Name": storage.StringValue("System Administrator")}}
+			parents := machine.Org.Objects["Widget__c"]
+			for id, parent := range parents.Records {
+				parent.System.OwnerID = publisher.ID
+				parent.System.CreatedByID = publisher.ID
+				parents.Records[id] = parent
+			}
+			event := Object("Signal__e")
+			event.Fields["ParentRef__c"] = String("a00000000000001")
+			event.Fields["CreatedById"] = String(string(publisher.ID))
+			machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
+			shares := storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{}}
+			for i, parent := range []storage.ID{"a00000000000001", "a00000000000002"} {
+				for j, cause := range []string{"Owner", "Reason__c"} {
+					id := storage.ID(fmt.Sprintf("a1000000000000%d", 1+2*i+j))
+					access := "Read"
+					if cause == "Owner" {
+						access = "All"
+					}
+					shares.Records[id] = storage.Record{ID: id, Object: "Widget__Share", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent), "UserOrGroupId": storage.IDValue(publisher.ID), "RowCause": storage.StringValue(cause), "AccessLevel": storage.StringValue(access)}}
+				}
+			}
+			switch change {
+			case "extra parent":
+				parents.Records["a00000000000003"] = storage.Record{ID: "a00000000000003", Object: "Widget__c", System: storage.SystemFields{OwnerID: publisher.ID, CreatedByID: publisher.ID}}
+			case "different owner":
+				parent := parents.Records["a00000000000002"]
+				parent.System.OwnerID = "005000000000002"
+				parents.Records[parent.ID] = parent
+			case "extra share":
+				shares.Records["a10000000000005"] = storage.Record{ID: "a10000000000005", Object: "Widget__Share", Fields: map[string]storage.Value{"ParentId": storage.IDValue("a00000000000002"), "UserOrGroupId": storage.IDValue(publisher.ID), "RowCause": storage.StringValue("Extra__c"), "AccessLevel": storage.StringValue("Read")}}
+			}
+			machine.Org.Objects["Widget__Share"] = shares
+			query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000002")}}
+			if got, want := machine.capturedEventSubscriberCount(query), change == "captured"; got != want {
+				t.Fatalf("second parent scope = %t, want %t", got, want)
+			}
+		})
 	}
 }
