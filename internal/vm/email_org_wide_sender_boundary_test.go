@@ -145,8 +145,8 @@ func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
 // These missing-sender shapes were not in the capture and match the base.
 func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 	for _, tc := range []struct {
-		name, api, namespace   string
-		cc, twoTo, html, reply bool
+		name, api, namespace                     string
+		cc, twoTo, html, reply, existingTemplate bool
 	}{
 		{name: "API 68", api: "68.0"},
 		{name: "namespace", api: "67.0", namespace: "example"},
@@ -154,6 +154,7 @@ func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 		{name: "two recipients", api: "67.0", twoTo: true},
 		{name: "HTML body", api: "67.0", html: true},
 		{name: "reply-to address", api: "67.0", reply: true},
+		{name: "existing template and address", api: "67.0", existingTemplate: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.NewOrgState()
@@ -163,6 +164,13 @@ func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 			const other = storage.ID("0D2000000000002")
 			object.Records = map[storage.ID]storage.Record{other: {ID: other}}
 			org.Objects["OrgWideEmailAddress"] = object
+			if tc.existingTemplate {
+				storage.EnsureStandardObject(&org, "EmailTemplate")
+				templates := org.Objects["EmailTemplate"]
+				const templateID = storage.ID("00X000000000010AAA")
+				templates.Records = map[storage.ID]storage.Record{templateID: {ID: templateID, Object: "EmailTemplate"}}
+				org.Objects["EmailTemplate"] = templates
+			}
 			machine := New(nil)
 			machine.SetOrg(&org)
 			machine.currentMethod = Method{APIVersion: tc.api}
@@ -182,6 +190,9 @@ func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 			}
 			if tc.reply {
 				message.Fields["replyTo"] = String("reply@example.invalid")
+			}
+			if tc.existingTemplate {
+				message.Fields["templateId"] = String("00X000000000010AAA")
 			}
 			message.Fields["orgWideEmailAddressId"] = String("0D2000000000001")
 			got, err := machine.sendEmail([]Value{List(message), Bool(false)}, &Result{})
