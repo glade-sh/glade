@@ -46,6 +46,8 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 				}
 				if strings.HasSuffix(name, "ShareEventProbeTest.cls") && tc.route != "same" {
 					text = strings.Replace(text, "String out;", "String out; Doc__c d; Integer direct;", 1)
+					text = strings.Replace(text, "System.runAs(u) {", "System.runAs(u) {\nSystem.runAs(u) {", 1)
+					text = strings.Replace(text, "return out;", "}\nreturn out;", 1)
 					text = strings.Replace(text, "Doc__c d = new Doc__c", "d = new Doc__c", 1)
 					text = strings.Replace(text, "Integer direct = [", "direct = [", 1)
 					publish := "EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id)));"
