@@ -575,6 +575,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 }
 
 func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[string]bool) (int, bool) {
+	if vm.paymentFlowConstructorType != "" && strings.EqualFold(typeName, vm.paymentFlowConstructorType) && strings.EqualFold(target, "commercepayments.PaymentGatewayRequest") {
+		return 1, true
+	}
 	// The Address overlay describes System.Address, not a source class that
 	// shadows its short name. Such classes use their declared hierarchy below.
 	if strings.EqualFold(typeName, "Address") {

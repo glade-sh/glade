@@ -4047,6 +4047,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	if strings.EqualFold(resolvedTypeName, "AggregateResult") && !semaProjectTypeShadowsPlatform(model, typeName) {
 		return []diagnostic.Diagnostic{{Severity: diagnostic.Error, Code: "GLADESEMA015", Message: "SObject is not constructable: AggregateResult", File: typ.File, Range: semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)))}}
 	}
+	if strings.EqualFold(resolvedTypeName, "commercepayments.PaymentGatewayContext") && semaPaymentFlowContextShape(typ, member, model, resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), expr, source, bodyOffset+pos, bodyOffset+expr.Pos) {
+		model = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
+	}
 	if !semaProjectTypeShadowsPlatform(model, typeName) {
 		if hidden := semaHTTPInvisibleType(typeName); hidden != "" {
 			return []diagnostic.Diagnostic{semaHTTPDiagnostic(typ, "Type is not visible: "+hidden, bodyOffset+pos, bodyOffset+pos+len(typeName), source)}
@@ -4477,7 +4480,7 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 	if strings.EqualFold(valueType, "void") && semaIRExprLooksLikeIndexAssignmentValue(expr, source, bodyOffset+pos) {
 		valueType = resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr.Args[1], *scope, model, typ.Name))
 	}
-	if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) || semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) || semaIRSOQLNullCoalesceAssignable(targetType, valueType, expr, model) || a.semaIRSOQLConditionalAssignable(targetType, expr, *scope, model, typ.Name) {
+	if valueType == "" || valueType == "null" || (verb == "initializes" && member.Kind != apexast.DeclarationField && expr.Kind == ir.ExprVariable && simpleIdentifierPattern.MatchString(expr.Name) && semaPaymentFlowResponseAssignment(typ, member, model, targetType, valueType)) || semaAssignableToType(targetType, valueType, model) || semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) || semaIRSOQLNullCoalesceAssignable(targetType, valueType, expr, model) || a.semaIRSOQLConditionalAssignable(targetType, expr, *scope, model, typ.Name) {
 		return nil
 	}
 	if semaDMLStringLocaleProperty(targetType, target, valueType, *scope, model, typ.Name) {

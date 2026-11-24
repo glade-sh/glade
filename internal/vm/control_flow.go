@@ -106,13 +106,19 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			}
 			value := Null
 			if inst.Expr.Kind != "" {
+				previous := vm.paymentFlowContextDeclaration
+				vm.paymentFlowContextDeclaration = paymentFlowContextDeclaration(inst)
 				evaluated, err := vm.evalForType(inst.Expr, inst.Type, result)
+				vm.paymentFlowContextDeclaration = previous
 				if err != nil {
 					return execOutcome{}, err
 				}
 				value = plainNull(evaluated)
 			}
 			coerced, err := vm.coerceAssignable(inst.Type, value)
+			if err != nil && inst.Expr.Kind == ir.ExprVariable && !strings.Contains(inst.Expr.Name, ".") && strings.EqualFold(inst.Type, "commercepayments.GatewayResponse") && strings.EqualFold(vm.paymentFlowCapturedInterface(value.Type), inst.Type) {
+				coerced, err = value, nil
+			}
 			if err != nil {
 				return execOutcome{}, fmt.Errorf("%s %s: %w", inst.Type, inst.Name, err)
 			}
