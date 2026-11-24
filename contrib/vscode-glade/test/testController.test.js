@@ -42,6 +42,12 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
   await run([a]); assert(events.some(e => e[0] === 'failed' && e[2].includes('assertion failed')));
   report = makeReport(suite([row('a', 'pass')]));
   await run([a]); assert(events.some(e => e[0] === 'passed' && e[1] === a.id));
+  report = makeReport(suite([row('a', 'pass'), row('b', 'fail', 'unrelated')]));
+  await run([a]); assert(events.some(e => e[0] === 'passed' && e[1] === a.id));
+  report = makeReport([...suite([row('a', 'pass')]), { name: 'Other', cases: [{ className: 'Other', methodName: 'bad', status: 'fail', problem: { message: 'unrelated' } }] }]);
+  await run([cls]); assert(events.some(e => e[0] === 'passed' && e[1] === cls.id));
+  report = makeReport(suite([row('b', 'fail', 'unrelated')]));
+  await run([a]); assert(events.some(e => e[0] === 'errored' && e[1] === a.id));
   report = makeReport(suite([row('a', 'pass'), row('b', 'pass')]));
   await run([cls], [b]); assert.deepStrictEqual(calls, [['Example', 'a']]);
   await run([cls, a], []); assert.deepStrictEqual(calls, [['Example', undefined]]);

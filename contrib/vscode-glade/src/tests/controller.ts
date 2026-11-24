@@ -164,7 +164,8 @@ export class GladeTestController {
           this.recordResult(run, child, testCase);
         }
       }
-      const failed = childResults.find((candidate) => candidate.status !== "pass") || flat.find((candidate) => candidate.status !== "pass");
+      const failed = childResults.find((candidate) => candidate.status !== "pass") ||
+        (childResults.length === 0 ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass") : undefined);
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
         this.setFailedItem(item);

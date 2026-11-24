@@ -5,6 +5,7 @@ export interface FlatTestCaseResult {
   className: string;
   methodName: string;
   status: string;
+  problemType?: string;
   durationMs: number;
   message?: string;
   file?: string;
@@ -24,6 +25,7 @@ export function flattenTestCases(run: GladeTestRun): FlatTestCaseResult[] {
         className,
         methodName,
         status: testCase.status,
+        problemType: testCase.problem?.type,
         durationMs: testCase.durationMs || 0,
         message: testCase.problem?.type === "Selector"
           ? [testCase.problem.type, testCase.problem.message, testCase.problem.detail].filter(Boolean).join(": ")
