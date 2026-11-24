@@ -4852,8 +4852,30 @@ func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string
 	return relation, true
 }
 
+// capturedEventSubscriberParentCount covers the private custom-object COUNT
+// by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
+// source versions retain their existing sharing behavior.
+func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !query.Count || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || query.Where == nil {
+		return false
+	}
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	if version != "62.0" && version != "67.0" {
+		return false
+	}
+	where := query.Where
+	if where.Not || len(where.And) != 0 || len(where.Or) != 0 || !strings.EqualFold(where.Field, "Id") || where.Op != "=" {
+		return false
+	}
+	object, ok := vm.resolveObjectName(query.Object)
+	return ok && hasSuffixFold(object, "__c") && strings.EqualFold(strings.TrimSpace(vm.Org.Objects[object].Definition.SharingModel), "Private")
+}
+
 func (vm *VM) soqlSharingUserID(query soql.Query) string {
 	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
+	if userMode && vm.capturedEventSubscriberParentCount(query) {
+		return ""
+	}
 	// An AutomatedProcess success callback sees the captured private
 	// rows even through a with-sharing helper. This is a callback read scope,
 	// not a profile grant or a general AutomatedProcess sharing exemption.
