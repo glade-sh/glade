@@ -53,10 +53,10 @@ func TestCustomSettingOrgDefaultGuard(t *testing.T) {
 					}
 					problem := run.Suites[0].Cases[0].Problem
 					if tc.want == "" {
-						if problem != nil {
-							t.Fatalf("expected success: %+v", problem)
+						if run.Summary().Passed != 1 || problem != nil {
+							t.Fatalf("expected success: summary=%+v problem=%+v", run.Summary(), problem)
 						}
-					} else if problem == nil || !strings.Contains(problem.Message, tc.want) {
+					} else if run.Summary().Failed != 1 || problem == nil || !strings.Contains(problem.Message, tc.want) {
 						t.Fatalf("expected %s: %+v", tc.want, problem)
 					}
 				})
