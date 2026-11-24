@@ -1166,22 +1166,24 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.Classes = copyClassMap(classes)
 	}
 	if shareFrozenStatics {
-		vm.staticValueRefsMu.Lock()
-		if shareStaticValueRefs {
-			if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
-				vm.buildStaticValueRefs()
+		func() {
+			vm.staticValueRefsMu.Lock()
+			defer vm.staticValueRefsMu.Unlock()
+			if shareStaticValueRefs {
+				if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+					vm.buildStaticValueRefs()
+				}
+				vm.flattenStaticValueRefs()
+				clone.staticValueRefs = vm.staticValueRefs
+				clone.staticValueRefFields = vm.staticValueRefFields
+				clone.staticValueRefsShared = true
+				vm.staticValueRefsShared = true
 			}
-			vm.flattenStaticValueRefs()
-			clone.staticValueRefs = vm.staticValueRefs
-			clone.staticValueRefFields = vm.staticValueRefFields
-			clone.staticValueRefsShared = true
-			vm.staticValueRefsShared = true
-		}
-		// The source may run again after cloning, including when it was
-		// itself a clone with already-owned statics. Both sides must detach.
-		vm.sharedStaticClasses = true
-		vm.ownedStaticClasses = nil
-		vm.staticValueRefsMu.Unlock()
+			// The source may run again after cloning, including when it was
+			// itself a clone with already-owned statics. Both sides must detach.
+			vm.sharedStaticClasses = true
+			vm.ownedStaticClasses = nil
+		}()
 	}
 	// frozenClassLookup binds canonical class-name results to one exact runtime
 	// generation. Clones share that immutable artifact by pointer and resolve

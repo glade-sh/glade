@@ -273,7 +273,7 @@ func TestLazyClassRegistersShellsWithoutBuilding(t *testing.T) {
 			if len(class.Fields) != 0 || len(class.Methods) != 0 || len(class.Constructors) != 0 {
 				t.Fatalf("shell %s carries members", class.Name)
 			}
-			if class.lazy.built != nil {
+			if class.lazy.built.Load() != nil {
 				t.Fatalf("shell %s was built by registration", class.Name)
 			}
 		}
@@ -291,7 +291,7 @@ func TestLazyClassRegistersShellsWithoutBuilding(t *testing.T) {
 	for range lazy.classEntriesNoLazy() {
 	}
 	for _, class := range lazy.classEntriesRaw() {
-		if class.IsLazy() && class.lazy.built != nil {
+		if class.IsLazy() && class.lazy.built.Load() != nil {
 			t.Fatalf("header-only reads built %s", class.Name)
 		}
 	}
@@ -302,7 +302,7 @@ func TestLazyClassRegistersShellsWithoutBuilding(t *testing.T) {
 	}
 	built := 0
 	for _, class := range lazy.classEntriesRaw() {
-		if class.IsLazy() && class.lazy.built != nil {
+		if class.IsLazy() && class.lazy.built.Load() != nil {
 			built++
 		}
 	}

@@ -1730,21 +1730,24 @@ func validMemoryRuntimeExecution(key runtimeCacheKey) (runtimeExecutionView, boo
 }
 
 func validMemoryRuntimeProjection[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
-	runtimeCacheMu.RLock()
-	cached, ok := runtimeCache[key]
-	if ok && runtimeCacheEntryUsable(cached) {
-		projected, projectedOK := project(cached)
-		runtimeCacheMu.RUnlock()
-		if projectedOK {
-			touchRuntimeCacheKey(key)
-			return projected, true
+	found := false
+	projected, ok := func() (T, bool) {
+		runtimeCacheMu.RLock()
+		defer runtimeCacheMu.RUnlock()
+		var cached runtimeCacheEntry
+		cached, found = runtimeCache[key]
+		if found && runtimeCacheEntryUsable(cached) {
+			return project(cached)
 		}
-		return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
-	}
-	runtimeCacheMu.RUnlock()
-	if !ok {
 		var zero T
 		return zero, false
+	}()
+	if ok {
+		touchRuntimeCacheKey(key)
+		return projected, true
+	}
+	if !found {
+		return projected, false
 	}
 	return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
 }
@@ -1756,27 +1759,23 @@ func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runt
 func recheckMemoryRuntimeProjectionAfterInvalidObservation[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
 	// Recheck under the write lock so an invalid observation cannot evict a
 	// concurrently published valid replacement.
-	runtimeCacheMu.Lock()
-	cached, ok := runtimeCache[key]
-	var projected T
-	if ok && runtimeCacheEntryUsable(cached) {
-		var projectedOK bool
-		projected, projectedOK = project(cached)
-		if !projectedOK {
-			delete(runtimeCache, key)
-			ok = false
+	var zero T
+	projected, ok := func() (T, bool) {
+		runtimeCacheMu.Lock()
+		defer runtimeCacheMu.Unlock()
+		cached, found := runtimeCache[key]
+		if found && runtimeCacheEntryUsable(cached) {
+			if value, valid := project(cached); valid {
+				return value, true
+			}
 		}
-	} else if ok {
 		delete(runtimeCache, key)
-		ok = false
-	}
-	runtimeCacheMu.Unlock()
-	if !ok {
-		var zero T
 		return zero, false
+	}()
+	if ok {
+		touchRuntimeCacheKey(key)
 	}
-	touchRuntimeCacheKey(key)
-	return projected, true
+	return projected, ok
 }
 
 func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (*typesys.SourceDigestSet, error) {
@@ -5486,16 +5485,18 @@ func standardApexTestOrgForRun() storage.OrgState {
 }
 
 func standardApexTestOrg() storage.OrgState {
-	standardApexTestOrgCache.mu.Lock()
-	if !standardApexTestOrgCache.built {
-		org := storage.NewOrgState()
-		org.OrgID = storage.DefaultOrgID
-		EnsureStandardObjectSpread(&org)
-		standardApexTestOrgCache.org = org
-		standardApexTestOrgCache.built = true
-	}
-	seed := standardApexTestOrgCache.org
-	standardApexTestOrgCache.mu.Unlock()
+	seed := func() storage.OrgState {
+		standardApexTestOrgCache.mu.Lock()
+		defer standardApexTestOrgCache.mu.Unlock()
+		if !standardApexTestOrgCache.built {
+			org := storage.NewOrgState()
+			org.OrgID = storage.DefaultOrgID
+			EnsureStandardObjectSpread(&org)
+			standardApexTestOrgCache.org = org
+			standardApexTestOrgCache.built = true
+		}
+		return standardApexTestOrgCache.org
+	}()
 	return seed.CloneRuntimeFrozenDefinition()
 }
 
