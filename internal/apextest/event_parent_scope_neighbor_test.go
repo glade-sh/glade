@@ -21,6 +21,8 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 		{"differentRunAs", "62.0", "62.0", "different", "parent0"},
 		{"class67Trigger62", "67.0", "62.0", "same", "parent0"},
 		{"class62Trigger67", "62.0", "67.0", "same", "parent0"},
+		{"extraParents", "62.0", "62.0", "extraParents", "parent0"},
+		{"extraShare", "62.0", "62.0", "extraShare", "parent0"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -44,7 +46,7 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 				if strings.HasSuffix(name, "EvtTrigger.trigger-meta.xml") {
 					text = strings.ReplaceAll(text, "62.0", tc.triggerAPI)
 				}
-				if strings.HasSuffix(name, "ShareEventProbeTest.cls") && tc.route != "same" {
+				if strings.HasSuffix(name, "ShareEventProbeTest.cls") && (tc.route == "outside" || tc.route == "different") {
 					text = strings.Replace(text, "String out;", "String out; Doc__c d; Integer direct;", 1)
 					text = strings.Replace(text, "System.runAs(u) {", "System.runAs(u) {\nSystem.runAs(u) {", 1)
 					text = strings.Replace(text, "return out;", "}\nreturn out;", 1)
@@ -55,6 +57,14 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 						text = strings.Replace(text, publish, "}\n"+publish+"\nSystem.runAs(u) {", 1)
 					} else {
 						text = strings.Replace(text, publish, publish+"\n}\nSystem.runAs(u) {", 1)
+					}
+				}
+				if strings.HasSuffix(name, "ShareEventProbeTest.cls") {
+					switch tc.route {
+					case "extraParents":
+						text = strings.Replace(text, "Test.startTest();", "insert new List<Doc__c>{new Doc__c(Name = 'extra1'), new Doc__c(Name = 'extra2')};\nTest.startTest();", 1)
+					case "extraShare":
+						text = strings.Replace(text, "Test.startTest();", "insert new Doc__Share(ParentId = d.Id, UserOrGroupId = other.Id, AccessLevel = 'Read', RowCause = 'Manual');\nTest.startTest();", 1)
 					}
 				}
 				writeFile(t, filepath.Join(root, name), text)
