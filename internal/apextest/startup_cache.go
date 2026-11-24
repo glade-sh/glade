@@ -3,7 +3,6 @@ package apextest
 import (
 	"path/filepath"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -561,43 +560,26 @@ func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index ty
 	if childRelationshipLookup == nil {
 		childRelationshipLookup = projectReferencedChildRelationshipLookup(*org)
 	}
-	workers := compileWorkers(len(files))
-	if workers <= 1 {
+	if compileWorkers(len(files)) <= 1 {
 		var merged standardFieldScanResult
 		for _, file := range files {
-			source, err := cache.read(file)
-			if err != nil {
-				continue
+			cache.build.at("scan_standard_fields")
+			if source, err := cache.read(file); err == nil {
+				merged = mergeStandardFieldScanResults([]standardFieldScanResult{merged, scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)})
 			}
-			merged = mergeStandardFieldScanResults([]standardFieldScanResult{merged, scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)})
 		}
 		return merged
 	}
-	jobs := make(chan string)
 	results := make(chan standardFieldScanResult, len(files))
-	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for file := range jobs {
-				source, err := cache.read(file)
-				if err != nil {
-					continue
-				}
-				results <- scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)
-			}
-		}()
-	}
-	for _, file := range files {
-		jobs <- file
-	}
-	close(jobs)
-	wg.Wait()
+	runRuntimeBuildJobs(len(files), cache.build, "scan_standard_fields", func(i int) {
+		if source, err := cache.read(files[i]); err == nil {
+			results <- scanProjectReferencedStandardFieldsFromSource(org, source, childRelationshipLookup)
+		}
+	})
 	close(results)
 	collected := make([]standardFieldScanResult, 0, len(files))
-	for result := range results {
-		collected = append(collected, result)
+	for r := range results {
+		collected = append(collected, r)
 	}
 	return mergeStandardFieldScanResults(collected)
 }

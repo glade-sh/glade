@@ -34,14 +34,14 @@ func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
 	if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	savedNow, savedHook := fileDigestNow, fileDigestReadHook
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = savedNow, savedHook; resetFileDigestTrust() })
+	savedNow, savedHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	t.Cleanup(func() { fileDigestClock.Store(savedNow); fileDigestReadHook.Store(savedHook); resetFileDigestTrust() })
 	// Exercise a genuinely old stamp. Advancing only the test clock would make
 	// a newly written file appear old on a coarse-timestamp filesystem.
-	fileDigestNow = time.Now
+	setFileDigestClockForTesting(time.Now)
 	time.Sleep(fileDigestTrustAge + time.Second)
 	reads := 0
-	fileDigestReadHook = func(string) { reads++ }
+	SetFileDigestReadHookForTesting(func(string) { reads++ })
 	resetFileDigestTrust()
 	first, err := currentFileDigest(path)
 	if err != nil {
@@ -86,11 +86,11 @@ func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
 	if err := os.WriteFile(path, []byte("fresh"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	savedNow, savedHook := fileDigestNow, fileDigestReadHook
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = savedNow, savedHook; resetFileDigestTrust() })
-	fileDigestNow = time.Now
+	savedNow, savedHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	t.Cleanup(func() { fileDigestClock.Store(savedNow); fileDigestReadHook.Store(savedHook); resetFileDigestTrust() })
+	setFileDigestClockForTesting(time.Now)
 	reads := 0
-	fileDigestReadHook = func(string) { reads++ }
+	SetFileDigestReadHookForTesting(func(string) { reads++ })
 	resetFileDigestTrust()
 	if _, err := currentFileDigest(path); err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestPersistedVisualforceDigestRejectsRecentAndCorruptData(t *testing.T) {
 		t.Fatalf("recent file was reused: reads=%d", reads)
 	}
 
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
 	resetFileDigestTrust()
 	if _, err := currentFileDigest(path); err != nil {
 		t.Fatal(err)
@@ -137,15 +137,15 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 	writeFile(t, resource, "asset")
 	restore := EnableDiskCacheForTesting()
 	defer restore()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
 	reads := 0
-	fileDigestReadHook = func(path string) {
+	SetFileDigestReadHookForTesting(func(path string) {
 		if path == resource {
 			reads++
 		}
-	}
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	})
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	capture := func(p project.Project) typesys.ApexMetadataInput {
 		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}, allowVisualforceDiskDigests: true}
 		if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
@@ -187,9 +187,9 @@ func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
 			if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
 				t.Fatal(err)
 			}
-			oldNow := fileDigestNow
-			fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
-			t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+			oldNow := fileDigestClock.Load()
+			setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
+			t.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 			resetFileDigestTrust()
 			if _, err := currentFileDigest(path); err != nil {
 				t.Fatal(err)
@@ -247,9 +247,9 @@ func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
 	if err := os.WriteFile(path, []byte("stable"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
-	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	if _, err := currentFileDigest(path); err != nil {
 		t.Fatal(err)
@@ -308,12 +308,13 @@ func TestPersistedVisualforceDigestDoesNotReadUnsafeRoot(t *testing.T) {
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
 	reads := 0
-	fileDigestReadHook = func(string) { reads++ }
+	SetFileDigestReadHookForTesting(func(string) { reads++ })
 	t.Cleanup(func() {
-		fileDigestNow, fileDigestReadHook = oldNow, oldHook
+		fileDigestClock.Store(oldNow)
+		fileDigestReadHook.Store(oldHook)
 		resetFileDigestTrust()
 		_ = os.Chmod(root, 0700)
 	})
@@ -360,9 +361,9 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 	}
 	restore := EnableDiskCacheForTesting()
 	defer restore()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			root := privateVisualforceDigestTestRoot(t)
@@ -372,11 +373,11 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 			p := project.Project{Root: root, VisualforcePageFiles: []string{page}}
 			tc.set(&p, input)
 			reads := 0
-			fileDigestReadHook = func(path string) {
+			SetFileDigestReadHookForTesting(func(path string) {
 				if path == input {
 					reads++
 				}
-			}
+			})
 			capture := func() typesys.ApexMetadataInput {
 				generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}, allowVisualforceDiskDigests: true}
 				if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
@@ -427,9 +428,9 @@ func TestPersistedVisualforceDigestRejectsChecksumMismatch(t *testing.T) {
 	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
-	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Minute) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	if _, err := currentFileDigest(path); err != nil {
 		t.Fatal(err)

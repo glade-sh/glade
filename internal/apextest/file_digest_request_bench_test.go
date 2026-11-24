@@ -53,7 +53,7 @@ func TestRequestFileDigestMatchesParent(t *testing.T) {
 	}
 	check(path)
 	check(path)
-	ctimeTick()
+	ctimeTick(t, path)
 	if err := os.WriteFile(path, []byte("public class B {}"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -117,9 +117,9 @@ func TestRequestFileDigestLargeProjectIdentity(t *testing.T) {
 
 func TestRequestFileDigestRereadsMidRequestEdit(t *testing.T) {
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = time.Now
-	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(time.Now)
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	path := filepath.Join(t.TempDir(), "A.cls")
 	first := []byte("public class A {}")
 	second := []byte("public class B {}")
@@ -131,7 +131,7 @@ func TestRequestFileDigestRereadsMidRequestEdit(t *testing.T) {
 	if got, err := request.digest(path); err != nil || got != sha256.Sum256(first) {
 		t.Fatalf("first digest %x, %v", got, err)
 	}
-	ctimeTick()
+	ctimeTick(t, path)
 	if err := os.WriteFile(path, second, 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -175,9 +175,9 @@ func TestRequestFileDigestInvalidatesStampFields(t *testing.T) {
 
 func BenchmarkRequestFileDigestWarmProject(b *testing.B) {
 	resetFileDigestTrust()
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
-	b.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
+	b.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 	dir := b.TempDir()
 	type input struct {
 		path       string

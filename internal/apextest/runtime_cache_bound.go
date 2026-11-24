@@ -32,6 +32,12 @@ func touchRuntimeCacheKey(key runtimeCacheKey) {
 	runtimeCacheUseMu.Unlock()
 }
 
+func storeRuntimeCacheEntry(key runtimeCacheKey, entry runtimeCacheEntry) []runtimeCacheKey {
+	runtimeCacheMu.Lock()
+	defer runtimeCacheMu.Unlock()
+	return storeRuntimeCacheEntryLocked(key, entry)
+}
+
 // storeRuntimeCacheEntryLocked publishes entry while the caller holds
 // runtimeCacheMu for writing. It evicts least recently used keys beyond
 // maxRuntimeCacheEntries and returns them; the caller passes them to
