@@ -26,7 +26,7 @@ import (
 // Version 16 rejects org snapshots without component-tab bundle identities.
 const Version = 16
 
-const manifestSchemaVersion = 1
+const manifestSchemaVersion = 3
 
 const sourceDigestTrustAge = 2 * time.Second
 

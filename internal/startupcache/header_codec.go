@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	testCacheHeaderEncodingVersion = 1
+	testCacheHeaderEncodingVersion = 2
 	maxTestCacheHeaderBytes        = 16 << 20
 	maxTestCacheHeaderStringBytes  = 1 << 20
 	maxTestCacheHeaderPathBytes    = 64 << 10
