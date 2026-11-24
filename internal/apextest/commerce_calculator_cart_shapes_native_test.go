@@ -20,6 +20,9 @@ import (
 // CartTestUtil.getCart (quantity scale, no selected delivery method), builds a
 // delivery group method without a product, and runs a calculator built without
 // an executor.
+// NATIVE commerce_tax_missing_prices/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
+// NATIVE commerce_tax_price_controls/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
+// NATIVE commerce_tax_calculator_missing_inputs/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
 func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 	type fixture struct {
 		dir, class string
