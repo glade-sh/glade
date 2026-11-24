@@ -1,7 +1,9 @@
 # Locale text ordering capture
 
-A fresh one-day Developer Edition scratch org was seeded with 35 synthetic Account records using the fixture's `seed.apex`. Each record's AccountNumber is its three-digit position in the seed list; BillingCity is the test value. The seed includes one null, ASCII punctuation and digits, uppercase and lowercase, accented Latin letters, ligatures, Japanese, Han, Greek, and Cyrillic.
+The fixture under `internal/apextest/testdata/conformance/locale_order_466` contains 35 synthetic Account values: a null, punctuation, digits, case, accented letters, ligatures, Japanese, Han, Greek, and Cyrillic. AccountNumber is the position in `seed.apex`; BillingCity is the text value.
 
-For each of de_DE, sv_SE, ja_JP, fr_FR, es_ES, and en_US, the running user's LocaleSidKey was updated in a separate transaction. LanguageLocaleKey remained en_US. The fixture's `query.apex` was executed anonymously at API 62.0 and 67.0. It returns labels from `ORDER BY BillingCity ASC NULLS FIRST, AccountNumber ASC`. The tie breaker fixes the result when collation treats strings equally. `org.tsv` contains the resulting labels and observed running locale. The two API versions agreed for each locale.
+The anonymous rows were captured in a fresh one-day Developer Edition scratch org by updating the running user's LocaleSidKey in a separate transaction and executing `query.apex` at API 62.0 and 67.0. LanguageLocaleKey remained en_US.
 
-The scratch org was deleted after capture. A subsequent org display reported the org was not found.
+The IsTest rows were captured in a second fresh one-day Developer Edition scratch org. The deployed `LocaleCapture62` and `LocaleCapture67` classes each contain six test methods, one for each locale. Each creates a synthetic user and runs the same seed and query inside `System.runAs`. The method deliberately fails an assertion to report the observed locale and label sequence; class metadata specifies API 62.0 or 67.0, and the test-run request used the CLI default API version. All 12 test rows match the corresponding anonymous rows. Both orgs were deleted and subsequent org display returned not found.
+
+The query uses `ORDER BY BillingCity ASC NULLS FIRST, AccountNumber ASC` to fix ties. `org.tsv` records both routes independently; the conformance test compares every native row with both Glade anonymous Apex and named IsTest execution.
