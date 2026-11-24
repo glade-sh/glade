@@ -43,11 +43,8 @@ const runtimeBesideGateEnv = "GLADE_EXPERIMENTAL_BESIDE_GATE"
 // environment. Nothing outside _test.go files sets it.
 var testOnlyRuntimeBesideGateEnabled atomic.Bool
 
-// ExperimentalRuntimeBesideGate reports the process opt-in for the runner and daemon.
-func ExperimentalRuntimeBesideGate() bool { return os.Getenv(runtimeBesideGateEnv) == "1" }
-
 func runtimeBesideGateEnabled() bool {
-	return testOnlyRuntimeBesideGateEnabled.Load() || ExperimentalRuntimeBesideGate()
+	return testOnlyRuntimeBesideGateEnabled.Load() || os.Getenv(runtimeBesideGateEnv) == "1"
 }
 
 // runtimeBesideGateBuildIDs numbers builds for the panic log line.
@@ -90,20 +87,21 @@ func (p *runtimeBuildPanic) Error() string {
 	return fmt.Sprintf("runtime build worker panicked: %v\n%s", p.value, p.stack)
 }
 
-const runtimeBuildPanicStackLimit = 8 << 10
+const (
+	runtimeBuildPanicValueLimit = 256
+	runtimeBuildPanicStackLimit = 8 << 10
+)
 
-// Preserve the familiar nil-dereference diagnostic without ever calling a
-// panic value's Error or String method. Those methods may panic or print source.
+// Only the Go runtime's own error types may supply text for the log. A
+// user-defined Error or String method can itself panic or print source.
 func logRuntimeBuildPanic(out io.Writer, p *runtimeBuildPanic, abandoned bool) {
 	state := "accepted; the run falls back to the sequential build"
 	if abandoned {
 		state = "abandoned"
 	}
 	value := "<not shown>"
-	v := reflect.ValueOf(p.value)
-	const nilFault = "invalid memory address or nil pointer dereference"
-	if v.Kind() == reflect.String && v.Type().PkgPath() == "runtime" && v.String() == nilFault {
-		value = nilFault
+	if err, ok := p.value.(error); ok && reflect.TypeOf(err).PkgPath() == "runtime" {
+		value = truncateRuntimeBuildPanicText(err.Error(), runtimeBuildPanicValueLimit)
 	}
 	stack := truncateRuntimeBuildPanicText(string(p.stack), runtimeBuildPanicStackLimit)
 	kind := "panicked"
