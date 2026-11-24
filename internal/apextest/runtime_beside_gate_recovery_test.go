@@ -309,7 +309,7 @@ func TestGatedPublicationRollbackErrorReachesRun(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
 	p := newBesideGateStressProject(t, 0)
 	index, artifacts, cases := p.load(t, 0, 1, false)
-	cacheDir := filepath.Join(p.root, ".glade", startupcache.SubdirTest)
+	cacheDir := filepath.Join(p.root, startupcache.SubdirTest)
 	var injectErr error
 	hooks := runtimeBuildHooks{stage: func(stage string) {
 		if stage != "after_publish" {

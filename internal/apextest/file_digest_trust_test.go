@@ -39,7 +39,16 @@ func countReads(t *testing.T, path string) *int {
 }
 
 // ctimeTick separates two writes so a coarse filesystem clock cannot give them one ctime.
-func ctimeTick() { time.Sleep(30 * time.Millisecond) }
+func ctimeTick(t *testing.T, path string) {
+	t.Helper()
+	if stamp, ok := filestamp.Stat(path); ok && stamp.Ctime%int64(time.Second) == 0 {
+		// HFS+ records ctime to whole seconds. A shorter delay can leave
+		// a same-size rewrite with the exact stamp the test just recorded.
+		time.Sleep(1100 * time.Millisecond)
+		return
+	}
+	time.Sleep(30 * time.Millisecond)
+}
 
 // skipWithoutStamps skips tests of the trusted path on file systems whose
 // ctime cannot be relied on (exFAT, network mounts); there every validation
@@ -192,7 +201,7 @@ func TestCurrentFileDigestSeesEveryKindOfEdit(t *testing.T) {
 			if err != nil || first != sha256.Sum256(original) {
 				t.Fatalf("first digest %x, %v", first, err)
 			}
-			ctimeTick()
+			ctimeTick(t, path)
 			edit(t, path)
 			got, err := currentFileDigest(path)
 			content, readErr := os.ReadFile(path)
@@ -254,14 +263,14 @@ func TestValidatorsDetectEditAfterTrustedPass(t *testing.T) {
 		t.Fatalf("source read %d times in total across 4 validations of an unchanged old file, want 1", *reads)
 	}
 
-	ctimeTick()
+	ctimeTick(t, source)
 	if err := os.WriteFile(source, []byte("public class A { Integer x = 2; }"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := cache.validateCapturedSourceGenerationRaw(); err == nil {
 		t.Fatal("raw generation accepted an edited source")
 	}
-	ctimeTick()
+	ctimeTick(t, meta)
 	if err := os.WriteFile(meta, []byte("<ApexClass><apiVersion>66.0</apiVersion></ApexClass>"), 0o600); err != nil {
 		t.Fatal(err)
 	}

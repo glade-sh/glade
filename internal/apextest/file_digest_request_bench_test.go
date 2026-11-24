@@ -53,7 +53,7 @@ func TestRequestFileDigestMatchesParent(t *testing.T) {
 	}
 	check(path)
 	check(path)
-	ctimeTick()
+	ctimeTick(t, path)
 	if err := os.WriteFile(path, []byte("public class B {}"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestRequestFileDigestRereadsMidRequestEdit(t *testing.T) {
 	if got, err := request.digest(path); err != nil || got != sha256.Sum256(first) {
 		t.Fatalf("first digest %x, %v", got, err)
 	}
-	ctimeTick()
+	ctimeTick(t, path)
 	if err := os.WriteFile(path, second, 0600); err != nil {
 		t.Fatal(err)
 	}
