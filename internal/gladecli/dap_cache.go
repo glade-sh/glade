@@ -60,9 +60,11 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 // dapLoadSeams are test hooks inside one cold build. Each receives the
 // 1-based attempt number.
 type dapLoadSeams struct {
-	beforeLoad    func(attempt int)
-	afterIndex    func(attempt int)
-	beforeRecheck func(attempt int)
+	beforeLoad     func(attempt int)
+	beforeFrontend func(attempt int)
+	afterFrontend  func(attempt int)
+	afterIndex     func(attempt int)
+	beforeRecheck  func(attempt int)
 }
 
 func loadDAPStartupStateWithSeams(root string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
@@ -222,11 +224,17 @@ func buildDAPStateFromView(ctx context.Context, root string, v *inputview.View, 
 	var index typesys.Index
 	var artifacts typesys.BuildArtifacts
 	s, schemaErr := schema.LoadProject(p)
+	if seams.beforeFrontend != nil {
+		seams.beforeFrontend(attempt)
+	}
 	if schemaErr == nil && apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled {
 		result := frontendcache.LoadOrBuild(p, s, func() (typesys.Index, typesys.BuildArtifacts) { return typesys.BuildWithArtifacts(p, s) })
 		index, artifacts = result.Index, result.Artifacts
 	} else {
 		index, artifacts = buildProjectIndexWithArtifacts(p)
+	}
+	if seams.afterFrontend != nil {
+		seams.afterFrontend(attempt)
 	}
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
