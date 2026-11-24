@@ -42,7 +42,7 @@ v0.3.14 adds captured Salesforce behavior for Site methods, share rows, custom m
 
 ### Performance
 
-PERF-SUMMARY-PLACEHOLDER
+On an 8 GiB Apple-silicon Mac, a cold full `glade test` run of a 4,565-test application took 435.7 s in v0.3.14 and 453.3 s in v0.3.13 (median of three interleaved runs each, 3.9% faster), with the same peak memory (about 4.0 GiB) and identical test outcomes.
 
 On a Linux host, a method-body edit through the test daemon took 23.3 s in v0.3.14, down from 142.5 s in v0.3.13. A signature edit took 52.7 s instead of 138.7 s, and adding a method took 49.0 s instead of 135.3 s. Outcomes were identical.
 
