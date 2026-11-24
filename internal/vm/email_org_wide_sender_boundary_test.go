@@ -145,13 +145,15 @@ func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
 // These missing-sender shapes were not in the capture and match the base.
 func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 	for _, tc := range []struct {
-		name, api, namespace string
-		cc, twoTo            bool
+		name, api, namespace   string
+		cc, twoTo, html, reply bool
 	}{
 		{name: "API 68", api: "68.0"},
 		{name: "namespace", api: "67.0", namespace: "example"},
 		{name: "copied recipient", api: "67.0", cc: true},
 		{name: "two recipients", api: "67.0", twoTo: true},
+		{name: "HTML body", api: "67.0", html: true},
+		{name: "reply-to address", api: "67.0", reply: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.NewOrgState()
@@ -174,6 +176,13 @@ func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 			}
 			message.Fields["subject"] = String("probe")
 			message.Fields["plainTextBody"] = String("probe")
+			if tc.html {
+				message.Fields["plainTextBody"] = Null
+				message.Fields["htmlBody"] = String("<p>probe</p>")
+			}
+			if tc.reply {
+				message.Fields["replyTo"] = String("reply@example.invalid")
+			}
 			message.Fields["orgWideEmailAddressId"] = String("0D2000000000001")
 			got, err := machine.sendEmail([]Value{List(message), Bool(false)}, &Result{})
 			if err != nil || len(got.List) != 1 || !got.List[0].Fields["success"].Bool {
