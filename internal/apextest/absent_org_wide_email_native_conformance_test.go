@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -57,6 +60,7 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 				}
 				org := orgFromIndex(index)
 				org.APIVersion = api
+				seedOrgWideEmailCatalog(&org)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				result, err := runner.newMachine().Execute(program)
 				if err != nil {
@@ -83,33 +87,45 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 				}
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes/Road548Probe.cls"), string(source))
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes/Road548Probe.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
-				run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{"Road548Probe"}, NoDiskCache: true, Parallelism: 1})
+				index := loadTestIndex(t, root)
+				if result := sema.Analyze(index); result.HasErrors() {
+					t.Fatalf("class semantics: %v", result.Diagnostics)
+				}
+				org := orgFromIndex(index)
+				org.APIVersion = api
+				seedOrgWideEmailCatalog(&org)
+				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				cases := Discover(index, Options{SelectedClasses: []string{"Road548Probe"}})
+				methods, methodErrors := compileTestMethods(cases)
+				programs, programErrors := compileTestInvokePrograms(cases)
+				runtimeMethods := indexTestRuntimeMethods(methods)
 				count := 0
-				for _, suite := range run.Suites {
-					for _, c := range suite.Cases {
-						if strings.EqualFold(c.MethodName, id) {
-							count++
-							actual[4] = string(c.Status)
-							if actual[4] == "fail" {
-								actual[4] = "Failed"
-							}
-							if c.Problem == nil {
-								t.Fatalf("missing assertion: %+v", c)
-							}
-							if c.Problem.Type != "System.AssertException" {
-								t.Fatalf("unexpected assertion type: %q", c.Problem.Type)
-							}
-							const prefix = "Assertion Failed: ROAD548="
-							var ok bool
-							actual[5], ok = strings.CutPrefix(c.Problem.Message, prefix)
-							if !ok {
-								t.Fatalf("unexpected assertion message: %q", c.Problem.Message)
-							}
-						}
+				for _, testCase := range cases {
+					if !strings.EqualFold(testCase.MethodName, id) {
+						continue
+					}
+					count++
+					key := testCaseKey(testCase)
+					result := runCase(context.Background(), testCase, methods[key], runtimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)], methodErrors[key], programs[key], programErrors[key], runner.base, nil, nil, nil, org, 0, Options{NoDiskCache: true, Parallelism: 1}, true, nil, newRunPerfCounters(false))
+					actual[4] = string(result.Status)
+					if actual[4] == "fail" {
+						actual[4] = "Failed"
+					}
+					if result.Problem == nil {
+						t.Fatalf("missing assertion: %+v", result)
+					}
+					if result.Problem.Type != "System.AssertException" {
+						t.Fatalf("unexpected assertion type: %q", result.Problem.Type)
+					}
+					const prefix = "Assertion Failed: ROAD548="
+					var ok bool
+					actual[5], ok = strings.CutPrefix(result.Problem.Message, prefix)
+					if !ok {
+						t.Fatalf("unexpected assertion message: %q", result.Problem.Message)
 					}
 				}
 				if count != 1 {
-					t.Fatalf("found %d cases for %s: %+v", count, id, run)
+					t.Fatalf("found %d cases for %s", count, id)
 				}
 				actual[6] = api
 			}
@@ -128,4 +144,15 @@ func TestAbsentOrgWideEmailNativeConformance(t *testing.T) {
 			}
 		}
 	}
+}
+
+// A populated local catalog lets the VM validate the captured missing ID.
+// Its address deliberately differs from the fixture's missing lookup.
+func seedOrgWideEmailCatalog(org *storage.OrgState) {
+	const id = storage.ID("0D2000000000002")
+	object := org.Objects["OrgWideEmailAddress"]
+	object.Records = map[storage.ID]storage.Record{
+		id: {ID: id, Object: "OrgWideEmailAddress", Fields: map[string]storage.Value{"Address": storage.StringValue("seed@example.invalid")}},
+	}
+	org.Objects["OrgWideEmailAddress"] = object
 }

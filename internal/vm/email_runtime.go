@@ -724,17 +724,19 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 // Validate against the stored recipient, not a possibly stale caller record.
 func (vm *VM) localSendEmailRecipientValidationError(message Value) Value {
 	if message.Type == "Messaging.SingleEmailMessage" && vm.Org != nil {
-		// Native: absent_org_wide_email/org.tsv. A supplied sender must
-		// refer to an existing org-wide email address; null uses the default.
+		// Native: absent_org_wide_email/org.tsv. Only validate the captured
+		// sender ID shape when the local catalog has records to compare against.
 		senderID := emailFieldString(message, "orgWideEmailAddressId")
-		if senderID != "" {
+		if strings.HasPrefix(senderID, "0D2") && validateApexID(senderID) == nil {
 			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
 			if !ok {
 				objectName = "OrgWideEmailAddress"
 			}
-			_, sender, found := storage.LookupRecordByID(vm.Org.Objects[objectName].Records, storage.ID(senderID))
-			if !found || sender.System.IsDeleted {
-				return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+			records := vm.Org.Objects[objectName].Records
+			if len(records) > 0 {
+				if _, _, found := storage.LookupRecordByID(records, storage.ID(senderID)); !found {
+					return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+				}
 			}
 		}
 		templateID := emailFieldString(message, "templateId")
