@@ -1,0 +1,5 @@
+capture: before-save parent lookup with 15- and 18-character inputs and a deleted parent
+apis: 62.0 63.0 67.0; Flow, Apex class, and anonymous API versions matched
+routes: anonymous Apex and synchronous @IsTest
+mode: live Salesforce Developer scratch org; deleted after capture
+Rows project the first two results of the combined capture, preserved in deleted-parent-capture.cls.txt. The third result was ERR:ENTITY_IS_DELETED; Glade reaches Flow evaluation before rejecting that insert, so deletion is covered separately as a base-behavior differential.

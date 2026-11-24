@@ -29,3 +29,5 @@ pbcustom_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Asserti
 ea_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ERR:INVALID_ARGUMENT_TYPE:We can't save this record because the “CritEA” process failed. Give your Salesforce admin these details. CANNOT_EXECUTE_FLOW_TRIGGER: Org-Wide Email provided is not valid. Please fix and try again.,emails=0	67.0	n/a	n/a
 eb_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	n/a
 ec_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=ok,sent,emails=0	67.0	n/a	n/a
+rv_anonymous	63.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	63.0	n/a	0
+rv_test	63.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Acme RV,none|none,none|none,found	63.0	n/a	n/a

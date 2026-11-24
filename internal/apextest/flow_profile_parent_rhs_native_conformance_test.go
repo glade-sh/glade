@@ -22,13 +22,13 @@ func TestFlowProfileParentRHSNativeConformance(t *testing.T) {
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 5 {
+	if err != nil || len(rows) != 7 {
 		t.Fatalf("native rows=%d: %v", len(rows), err)
 	}
 	seen := map[string]bool{}
 	for _, row := range rows[1:] {
 		key := row[1] + "/" + row[2]
-		if (row[1] != "62.0" && row[1] != "67.0") || (row[2] != "anonymous" && row[2] != "istest") || seen[key] {
+		if (row[1] != "62.0" && row[1] != "63.0" && row[1] != "67.0") || (row[2] != "anonymous" && row[2] != "istest") || seen[key] {
 			t.Fatalf("unexpected or duplicate native row: %v", row)
 		}
 		seen[key] = true

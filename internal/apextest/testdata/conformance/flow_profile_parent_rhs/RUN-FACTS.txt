@@ -6,3 +6,4 @@ sf: @salesforce/cli/2.159.7
 mode: live Salesforce scratch org; Developer edition; 30-day duration; deletion succeeded after capture
 metadata: synthetic Contact after-save Flow; each API version deployed before its observations
 observations: matching parent, nonmatching parent, no parent; anonymous assertion rolled back its transaction; tests rolled back
+additional capture: API 63.0, anonymous and synchronous @IsTest; same owned fixture, Developer scratch org; deleted after capture

@@ -1,0 +1,1 @@
+@IsTest private class BeforeTest { @IsTest static void probe() { System.assert(false, 'OBS='+BeforeCase.run()); } }
