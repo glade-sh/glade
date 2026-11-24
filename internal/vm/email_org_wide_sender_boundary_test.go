@@ -142,11 +142,16 @@ func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
 	}
 }
 
-// The missing-sender rule is not captured at API 68 or in namespaces.
+// These missing-sender shapes were not in the capture and match the base.
 func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
-	for _, tc := range []struct{ name, api, namespace string }{
-		{"API 68", "68.0", ""},
-		{"namespace", "67.0", "example"},
+	for _, tc := range []struct {
+		name, api, namespace string
+		cc, twoTo            bool
+	}{
+		{name: "API 68", api: "68.0"},
+		{name: "namespace", api: "67.0", namespace: "example"},
+		{name: "copied recipient", api: "67.0", cc: true},
+		{name: "two recipients", api: "67.0", twoTo: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.NewOrgState()
@@ -161,6 +166,12 @@ func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
 			machine.currentMethod = Method{APIVersion: tc.api}
 			message := newSingleEmailMessage()
 			message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+			if tc.cc {
+				message.Fields["ccAddresses"] = List(String("copy@example.invalid"))
+			}
+			if tc.twoTo {
+				message.Fields["toAddresses"] = List(String("recipient@example.invalid"), String("other@example.invalid"))
+			}
 			message.Fields["subject"] = String("probe")
 			message.Fields["plainTextBody"] = String("probe")
 			message.Fields["orgWideEmailAddressId"] = String("0D2000000000001")
