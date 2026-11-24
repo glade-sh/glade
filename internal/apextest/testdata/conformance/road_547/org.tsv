@@ -1,0 +1,17 @@
+api	route	case	outcome	observation
+62.0	anonymous	share	passed	0
+62.0	istest	share	passed	
+62.0	anonymous	metadata	passed	1|Probe Label
+62.0	istest	metadata	passed	
+62.0	anonymous	publish	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+62.0	istest	publish	passed	
+62.0	anonymous	insert	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+62.0	istest	insert	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead
+67.0	anonymous	share	passed	0
+67.0	istest	share	passed	
+67.0	anonymous	metadata	passed	1|Probe Label
+67.0	istest	metadata	passed	
+67.0	anonymous	publish	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+67.0	istest	publish	passed	
+67.0	anonymous	insert	compile_error	DML operation Insert not allowed on BatchApexErrorEvent
+67.0	istest	insert	runtime_error	System.DmlException: Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead

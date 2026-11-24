@@ -1,0 +1,4 @@
+Salesforce scratch-org capture: 2026-11-24 UTC.
+Source versions: 62.0 and 67.0. Anonymous execution used sf apex run with --api-version; each test class was deployed with the matching apiVersion metadata and executed using sf apex run test --synchronous.
+The custom object and custom metadata type and record are included in this directory. cases.json supplies each anonymous body; the test route wraps the same body in an @IsTest static method. Anonymous debug output is captured in the observation column. Test-route passes establish successful execution only; debug values were not retrieved for those rows.
+The object metadata deployed at API 67.0. Each case class deployment succeeded. The scratch org was deleted successfully after the run. The first Dev Hub attempted reported LIMIT_EXCEEDED before an org was created; a second hub supplied this disposable org.
