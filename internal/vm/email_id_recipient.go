@@ -159,6 +159,14 @@ func (vm *VM) capturedOrgWideEmailShape(message Value) bool {
 			return false
 		}
 		if target == "" {
+			if template != "" {
+				if !strings.HasPrefix(template, "00X") || validateApexID(template) != nil {
+					return false
+				}
+				if _, found := vm.emailTemplateByID(template); found {
+					return false
+				}
+			}
 			return true
 		}
 	}
