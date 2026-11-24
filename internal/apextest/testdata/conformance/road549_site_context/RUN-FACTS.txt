@@ -1,0 +1,10 @@
+Live Salesforce scratch-org capture, 2026-11-24 UTC.
+Salesforce CLI 2.159.7; Developer edition; 30-day scratch org; deleted after capture.
+API versions: 62.0 and 67.0. Routes: execute anonymous and deployed @IsTest class with matching ApexClass apiVersion.
+An inactive Visualforce CustomSite and its landing page were deployed between the absent and present measurements. SELECT COUNT() FROM Site returned 0 before deployment and 1 after deployment in each route and API version, including inside @IsTest without SeeAllData.
+Probe computed raw null versus empty String versus nonempty, verified Test.isRunningTest(), and emitted the result through an intentional assertion failure. Site.getSiteId was checked for raw null. Values in org.tsv retain the exact empty-string and null observations; no org identifiers are recorded.
+Probe body:
+String p=Site.getPathPrefix(), b=Site.getBaseUrl(); Id i=Site.getSiteId();
+String row='ROAD549|'+(p==null?'NULL':p==''?'EMPTY':'NONEMPTY')+'|'+(b==null?'NULL':b==''?'EMPTY':'NONEMPTY')+'|'+(i==null?'NULL':'NONEMPTY')+'|TEST='+Test.isRunningTest()+'|COUNT='+[SELECT COUNT() FROM Site];
+System.assert(false,row);
+Metadata: internal/apextest/testdata/conformance/nulls_order_prompt_experience/synthetic/{sites,pages}, deployed via Salesforce CLI.
