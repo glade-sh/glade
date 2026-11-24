@@ -32,8 +32,10 @@ func TestFlowLookupParentReferenceIDFormsAndControls(t *testing.T) {
 	org.Objects["Parent__c"].Records[parentID] = parent
 	for _, text := range []string{string(parentID), storage.ID18(string(parentID))} {
 		source.Fields["Parent__c"] = storage.IDValue(storage.ID(text))
-		if value, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef); !ok || value.Kind != storage.ValueID || value.ID != targetID {
-			t.Fatalf("deleted parent behavior changed for ID length %d", len(text))
+		value, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef)
+		_, mainFound := org.Objects["Parent__c"].Records[storage.ID(text)]
+		if ok != mainFound || (ok && (value.Kind != storage.ValueID || value.ID != targetID)) {
+			t.Fatalf("deleted parent differs from base for ID length %d", len(text))
 		}
 	}
 	source.Fields["Parent__c"] = storage.IDValue(parentID)

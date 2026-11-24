@@ -47,7 +47,7 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		if !found && len(parentID) == 18 {
 			short := parentID[:15]
 			if storage.ID18(string(short)) == string(parentID) {
-				if _, present := parent.Records[short]; present {
+				if candidate, present := parent.Records[short]; present && !candidate.System.IsDeleted {
 					_, record, found = storage.LookupRecordByID(parent.Records, short)
 				}
 			}
