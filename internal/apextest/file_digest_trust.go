@@ -34,9 +34,16 @@ var (
 	recentVisualforceSharedBytes int64
 
 	// Test seams.
-	fileDigestNow      = time.Now
+	fileDigestClock    atomic.Pointer[func() time.Time]
 	fileDigestReadHook atomic.Pointer[func(string)]
 )
+
+func fileDigestNow() time.Time {
+	if now := fileDigestClock.Load(); now != nil {
+		return (*now)()
+	}
+	return time.Now()
+}
 
 // SetFileDigestReadHookForTesting observes every physical read a source
 // digest validation performs. The returned function restores the previous

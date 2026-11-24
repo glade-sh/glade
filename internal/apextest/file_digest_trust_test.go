@@ -15,9 +15,8 @@ import (
 
 // setFileDigestClockForTesting changes the clock used by digest validation.
 func setFileDigestClockForTesting(now func() time.Time) func() {
-	previous := fileDigestNow
-	fileDigestNow = now
-	return func() { fileDigestNow = previous }
+	previous := fileDigestClock.Swap(&now)
+	return func() { fileDigestClock.Store(previous) }
 }
 
 func TestFileDigestClockRestoreDuringRead(t *testing.T) {
@@ -49,10 +48,10 @@ func TestFileDigestClockRestoreDuringRead(t *testing.T) {
 func trustedClock(t *testing.T) {
 	t.Helper()
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
 	t.Cleanup(func() {
-		fileDigestNow = oldNow
+		fileDigestClock.Store(oldNow)
 		fileDigestReadHook.Store(oldHook)
 		resetFileDigestTrust()
 	})

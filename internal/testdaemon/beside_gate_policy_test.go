@@ -1,10 +1,11 @@
 package testdaemon
 
 import (
-	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/watch"
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/watch"
 )
 
 func TestDaemonStartupPublicationFollowsOptIn(t *testing.T) {

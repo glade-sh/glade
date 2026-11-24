@@ -25,9 +25,9 @@ func TestVisualforceDigestReusedByRuntimeManifest(t *testing.T) {
 		t.Fatal(err)
 	}
 	resetFileDigestTrust()
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
-	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
 	if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
 		t.Fatal(err)
@@ -92,9 +92,9 @@ func TestVisualforceManifestDigestLookupScope(t *testing.T) {
 		writeFile(t, path, "content")
 	}
 	resetFileDigestTrust()
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
-	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); resetFileDigestTrust() })
 	if _, err := currentFileDigest(unrelated); err != nil {
 		t.Fatal(err)
 	}
@@ -130,15 +130,15 @@ func TestRecentVisualforceInputsAvoidRepeatedHashing(t *testing.T) {
 	}
 	index := loadTestIndex(t, root)
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
-	fileDigestNow = time.Now
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(time.Now)
 	reads := 0
 	SetFileDigestReadHookForTesting(func(path string) {
 		if path == resource {
 			reads++
 		}
 	})
-	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	sources := newSourceCache()
 	sources.seedProjectSnapshot(&p)
 	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
@@ -193,14 +193,14 @@ func TestRecentVisualforceInputValidationDetectsChanges(t *testing.T) {
 			index := loadTestIndex(t, root)
 			resetFileDigestTrust()
 			reads := 0
-			oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
-			fileDigestNow = time.Now
+			oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+			setFileDigestClockForTesting(time.Now)
 			SetFileDigestReadHookForTesting(func(path string) {
 				if path == resource {
 					reads++
 				}
 			})
-			t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
+			t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 			sources := newSourceCache()
 			sources.seedProjectSnapshot(&p)
 			generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
@@ -290,9 +290,9 @@ func TestRecentVisualforceInputSnapshotBounds(t *testing.T) {
 	if _, captured, err := captureRecentVisualforceInput(large, recentVisualforceBudget); err != nil || captured {
 		t.Fatalf("large capture=%v err=%v", captured, err)
 	}
-	oldNow := fileDigestNow
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
-	t.Cleanup(func() { fileDigestNow = oldNow })
+	oldNow := fileDigestClock.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow) })
 	if _, captured, err := captureRecentVisualforceInput(small, recentVisualforceBudget); err != nil || captured {
 		t.Fatalf("old capture=%v err=%v", captured, err)
 	}

@@ -18,15 +18,15 @@ func TestRecentVisualforceDigestReusedAcrossGenerations(t *testing.T) {
 	writeFile(t, page, "<apex:page/>")
 	writeFile(t, input, "first")
 	p := project.Project{Root: root, VisualforcePageFiles: []string{page}, StaticResourceFiles: []string{input}}
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook.Load()
-	fileDigestNow = time.Now
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(time.Now)
 	reads := 0
 	SetFileDigestReadHookForTesting(func(path string) {
 		if path == input {
 			reads++
 		}
 	})
-	t.Cleanup(func() { fileDigestNow = oldNow; fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
+	t.Cleanup(func() { fileDigestClock.Store(oldNow); fileDigestReadHook.Store(oldHook); resetFileDigestTrust() })
 	resetFileDigestTrust()
 	capture := func() typesys.ApexMetadataInput {
 		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
