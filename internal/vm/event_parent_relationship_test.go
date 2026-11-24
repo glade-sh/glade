@@ -22,9 +22,25 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 	event.Fields["ParentRef__c"] = String("a00000000000002")
 	event.Fields["CreatedById"] = String("005000000000002")
 	machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
+	users := machine.Org.Objects["User"]
+	publisher := users.Records["005000000000002"]
+	publisher.Fields["ProfileId"] = storage.IDValue("00e000000000002")
+	users.Records[publisher.ID] = publisher
+	profiles := machine.Org.Objects["Profile"]
+	profile := profiles.Records["00e000000000002"]
+	profile.Fields["Name"] = storage.StringValue("System Administrator")
+	profiles.Records[profile.ID] = profile
+	parents := machine.Org.Objects["Widget__c"]
+	parent := parents.Records["a00000000000002"]
+	parent.System.CreatedByID = publisher.ID
+	parents.Records[parent.ID] = parent
 	query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000001")}}
 	if got, want := machine.soqlSharingUserID(query), machine.currentUserID(); got != want {
 		t.Fatalf("unrelated parent sharing user = %q, want %q", got, want)
+	}
+	query.Where.Value = storage.IDValue(parent.ID)
+	if got := machine.soqlSharingUserID(query); got != "" {
+		t.Fatalf("captured parent sharing user = %q, want bypass", got)
 	}
 	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{
 		"a10000000000001": {ID: "a10000000000001", Object: "Widget__Share", Fields: map[string]storage.Value{"ParentId": storage.IDValue("a00000000000001")}},
