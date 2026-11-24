@@ -140,3 +140,33 @@ func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
 		})
 	}
 }
+
+// The missing-sender rule is not captured at API 68 or in namespaces.
+func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
+	for _, tc := range []struct{ name, api, namespace string }{
+		{"API 68", "68.0", ""},
+		{"namespace", "67.0", "example"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.Namespace = tc.namespace
+			storage.EnsureStandardObject(&org, "OrgWideEmailAddress")
+			object := org.Objects["OrgWideEmailAddress"]
+			const other = storage.ID("0D2000000000002")
+			object.Records = map[storage.ID]storage.Record{other: {ID: other}}
+			org.Objects["OrgWideEmailAddress"] = object
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.currentMethod = Method{APIVersion: tc.api}
+			message := newSingleEmailMessage()
+			message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+			message.Fields["subject"] = String("probe")
+			message.Fields["plainTextBody"] = String("probe")
+			message.Fields["orgWideEmailAddressId"] = String("0D2000000000001")
+			got, err := machine.sendEmail([]Value{List(message), Bool(false)}, &Result{})
+			if err != nil || len(got.List) != 1 || !got.List[0].Fields["success"].Bool {
+				t.Fatalf("uncaptured neighbor differs from main: result=%v err=%v", got, err)
+			}
+		})
+	}
+}
