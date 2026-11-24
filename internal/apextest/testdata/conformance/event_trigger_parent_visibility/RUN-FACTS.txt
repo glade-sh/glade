@@ -23,3 +23,5 @@ The accessOwner and accessOther rows publish the scalar event with
 EventBus.publishWithAccessLevel and SYSTEM_MODE. Both return the same subscriber
 counts as EventBus.publish. The relevant runAs and test delivery are only
 available in an Apex test context.
+The extraOwner and extraOther rows publish the same event with Extra__c = 'x';
+both return the same subscriber counts as the single-field event.

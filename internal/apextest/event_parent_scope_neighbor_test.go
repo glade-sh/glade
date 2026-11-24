@@ -57,7 +57,9 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 					}
 					text = strings.Replace(text, "Doc__c d = new Doc__c", "d = new Doc__c", 1)
 					text = strings.Replace(text, "Integer direct = [", "direct = [", 1)
-					publish := "EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id)));"
+					publish := `if (accessLevel) EventBus.publishWithAccessLevel(new Evt__e(DocId__c = String.valueOf(d.Id)), AccessLevel.SYSTEM_MODE);
+            else if (extra) EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id), Extra__c = 'x'));
+            else EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id)));`
 					if tc.route == "outside" || tc.route == "outsideAny" {
 						text = strings.Replace(text, publish, "}\n"+publish+"\nSystem.runAs(u) {", 1)
 					} else {
