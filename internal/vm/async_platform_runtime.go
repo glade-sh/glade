@@ -450,6 +450,9 @@ func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Valu
 			// Native scalar publication from runAs fails before enqueueing.
 			return Null, newExceptionError("System.UnexpectedException", "Something went wrong while attempting to publish events with a callback. Try again later.")
 		}
+		if args[1].Kind == ValueNull {
+			return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
+		}
 		return vm.eventBusPublishRoute([]Value{args[0], args[1]}, result, true, false, true)
 	default:
 		return Null, fmt.Errorf("EventBus.publishWithAccessLevel expects event record or list, optional callback, and AccessLevel")
