@@ -9,7 +9,9 @@ private class ShareEventProbeTest {
         return u;
     }
 
-    private static String run(Boolean shareToOwner) {
+    private static String run(Boolean shareToOwner) { return run(shareToOwner, false); }
+
+    private static String run(Boolean shareToOwner, Boolean accessLevel) {
         User u = mk('System Administrator', 'adm');
         User other = mk('System Administrator', 'oth');
         String out;
@@ -20,7 +22,8 @@ private class ShareEventProbeTest {
             insert new Doc__Share(ParentId = d.Id, UserOrGroupId = target, AccessLevel = 'Read', RowCause = Schema.Doc__Share.RowCause.Rsn__c);
             Integer direct = [SELECT COUNT() FROM Doc__Share WHERE RowCause IN ('Rsn__c') AND ParentId IN (:d.Id) WITH USER_MODE];
             Test.startTest();
-            EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id)));
+            if (accessLevel) EventBus.publishWithAccessLevel(new Evt__e(DocId__c = String.valueOf(d.Id)), AccessLevel.SYSTEM_MODE);
+            else EventBus.publish(new Evt__e(DocId__c = String.valueOf(d.Id)));
             Test.stopTest();
             List<Res__c> res = [SELECT Name FROM Res__c];
             out = 'direct' + direct + ';trig=' + (res.isEmpty() ? 'none' : res[0].Name);
@@ -28,6 +31,8 @@ private class ShareEventProbeTest {
         return out;
     }
 
+    @IsTest static void accessOwner() { System.assert(false, 'OUT:' + run(true, true)); }
+    @IsTest static void accessOther() { System.assert(false, 'OUT:' + run(false, true)); }
     @IsTest static void ownerShare() { System.assert(false, 'OUT:' + run(true)); }
     @IsTest static void otherShare() { System.assert(false, 'OUT:' + run(false)); }
 }
