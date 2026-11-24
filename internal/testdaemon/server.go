@@ -131,6 +131,8 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Server.Close drains these writes through WaitForRuntimeCacheWork.
+	daemon.backgroundDiskPublication = true
 
 	s := &Server{
 		daemon:        daemon,

@@ -50,15 +50,18 @@ type Options struct {
 	// RuntimeRESTAPIVersion selects the test org REST context, independently of
 	// project and component source API versions. Empty retains the default.
 	RuntimeRESTAPIVersion string
-	Filter                string
-	SelectedClasses       []string
-	SelectedMethod        string
-	LimitMode             vm.LimitMode
-	LimitCaps             vm.LimitCaps
-	LimitCapsSet          bool
-	TraceBlocked          bool
-	TraceAll              bool
-	SlowTestThresholdMS   int64
+	// BackgroundDiskPublication writes a freshly built runtime to the startup
+	// cache after the run returns; WaitForRuntimeCacheWork drains those writes.
+	BackgroundDiskPublication bool
+	Filter                    string
+	SelectedClasses           []string
+	SelectedMethod            string
+	LimitMode                 vm.LimitMode
+	LimitCaps                 vm.LimitCaps
+	LimitCapsSet              bool
+	TraceBlocked              bool
+	TraceAll                  bool
+	SlowTestThresholdMS       int64
 	// WorkSink, when set, receives each test's counted work after it runs.
 	// It is advisory and never changes a test outcome.
 	WorkSink        func(class, method string, total vm.WorkCounts, methods []vm.MethodWork)
@@ -400,6 +403,38 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	return report
 }
 
+// prepareRunSources builds one run's request source cache and runtime
+// generation. A run calls it again, from a clean state, when the build
+// beside the semantic gate panicked.
+func prepareRunSources(index typesys.Index, opts Options, runState *runExecution) (*sourceCache, runtimeGeneration, *typesys.SourceDigestSet, error) {
+	sources := newSourceCache()
+	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
+	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
+	// A matching snapshot selects the already-loaded project graph for runtime
+	// metadata generation and org setup; nil retains disk discovery. This keeps
+	// dependency roots from changing between indexing and generation. Native
+	// generated-metadata results are pinned at source API 62.0/67.0 by
+	// internal/apextest/testdata/conformance/metadata_field_names/org.tsv:
+	// custom-column, standard-column, entity, filtered-groups (anonymous/istest),
+	// and internal/apextest/testdata/conformance/setup_metadata/org.tsv:
+	// businessHours, duplicateRule, personDuplicateRule (named @IsTest).
+	// Each directory's ORG-RUN.txt records the capture; workspace graph routing
+	// itself is covered by TestMetadataGenerationReadsSiblingProjectCustomMetadata.
+	sources.seedProjectSnapshot(opts.ProjectSnapshot)
+	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	digests, err := authoritativeRuntimeSourceDigests(index, opts.SourceDigests)
+	if err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	generation, err := prepareRuntimeGeneration(index, digests, sources)
+	if err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	return sources, generation, digests, nil
+}
+
 // runCasesGated runs one generation of the project. gate is nil for the
 // complete project and set when the dependency-scoped compile gate reruns a
 // project subset without its invalid classes and their dependents.
@@ -427,51 +462,55 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		return compileErrorRun(cases, versionErr, started, opts)
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
-	sources := newSourceCache()
-	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
-	// A matching snapshot selects the already-loaded project graph for runtime
-	// metadata generation and org setup; nil retains disk discovery. This keeps
-	// dependency roots from changing between indexing and generation. Native
-	// generated-metadata results are pinned at source API 62.0/67.0 by
-	// internal/apextest/testdata/conformance/metadata_field_names/org.tsv:
-	// custom-column, standard-column, entity, filtered-groups (anonymous/istest),
-	// and internal/apextest/testdata/conformance/setup_metadata/org.tsv:
-	// businessHours, duplicateRule, personDuplicateRule (named @IsTest).
-	// Each directory's ORG-RUN.txt records the capture; workspace graph routing
-	// itself is covered by TestMetadataGenerationReadsSiblingProjectCustomMetadata.
-	sources.seedProjectSnapshot(opts.ProjectSnapshot)
-	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
-		return compileErrorRun(cases, err, started, opts)
-	}
-	var generation runtimeGeneration
-	var generationErr error
-	opts.SourceDigests, generationErr = authoritativeRuntimeSourceDigests(index, opts.SourceDigests)
-	if generationErr == nil {
-		generation, generationErr = prepareRuntimeGeneration(index, opts.SourceDigests, sources)
-	}
+	sources, generation, digests, generationErr := prepareRunSources(index, opts, runState)
 	if generationErr != nil {
 		return compileErrorRun(cases, generationErr, started, opts)
 	}
+	opts.SourceDigests = digests
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
+	generation.oneShot = opts.OneShotProcess
+	early := startRuntimeBesideGate(index, opts, sources, generation, runState)
+	// Every exit, a panic included, releases a build the run did not finish.
+	defer early.abandon()
 	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), gate, runState.counters)
 	if gateErr != nil {
+		early.abandon()
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
-	generation.oneShot = opts.OneShotProcess
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
+		early.abandon()
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
-	if runState.counters.enabled {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
-	} else {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
+	var besideGatePanic *runtimeBuildPanic
+	if early != nil {
+		runtimeKey, runtime, runtimeErr, besideGatePanic = early.finish(generation.controllerCompilation)
+	}
+	// A build beside the gate that panicked (logged with its stack) is
+	// replaced by the sequential build, exactly as a run without the build
+	// beside the gate does; a panic there fails the run as it always has.
+	if besideGatePanic != nil {
+		// Discard everything the failed build could have written for this
+		// request, then build from a clean state. Correctness over speed on
+		// this rare path.
+		var discardErr error
+		sources, generation, discardErr = discardFailedBesideGateBuild(index, opts, runState, generation)
+		if discardErr != nil {
+			return compileErrorRun(cases, discardErr, started, opts)
+		}
+	}
+	if early == nil || besideGatePanic != nil {
+		if runState.counters.enabled {
+			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
+		} else {
+			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationProjected(index, opts.SourceDigests, sources, &generation, runtimeExecutionProjection, runState.diskCacheEnabled)
+		}
 	}
 	if runtimeErr != nil {
 		return compileErrorRun(cases, runtimeErr, started, opts)
@@ -1542,6 +1581,16 @@ type runtimeGeneration struct {
 	// generation, offered to the Visualforce controller compile gate so page
 	// registration does not build and analyze the project a second time.
 	controllerCompilation *visualforce.ControllerCompilation
+	// awaitControllerCompilation, when set, supplies controllerCompilation
+	// once the semantic gate finishes, so the project compile can start
+	// beside the gate. ok false abandons the build; see errRuntimeAbandoned.
+	awaitControllerCompilation func() (compilation *visualforce.ControllerCompilation, ok bool)
+	// besideGateRejected, when set, reports without blocking that the gate
+	// rejected the index, so the build stops at its next compile phase.
+	besideGateRejected func() bool
+	// besideGateStageHook is testOnlyRuntimeBesideGateStageHook captured for
+	// a build beside the gate; nil outside package tests.
+	besideGateStageHook func(stage string)
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -1948,6 +1997,11 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if prepared != nil && prepared.awaitControllerCompilation != nil {
+			if _, ok := prepared.awaitControllerCompilation(); !ok {
+				return "", zero, errRuntimeAbandoned
+			}
+		}
 		if sources != nil && sources.privateRuntime {
 			return "", zero, err
 		}
@@ -1984,8 +2038,20 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	} else {
 		generation = *prepared
 	}
+	// A build started beside the semantic gate touches no shared cache state
+	// until the gate accepts the index: accepted blocks for the gate's result.
+	accepted := func() bool {
+		if generation.awaitControllerCompilation == nil {
+			return true
+		}
+		_, ok := generation.awaitControllerCompilation()
+		return ok
+	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
+		if !accepted() {
+			return key, zero, errRuntimeAbandoned
+		}
 		if !sources.privateRuntime {
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -1994,11 +2060,24 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
 	key := generation.key
-	if !sources.privateRuntime {
-		rememberRuntimeCacheRoot(index, key)
+	// rememberRoot records the cache root once the index is accepted; a build
+	// beside the gate does so when it reaches page registration.
+	rememberRoot := func() {
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+		}
+	}
+	if generation.awaitControllerCompilation == nil {
+		rememberRoot()
 	}
 	if !sources.privateRuntime {
 		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			if !accepted() {
+				return key, zero, errRuntimeAbandoned
+			}
+			if generation.awaitControllerCompilation != nil {
+				rememberRoot()
+			}
 			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
 			if err := sources.validateCapturedSourceGeneration(); err != nil {
 				evictSnapshotCaches(key)
@@ -2014,6 +2093,12 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
+				if !accepted() {
+					return key, zero, errRuntimeAbandoned
+				}
+				if generation.awaitControllerCompilation != nil {
+					rememberRoot()
+				}
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
 				if err := sources.validateCapturedSourceGeneration(); err != nil {
 					evictSnapshotCaches(key)
@@ -2032,21 +2117,52 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			}
 		}
 	}
+	// rejected stops a build beside the gate between compile phases once the
+	// gate has rejected the index; the sequential build never compiled one.
+	rejected := func() bool {
+		return generation.besideGateRejected != nil && generation.besideGateRejected()
+	}
+	stage := func(name string) {
+		if generation.besideGateStageHook != nil {
+			generation.besideGateStageHook(name)
+		}
+	}
 	if digests != nil {
 		if err := preloadRuntimeSources(index, sources); err != nil {
 			return key, zero, err
 		}
 	}
-
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	methods := compileProjectMethods(index, sources)
+	stage("after_methods")
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	classRuntime := prepareProjectClassRuntime(index, methods, sources)
 	classes := classRuntime.classes
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	if rejected() {
+		return key, zero, errRuntimeAbandoned
+	}
 	org, orgErr := orgFromIndexWithError(index, sources)
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	stage("after_org")
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+		rememberRoot()
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -2094,10 +2210,18 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
-			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+		publish := func() {
+			if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
+				persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
+			}
+		}
+		if sources.backgroundDiskPublication {
+			publishInBackground(filepath.Clean(strings.TrimSpace(index.Project.Root)), publish)
+		} else {
+			publish()
 		}
 	}
+	stage("after_publish")
 	return key, projected, nil
 }
 
@@ -2219,7 +2343,14 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
+	controllerCompilation := generation.controllerCompilation
+	if generation.awaitControllerCompilation != nil {
+		var ok bool
+		if controllerCompilation, ok = generation.awaitControllerCompilation(); !ok {
+			return key, zero, errRuntimeAbandoned
+		}
+	}
+	pageNames := visualforcePageNamesWithSources(index, controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
@@ -4096,6 +4227,8 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
+	// backgroundDiskPublication is Options.BackgroundDiskPublication.
+	backgroundDiskPublication   bool
 	mu                          sync.RWMutex
 	expectedDigests             *typesys.SourceDigestSet
 	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
@@ -5440,18 +5573,22 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 		DomainURL string
 		Eager     bool
 	}{features, domainURL, eagerStandardSpread.Load()})
-	shapedStandardApexTestOrgCache.mu.Lock()
-	if shapedStandardApexTestOrgCache.key != string(key) {
-		org := standardApexTestOrgForRun()
-		org.APIVersion = storage.DefaultRESTAPIVersion
-		org.DomainURL = domainURL
-		storage.ApplyProjectOrgShape(&org, features)
-		shapedStandardApexTestOrgCache.key = string(key)
-		shapedStandardApexTestOrgCache.org = org
-		releaseStandardSeedMemory()
-	}
-	seed := shapedStandardApexTestOrgCache.org
-	shapedStandardApexTestOrgCache.mu.Unlock()
+	// The deferred unlock keeps a panic while building the seed from leaving
+	// the cache locked for every later run.
+	seed := func() storage.OrgState {
+		shapedStandardApexTestOrgCache.mu.Lock()
+		defer shapedStandardApexTestOrgCache.mu.Unlock()
+		if shapedStandardApexTestOrgCache.key != string(key) {
+			org := standardApexTestOrgForRun()
+			org.APIVersion = storage.DefaultRESTAPIVersion
+			org.DomainURL = domainURL
+			storage.ApplyProjectOrgShape(&org, features)
+			shapedStandardApexTestOrgCache.key = string(key)
+			shapedStandardApexTestOrgCache.org = org
+			releaseStandardSeedMemory()
+		}
+		return shapedStandardApexTestOrgCache.org
+	}()
 	return seed.CloneRuntimeFrozenDefinition()
 }
 
@@ -6324,7 +6461,7 @@ func referencedSyntheticFieldSetReferences(org *storage.OrgState, index typesys.
 		seenObjects := make(map[string]bool)
 		var names []string
 		var objectNames []string
-		fieldSetMatches := apexFieldSetConstantPattern.FindAllStringSubmatch(source, -1)
+		fieldSetMatches := fieldSetConstantMemo.get(source, fieldSetConstantMatches)
 		for _, match := range fieldSetMatches {
 			if len(match) != 3 || hasPrefixFold(match[1], "error") {
 				continue

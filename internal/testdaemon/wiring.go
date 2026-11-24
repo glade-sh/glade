@@ -291,7 +291,7 @@ func (d *Daemon) runRequestV1Attempt(
 			progress(event)
 		}
 	}
-	run := apextest.RunCasesContext(ctx, generation.index, optionsForGeneration(options, generation), cases)
+	run := apextest.RunCasesContext(ctx, generation.index, d.optionsForGeneration(options, generation), cases)
 	summary := run.Summary()
 	if allowRetry && summary.CompileErrors > 0 && summary.CompileErrors == summary.Total && ctx.Err() == nil {
 		if _, ok := d.refreshStaleGeneration(generation); ok {
