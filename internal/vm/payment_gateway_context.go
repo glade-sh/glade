@@ -5,7 +5,9 @@ import "strings"
 // These constructor shapes were observed in anonymous Apex at APIs 62 and 67.
 // Linked user classes do not inherit this platform-only restriction.
 func (vm *VM) paymentRequestOutsideTestError(typeName string, args []Value, namedArgs map[string]Value) error {
-	if vm.testContext != nil || len(namedArgs) != 0 || !hasTypePrefixFold(typeName, "commercepayments") {
+	if vm.testContext != nil || vm.currentClass != "" || vm.currentMethod.ClassName != "" || vm.currentTrigger ||
+		(vm.currentMethod.APIVersion != "62.0" && vm.currentMethod.APIVersion != "67.0") ||
+		len(namedArgs) != 0 || !hasTypePrefixFold(typeName, "commercepayments") {
 		return nil
 	}
 	names := map[string]struct {
