@@ -11,6 +11,7 @@ import (
 // lookup contract while the ID spelling is made equivalent.
 func TestFlowLookupParentReferenceIDFormsAndControls(t *testing.T) {
 	org := storage.NewOrgState()
+	org.APIVersion = "67.0"
 	parentID := storage.ID("a00000000000001")
 	targetID := storage.ID("b00000000000001")
 	parentDef := storage.ObjectDefinition{APIName: "Parent__c", Fields: map[string]storage.Field{"Ref__c": {APIName: "Ref__c", Type: storage.FieldReference, ReferenceTo: []string{"Target__c"}}, "Text__c": {APIName: "Text__c", Type: storage.FieldString}}}
@@ -90,5 +91,12 @@ func TestFlowLookupParentReferenceUncapturedVersionMatchesMain(t *testing.T) {
 	engine := NewEngine(&org)
 	if _, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef); ok {
 		t.Fatal("uncaptured API version differs from main exact-key lookup")
+	}
+	if _, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef, "62.0"); !ok {
+		t.Fatal("captured Flow version did not use the ID-form rule")
+	}
+	org.APIVersion = "67.0"
+	if _, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef, "68.0"); ok {
+		t.Fatal("uncaptured Flow version inherited the org version")
 	}
 }
