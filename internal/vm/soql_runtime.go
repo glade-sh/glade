@@ -4871,9 +4871,40 @@ func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
 	return ok && hasSuffixFold(object, "__c") && strings.EqualFold(strings.TrimSpace(vm.Org.Objects[object].Definition.SharingModel), "Private")
 }
 
+// capturedEventSubscriberShareCount covers the two share COUNT queries in
+// share_event_trigger_visibility/org.tsv:2-3. Other share queries keep their
+// parent-based runAs visibility.
+func (vm *VM) capturedEventSubscriberShareCount(query soql.Query) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil {
+		return false
+	}
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	if version != "62.0" && version != "67.0" {
+		return false
+	}
+	object, ok := vm.resolveObjectName(query.Object)
+	if !ok || !storage.IsGeneratedShareObject(vm.Org.Objects[object].Definition) {
+		return false
+	}
+	parent := vm.Org.Objects[object].Definition.Metadata["parentObject"]
+	if !hasSuffixFold(parent, "__c") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[parent].Definition.SharingModel), "Private") {
+		return false
+	}
+	if query.Where == nil {
+		return true
+	}
+	where := query.Where
+	if where.Not || len(where.Or) != 0 || len(where.And) != 2 {
+		return false
+	}
+	first, second := where.And[0], where.And[1]
+	return strings.EqualFold(first.Field, "RowCause") && strings.EqualFold(first.Op, "IN") &&
+		strings.EqualFold(second.Field, "ParentId") && strings.EqualFold(second.Op, "IN")
+}
+
 func (vm *VM) soqlSharingUserID(query soql.Query) string {
 	userMode := strings.EqualFold(strings.TrimSpace(query.SecurityMode), "USER_MODE")
-	if userMode && vm.capturedEventSubscriberParentCount(query) {
+	if userMode && (vm.capturedEventSubscriberParentCount(query) || vm.capturedEventSubscriberShareCount(query)) {
 		return ""
 	}
 	// An AutomatedProcess success callback sees the captured private

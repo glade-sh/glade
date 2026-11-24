@@ -89,19 +89,9 @@ func (vm *VM) generatedShareParentRecord(objectName string, record storage.Recor
 	return parentObject, parent, true
 }
 
-// shareTableFollowsParent reports whether share rows take the visibility of
-// their parent record. The captured rows cover a runAs user. An event trigger
-// runs as the Automated Process user even inside a runAs block, and native
-// reads every share row there (share_event_trigger_visibility), so the rule
-// does not apply to it.
+// Share rows follow their parent for ordinary runAs visibility.
 func (vm *VM) shareTableFollowsParent() bool {
-	if vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
-		return false
-	}
-	version := vm.currentSourceExecutionPolicy().APIVersion
-	return vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger ||
-		!strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") ||
-		(version != "62.0" && version != "67.0")
+	return vm.testContext != nil && vm.testContext.RunAsDepth > 0
 }
 
 func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, userID string) bool {
