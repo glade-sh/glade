@@ -516,6 +516,18 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 	}
 	if runtimeErr != nil {
+		// The gate accepted the project. An interrupted speculative build
+		// has no runtime to execute, but its selected cases still belong
+		// in the same cancellation report as a sequential run.
+		if early != nil && runtimeErr == ctx.Err() {
+			run := unexecutedCaseRun(cases, started, opts, "pass", func(_ int, tc TestCase) testreport.Case {
+				return canceledCase(tc, runtimeErr)
+			})
+			if opts.CodeCoverage || opts.CoverageGate != "" {
+				newCoverageSession().attach(&run, coverageProject(index, sources), opts.CoverageGate, opts.CoverageSynchronous)
+			}
+			return run
+		}
 		return compileErrorRun(cases, runtimeErr, started, opts)
 	}
 	var testCompileStarted time.Time
@@ -727,17 +739,12 @@ assemble:
 }
 
 func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts Options) testreport.Run {
-	run := testreport.Run{
-		Name:       "glade test",
-		DurationMS: time.Since(started).Milliseconds(),
-	}
 	if len(cases) == 0 {
 		cases = []TestCase{{
 			ClassName:  "project",
 			MethodName: "compile",
 		}}
 	}
-	suiteIndexes := make(map[string]int)
 	fullMessage := compileErr.Error()
 	// Only the dependency diagnostic list is shortened on later cases. Any
 	// other error (snapshot, version, runtime, generation, gate, setup or test
@@ -747,6 +754,32 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 	if errors.As(compileErr, &listed) {
 		repeatedMessage = compileErrorRepeatedMessage(listed.lines, cases[0])
 	}
+	return unexecutedCaseRun(cases, started, opts, "fail", func(i int, testCase TestCase) testreport.Case {
+		message := fullMessage
+		if i > 0 {
+			message = repeatedMessage
+		}
+		return testreport.Case{
+			ClassName:          testCase.ClassName,
+			MethodName:         testCase.MethodName,
+			SelectedSourceFile: testCase.File,
+			Status:             testreport.StatusCompileError,
+			Problem:            problem("CompileError", message, testCase),
+		}
+	})
+}
+
+// unexecutedCaseRun reports the compile outcome followed by one terminal
+// result per selection, preserving suite order and empty selections.
+func unexecutedCaseRun(cases []TestCase, started time.Time, opts Options, compileStatus string, result func(int, TestCase) testreport.Case) testreport.Run {
+	run := testreport.Run{
+		Name:       "glade test",
+		DurationMS: time.Since(started).Milliseconds(),
+	}
+	if opts.Progress != nil {
+		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: run.DurationMS, Status: compileStatus})
+	}
+	suiteIndexes := make(map[string]int)
 	for i, testCase := range cases {
 		index, ok := suiteIndexes[testCase.ClassName]
 		if !ok {
@@ -754,27 +787,12 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 			suiteIndexes[testCase.ClassName] = index
 			run.Suites = append(run.Suites, testreport.Suite{Name: testCase.ClassName})
 		}
-		message := fullMessage
-		if i > 0 {
-			message = repeatedMessage
-		}
-		result := testreport.Case{
-			ClassName:          testCase.ClassName,
-			MethodName:         testCase.MethodName,
-			SelectedSourceFile: testCase.File,
-			Status:             testreport.StatusCompileError,
-			Problem:            problem("CompileError", message, testCase),
-		}
-		run.Suites[index].Cases = append(run.Suites[index].Cases, result)
-	}
-	if opts.Progress != nil {
-		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "fail"})
-		for _, testCase := range cases {
+		c := result(i, testCase)
+		run.Suites[index].Cases = append(run.Suites[index].Cases, c)
+		if opts.Progress != nil {
 			reportProgress(opts, TestProgress{
-				Event:      "test_done",
-				ClassName:  testCase.ClassName,
-				MethodName: testCase.MethodName,
-				Status:     string(testreport.StatusCompileError),
+				Event: "test_done", ClassName: testCase.ClassName, MethodName: testCase.MethodName,
+				Status: string(c.Status),
 			})
 		}
 	}
