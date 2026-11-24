@@ -720,7 +720,7 @@ func frontendInputIdentity(p project.Project, s schema.Schema, previous *SourceD
 }
 
 func captureFrontendInputs(p project.Project, s schema.Schema, artifacts *BuildArtifacts, previous *SourceDigestSet, captured *FrontendInputs) (*FrontendInputs, error) {
-	return captureFrontendInputsWithReader(p, s, artifacts, previous, captured, os.ReadFile)
+	return captureFrontendInputsWithReader(p, s, artifacts, previous, captured, p.ReadFile)
 }
 
 func captureFrontendInputsWithReader(p project.Project, s schema.Schema, artifacts *BuildArtifacts, previous *SourceDigestSet, captured *FrontendInputs, readFile func(string) ([]byte, error)) (*FrontendInputs, error) {
