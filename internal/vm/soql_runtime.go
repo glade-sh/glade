@@ -4856,7 +4856,7 @@ func (vm *VM) polymorphicSOQLNameFieldRelationship(objectName, expression string
 // by Id in event_trigger_parent_visibility/org.tsv:2-3. Other query shapes and
 // source versions retain their existing sharing behavior.
 func (vm *VM) capturedEventSubscriberParentCount(query soql.Query) bool {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Having != nil || query.Where == nil {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.eventSubscriberTriggerDepth == 0 || !vm.currentTrigger || !strings.EqualFold(vm.currentUserInfoField("UserType", ""), "AutomatedProcess") || !query.Count || len(query.Aggregates) != 1 || !strings.EqualFold(query.Aggregates[0].Func, "COUNT") || query.Aggregates[0].Field != "" || len(query.GroupBy) != 0 || query.Having != nil || query.Where == nil {
 		return false
 	}
 	version := vm.currentSourceExecutionPolicy().APIVersion
