@@ -8,6 +8,13 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func qualifyEventParentUnit(machine *VM, event Value, version string) {
+	machine.Classes["EventParentUnit"] = Class{Name: "EventParentUnit", IsTest: true, APIVersion: version}
+	machine.testExecutionEntry = &testExecutionEntry{className: "EventParentUnit"}
+	event.Fields["EventUuid"] = String("event-unit")
+	machine.testContext.EventParentPublishUUIDs = []string{"event-unit"}
+}
+
 // The native event carries the publisher-owned parent's ID. Unrelated records
 // and share rows have no captured outcome and retain the ordinary user filter.
 func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
@@ -22,6 +29,7 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 	event := Object("Signal__e")
 	event.Fields["ParentRef__c"] = String("a00000000000001")
 	event.Fields["CreatedById"] = String("005000000000001")
+	qualifyEventParentUnit(machine, event, "62.0")
 	machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
 	users := machine.Org.Objects["User"]
 	publisher := users.Records["005000000000001"]
@@ -37,6 +45,11 @@ func TestEventSubscriberUnrelatedRecordSharingNeighbor(t *testing.T) {
 	if got, want := machine.soqlSharingUserID(query), machine.currentUserID(); got != want {
 		t.Fatalf("unrelated parent sharing user = %q, want %q", got, want)
 	}
+	delete(parents.Records, "a00000000000002")
+	machine.Org.Objects["Widget__Share"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{
+		"a10000000000001": {ID: "a10000000000001", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "UserOrGroupId": storage.IDValue(publisher.ID), "RowCause": storage.StringValue("Owner"), "AccessLevel": storage.StringValue("All")}},
+		"a10000000000002": {ID: "a10000000000002", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "UserOrGroupId": storage.IDValue(publisher.ID), "RowCause": storage.StringValue("Reason__c"), "AccessLevel": storage.StringValue("Read")}},
+	}}
 	query.Where.Value = storage.IDValue(parent.ID)
 	if got := machine.soqlSharingUserID(query); got != "" {
 		t.Fatalf("captured parent sharing user = %q, want bypass", got)
@@ -115,6 +128,7 @@ func TestEventSecondParentCapturedScope(t *testing.T) {
 			event := Object("Signal__e")
 			event.Fields["ParentRef__c"] = String("a00000000000001")
 			event.Fields["CreatedById"] = String(string(publisher.ID))
+			qualifyEventParentUnit(machine, event, "62.0")
 			machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
 			shares := storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{}}
 			for i, parent := range []storage.ID{"a00000000000001", "a00000000000002"} {
@@ -141,6 +155,7 @@ func TestEventSecondParentCapturedScope(t *testing.T) {
 			query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000002")}}
 			for version := 50; version <= 68; version++ {
 				machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
+				qualifyEventParentUnit(machine, event, machine.currentMethod.APIVersion)
 				want := change == "captured" && (version == 62 || version == 67)
 				if got := machine.capturedEventSubscriberCount(query); got != want {
 					t.Errorf("API %d: second parent scope = %t, want %t", version, got, want)
@@ -177,6 +192,7 @@ func TestEventReferencedParentShapeNeighbors(t *testing.T) {
 			event := Object("Signal__e")
 			event.Fields["ParentRef__c"] = String("a00000000000001")
 			event.Fields["CreatedById"] = String(string(publisher.ID))
+			qualifyEventParentUnit(machine, event, "62.0")
 			machine.triggerGlobals = map[string]Value{"Trigger.new": List(event)}
 			shares := storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__Share", Metadata: map[string]string{"kind": "generatedShare", "parentObject": "Widget__c"}}, Records: map[storage.ID]storage.Record{}}
 			for i, parent := range []storage.ID{"a00000000000001", "a00000000000002"} {
@@ -203,6 +219,7 @@ func TestEventReferencedParentShapeNeighbors(t *testing.T) {
 			query := soql.Query{Object: "Widget__c", Count: true, SecurityMode: "USER_MODE", Aggregates: []soql.Aggregate{{Func: "COUNT"}}, Where: &soql.Condition{Field: "Id", Op: "=", Value: storage.IDValue("a00000000000001")}}
 			for version := 50; version <= 68; version++ {
 				machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
+				qualifyEventParentUnit(machine, event, machine.currentMethod.APIVersion)
 				want := change == "captured" && (version == 62 || version == 67)
 				got := machine.soqlSharingUserID(query)
 				if want && got != "" || !want && got != machine.currentUserID() {

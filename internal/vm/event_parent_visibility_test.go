@@ -62,10 +62,11 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	parent := parents.Records["a00000000000002"]
 	parent.System.CreatedByID = "005000000000002"
 	parents.Records[parent.ID] = parent
+	delete(parents.Records, "a00000000000001")
 	shares := machine.Org.Objects["Widget__Share"]
 	shares.Records = map[storage.ID]storage.Record{
-		"a10000000000001": {ID: "a10000000000001", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Owner")}},
-		"a10000000000002": {ID: "a10000000000002", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Reason__c")}},
+		"a10000000000001": {ID: "a10000000000001", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Owner"), "UserOrGroupId": storage.IDValue(publisher.ID), "AccessLevel": storage.StringValue("All")}},
+		"a10000000000002": {ID: "a10000000000002", Fields: map[string]storage.Value{"ParentId": storage.IDValue(parent.ID), "RowCause": storage.StringValue("Reason__c"), "UserOrGroupId": storage.IDValue(publisher.ID), "AccessLevel": storage.StringValue("Read")}},
 	}
 	machine.Org.Objects["Widget__Share"] = shares
 	event := Object("Signal__e")
@@ -78,6 +79,7 @@ func TestEventParentVisibilityVersionScope(t *testing.T) {
 	shareQuery.Where = nil
 	for version := 50; version <= 68; version++ {
 		machine.currentMethod.APIVersion = fmt.Sprintf("%d.0", version)
+		qualifyEventParentUnit(machine, event, machine.currentMethod.APIVersion)
 		if got, want := machine.capturedEventSubscriberCount(query), version == 62 || version == 67; got != want {
 			t.Errorf("API %d: captured parent shape=%t, want %t", version, got, want)
 		}
