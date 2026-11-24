@@ -13,6 +13,37 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// setFileDigestClockForTesting changes the clock used by digest validation.
+func setFileDigestClockForTesting(now func() time.Time) func() {
+	previous := fileDigestNow
+	fileDigestNow = now
+	return func() { fileDigestNow = previous }
+}
+
+func TestFileDigestClockRestoreDuringRead(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Clock.cls")
+	if err := os.WriteFile(path, []byte("public class Clock {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	start, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		<-start
+		for range 1000 {
+			restore := setFileDigestClockForTesting(time.Now)
+			restore()
+		}
+	}()
+	close(start)
+	for range 50 {
+		if _, err := currentFileDigest(path); err != nil {
+			<-done
+			t.Fatal(err)
+		}
+	}
+	<-done
+}
+
 // trustedClock makes every file look old enough to trust, as in a daemon that
 // validates sources edited long ago.
 func trustedClock(t *testing.T) {

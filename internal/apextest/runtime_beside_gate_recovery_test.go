@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 	"weak"
 
 	"github.com/glade-sh/glade/internal/startupcache"
@@ -144,6 +145,7 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 			}
 			for n := 0; ; n++ {
 				undo := SetFileDigestReadHookForTesting(func(string) {})
+				restoreClock := setFileDigestClockForTesting(time.Now)
 				restore := setSnapshotValidationHookForTesting(func(string) {})
 				InvalidateRuntimeCaches()
 				// Exercise the same nil-prefix fallback as the prefix neighbor.
@@ -159,6 +161,7 @@ func TestRuntimeBesideGateNeighborStress(t *testing.T) {
 				shells[(i+n)%len(shells)].BuiltClass()
 				runtime.KeepAlive(clone)
 				restore()
+				restoreClock()
 				undo()
 				select {
 				case <-stop:
