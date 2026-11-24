@@ -243,16 +243,16 @@ export class GladeTestController {
 }
 
 function selectedItems(collection: vscode.TestItemCollection, include?: readonly vscode.TestItem[], exclude?: readonly vscode.TestItem[]): vscode.TestItem[] {
-  const excluded = new Set(exclude || []);
-  const included = include === undefined ? undefined : new Set(include);
+  const excluded = new Set((exclude || []).map((item) => item.id));
+  const included = include === undefined ? undefined : new Set(include.map((item) => item.id));
   const queue: vscode.TestItem[] = [];
   const visit = (item: vscode.TestItem, selected: boolean, blocked: boolean): void => {
-    blocked = blocked || excluded.has(item);
-    selected = selected || included === undefined || included.has(item);
+    blocked = blocked || excluded.has(item.id);
+    selected = selected || included === undefined || included.has(item.id);
     if (blocked) return;
     const children = collectionItems(item.children);
     const containsExclusion = (candidate: vscode.TestItem): boolean =>
-      excluded.has(candidate) || collectionItems(candidate.children).some(containsExclusion);
+      excluded.has(candidate.id) || collectionItems(candidate.children).some(containsExclusion);
     if (selected && !children.some(containsExclusion)) {
       queue.push(item);
     } else {

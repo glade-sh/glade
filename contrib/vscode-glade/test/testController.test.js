@@ -13,7 +13,7 @@ class Item {
 }
 const events = [];
 const controller = { items: new Collection(), createRunProfile() {}, createTestRun() { return { started() {}, passed: item => events.push(['passed', item.id]), failed: (item, msg) => events.push(['failed', item.id, msg.message]), errored: (item, msg) => events.push(['errored', item.id, msg.message]), end() {} }; } };
-const vscode = { tests: { createTestController: () => controller }, TestRunProfileKind: { Run: 1, Debug: 2 }, TestMessage: class { constructor(message) { this.message = message; } }, workspace: {}, window: {} };
+const vscode = { CancellationTokenSource: class { constructor() { this.token = { isCancellationRequested: false }; } dispose() {} }, TestRunRequest: class { constructor(include) { this.include = include; } }, tests: { createTestController: () => controller }, TestRunProfileKind: { Run: 1, Debug: 2 }, TestMessage: class { constructor(message) { this.message = message; } }, workspace: {}, window: {} };
 Module._load = function(request, parent, isMain) { return request === 'vscode' ? vscode : originalLoad.call(this, request, parent, isMain); };
 const runner = require('../out/tests/runner');
 const { GladeTestController } = require('../out/tests/controller');
@@ -49,4 +49,16 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
   await run([cls], [cls]); assert.deepStrictEqual(calls, []);
   await run([], []); assert.deepStrictEqual(calls, []);
   await run(undefined, []); assert.deepStrictEqual(calls, [['Example', undefined]]);
+  report = makeReport(suite([row('a', 'fail', 'failure')]));
+  await run([a]);
+  const refreshedClass = new Item('Example');
+  const refreshedA = new Item('Example.a');
+  refreshedClass.children.add(refreshedA);
+  controller.items.replace([refreshedClass]);
+  instance.itemData.set(refreshedClass, { className: 'Example' });
+  instance.itemData.set(refreshedA, { className: 'Example', methodName: 'a' });
+  calls.length = 0; events.length = 0;
+  await instance.runFailed();
+  assert.deepStrictEqual(calls, [['Example', 'a']]);
+  assert(events.some(e => e[0] === 'failed' && e[1] === refreshedA.id));
 })().catch(error => { console.error(error); process.exitCode = 1; });
