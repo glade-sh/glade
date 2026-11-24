@@ -83,9 +83,17 @@ func TestEventParentPublicationAndVersionNeighbors(t *testing.T) {
 				t.Fatalf("project: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
 			results := (&shareMdtProject{index: index, api: tc.classAPI}).runTestClass(t, "ShareEventProbeTest")
+			allShares := "2"
+			switch tc.route {
+			case "extraParents":
+				allShares = "4"
+			case "extraShare":
+				allShares = "3"
+			}
+			want := "System.AssertException: Assertion Failed: OUT:direct1;trig=" + tc.want + ";rsn1;all" + allShares
 			for _, name := range []string{"ownerShare", "otherShare"} {
-				if result, ok := results[name]; !ok || !strings.Contains(result, "trig="+tc.want+";") {
-					t.Errorf("%s = %q; want %s", name, result, tc.want)
+				if result, ok := results[name]; !ok || result != want {
+					t.Errorf("%s = %q; want %q", name, result, want)
 				}
 			}
 		})
