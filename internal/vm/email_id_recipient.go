@@ -123,6 +123,29 @@ func (vm *VM) capturedOrgWideEmailContext() bool {
 	return known && major >= 62 && major <= 67
 }
 
+// The sender rows cover a single explicit recipient, with an optional current
+// user target, and an active-template send to the current user. Other message
+// shapes keep their previous validation behavior.
+func (vm *VM) capturedOrgWideEmailShape(message Value) bool {
+	if message.Type != "Messaging.SingleEmailMessage" ||
+		len(message.Fields["ccAddresses"].List) != 0 || len(message.Fields["bccAddresses"].List) != 0 ||
+		emailFieldString(message, "whatId") != "" {
+		return false
+	}
+	target := storage.ID(emailFieldString(message, "targetObjectId"))
+	template := emailFieldString(message, "templateId")
+	toCount := len(message.Fields["toAddresses"].List)
+	if toCount == 1 && target == "" {
+		return true
+	}
+	current := storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID))
+	if target == "" || !storage.IDsEqual(target, current) {
+		return false
+	}
+	return (toCount == 1 && template == "") ||
+		(toCount == 0 && template != "" && !emailFieldBool(message, "saveAsActivity"))
+}
+
 func (vm *VM) singleNullEmailAddressObservation(message, address Value) bool {
 	return vm.plainSingleEmailTestObservation(message) && address.Kind == ValueNull &&
 		len(message.Fields["toAddresses"].List) == 1 && emailFieldString(message, "targetObjectId") == ""
