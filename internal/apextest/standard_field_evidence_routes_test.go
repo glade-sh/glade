@@ -77,11 +77,6 @@ func TestStandardFieldEvidenceCommerceProjectRoutes(t *testing.T) {
 
 func runStandardFieldEvidenceRoutes(t *testing.T, root, api, body string) {
 	t.Helper()
-	runStandardFieldEvidenceRoutesWithNamed(t, root, api, body, true)
-}
-
-func runStandardFieldEvidenceRoutesWithNamed(t *testing.T, root, api, body string, includeNamed bool) {
-	t.Helper()
 	const class = "OwnedEvidenceTest"
 	namedPath := filepath.Join(root, "force-app/main/default/classes/OwnedEvidenceNamed.cls")
 	writeFile(t, namedPath, "public class OwnedEvidenceNamed { public static void sample(){"+body+"} }")
@@ -114,14 +109,12 @@ func runStandardFieldEvidenceRoutesWithNamed(t *testing.T, root, api, body strin
 			if _, err := runner.execute(program); err != nil {
 				t.Fatal(err)
 			}
-			if includeNamed {
-				named, err := vm.CompileAnonymousWithOptions("OwnedEvidenceNamed.sample();", vm.CompileOptions{APIVersion: api})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if _, err := runner.execute(named); err != nil {
-					t.Fatal(err)
-				}
+			named, err := vm.CompileAnonymousWithOptions("OwnedEvidenceNamed.sample();", vm.CompileOptions{APIVersion: api})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := runner.execute(named); err != nil {
+				t.Fatal(err)
 			}
 			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: "sample", NoDiskCache: true, Parallelism: 1})
 			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem != nil {

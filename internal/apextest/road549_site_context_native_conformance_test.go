@@ -6,6 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestSiteContextRoutesNativeConformance(t *testing.T) {
@@ -36,11 +40,7 @@ func TestSiteContextRoutesNativeConformance(t *testing.T) {
 			t.Run(state+"/"+api, func(t *testing.T) {
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
-				features := "[]"
-				if state == "present" {
-					features = "[Sites]"
-				}
-				writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: "+features+"\n")
+				writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Sites]\n")
 				count := 0
 				if state == "present" {
 					count = 1
@@ -68,8 +68,71 @@ func TestSiteContextRoutesNativeConformance(t *testing.T) {
 						t.Fatalf("unsupported native observation %q", expected)
 					}
 				}
-				runStandardFieldEvidenceRoutesWithNamed(t, root, api, body, false)
+				runSiteContextRoutes(t, root, api, state, body)
 			})
 		}
+	}
+}
+
+// Exercise the captured anonymous and @IsTest routes against independent
+// clones of the same Sites-enabled org. The project runner otherwise rebuilds
+// the seeded Site, so the no-record shape must be supplied explicitly.
+func runSiteContextRoutes(t *testing.T, root, api, state, body string) {
+	t.Helper()
+	const class = "SiteContextEvidenceTest"
+	path := filepath.Join(root, "force-app/main/default/classes", class+".cls")
+	writeFile(t, path, "@IsTest private class "+class+" { @IsTest static void sample(){System.assertEquals(true, Test.isRunningTest());"+body+"} }")
+	writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+	index := loadTestIndex(t, root)
+	anonymous := "System.assertEquals(false, Test.isRunningTest());" + body
+	if analysis := sema.AnalyzeAnonymous(index, anonymous, api); index.HasErrors() || analysis.HasErrors() {
+		t.Fatalf("anonymous compilation: %v %v", index.Diagnostics, analysis.Diagnostics)
+	}
+	if analysis := sema.Analyze(index); analysis.HasErrors() {
+		t.Fatalf("test compilation: %v", analysis.Diagnostics)
+	}
+	org := orgFromIndex(index)
+	if !org.HasFeature("Sites") {
+		t.Fatal("Sites feature is not enabled")
+	}
+	if state == "absent" {
+		site := org.Objects["Site"]
+		site.SetRecords(map[storage.ID]storage.Record{})
+		site.Indexes = nil
+		site.RecordsShared = false
+		site.IndexesShared = false
+		org.Objects["Site"] = site
+	}
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	program, err := vm.CompileAnonymousWithOptions(anonymous, vm.CompileOptions{APIVersion: api})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := Discover(index, Options{SelectedClasses: []string{class}, SelectedMethod: "sample"})
+	if len(cases) != 1 {
+		t.Fatalf("discovered %d tests, want 1", len(cases))
+	}
+	methods, methodErrors := compileTestMethods(cases)
+	programs, programErrors := compileTestInvokePrograms(cases)
+	tc := cases[0]
+	key := testCaseKey(tc)
+	if methodErrors[key] != nil || programErrors[key] != nil {
+		t.Fatalf("test compile: %v %v", methodErrors[key], programErrors[key])
+	}
+	for _, temperature := range []string{"cold", "warm"} {
+		t.Run(temperature, func(t *testing.T) {
+			if _, err := runner.execute(program); err != nil {
+				t.Fatalf("anonymous: %v", err)
+			}
+			machine := runner.newMachine()
+			if err := machine.RegisterMethod(methods[key]); err != nil {
+				t.Fatal(err)
+			}
+			machine.EnableTestContext()
+			machine.SetTestSeeAllData(tc.SeeAllData)
+			if _, err := machine.ExecuteInClass(programs[key], tc.ClassName); err != nil {
+				t.Fatalf("@IsTest: %v", err)
+			}
+		})
 	}
 }
