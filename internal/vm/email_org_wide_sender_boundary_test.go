@@ -57,3 +57,51 @@ Messaging.SendEmailResult result = Messaging.sendEmail(new Messaging.SingleEmail
 		})
 	}
 }
+
+// Main accepts a missing sender for these overloads. Compare with the same
+// message without a sender so each overload keeps that behavior independently.
+func TestSendEmailOrgWideSenderUncapturedOverloadsMatchMain(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		extra []Value
+	}{
+		{name: "default"},
+		{name: "all or nothing", extra: []Value{Bool(true)}},
+		{name: "send options", extra: []Value{Object("Messaging.SendEmailOptions")}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			send := func(sender string) (Value, error) {
+				org := storage.NewOrgState()
+				storage.EnsureStandardObject(&org, "OrgWideEmailAddress")
+				object := org.Objects["OrgWideEmailAddress"]
+				const other = storage.ID("0D2000000000002")
+				object.Records = map[storage.ID]storage.Record{other: {ID: other}}
+				org.Objects["OrgWideEmailAddress"] = object
+				machine := New(nil)
+				machine.SetOrg(&org)
+				message := newSingleEmailMessage()
+				message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+				message.Fields["subject"] = String("probe")
+				message.Fields["plainTextBody"] = String("probe")
+				if sender != "" {
+					message.Fields["orgWideEmailAddressId"] = String(sender)
+				}
+				return machine.sendEmail(append([]Value{List(message)}, tc.extra...), &Result{})
+			}
+			want, err := send("")
+			if err != nil {
+				t.Fatalf("main control: %v", err)
+			}
+			got, err := send("0D2000000000001")
+			if err != nil {
+				t.Fatalf("missing sender differs from main: %v", err)
+			}
+			if len(want.List) != 1 || !want.List[0].Fields["success"].Bool || len(want.List[0].Fields["errors"].List) != 0 {
+				t.Fatal("main control did not succeed without errors")
+			}
+			if len(got.List) != 1 || !got.List[0].Fields["success"].Bool || len(got.List[0].Fields["errors"].List) != 0 {
+				t.Fatal("missing sender differs from main control")
+			}
+		})
+	}
+}
