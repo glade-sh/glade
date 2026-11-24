@@ -5,5 +5,6 @@
   "insert": "insert new BatchApexErrorEvent(); System.debug('ROAD547|inserted');",
   "nested_if": "if (true) { insert new BatchApexErrorEvent(); }",
   "nested_try": "try { insert new BatchApexErrorEvent(); } catch (Exception e) {}",
-  "nested_loop": "for (Integer i=0;i<1;i++) { insert new BatchApexErrorEvent(); }"
+  "nested_loop": "for (Integer i=0;i<1;i++) { insert new BatchApexErrorEvent(); }",
+  "nested_while": "while (false) { insert new BatchApexErrorEvent(); }"
 }

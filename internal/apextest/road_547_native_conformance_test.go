@@ -31,7 +31,7 @@ func TestRoad547NativeConformance(t *testing.T) {
 	reader := csv.NewReader(f)
 	reader.Comma = '\t'
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 29 {
+	if err != nil || len(rows) != 33 {
 		t.Fatalf("incomplete native rows: %v", err)
 	}
 	seen := map[string]bool{}
@@ -134,10 +134,11 @@ func TestRoad547NeighborBaseline(t *testing.T) {
 		`delete new BatchApexErrorEvent();`,
 		`insert new List<BatchApexErrorEvent>();`,
 		`insert new BatchApexErrorEvent();`,
+		`while (false) { insert new BatchApexErrorEvent(); }`,
 	}
 	for _, api := range []string{"61.0", "62.0", "67.0", "68.0"} {
 		for _, source := range cases {
-			if source == `insert new BatchApexErrorEvent();` && (api == "62.0" || api == "67.0") {
+			if (source == `insert new BatchApexErrorEvent();` || source == `while (false) { insert new BatchApexErrorEvent(); }`) && (api == "62.0" || api == "67.0") {
 				continue
 			}
 			result := sema.AnalyzeAnonymous(typesys.Index{}, source, api)
