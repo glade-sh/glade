@@ -8,7 +8,7 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func TestDaemonStartupPublicationFollowsOptIn(t *testing.T) {
+func TestDaemonStartupPublicationIndependentOfBuildOptIn(t *testing.T) {
 	root, _ := editSnapshotProject(t)
 	for _, optIn := range []string{"", "0", "1"} {
 		t.Setenv("GLADE_EXPERIMENTAL_BESIDE_GATE", optIn)
@@ -19,13 +19,13 @@ func TestDaemonStartupPublicationFollowsOptIn(t *testing.T) {
 		if err := s.Close(); err != nil {
 			t.Fatal(err)
 		}
-		if got := s.daemon.backgroundDiskPublication; got != (optIn == "1") {
+		if got := s.daemon.backgroundDiskPublication; !got {
 			t.Errorf("opt-in %q: background publication %t", optIn, got)
 		}
 	}
 }
 
-func TestDaemonBodyEditMentionRecheckFollowsOptIn(t *testing.T) {
+func TestDaemonBodyEditMentionRecheckIndependentOfBuildOptIn(t *testing.T) {
 	for _, optIn := range []string{"", "1"} {
 		t.Setenv("GLADE_EXPERIMENTAL_BESIDE_GATE", optIn)
 		root := incrementalProject(t)
@@ -46,12 +46,8 @@ func TestDaemonBodyEditMentionRecheckFollowsOptIn(t *testing.T) {
 			t.Fatal(err)
 		}
 		stats := d.semaState.LastStats()
-		want := 2 // Util and Caller, which mentions Util.
-		if optIn == "1" {
-			want = 1
-		}
-		if !stats.Incremental || stats.Rechecked != want {
-			t.Errorf("opt-in %q: got %+v, want %d rechecked", optIn, stats, want)
+		if !stats.Incremental || stats.Rechecked != 1 {
+			t.Errorf("opt-in %q: got %+v, want only the edited type rechecked", optIn, stats)
 		}
 	}
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
