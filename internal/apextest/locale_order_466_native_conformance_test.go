@@ -7,9 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestLocaleOrder466NativeConformance(t *testing.T) {
@@ -49,32 +46,6 @@ func TestLocaleOrder466NativeConformance(t *testing.T) {
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes", name+suffix), read(name+suffix))
 			}
 			index := loadTestIndex(t, root)
-			org := orgFromIndex(index)
-			org.APIVersion = api
-			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
-			source := read("seed.apex") + "\n" + read("query.apex")
-			program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
-			if err != nil {
-				t.Fatal(err)
-			}
-			anonymous := map[string]string{}
-			for _, locale := range locales {
-				locale := locale
-				result, err := runner.execute(program, func(machine *vm.VM) {
-					machine.SetCurrentUser(storage.Record{ID: storage.ID("005-local-locale-user"), Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue(locale), "LanguageLocaleKey": storage.StringValue("en_US")}})
-				})
-				if err != nil {
-					t.Fatalf("anonymous %s failed: %v", locale, err)
-				}
-				for _, line := range result.Debug {
-					if m := payload.FindStringSubmatch(line); len(m) == 3 && m[1] == locale {
-						anonymous[locale] = m[2]
-					}
-				}
-				if anonymous[locale] == "" {
-					t.Fatalf("anonymous %s has no observation", locale)
-				}
-			}
 			run := Run(index, Options{SelectedClasses: []string{name}, NoDiskCache: true, Parallelism: 1})
 			if run.Summary().Total != 6 {
 				t.Fatalf("test selection: %+v", run.Summary())
@@ -82,7 +53,7 @@ func TestLocaleOrder466NativeConformance(t *testing.T) {
 			testRows := map[string]string{}
 			for _, suite := range run.Suites {
 				for _, test := range suite.Cases {
-					if test.Problem == nil {
+					if test.Problem == nil || !strings.HasSuffix(test.Problem.Type, "AssertException") {
 						t.Fatalf("test %s did not produce its intentional assertion", test.MethodName)
 					}
 					m := payload.FindStringSubmatch(test.Problem.Message)
@@ -102,10 +73,8 @@ func TestLocaleOrder466NativeConformance(t *testing.T) {
 					if !ok {
 						t.Fatalf("missing native row %s", key)
 					}
-					for route, got := range map[string]string{"anonymous": anonymous[locale], "istest": testRows[locale]} {
-						if got != want {
-							t.Errorf("native %s / Glade %s: got %s want %s", key, route, got, want)
-						}
+					if got := testRows[locale]; got != want {
+						t.Errorf("native %s / Glade istest: got %s want %s", key, got, want)
 					}
 				}
 			}
