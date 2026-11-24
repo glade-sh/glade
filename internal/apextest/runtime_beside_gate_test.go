@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -266,5 +269,137 @@ func TestRuntimeBesideGateBuildPanicIsFailSafe(t *testing.T) {
 				t.Fatalf("panic log = %q", line)
 			}
 		})
+	}
+}
+
+// runtimeCacheMethodIdentities returns the identity of each compiled method
+// table in the in-process runtime cache.
+func runtimeCacheMethodIdentities() map[string]bool {
+	runtimeCacheMu.RLock()
+	defer runtimeCacheMu.RUnlock()
+	out := make(map[string]bool, len(runtimeCache))
+	for _, entry := range runtimeCache {
+		out[fmt.Sprintf("%p", entry.Methods)] = true
+	}
+	return out
+}
+
+// TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites panics inside a
+// partly completed accepted build: after method compilation has filled the
+// request source cache, after org construction, and after the build has
+// published its runtime to the memory and startup caches. The run's outcome
+// equals a run without the build beside the gate, and nothing the failed
+// build published survives: the cached runtime and the startup payload are
+// the sequential build's.
+func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	classes := filepath.Join(root, "force-app", "main", "default", "classes")
+	writeFile(t, filepath.Join(classes, "PartialPanicHelper.cls"), "public class PartialPanicHelper { public static Integer value() { return 3; } }")
+	writeFile(t, filepath.Join(classes, "PartialPanicTest.cls"), "@IsTest private class PartialPanicTest { @IsTest static void runs() { System.assertEquals(3, PartialPanicHelper.value()); } }")
+	loaded, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(loaded, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	opts := Options{BuildArtifacts: &artifacts}
+	cold := func() {
+		WaitForRuntimeCacheWork()
+		InvalidateRuntimeCaches()
+		if err := startupcache.Clear(root, startupcache.SubdirTest); err != nil {
+			t.Fatal(err)
+		}
+	}
+	payload := func() os.FileInfo {
+		matches, _ := filepath.Glob(filepath.Join(root, ".glade", "test", "startup.payload.*"))
+		if len(matches) != 1 {
+			return nil
+		}
+		info, err := os.Stat(matches[0])
+		if err != nil {
+			return nil
+		}
+		return info
+	}
+
+	cold()
+	previous := runtime.GOMAXPROCS(1)
+	sequential := RunCasesContext(context.Background(), index, opts, cases)
+	runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(previous)
+	if summary := sequential.Summary(); summary.Passed != 1 {
+		t.Fatalf("sequential summary = %#v problem %q", summary, firstRunProblem(sequential))
+	}
+	want := besideGateOutcomeDigest(t, sequential)
+
+	for _, at := range []string{"after_methods", "after_org", "after_publish"} {
+		t.Run(at, func(t *testing.T) {
+			cold()
+			log := &besideGateLogBuffer{}
+			var failedMethods map[string]bool
+			var failedPayload os.FileInfo
+			testOnlyRuntimeBesideGateLog = log
+			testOnlyRuntimeBesideGateStageHook = func(stage string) {
+				if stage != at {
+					return
+				}
+				failedMethods = runtimeCacheMethodIdentities()
+				failedPayload = payload()
+				panic("partial build panic at " + stage)
+			}
+			t.Cleanup(func() {
+				testOnlyRuntimeBesideGateStageHook = nil
+				testOnlyRuntimeBesideGateLog = nil
+			})
+			var run testreport.Run
+			func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						t.Fatalf("the run panicked: %v", recovered)
+					}
+				}()
+				run = RunCasesContext(context.Background(), index, opts, cases)
+			}()
+			if got := besideGateOutcomeDigest(t, run); got != want {
+				t.Fatalf("outcome digest %s, want the sequential run's %s: %#v problem %q", got, want, run.Summary(), firstRunProblem(run))
+			}
+			line := log.String()
+			if strings.Count(line, "\n") != 1 || !strings.Contains(line, "(accepted;") || !strings.Contains(line, "type=string") ||
+				strings.Contains(line, "partial build panic") || !strings.Contains(line, "TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites") {
+				t.Fatalf("panic log = %q", line)
+			}
+			if at != "after_publish" {
+				return
+			}
+			if len(failedMethods) == 0 || failedPayload == nil {
+				t.Fatalf("the failed build published nothing to discard: methods=%v payload=%v", failedMethods, failedPayload)
+			}
+			for identity := range runtimeCacheMethodIdentities() {
+				if failedMethods[identity] {
+					t.Fatalf("the failed build's runtime %s survived in the memory cache", identity)
+				}
+			}
+			WaitForRuntimeCacheWork()
+			if current := payload(); current == nil || os.SameFile(current, failedPayload) {
+				t.Fatalf("startup payload = %v, want the sequential build's, not the failed build's", current)
+			}
+		})
+	}
+}
+
+// TestRuntimeBuildPanicLogIsBounded pins the log line's bounds: one line, a
+// non-runtime-error value never printed, and the stack truncated.
+func TestRuntimeBuildPanicLogIsBounded(t *testing.T) {
+	var out bytes.Buffer
+	stack := []byte(strings.Repeat("frame\n", runtimeBuildPanicStackLimit))
+	logRuntimeBuildPanic(&out, &runtimeBuildPanic{build: 7, value: "class Secret {\n}", stack: stack}, true)
+	line := out.String()
+	if strings.Count(line, "\n") != 1 || strings.Contains(line, "Secret") || !strings.Contains(line, "(abandoned)") ||
+		!strings.Contains(line, "...(truncated)") || len(line) > runtimeBuildPanicStackLimit*2+1024 {
+		t.Fatalf("log line (%d bytes) = %.300q", len(line), line)
 	}
 }

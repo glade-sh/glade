@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"unicode/utf8"
 
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 )
@@ -26,6 +30,12 @@ var errRuntimeBuildIncomplete = errors.New("runtime build beside the semantic ga
 // testOnlyRuntimeBesideGateStartHook is a package test seam run on the build
 // goroutine before the build starts. Nothing outside _test.go files sets it.
 var testOnlyRuntimeBesideGateStartHook func()
+
+// testOnlyRuntimeBesideGateStageHook is a package test seam a build beside
+// the gate calls at named points of a partly completed build
+// ("after_methods", "after_org", "after_publish"). Nothing outside _test.go
+// files sets it.
+var testOnlyRuntimeBesideGateStageHook func(stage string)
 
 // testOnlyRuntimeBesideGateLog, when set by a package test, receives the
 // build-panic log line instead of os.Stderr.
@@ -79,20 +89,39 @@ func (p *runtimeBuildPanic) Error() string {
 	return fmt.Sprintf("runtime build %d beside the semantic gate panicked: %v\n\noriginal stack:\n%s", p.build, p.value, p.stack)
 }
 
-// logRuntimeBuildPanic writes one line: the build id, whether the gate
-// accepted the build, the panic value and the quoted original stack.
+// Bounds of the build-panic log line.
+const (
+	runtimeBuildPanicValueLimit = 256
+	runtimeBuildPanicStackLimit = 8 << 10
+)
+
+// logRuntimeBuildPanic writes one bounded line: the build id, whether the
+// gate accepted the build, the panic's type, its message only when it is a
+// runtime error (an arbitrary panic value can carry Apex source text, so it
+// is never printed), and the original stack, which holds only function
+// names, files and lines. Both are truncated and quoted onto one line.
 func logRuntimeBuildPanic(out io.Writer, p *runtimeBuildPanic, abandoned bool) {
 	state := "accepted; the run falls back to the sequential build"
 	if abandoned {
 		state = "abandoned"
 	}
-	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate panicked (%s): %v stack=%q\n", p.build, state, p.value, p.stack)
+	value := "<not shown>"
+	if err, ok := p.value.(runtime.Error); ok {
+		value = truncateRuntimeBuildPanicText(err.Error(), runtimeBuildPanicValueLimit)
+	}
+	stack := truncateRuntimeBuildPanicText(string(p.stack), runtimeBuildPanicStackLimit)
+	_, _ = fmt.Fprintf(out, "glade: runtime build %d beside the semantic gate panicked (%s): type=%T value=%q stack=%q\n", p.build, state, p.value, value, stack)
 }
 
-// Unwrap exposes an error panic value, such as a runtime.Error, to errors.As.
-func (p *runtimeBuildPanic) Unwrap() error {
-	err, _ := p.value.(error)
-	return err
+func truncateRuntimeBuildPanicText(text string, limit int) string {
+	if len(text) <= limit {
+		return text
+	}
+	cut := limit
+	for cut > 0 && !utf8.RuneStart(text[cut]) {
+		cut--
+	}
+	return text[:cut] + "...(truncated)"
 }
 
 // runtimeBesideGateBuilds counts builds still running beside a gate,
@@ -114,6 +143,7 @@ func startRuntimeBesideGate(index typesys.Index, opts Options, sources *sourceCa
 		return received.compilation, received.ok
 	}
 	generation.besideGateRejected = early.rejected.Load
+	generation.besideGateStageHook = testOnlyRuntimeBesideGateStageHook
 	// The seam is read here, on the run's goroutine, so a test that restores
 	// it cannot race the build.
 	startHook := testOnlyRuntimeBesideGateStartHook
@@ -187,4 +217,28 @@ func (e *runtimeBesideGate) finish(compilation *visualforce.ControllerCompilatio
 		return "", runtimeExecutionView{}, nil, result.panicked
 	}
 	return result.key, result.runtime, result.err, nil
+}
+
+// discardFailedBesideGateBuild removes every effect a panicked build beside
+// the gate could have left for this request, so the sequential build that
+// replaces it starts from the state a run without the beside-gate build
+// sees. The build has exited (finish returned), so nothing it started is
+// still writing except a background disk publication, which is drained
+// first. Then the project's startup cache, the root mapping and every
+// in-process runtime, setup, test and semantic cache are dropped, and the
+// request's source cache and runtime generation are rebuilt.
+func discardFailedBesideGateBuild(index typesys.Index, opts Options, runState *runExecution, failed runtimeGeneration) (*sourceCache, runtimeGeneration, error) {
+	backgroundPublicationsDone.Wait()
+	evictSnapshotCaches(failed.key)
+	if root := strings.TrimSpace(index.Project.Root); root != "" {
+		_ = startupcache.Clear(filepath.Clean(root), startupcache.SubdirTest)
+	}
+	InvalidateRuntimeCaches()
+	sources, generation, _, err := prepareRunSources(index, opts, runState)
+	if err != nil {
+		return nil, runtimeGeneration{}, err
+	}
+	generation.oneShot = failed.oneShot
+	generation.controllerCompilation = failed.controllerCompilation
+	return sources, generation, nil
 }

@@ -403,6 +403,38 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	return report
 }
 
+// prepareRunSources builds one run's request source cache and runtime
+// generation. A run calls it again, from a clean state, when the build
+// beside the semantic gate panicked.
+func prepareRunSources(index typesys.Index, opts Options, runState *runExecution) (*sourceCache, runtimeGeneration, *typesys.SourceDigestSet, error) {
+	sources := newSourceCache()
+	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
+	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
+	// A matching snapshot selects the already-loaded project graph for runtime
+	// metadata generation and org setup; nil retains disk discovery. This keeps
+	// dependency roots from changing between indexing and generation. Native
+	// generated-metadata results are pinned at source API 62.0/67.0 by
+	// internal/apextest/testdata/conformance/metadata_field_names/org.tsv:
+	// custom-column, standard-column, entity, filtered-groups (anonymous/istest),
+	// and internal/apextest/testdata/conformance/setup_metadata/org.tsv:
+	// businessHours, duplicateRule, personDuplicateRule (named @IsTest).
+	// Each directory's ORG-RUN.txt records the capture; workspace graph routing
+	// itself is covered by TestMetadataGenerationReadsSiblingProjectCustomMetadata.
+	sources.seedProjectSnapshot(opts.ProjectSnapshot)
+	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	digests, err := authoritativeRuntimeSourceDigests(index, opts.SourceDigests)
+	if err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	generation, err := prepareRuntimeGeneration(index, digests, sources)
+	if err != nil {
+		return nil, runtimeGeneration{}, nil, err
+	}
+	return sources, generation, digests, nil
+}
+
 // runCasesGated runs one generation of the project. gate is nil for the
 // complete project and set when the dependency-scoped compile gate reruns a
 // project subset without its invalid classes and their dependents.
@@ -430,32 +462,11 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		return compileErrorRun(cases, versionErr, started, opts)
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
-	sources := newSourceCache()
-	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
-	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
-	// A matching snapshot selects the already-loaded project graph for runtime
-	// metadata generation and org setup; nil retains disk discovery. This keeps
-	// dependency roots from changing between indexing and generation. Native
-	// generated-metadata results are pinned at source API 62.0/67.0 by
-	// internal/apextest/testdata/conformance/metadata_field_names/org.tsv:
-	// custom-column, standard-column, entity, filtered-groups (anonymous/istest),
-	// and internal/apextest/testdata/conformance/setup_metadata/org.tsv:
-	// businessHours, duplicateRule, personDuplicateRule (named @IsTest).
-	// Each directory's ORG-RUN.txt records the capture; workspace graph routing
-	// itself is covered by TestMetadataGenerationReadsSiblingProjectCustomMetadata.
-	sources.seedProjectSnapshot(opts.ProjectSnapshot)
-	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
-		return compileErrorRun(cases, err, started, opts)
-	}
-	var generation runtimeGeneration
-	var generationErr error
-	opts.SourceDigests, generationErr = authoritativeRuntimeSourceDigests(index, opts.SourceDigests)
-	if generationErr == nil {
-		generation, generationErr = prepareRuntimeGeneration(index, opts.SourceDigests, sources)
-	}
+	sources, generation, digests, generationErr := prepareRunSources(index, opts, runState)
 	if generationErr != nil {
 		return compileErrorRun(cases, generationErr, started, opts)
 	}
+	opts.SourceDigests = digests
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
@@ -484,6 +495,16 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	// A build beside the gate that panicked (logged with its stack) is
 	// replaced by the sequential build, exactly as a run without the build
 	// beside the gate does; a panic there fails the run as it always has.
+	if besideGatePanic != nil {
+		// Discard everything the failed build could have written for this
+		// request, then build from a clean state. Correctness over speed on
+		// this rare path.
+		var discardErr error
+		sources, generation, discardErr = discardFailedBesideGateBuild(index, opts, runState, generation)
+		if discardErr != nil {
+			return compileErrorRun(cases, discardErr, started, opts)
+		}
+	}
 	if early == nil || besideGatePanic != nil {
 		if runState.counters.enabled {
 			runtimeKey, runtime, runtimeErr = runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, opts.SourceDigests, sources, &generation, runState.diskCacheEnabled, runState.counters, runtimeExecutionProjection)
@@ -1567,6 +1588,9 @@ type runtimeGeneration struct {
 	// besideGateRejected, when set, reports without blocking that the gate
 	// rejected the index, so the build stops at its next compile phase.
 	besideGateRejected func() bool
+	// besideGateStageHook is testOnlyRuntimeBesideGateStageHook captured for
+	// a build beside the gate; nil outside package tests.
+	besideGateStageHook func(stage string)
 	// oneShot is Options.OneShotProcess for the run that prepared this
 	// generation. It is not part of any cache key.
 	oneShot bool
@@ -2098,6 +2122,11 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	rejected := func() bool {
 		return generation.besideGateRejected != nil && generation.besideGateRejected()
 	}
+	stage := func(name string) {
+		if generation.besideGateStageHook != nil {
+			generation.besideGateStageHook(name)
+		}
+	}
 	if digests != nil {
 		if err := preloadRuntimeSources(index, sources); err != nil {
 			return key, zero, err
@@ -2107,6 +2136,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		return key, zero, errRuntimeAbandoned
 	}
 	methods := compileProjectMethods(index, sources)
+	stage("after_methods")
 	if rejected() {
 		return key, zero, errRuntimeAbandoned
 	}
@@ -2123,6 +2153,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
+	stage("after_org")
 	controllerCompilation := generation.controllerCompilation
 	if generation.awaitControllerCompilation != nil {
 		var ok bool
@@ -2190,6 +2221,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			publish()
 		}
 	}
+	stage("after_publish")
 	return key, projected, nil
 }
 
@@ -5541,18 +5573,22 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 		DomainURL string
 		Eager     bool
 	}{features, domainURL, eagerStandardSpread.Load()})
-	shapedStandardApexTestOrgCache.mu.Lock()
-	if shapedStandardApexTestOrgCache.key != string(key) {
-		org := standardApexTestOrgForRun()
-		org.APIVersion = storage.DefaultRESTAPIVersion
-		org.DomainURL = domainURL
-		storage.ApplyProjectOrgShape(&org, features)
-		shapedStandardApexTestOrgCache.key = string(key)
-		shapedStandardApexTestOrgCache.org = org
-		releaseStandardSeedMemory()
-	}
-	seed := shapedStandardApexTestOrgCache.org
-	shapedStandardApexTestOrgCache.mu.Unlock()
+	// The deferred unlock keeps a panic while building the seed from leaving
+	// the cache locked for every later run.
+	seed := func() storage.OrgState {
+		shapedStandardApexTestOrgCache.mu.Lock()
+		defer shapedStandardApexTestOrgCache.mu.Unlock()
+		if shapedStandardApexTestOrgCache.key != string(key) {
+			org := standardApexTestOrgForRun()
+			org.APIVersion = storage.DefaultRESTAPIVersion
+			org.DomainURL = domainURL
+			storage.ApplyProjectOrgShape(&org, features)
+			shapedStandardApexTestOrgCache.key = string(key)
+			shapedStandardApexTestOrgCache.org = org
+			releaseStandardSeedMemory()
+		}
+		return shapedStandardApexTestOrgCache.org
+	}()
 	return seed.CloneRuntimeFrozenDefinition()
 }
 
