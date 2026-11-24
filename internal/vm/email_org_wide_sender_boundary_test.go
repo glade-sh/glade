@@ -106,3 +106,37 @@ func TestSendEmailOrgWideSenderUncapturedOverloadsMatchMain(t *testing.T) {
 		})
 	}
 }
+
+// These neighbors had no current-user activity error on the base tree.
+func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		api       string
+		namespace string
+		cc        bool
+		sender    string
+	}{
+		{name: "anonymous API 68", api: "68.0", sender: "0D2000000000001"},
+		{name: "namespaced", api: "67.0", namespace: "example", sender: "0D2000000000001"},
+		{name: "copied recipient", api: "67.0", cc: true, sender: "0D2000000000001"},
+		{name: "no sender", api: "67.0"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.Namespace = tc.namespace
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.currentMethod = Method{APIVersion: tc.api}
+			message := newSingleEmailMessage()
+			message.Fields["targetObjectId"] = String(string(storage.DefaultUserID))
+			message.Fields["orgWideEmailAddressId"] = String(tc.sender)
+			message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+			if tc.cc {
+				message.Fields["ccAddresses"] = List(String("copy@example.invalid"))
+			}
+			if got := machine.currentUserTargetActivityValidation(message); got.Kind != ValueNull {
+				t.Fatalf("uncaptured neighbor differs from main: %v", got)
+			}
+		})
+	}
+}
