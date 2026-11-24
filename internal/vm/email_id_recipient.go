@@ -92,9 +92,8 @@ func (vm *VM) currentUserTargetActivityValidation(message Value, partialSend boo
 	previouslyCovered := vm.plainSingleEmailTestObservation(message) && len(message.Fields["toAddresses"].List) == 0
 	sender := emailFieldString(message, "orgWideEmailAddressId")
 	capturedSenderTarget := partialSend && vm.capturedOrgWideEmailContext() &&
-		message.Type == "Messaging.SingleEmailMessage" && strings.HasPrefix(sender, "0D2") && validateApexID(sender) == nil &&
-		len(message.Fields["toAddresses"].List) == 1 && len(message.Fields["ccAddresses"].List) == 0 && len(message.Fields["bccAddresses"].List) == 0 &&
-		emailFieldString(message, "templateId") == "" && emailFieldString(message, "whatId") == ""
+		vm.capturedOrgWideEmailShape(message) && strings.HasPrefix(sender, "0D2") && validateApexID(sender) == nil &&
+		len(message.Fields["toAddresses"].List) == 1 && emailFieldString(message, "templateId") == ""
 	if !previouslyCovered && !capturedSenderTarget {
 		return Null
 	}
@@ -132,18 +131,44 @@ func (vm *VM) capturedOrgWideEmailShape(message Value) bool {
 		emailFieldString(message, "whatId") != "" {
 		return false
 	}
+	for _, field := range []string{"replyTo", "senderDisplayName", "charset", "inReplyTo", "references", "templateName", "emailPriority", "unsubscribeComment"} {
+		if emailFieldString(message, field) != "" {
+			return false
+		}
+	}
+	for _, field := range []string{"fileAttachments", "entityAttachments", "documentAttachments", "targetObjectIds", "unsubscribeUrls"} {
+		if len(message.Fields[field].List) != 0 {
+			return false
+		}
+	}
+	for _, field := range []string{"treatBodiesAsTemplate", "bccSender", "oneClickPost", "userMail"} {
+		if emailFieldBool(message, field) {
+			return false
+		}
+	}
+	if message.Fields["customHeaders"].Kind != ValueNull || !emailFieldBool(message, "treatTargetObjectAsRecipient") ||
+		!emailFieldBool(message, "useSignature") || emailFieldString(message, "optOutPolicy") != "SEND" ||
+		emailFieldString(message, "htmlBody") != "" {
+		return false
+	}
 	target := storage.ID(emailFieldString(message, "targetObjectId"))
 	template := emailFieldString(message, "templateId")
 	toCount := len(message.Fields["toAddresses"].List)
-	if toCount == 1 && target == "" {
-		return true
+	if toCount == 1 {
+		if emailFieldString(message, "subject") == "" || emailFieldString(message, "plainTextBody") == "" || !emailFieldBool(message, "saveAsActivity") {
+			return false
+		}
+		if target == "" {
+			return true
+		}
 	}
 	current := storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID))
 	if target == "" || !storage.IDsEqual(target, current) {
 		return false
 	}
-	return (toCount == 1 && template == "") ||
-		(toCount == 0 && template != "" && !emailFieldBool(message, "saveAsActivity"))
+	return (toCount == 1 && template == "") || (toCount == 0 && template != "" &&
+		emailFieldString(message, "subject") == "" && emailFieldString(message, "plainTextBody") == "" &&
+		!emailFieldBool(message, "saveAsActivity"))
 }
 
 func (vm *VM) singleNullEmailAddressObservation(message, address Value) bool {
