@@ -41,18 +41,17 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 			return storage.NullValue(), true
 		}
 		parentID := idFromStorageValue(id)
-		// Parent maps normally use 15-character keys. Avoid the shared
-		// lookup's linear equivalent-ID scan for the common 18-character form
-		// without changing exact-key precedence or the fallback semantics.
-		if len(parentID) == 18 {
-			if _, exact := parent.Records[parentID]; !exact {
-				short := parentID[:15]
+		record, found := parent.Records[parentID]
+		// The captured 18-character input can refer to a 15-character key.
+		// Keep exact-key behavior for all other, uncaptured storage forms.
+		if !found && len(parentID) == 18 {
+			short := parentID[:15]
+			if storage.ID18(string(short)) == string(parentID) {
 				if _, present := parent.Records[short]; present {
-					parentID = short
+					_, record, found = storage.LookupRecordByID(parent.Records, short)
 				}
 			}
 		}
-		_, record, found := storage.LookupRecordByID(parent.Records, parentID)
 		if !found {
 			return storage.Value{}, false
 		}

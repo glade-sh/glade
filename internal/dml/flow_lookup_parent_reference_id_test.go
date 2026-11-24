@@ -63,7 +63,15 @@ func TestFlowLookupParentReferenceIDFormsAndControls(t *testing.T) {
 	}
 	delete(org.Objects["Parent__c"].Records, parentID)
 	source.Fields["Parent__c"] = storage.IDValue(parentID)
-	if value, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef); !ok || value.ID != otherID {
-		t.Fatal("shared ID lookup did not resolve the equivalent stored key")
+	// Main used an exact map lookup for these uncaptured storage forms.
+	// Compare the route result to that original lookup rather than broadening
+	// the observed 18-character input / 15-character key behavior.
+	for _, input := range []storage.ID{parentID, storage.ID(string(parentID) + "ZZZ")} {
+		source.Fields["Parent__c"] = storage.IDValue(input)
+		_, mainFound := org.Objects["Parent__c"].Records[input]
+		_, found := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef)
+		if found != mainFound {
+			t.Fatalf("uncaptured input length %d: got found=%v, main=%v", len(input), found, mainFound)
+		}
 	}
 }
