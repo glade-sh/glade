@@ -673,7 +673,7 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient, va
 	var errors []Value
 	if message.Type == "Messaging.SingleEmailMessage" {
 		targetID := emailFieldString(message, "targetObjectId")
-		if validation := vm.currentUserTargetActivityValidation(message); validation.Kind != ValueNull {
+		if validation := vm.currentUserTargetActivityValidation(message, validateOrgWideSender); validation.Kind != ValueNull {
 			errors = append(errors, validation)
 		}
 		if object, known := vm.sObjectNameForID(targetID); known && object != "User" && object != "Contact" && object != "Lead" && object != "Person" {

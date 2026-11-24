@@ -134,7 +134,7 @@ func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
 			if tc.cc {
 				message.Fields["ccAddresses"] = List(String("copy@example.invalid"))
 			}
-			if got := machine.currentUserTargetActivityValidation(message); got.Kind != ValueNull {
+			if got := machine.currentUserTargetActivityValidation(message, true); got.Kind != ValueNull {
 				t.Fatalf("uncaptured neighbor differs from main: %v", got)
 			}
 		})

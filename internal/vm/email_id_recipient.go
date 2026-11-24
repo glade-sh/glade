@@ -88,7 +88,16 @@ func (vm *VM) plainSingleEmailTestObservation(message Value) bool {
 
 // A current-User target with the default activity flag has a distinct native
 // error from the accepted current-User ID in toAddresses.
-func (vm *VM) currentUserTargetActivityValidation(message Value) Value {
+func (vm *VM) currentUserTargetActivityValidation(message Value, partialSend bool) Value {
+	previouslyCovered := vm.plainSingleEmailTestObservation(message) && len(message.Fields["toAddresses"].List) == 0
+	sender := emailFieldString(message, "orgWideEmailAddressId")
+	capturedSenderTarget := partialSend && vm.capturedOrgWideEmailContext() &&
+		message.Type == "Messaging.SingleEmailMessage" && strings.HasPrefix(sender, "0D2") && validateApexID(sender) == nil &&
+		len(message.Fields["toAddresses"].List) == 1 && len(message.Fields["ccAddresses"].List) == 0 && len(message.Fields["bccAddresses"].List) == 0 &&
+		emailFieldString(message, "templateId") == "" && emailFieldString(message, "whatId") == ""
+	if !previouslyCovered && !capturedSenderTarget {
+		return Null
+	}
 	if !emailFieldBool(message, "saveAsActivity") || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
 		return Null
 	}
@@ -100,6 +109,18 @@ func (vm *VM) currentUserTargetActivityValidation(message Value) Value {
 	validation := newSendEmailValidationError("saveAsActivity must be false when sending mail to users.", "INVALID_SAVE_AS_ACTIVITY_FLAG", string(target))
 	validation.Fields["fields"] = List(String("saveAsActivity"), String("true"))
 	return validation
+}
+
+func (vm *VM) capturedOrgWideEmailContext() bool {
+	if vm == nil || vm.Org == nil || vm.Org.Namespace != "" || vm.currentMethod.Namespace != "" {
+		return false
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" {
+		version = vm.Org.APIVersion
+	}
+	major, known := apexversion.Major(version)
+	return known && major >= 62 && major <= 67
 }
 
 func (vm *VM) singleNullEmailAddressObservation(message, address Value) bool {
