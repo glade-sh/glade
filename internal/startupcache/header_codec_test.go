@@ -203,3 +203,24 @@ func TestSplitCacheHeaderAndPayloadWritesArePrivate(t *testing.T) {
 		}
 	}
 }
+
+func TestManifestIdentityIgnoresGenerationOnly(t *testing.T) {
+	base := representativeTestCacheHeader(t.TempDir(), 2).Manifest
+	differentTime := cloneManifest(base)
+	differentTime.GeneratedAt++
+	if !equalManifestIdentity(base, differentTime) {
+		t.Fatal("generation time changed manifest identity")
+	}
+	differentFile := cloneManifest(base)
+	differentFile.Files[0].SHA256 = "different"
+	if equalManifestIdentity(base, differentFile) {
+		t.Fatal("source digest change retained manifest identity")
+	}
+	withNil := base
+	withNil.Features = nil
+	withEmpty := withNil
+	withEmpty.Features = []string{}
+	if equalManifestIdentity(withNil, withEmpty) {
+		t.Fatal("nil and empty feature lists compared equal")
+	}
+}

@@ -26,7 +26,7 @@ import (
 // Version 16 rejects org snapshots without component-tab bundle identities.
 const Version = 16
 
-const manifestSchemaVersion = 2
+const manifestSchemaVersion = 3
 
 const sourceDigestTrustAge = 2 * time.Second
 
@@ -438,6 +438,7 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 	apexDigests, useSnapshot := completeApexSourceDigests(loaded, digests)
 	savedFiles := append(append([]File(nil), manifest.Files...), manifest.ConfigFiles...)
 	currentFiles := append(append([]File(nil), current.Files...), current.ConfigFiles...)
+	generatedAt := time.Unix(0, manifest.GeneratedAt)
 	for i, fp := range savedFiles {
 		// A reused source digest is tied to its original generation. If the
 		// timestamp changed, hash the current file rather than trusting it.
@@ -445,21 +446,20 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 		fp.ModTime = currentFiles[i].ModTime
 		absPath := filepath.Clean(filepath.Join(root, filepath.FromSlash(fp.Path)))
 		digest, isApex := apexDigests[absPath]
-		var stamp filestamp.Stamp
-		trustDigest := false
 		if useSnapshot && isApex && sameGeneration && manifest.GeneratedAt != 0 {
-			var ok bool
-			stamp, ok = filestamp.Stat(absPath)
-			trustDigest = ok && stamp.OlderThan(time.Unix(0, manifest.GeneratedAt), sourceDigestTrustAge)
-		}
-		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, trustDigest, readFile) {
-			return false
-		}
-		if trustDigest {
-			after, ok := filestamp.Stat(absPath)
-			if !ok || after != stamp {
-				return false
+			// Use the same stat both to validate the fingerprint and to decide
+			// whether the snapshot is old enough to stand in for the bytes.
+			info, stamp, ok := filestamp.StatWithInfo(absPath)
+			if ok && stamp.OlderThan(generatedAt, sourceDigestTrustAge) {
+				if info.Size() != fp.Size || info.ModTime().UnixNano() != fp.ModTime ||
+					len(fp.SHA256) != sha256.Size*2 || hex.EncodeToString(digest[:]) != fp.SHA256 {
+					return false
+				}
+				continue
 			}
+		}
+		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, false, readFile) {
+			return false
 		}
 	}
 	return true
@@ -477,9 +477,7 @@ func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatfor
 	if filepath.Clean(entryProjectRoot) != root || input.projectRoot != root {
 		return false
 	}
-	savedIdentity, currentIdentity := manifest, input.manifest
-	savedIdentity.GeneratedAt, currentIdentity.GeneratedAt = 0, 0
-	if reflect.DeepEqual(savedIdentity, currentIdentity) {
+	if equalManifestIdentity(manifest, input.manifest) {
 		safe := manifest.GeneratedAt != 0
 		for _, fp := range manifest.Files {
 			stamp, ok := filestamp.Stat(filepath.Join(root, filepath.FromSlash(fp.Path)))
@@ -496,6 +494,28 @@ func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatfor
 	// Validate against live bytes before relaxing cross-generation timestamps.
 	return sameManifestContent(manifest, input.manifest) &&
 		freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, root, expectedVersion, nil, nil)
+}
+
+// equalManifestIdentity compares the persisted identity without its generation
+// time. Avoid reflection on every file in a warm cache lookup.
+func equalManifestIdentity(a, b Manifest) bool {
+	return a.SchemaVersion == b.SchemaVersion && a.ProjectRoot == b.ProjectRoot &&
+		a.SourceAPIVersion == b.SourceAPIVersion && a.Namespace == b.Namespace &&
+		a.ProjectDigest == b.ProjectDigest && a.Complete == b.Complete &&
+		equalManifestSlice(a.Features, b.Features) && equalManifestSlice(a.Files, b.Files) &&
+		equalManifestSlice(a.ConfigFiles, b.ConfigFiles) && equalManifestSlice(a.PackageRoots, b.PackageRoots)
+}
+
+func equalManifestSlice[T comparable](a, b []T) bool {
+	if (a == nil) != (b == nil) || len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // sameManifestContent compares fully validated generations without changing
@@ -561,6 +581,16 @@ func buildManifestWithSourceDigestsAndScope(projectRoot string, p project.Projec
 		inputs = nil
 	}
 	apexDigests, useSnapshot := completeApexSourceDigests(p, digests)
+	if includeHashes && useSnapshot && len(apexDigests) > 0 {
+		// A reused digest belongs to its source capture, not this later
+		// manifest build (which can happen after a long compilation).
+		capture := digests.CapturedAt()
+		if capture.IsZero() {
+			generatedAt = 0
+		} else if capture.UnixNano() < generatedAt {
+			generatedAt = capture.UnixNano()
+		}
+	}
 	paths := make([]File, 0, 128)
 	for _, manifestProject := range manifestProjects(p) {
 		for _, file := range deduplicateStrings(appendProjectFilesFromProject(manifestProject)) {

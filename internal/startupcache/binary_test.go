@@ -159,6 +159,39 @@ func TestFreshManifestRejectsRacySourceDigest(t *testing.T) {
 	}
 }
 
+func TestFreshManifestRejectsDelayedRacySourceDigest(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, path, "public class First {}\n")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeStartupCacheTestFile(t, path, "public class Other {}\n")
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	// The later manifest creation must not move the digest's capture time.
+	time.Sleep(sourceDigestTrustAge + time.Second)
+	manifest := BuildManifestWithSourceDigests(root, p, index, artifacts.SourceDigests)
+	if freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, artifacts.SourceDigests, nil) {
+		t.Fatal("stale source digest accepted after delayed manifest construction")
+	}
+	proof, err := ValidateInputWithSourceDigests(root, artifacts.SourceDigests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if freshManifestWithValidatedInput(Version, root, currentPlatformABI(), manifest, root, Version, proof) {
+		t.Fatal("validated input accepted stale delayed source digest")
+	}
+}
+
 func TestFreshManifestWithSourceDigestsUsesExactApexReadCounts(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
