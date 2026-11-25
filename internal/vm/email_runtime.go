@@ -673,7 +673,7 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient, va
 	var errors []Value
 	if message.Type == "Messaging.SingleEmailMessage" {
 		targetID := emailFieldString(message, "targetObjectId")
-		if validation := vm.currentUserTargetActivityValidation(message); validation.Kind != ValueNull {
+		if validation := vm.currentUserTargetActivityValidation(message, validateOrgWideSender); validation.Kind != ValueNull {
 			errors = append(errors, validation)
 		}
 		if object, known := vm.sObjectNameForID(targetID); known && object != "User" && object != "Contact" && object != "Lead" && object != "Person" {
@@ -729,7 +729,8 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value, validateOrgW
 		// sender ID shape for the explicit false overload when the local catalog
 		// has a live record to compare against.
 		senderID := emailFieldString(message, "orgWideEmailAddressId")
-		if validateOrgWideSender && strings.HasPrefix(senderID, "0D2") && validateApexID(senderID) == nil {
+		if validateOrgWideSender && strings.HasPrefix(senderID, "0D2") && vm.capturedOrgWideEmailContext() &&
+			validateApexID(senderID) == nil && vm.capturedOrgWideEmailShape(message) {
 			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
 			if !ok {
 				objectName = "OrgWideEmailAddress"

@@ -1958,9 +1958,8 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 			return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, "DML requires SObject or SObject list type: "+operandTypes[i])}
 		}
 		if strings.EqualFold(inst.Name, "insert") {
-			// ROAD-547: anonymous inserts, including nested blocks, reject this
-			// constructor at these source versions. Anonymous local methods
-			// are checked separately with a nonzero body offset.
+			// Native captures cover anonymous inserts, including nested blocks,
+			// at these source versions. Local methods have a nonzero body offset.
 			if scope.anonymous && bodyOffset == 0 && (typ.EffectiveAPIVersion == "62.0" || typ.EffectiveAPIVersion == "67.0") &&
 				inst.DMLMode == ir.DMLModeDefault && operand.Kind == ir.ExprCall &&
 				strings.EqualFold(operand.Callee, "new:BatchApexErrorEvent") && len(operand.Args) == 0 && len(operand.NamedArgs) == 0 &&

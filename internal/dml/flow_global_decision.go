@@ -80,7 +80,11 @@ func (e *Engine) flowAfterCreateProfileRecordCriterion(item storage.WorkflowCrit
 		field := reference[len(prefix):]
 		if strings.Contains(field, ".") {
 			parts := strings.Split(field, ".")
-			if !allowParent || !equals || len(parts) != 2 {
+			// The native rows cover a Contact's Account.Name. Other parent
+			// fields and object relationships retain their prior behavior.
+			if !allowParent || !equals || len(parts) != 2 ||
+				!strings.EqualFold(definition.APIName, "Contact") ||
+				!strings.EqualFold(parts[0], "Account") || !strings.EqualFold(parts[1], "Name") {
 				return false, false, false
 			}
 			lookup, ok := relationshipLookupField(definition, e.Org.Namespace, parts[0])
