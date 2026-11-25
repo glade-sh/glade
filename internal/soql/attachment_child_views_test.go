@@ -110,6 +110,34 @@ func TestCombinedAttachmentsUsesPlatformFileLinks(t *testing.T) {
 	assertAttachmentChildView(t, parent, "ContentDocumentLinks__r", "CustomLink__c", customChildID)
 }
 
+func TestCombinedAttachmentsUsesImportedDocumentIDs(t *testing.T) {
+	const parentID = "a01000000000001"
+	const documentID = "069000000000001"
+	for _, tc := range []struct {
+		name string
+		id   storage.Value
+	}{
+		{"typed", storage.IDValue(documentID)},
+		{"string", storage.StringValue(documentID)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := attachmentChildViewFixture(t,
+				storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
+				storage.FixtureObject{Name: "ContentDocumentLink", Records: []storage.FixtureRecord{
+					{ID: "06A000000000001", Fields: map[string]storage.Value{
+						"LinkedEntityId": storage.IDValue(parentID), "ContentDocumentId": tc.id,
+					}},
+				}},
+			)
+			result := queryAttachmentChildViews(t, org, ExecutionContext{})
+			if len(result.Records) != 1 {
+				t.Fatalf("parent rows = %d, want 1", len(result.Records))
+			}
+			assertAttachmentChildView(t, result.Records[0], "CombinedAttachments", "CombinedAttachment", documentID)
+		})
+	}
+}
+
 func BenchmarkAttachmentChildViews(b *testing.B) {
 	const parentCount = 100
 	parents := make([]storage.FixtureRecord, parentCount)
