@@ -14,8 +14,11 @@ import (
 // testdata/conformance/external_user_case_lead_sharing/public_read_write/org.tsv:2-5 istest 62.0 67.0
 // NATIVE the same with an internal Public Read model (Case stayed ReadWriteTransfer; Lead was Read)
 // testdata/conformance/external_user_case_lead_sharing/public_read/org.tsv:2-5 istest 62.0 67.0
-// NATIVE the external default was Private in all three variants
+// NATIVE Case and Lead default to ReadWriteTransfer internally and Private externally
 // testdata/conformance/external_user_case_lead_sharing/default/org.tsv:10-11 istest 62.0 67.0
+// NATIVE the external defaults remain Private after internal sharing changes
+// testdata/conformance/external_user_case_lead_sharing/public_read_write/org.tsv:10-11 istest 62.0 67.0
+// testdata/conformance/external_user_case_lead_sharing/public_read/org.tsv:10-11 istest 62.0 67.0
 // NATIVE a Community license refuses the Read Lead permission, so no row isolates Lead sharing
 // testdata/conformance/external_user_case_lead_sharing/lead_grant/org.tsv:2-5 istest 62.0 67.0
 //
@@ -30,7 +33,7 @@ import (
 //
 // The project declares only the internal model. Each observation is compared
 // whole: UserRecordAccess read and edit bits, three count queries and the Case
-// and Lead isAccessible flags, plus the transfer sharing model readback.
+// and Lead isAccessible flags, plus the sharing model readback.
 func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/external_user_case_lead_sharing"
 	const transfer = "public_read_write_transfer"
@@ -46,15 +49,20 @@ func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 				copyTree(t, filepath.Join(base, "project", "force-app"), filepath.Join(root, "force-app"), api)
-				if _, err := os.Stat(filepath.Join(base, variant, "objects")); err == nil {
-					copyTree(t, filepath.Join(base, variant, "objects"), filepath.Join(root, "force-app/main/default/objects"), api)
+				for _, object := range []string{"Case", "Lead"} {
+					// The Public Read deployment left Case at its scratch default.
+					if variant == "default" || (variant == "public_read" && object == "Case") {
+						continue
+					}
+					path := filepath.Join("objects", object)
+					copyTree(t, filepath.Join(base, variant, path), filepath.Join(root, "force-app/main/default", path), api)
 				}
 				copyTree(t, filepath.Join(base, scratchDefinition, "project-scratch-def.json"), filepath.Join(root, "config/project-scratch-def.json"), api)
 				index := loadTestIndex(t, root)
 				checked := 0
 				for _, row := range rows {
 					class := row["id"]
-					if row["api"] != api || (class == "PclModelsTest" && variant != transfer) {
+					if row["api"] != api {
 						continue
 					}
 					checked++
@@ -70,8 +78,7 @@ func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 					if variant == "public_read" && class == "PclStdTest" {
 						// This row was observed before sharing recalculated after the Lead
 						// model change (lead_read_model_recalculation/org.tsv:2-5 shows the
-						// later answer: no Lead edit) and the declared Read Case model was
-						// not applied natively. Only the read bits and counts are asserted.
+						// later answer: no Lead edit). Only the read bits and counts are asserted.
 						editBits := regexp.MustCompile(`\|e=[01]+`)
 						got, want = editBits.ReplaceAllString(got, ""), editBits.ReplaceAllString(want, "")
 					}
@@ -79,8 +86,12 @@ func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 						t.Errorf("%s %s/%s: Glade=%q native=%q", class, variant, api, got, want)
 					}
 				}
-				if checked != 4 {
-					t.Fatalf("checked %d native rows, want 4", checked)
+				wantRows := 5
+				if variant == transfer {
+					wantRows = 4
+				}
+				if checked != wantRows {
+					t.Fatalf("checked %d native rows, want %d", checked, wantRows)
 				}
 			})
 		}

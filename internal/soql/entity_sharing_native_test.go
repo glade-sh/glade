@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -123,4 +124,29 @@ func TestEntityExternalSharingDefaultRefreshesWarmView(t *testing.T) {
 	if got := view.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields["ExternalSharingModel"].String; got != "Private" {
 		t.Fatalf("refresh mutated the prior view to %q", got)
 	}
+}
+
+func TestEntitySharingDefaultsRefreshWhenScratchShapeChanges(t *testing.T) {
+	org := storage.NewOrgState()
+	for _, name := range []string{"Case", "Lead"} {
+		storage.EnsureStandardObject(&org, name)
+	}
+	check := func(view storage.OrgState, wantInternal, wantExternal string) {
+		t.Helper()
+		for _, name := range []string{"Case", "Lead"} {
+			fields := view.Objects["EntityDefinition"].Records[storage.ID(name)].Fields
+			if gotInternal, gotExternal := fields["InternalSharingModel"].String, fields["ExternalSharingModel"].String; gotInternal != wantInternal || gotExternal != wantExternal {
+				t.Errorf("%s sharing models = %q/%q, want %q/%q", name, gotInternal, gotExternal, wantInternal, wantExternal)
+			}
+		}
+	}
+	view := VirtualSchemaView(org)
+	check(view, "", "")
+
+	view.Features = []string{project.StandardFieldEditionDeveloper, "Communities", "NetworksEnabled"}
+	view = VirtualSchemaView(view)
+	check(view, "ReadWriteTransfer", "Private")
+
+	view.Features = []string{project.StandardFieldEditionDeveloper}
+	check(VirtualSchemaView(view), "", "")
 }
