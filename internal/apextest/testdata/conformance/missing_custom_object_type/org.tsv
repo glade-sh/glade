@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+missing_object	62.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+missing_object	67.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+missing_object	68.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+missing_generic	62.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+missing_generic	67.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+missing_generic	68.0	anonymous	False	False	Invalid type: AbsentBuoy__c	n/a	n/a	0
+standard_control	62.0	anonymous	True	True	ok	n/a	n/a	0
+standard_control	67.0	anonymous	True	True	ok	n/a	n/a	0
+standard_control	68.0	anonymous	True	True	ok	n/a	n/a	0
+missing_test	62.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	62.0 (deployment metadata)	n/a	n/a
+missing_test	67.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	67.0 (deployment metadata)	n/a	n/a
+missing_test	68.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	68.0 (deployment metadata)	n/a	n/a
