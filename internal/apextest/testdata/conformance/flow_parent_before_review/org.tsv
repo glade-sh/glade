@@ -1,7 +1,7 @@
 id	api	route	compiled	success	outcome	class_api	trigger_api	residue
-before_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found	62.0	n/a	0
-before_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found	62.0	n/a	n/a
-before_anonymous	63.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found	63.0	n/a	0
-before_test	63.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found	63.0	n/a	n/a
-before_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found	67.0	n/a	0
-before_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found	67.0	n/a	n/a
+before_anonymous	62.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	62.0	n/a	0
+before_test	62.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	62.0	n/a	n/a
+before_anonymous	63.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	63.0	n/a	0
+before_test	63.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	63.0	n/a	n/a
+before_anonymous	67.0	anonymous	True	False	System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	67.0	n/a	0
+before_test	67.0	istest	true	Failed	probe=Fail System.AssertException: Assertion Failed: OBS=Found|Found|ERR:ENTITY_IS_DELETED	67.0	n/a	n/a

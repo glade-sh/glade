@@ -46,6 +46,10 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		// The captured 18-character input can refer to a 15-character key
 		// at APIs 62.0 through 67.0 (flow_parent_reference_id_forms).
 		// Keep exact-key behavior for all other, uncaptured storage forms.
+		// A soft-deleted parent resolves under either spelling, as it does
+		// under its exact key: the Flow completes and the save is then
+		// rejected with ENTITY_IS_DELETED (flow_parent_before_review, third
+		// result, 62.0, 63.0 and 67.0, both routes).
 		version := e.Org.APIVersion
 		if len(flowVersion) > 0 {
 			version = flowVersion[0]
@@ -54,9 +58,7 @@ func (e *Engine) flowLookupParentReferenceValue(sourceField string, source stora
 		if !found && len(parentID) == 18 && known && major >= 62 && major <= 67 {
 			short := parentID[:15]
 			if storage.ID18(string(short)) == string(parentID) {
-				if candidate, present := parent.Records[short]; present && !candidate.System.IsDeleted {
-					_, record, found = storage.LookupRecordByID(parent.Records, short)
-				}
+				record, found = parent.Records[short]
 			}
 		}
 		if !found {

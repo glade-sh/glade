@@ -31,12 +31,14 @@ func TestFlowLookupParentReferenceIDFormsAndControls(t *testing.T) {
 	source := storage.Record{Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parentID)}}
 	parent.System.IsDeleted = true
 	org.Objects["Parent__c"].Records[parentID] = parent
+	// A soft-deleted parent resolves under both spellings, so the Flow
+	// completes and reference validation rejects the save with
+	// ENTITY_IS_DELETED: flow_parent_before_review/org.tsv, third result.
 	for _, text := range []string{string(parentID), storage.ID18(string(parentID))} {
 		source.Fields["Parent__c"] = storage.IDValue(storage.ID(text))
 		value, ok := engine.flowLookupParentReferenceValue("Parent__r.Ref__c", source, childDef)
-		_, mainFound := org.Objects["Parent__c"].Records[storage.ID(text)]
-		if ok != mainFound || (ok && (value.Kind != storage.ValueID || value.ID != targetID)) {
-			t.Fatalf("deleted parent differs from base for ID length %d", len(text))
+		if !ok || value.Kind != storage.ValueID || value.ID != targetID {
+			t.Fatalf("deleted parent did not resolve for ID length %d", len(text))
 		}
 	}
 	source.Fields["Parent__c"] = storage.IDValue(parentID)

@@ -4,7 +4,7 @@
 
 - Remove obsolete benchmark cache references from CI checks.
 - Report a missing org-wide sender when sending email with partial success enabled.
-- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0.
+- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0. A before-save Flow that follows an 18-character reference to a deleted parent no longer stops the save with a runtime error; the save fails with `ENTITY_IS_DELETED`, as captured at API 62.0, 63.0 and 67.0.
 - Match Salesforce compilation for direct anonymous BatchApexErrorEvent inserts at API 62.0 and 67.0.
 - Add Salesforce conformance coverage for inactive Visualforce Sites in anonymous Apex and tests.
 - Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery, and a class that failed only through such a test.
