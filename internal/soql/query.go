@@ -139,8 +139,6 @@ type childRelationshipResolution struct {
 	childObjectName string
 	relation        storage.Relationship
 	ok              bool
-	loaded          bool
-	objectCount     int
 }
 type UnsupportedFeatureError struct {
 	Message string

@@ -23,10 +23,7 @@ type attachmentViewSource struct {
 	index map[storage.ID][]string
 }
 
-// The Id-only attachment views on ordinary custom records read from their
-// backing child relationships. Run those selections through the normal child
-// path so they share its parent matching and visibility rules.
-func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectDefinition, parent storage.Record, child ChildQuery, cache *childRelationshipQueryCache, context ExecutionContext) ([]storage.Record, bool, error) {
+func attachmentViewName(definition storage.ObjectDefinition, child ChildQuery) string {
 	var viewName string
 	switch strings.ToLower(child.Relationship) {
 	case "notesandattachments":
@@ -34,11 +31,22 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 	case "combinedattachments":
 		viewName = "CombinedAttachment"
 	default:
-		return nil, false, nil
+		return ""
 	}
 	if !strings.HasSuffix(strings.ToLower(definition.APIName), "__c") ||
 		storage.StripAnyNamespaceToken(definition.APIName) != definition.APIName ||
 		storage.IsCustomSettingDefinition(definition) || !IsContentChildAttachedIDQuery(child.Query) {
+		return ""
+	}
+	return viewName
+}
+
+// The Id-only attachment views on ordinary custom records read from their
+// backing child relationships. Run those selections through the normal child
+// path so they share its parent matching and visibility rules.
+func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectDefinition, parent storage.Record, child ChildQuery, cache *childRelationshipQueryCache, context ExecutionContext) ([]storage.Record, bool, error) {
+	viewName := attachmentViewName(definition, child)
+	if viewName == "" {
 		return nil, false, nil
 	}
 	plan := planAttachmentView(org, definition, child.Relationship, viewName, cache)
@@ -149,14 +157,11 @@ func planAttachmentView(org storage.OrgState, definition storage.ObjectDefinitio
 			return plan
 		}
 	}
-	// Reference validation already resolves the loaded and platform edges.
-	// Reuse its schema result instead of scanning the standard spread again.
-	resolution := childRelationshipResolutionCached(org, definition, relationship, cache)
-	plan := &attachmentViewPlan{loaded: resolution.loaded}
-	if org.StandardSpread != "" && resolution.objectCount != len(org.Objects) {
-		// Lazy materialization during validation can expose more loaded edges.
-		_, _, plan.loaded = loadedChildRelationship(org, definition, relationship)
-	}
+	// The execution cache can outlive the declarations and cannot identify
+	// which objects a validation-only lazy schema view materialized. Resolve
+	// against the projection's schema once per query.
+	_, _, loaded := loadedChildRelationship(org, definition, relationship)
+	plan := &attachmentViewPlan{loaded: loaded}
 	if !plan.loaded {
 		if name, ok := storage.ResolveObjectName(org, view); ok && len(org.Objects[name].Records) > 0 {
 			plan.importedObject = name
