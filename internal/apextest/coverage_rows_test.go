@@ -84,7 +84,7 @@ func TestCoverageRowsSameNamedClassesStayApart(t *testing.T) {
 	}
 	index := typesys.Build(p, s)
 	options := Options{NoDiskCache: true, Parallelism: 1, CodeCoverage: true}
-	run := testreport.NativePerTestRows(RunCasesContext(context.Background(), index, options, discover(index, options, nil)))
+	run := testreport.NativePerTestRows(RunCasesContext(context.Background(), index, options, Discover(index, options)))
 	if got := run.Summary(); got.Passed != 2 {
 		t.Fatalf("summary=%#v problem=%q", got, firstRunProblem(run))
 	}

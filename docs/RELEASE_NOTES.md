@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- When two source files declare the same Apex test class, Glade runs only the selected file’s test methods and setup.
+- When Glade selects one source file for a duplicate Apex test class within a project, it runs that file’s test methods and setup.
 
 ## v0.3.15
 

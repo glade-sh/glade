@@ -232,23 +232,79 @@ type TestProgress struct {
 }
 
 func Discover(index typesys.Index, opts Options) []TestCase {
-	// The project loader selects the later lexical path across package
-	// directories and retains other duplicate symbols for diagnostics.
-	// Apply that source precedence to the remaining test-class copies.
-	winners := make(map[string]string)
+	// The project loader resolves cross-package collisions before indexing.
+	// Only remaining copies within the same SFDX project share precedence.
+	firstFiles := make(map[string]string)
+	duplicates := make(map[string]bool)
 	for _, typ := range index.Types {
 		if typ.Dependency || typ.Kind != apexast.DeclarationClass || typ.OwnerName != "" || !typ.HasSourceSnapshot() {
 			continue
 		}
 		key := testClassSourceKey(typ)
-		if typ.File > winners[key] {
+		if first, ok := firstFiles[key]; ok {
+			if first != typ.File {
+				duplicates[key] = true
+			}
+		} else {
+			firstFiles[key] = typ.File
+		}
+	}
+	if len(duplicates) == 0 {
+		return discover(index, opts, nil)
+	}
+
+	type projectClass struct{ root, name string }
+	projectRoots := make(map[string]string)
+	winners := make(map[projectClass]string)
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.Kind != apexast.DeclarationClass || typ.OwnerName != "" || !typ.HasSourceSnapshot() {
+			continue
+		}
+		name := testClassSourceKey(typ)
+		if !duplicates[name] {
+			continue
+		}
+		root, known := projectRoots[typ.File]
+		if !known {
+			sourceRoot := typ.SourceRoot
+			if sourceRoot == "" {
+				sourceRoot = index.Project.Root
+			}
+			root = nearestTestProjectRoot(sourceRoot, typ.File)
+			projectRoots[typ.File] = root
+		}
+		key := projectClass{root: root, name: name}
+		if root != "" && typ.File > winners[key] {
 			winners[key] = typ.File
 		}
 	}
 	return discover(index, opts, func(typ typesys.TypeSymbol) bool {
-		winner := winners[testClassSourceKey(typ)]
+		winner := winners[projectClass{root: projectRoots[typ.File], name: testClassSourceKey(typ)}]
 		return winner == "" || typ.File == winner
 	})
+}
+
+func nearestTestProjectRoot(sourceRoot, file string) string {
+	if sourceRoot == "" {
+		return ""
+	}
+	root, rootErr := filepath.Abs(sourceRoot)
+	dir, dirErr := filepath.Abs(filepath.Dir(file))
+	if rootErr != nil || dirErr != nil {
+		return ""
+	}
+	if relative, err := filepath.Rel(root, dir); err != nil || !filepath.IsLocal(relative) {
+		return ""
+	}
+	for {
+		if info, err := os.Stat(filepath.Join(dir, "sfdx-project.json")); err == nil && info.Mode().IsRegular() {
+			return dir
+		}
+		if dir == root {
+			return ""
+		}
+		dir = filepath.Dir(dir)
+	}
 }
 
 func testClassSourceKey(typ typesys.TypeSymbol) string {

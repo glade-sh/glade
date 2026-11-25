@@ -39,7 +39,7 @@ func TestRuntimeSameNamedTestClassesRunOwnTestSetup(t *testing.T) {
 	}
 	index := typesys.Build(p, s)
 	options := Options{NoDiskCache: true, Parallelism: 1, CodeCoverage: true}
-	cases := discover(index, options, nil)
+	cases := Discover(index, options)
 	if len(cases) != 2 {
 		t.Fatalf("discovered %d cases, want 2", len(cases))
 	}
