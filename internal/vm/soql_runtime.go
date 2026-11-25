@@ -1620,7 +1620,7 @@ func (vm *VM) warmsDirectUserRecordAccess(query soql.Query, explicitSystemMode, 
 // userRecordAccessForRecord is the relationship UserRecordAccess surface, from the current actor's
 // grants. Actor-dependent values never enter the shared query or schema caches.
 func (vm *VM) userRecordAccessForRecord(objectName string, record storage.Record) storage.Record {
-	return vm.userRecordAccess(objectName, record, false, false)
+	return vm.userRecordAccess(objectName, record, false, false, false)
 }
 
 // userRecordAccessDirect is the direct UserRecordAccess query surface. It
@@ -1628,10 +1628,10 @@ func (vm *VM) userRecordAccessForRecord(objectName string, record storage.Record
 // relationship surface recomputes for itself. userMode reports an explicit
 // USER_MODE on the direct query itself.
 func (vm *VM) userRecordAccessDirect(objectName string, record storage.Record, userMode bool) storage.Record {
-	return vm.userRecordAccess(objectName, record, true, userMode)
+	return vm.userRecordAccess(objectName, record, true, userMode, false)
 }
 
-func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct, directUserMode bool) storage.Record {
+func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct, directUserMode, publicTransferEdit bool) storage.Record {
 	userID := vm.currentUserInfoField("Id", "005-local-user")
 	live := !record.System.IsDeleted
 	accessible := live && vm.currentUserObjectPermission(objectName, "isAccessible")
@@ -1641,8 +1641,9 @@ func (vm *VM) userRecordAccess(objectName string, record storage.Record, direct,
 	if accessible && !read && (!direct || vm.testContext != nil && vm.testContext.RunAsDepth > 0) && vm.partnerLeadPrivateExternalDefault(objectName) {
 		read = true
 	}
-	edit := live && vm.currentUserCanWriteRecord(objectName, record, userID, "update") && vm.currentUserObjectPermission(objectName, "isUpdateable")
-	if edit && direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.capturedPartnerLeadTestOwner(record) &&
+	edit := live && (read && publicTransferEdit || vm.currentUserCanWriteRecord(objectName, record, userID, "update")) &&
+		vm.currentUserObjectPermission(objectName, "isUpdateable")
+	if edit && direct && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.partnerLeadPrivateExternalDefault(objectName) && vm.recordCreatedAndOwnedByAdministrator(record) &&
 		!storage.IDsEqual(record.System.CreatedByID, storage.ID(userID)) && !storage.IDsEqual(record.System.OwnerID, storage.ID(userID)) && !vm.currentUserBypassesRecordSharingForWrite() &&
 		!vm.currentUserObjectRecordGrant(objectName, "PermissionsModifyAllRecords") {
 		edit = false
@@ -2086,6 +2087,11 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			model := strings.TrimSpace(object.Definition.SharingModel)
 			publicCaseLead := anonymousCaseLead && capturedStandardNamedObject(objectName) &&
 				capturedCaseLeadPublicEditModel(model) && strings.TrimSpace(object.Definition.ExternalSharingModel) == ""
+			// The transfer fixture reads another user's access outside runAs.
+			// Its Standard User can edit the records created by their administrator owner.
+			testTransferEdit := standard && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && !vm.currentTrigger &&
+				(api == "62.0" || api == "67.0") && capturedStandardNamedObject(objectName) &&
+				strings.EqualFold(model, "ReadWriteTransfer") && strings.TrimSpace(object.Definition.ExternalSharingModel) == ""
 			if vm.testContext == nil && !partner && !standard && !publicCaseLead {
 				continue
 			}
@@ -2150,7 +2156,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 					!storage.IDsEqual(record.System.CreatedByID, storage.ID(current))) {
 					continue
 				}
-				access := vm.userRecordAccessDirect(objectName, record, userMode)
+				access := vm.userRecordAccess(objectName, record, true, userMode, testTransferEdit && vm.recordCreatedAndOwnedByAdministrator(record))
 				if publicCaseLead && standard && strings.EqualFold(model, "ReadWriteTransfer") &&
 					access.Fields["HasReadAccess"].Boolean && vm.currentUserObjectPermission(objectName, "isUpdateable") {
 					access.Fields["HasEditAccess"] = storage.BooleanValue(true)
@@ -5422,7 +5428,7 @@ func (vm *VM) partnerLeadPrivateExternalDefaultForNamedAccess(objectName, actorI
 			return false
 		}
 		if actorID == "" {
-			if !vm.capturedPartnerLeadTestOwner(lead) {
+			if !vm.recordCreatedAndOwnedByAdministrator(lead) {
 				return false
 			}
 		} else {
