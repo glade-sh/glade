@@ -11,13 +11,19 @@ import (
 // the rest of C0) were not captured and keep base behavior.
 const textWriteTrimSet = " \t"
 
-// NormalizeTextWrites applies the collation capture (re_collation, API 62.0 and
-// 67.0): a Text field write is trimmed of leading and trailing space and tab,
-// and a value that is empty afterwards is stored as null. Only plain Text fields
-// were captured (Account Name and Site, custom object Name); text areas,
-// picklists, email, phone and URL fields keep their existing behavior.
-// The canonical match field can be excluded while preparing an upsert trigger.
+// NormalizeTextWrites trims space and tab at the edges of plain Text fields
+// and converts blank values to null for DML storage.
 func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record, matchField string) {
+	normalizeTextWrites(definition, namespace, record, matchField, false)
+}
+
+// NormalizeTriggerTextWrites also trims Text Area and Long Text Area fields
+// on the working DML records. The canonical upsert match field is excluded.
+func NormalizeTriggerTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record, matchField string) {
+	normalizeTextWrites(definition, namespace, record, matchField, true)
+}
+
+func normalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record, matchField string, includeTextAreas bool) {
 	if record == nil {
 		return
 	}
@@ -29,7 +35,11 @@ func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, 
 			continue
 		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
-		if !ok || canonical == matchField || !isPlainTextWriteField(definition.Fields[canonical]) {
+		if !ok || canonical == matchField {
+			continue
+		}
+		field := definition.Fields[canonical]
+		if !isPlainTextWriteField(field) && !(includeTextAreas && isTextAreaWriteField(field)) {
 			continue
 		}
 		trimmed := strings.Trim(value.String, textWriteTrimSet)
@@ -54,6 +64,17 @@ func isPlainTextWriteField(field storage.Field) bool {
 	}
 	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
 	case "", "STRING":
+		return true
+	}
+	return false
+}
+
+func isTextAreaWriteField(field storage.Field) bool {
+	if field.Type != storage.FieldString || field.Encrypted || field.Formula != "" {
+		return false
+	}
+	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+	case "TEXTAREA", "LONGTEXTAREA":
 		return true
 	}
 	return false

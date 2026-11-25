@@ -831,7 +831,7 @@ func (vm *VM) normalizeBeforeInsertTriggerText(records []storage.Record, externa
 		}
 	}
 	for i := range records {
-		dml.NormalizeTextWrites(definition, vm.Org.Namespace, &records[i], matchField)
+		dml.NormalizeTriggerTextWrites(definition, vm.Org.Namespace, &records[i], matchField)
 	}
 }
 
