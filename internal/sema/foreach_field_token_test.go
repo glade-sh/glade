@@ -19,7 +19,7 @@ public class GaugePlan {
 }
 `
 	const helpers = `
-  private static GaugePlan reading = new GaugePlan();
+  private static String reading = 'marked';
   private static GaugePlan openPlan(Boolean ready) { return new GaugePlan(); }
   public static List<Lead> readings(GaugePlan plan) {
     return new List<Lead>{ new Lead(LastName = 'Morrow', Company = 'Gauge Works', AnnualRevenue = 3) };
@@ -35,11 +35,11 @@ public class GaugePlan {
     }
 `
 	const shadowingLoop = `
-    for (Lead reading : GaugeRun.readings(reading.mark(Lead.AnnualRevenue))) {
+    for (Lead reading : GaugeRun.readings(openPlan(true).mark(reading).mark(Lead.AnnualRevenue))) {
       Decimal observed = reading.AnnualRevenue;
       System.assertEquals(3, observed);
     }
-    GaugeRun.readings(reading.mark('after loop'));
+    openPlan(true).mark(reading);
 `
 	for _, tc := range []struct {
 		name string
@@ -53,12 +53,12 @@ public class GaugePlan {
 		{
 			name: "nested-loops",
 			body: `
-    for (Lead outer : new List<Lead>()) {
-      for (Lead reading : GaugeRun.readings(reading.mark(outer.LastName))) {
-        Decimal observed = reading.AnnualRevenue + outer.AnnualRevenue;
+    for (Lead outerLead : new List<Lead>()) {
+      for (Lead reading : GaugeRun.readings(openPlan(true).mark(outerLead.LastName).mark(reading))) {
+        Decimal observed = reading.AnnualRevenue + outerLead.AnnualRevenue;
         System.assertEquals(6, observed);
       }
-      GaugeRun.readings(reading.mark(outer.LastName));
+      openPlan(true).mark(reading).mark(outerLead.LastName);
     }`,
 		},
 		{
