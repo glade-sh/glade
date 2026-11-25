@@ -838,6 +838,7 @@ func unsupportedCallError(callee string) error {
 
 type testExecutionEntry struct {
 	className string
+	file      string
 	depth     int
 }
 
@@ -3708,24 +3709,26 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 	return vm.execute(program, className)
 }
 
-// ExecuteTestInClass scopes the sharing entry to an actual test invocation.
-// ExecuteTestInClassFromSourceUnit is ExecuteTestInClass with the entry
-// bound to one source unit: a call the program makes to a name that two
-// source units declare resolves to that unit's declaration, as a call from
-// that unit's own code does.
-func (vm *VM) ExecuteTestInClassFromSourceUnit(program ir.Program, className, sourceUnit string) (Result, error) {
+// ExecuteTestInClassFromSource scopes setup invocation to its source occurrence.
+// The source unit still controls calls made by the setup body.
+func (vm *VM) ExecuteTestInClassFromSource(program ir.Program, className, sourceUnit, file string) (Result, error) {
 	previous := vm.currentMethod.SourceUnit
 	vm.currentMethod.SourceUnit = sourceUnit
 	defer func() { vm.currentMethod.SourceUnit = previous }()
-	return vm.ExecuteTestInClass(program, className)
+	return vm.executeTestInClass(program, className, file)
 }
 
+// ExecuteTestInClass scopes the sharing entry to an actual test invocation.
 func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, error) {
+	return vm.executeTestInClass(program, className, "")
+}
+
+func (vm *VM) executeTestInClass(program ir.Program, className, file string) (Result, error) {
 	previousEntry, previousTest := vm.entrySharingMode, vm.testExecutionEntry
 	if vm.entrySharingMode == "" {
 		vm.entrySharingMode = "with sharing"
 	}
-	vm.testExecutionEntry = &testExecutionEntry{className: className, depth: len(vm.callStack) + 1}
+	vm.testExecutionEntry = &testExecutionEntry{className: className, file: file, depth: len(vm.callStack) + 1}
 	defer func() { vm.entrySharingMode, vm.testExecutionEntry = previousEntry, previousTest }()
 	return vm.ExecuteInClass(program, className)
 }

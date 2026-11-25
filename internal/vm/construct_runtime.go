@@ -3360,6 +3360,10 @@ func (vm *VM) methodResolveCacheKey(kind, typeName, method string, args []Value)
 		b.WriteString(vm.currentMethod.SourceUnit)
 		b.WriteByte('|')
 	}
+	if entry := vm.testSourceEntry(); entry != nil {
+		b.WriteString(entry.file)
+		b.WriteByte('|')
+	}
 	b.WriteString(strings.ToLower(typeName))
 	b.WriteByte('|')
 	b.WriteString(strings.ToLower(method))
@@ -3370,7 +3374,22 @@ func (vm *VM) methodResolveCacheKey(kind, typeName, method string, args []Value)
 	return b.String()
 }
 
+func (vm *VM) testSourceEntry() *testExecutionEntry {
+	if entry := vm.testExecutionEntry; entry != nil && entry.file != "" && len(vm.callStack)+1 == entry.depth {
+		return entry
+	}
+	return nil
+}
+
 func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool, bool) {
+	if entry := vm.testSourceEntry(); entry != nil {
+		for _, method := range candidates {
+			if strings.EqualFold(method.ClassName, entry.className) && sameMethodFile(method.File, entry.file) && vm.methodApplicable(method, args) {
+				vm.lastAmbiguous = nil
+				return method, true, false
+			}
+		}
+	}
 	if vm.capturedUserClassSetOverloadRejection(candidates, args) {
 		vm.lastAmbiguous = nil
 		return Method{}, false, false

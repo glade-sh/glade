@@ -30,7 +30,8 @@ func TestRunReportsBoundTestSource(t *testing.T) {
 			}
 			writeFile(t, second, `@isTest class `+secondClass+` { @isTest static void check() { System.assert(true); } }`)
 			index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
-			cases := Discover(index, Options{})
+			// Exercise explicit source-bound cases, including both copies.
+			cases := discover(index, Options{}, nil)
 			if len(cases) != 2 {
 				t.Fatalf("cases = %#v", cases)
 			}
@@ -179,14 +180,15 @@ func seedUnlowerableMethod(t *testing.T, index typesys.Index, name string) {
 // internal/project/testdata/source_collisions/org.tsv at 62.0 and 67.0.
 func TestRunDiscoversOnlySelectedDuplicateTestClass(t *testing.T) {
 	root := t.TempDir()
-	older := filepath.Join(root, "amber", "GorseTrailTest.cls")
-	selected := filepath.Join(root, "willow", "GorseTrailTest.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	older := filepath.Join(root, "force-app", "amber", "GorseTrailTest.cls")
+	selected := filepath.Join(root, "force-app", "willow", "GorseTrailTest.cls")
 	writeFile(t, older, `@IsTest private class GorseTrailTest {
-        @TestSetup static void seedAmber() { System.assert(false, 'shadowed setup'); }
+        @TestSetup static void seed() { System.assert(false, 'shadowed setup'); }
         @IsTest static void amberOnly() { System.assert(false, 'shadowed test'); }
     }`)
 	writeFile(t, selected, `@IsTest private class GorseTrailTest {
-        @TestSetup static void seedWillow() { insert new Account(Name = 'willow trail'); }
+        @TestSetup static void seed() { insert new Account(Name = 'willow trail'); }
         @IsTest static void willowOnly() {
             System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'willow trail']);
         }

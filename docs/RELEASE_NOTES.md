@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- When two source files declare the same Apex test class, Glade runs only the selected file’s test methods and setup.
 
 ## v0.3.15
 
