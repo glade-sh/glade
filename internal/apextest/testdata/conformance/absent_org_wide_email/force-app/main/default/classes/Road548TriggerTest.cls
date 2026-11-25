@@ -1,0 +1,1 @@
+@IsTest private class Road548TriggerTest { @IsTest static void direct() { Account a = new Account(Name='probe'); insert a; a=[SELECT Description FROM Account WHERE Id=:a.Id]; System.assert(false, 'ROAD548TRIGGER=' + a.Description); } }
