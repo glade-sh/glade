@@ -40,6 +40,43 @@ func TestAttachmentChildViewsPreserveImportedRows(t *testing.T) {
 	}
 }
 
+func TestAttachmentChildViewsCheckReturnedTypeVisibility(t *testing.T) {
+	const parentID = "a01000000000001"
+	const noteID = "002000000000001"
+	org := attachmentChildViewFixture(t,
+		storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
+		storage.FixtureObject{Name: "Note", Records: []storage.FixtureRecord{
+			{ID: noteID, Fields: map[string]storage.Value{"ParentId": storage.IDValue(parentID)}},
+		}},
+	)
+	for _, tc := range []struct {
+		view, relationship, otherView, otherRelationship string
+	}{
+		{"CombinedAttachment", "CombinedAttachments", "NoteAndAttachment", "NotesAndAttachments"},
+		{"NoteAndAttachment", "NotesAndAttachments", "CombinedAttachment", "CombinedAttachments"},
+	} {
+		t.Run(tc.view, func(t *testing.T) {
+			context := ExecutionContext{ChildRecordVisible: func(objectName string, row storage.Record) bool {
+				if objectName == tc.view || objectName == tc.otherView {
+					if row.Object != objectName || row.ID != noteID || row.Fields["ParentId"].ID != parentID {
+						t.Errorf("visibility callback received wrong %s row: %+v", objectName, row)
+					}
+				}
+				return objectName != tc.view
+			}}
+			result := queryAttachmentChildViews(t, org, context)
+			if len(result.Records) != 1 {
+				t.Fatalf("parent rows = %d, want 1", len(result.Records))
+			}
+			parent := result.Records[0]
+			if rows := parent.Children[tc.relationship]; len(rows) != 0 {
+				t.Errorf("%s returned vetoed rows: %+v", tc.relationship, rows)
+			}
+			assertAttachmentChildView(t, parent, tc.otherRelationship, tc.otherView, noteID)
+		})
+	}
+}
+
 func attachmentChildViewFixture(t *testing.T, objects ...storage.FixtureObject) storage.OrgState {
 	t.Helper()
 	org := storage.NewOrgState()
