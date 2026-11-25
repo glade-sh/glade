@@ -46,8 +46,35 @@ async function fixture(t) {
   await writeFile(join(commands, "curl"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$CURL_LOG"
 case "$*" in
-  *release-manifest.json*) [ "\${FAIL_DOWNLOAD:-}" != 1 ] || exit 28 ;;
-  *api.github.com/repos/glade-sh/glade/releases/*) exit 22 ;;
+  *release-manifest.json*)
+    if [ -n "\${FAIL_DOWNLOAD:-}" ]; then
+      printf '%s\\n' 'curl: (28) mirror timed out' 'additional mirror details' >&2
+      exit 28
+    fi ;;
+  *api.github.com/repos/glade-sh/glade/releases/tags/*)
+    case "\${FAIL_DOWNLOAD:-}" in
+      archive|checksum)
+        while [ "$1" != -o ]; do shift; done
+        printf '%s\\n' \
+          '"url": "https://api.github.com/repos/glade-sh/glade/releases/assets/1",' \
+          '"name": "${archive}",' \
+          '"url": "https://api.github.com/repos/glade-sh/glade/releases/assets/2",' \
+          '"name": "SHA256SUMS.txt"' > "$2"
+        exit 0 ;;
+    esac
+    printf '%s\\n' 'curl: (22) release metadata unavailable' 'additional metadata details' >&2
+    exit 22 ;;
+  *api.github.com/repos/glade-sh/glade/releases/assets/1*)
+    if [ "$FAIL_DOWNLOAD" = checksum ]; then
+      while [ "$1" != -o ]; do shift; done
+      cp "$TEST_ARCHIVE" "$2"
+      exit 0
+    fi
+    printf '%s\\n' 'curl: (56) archive connection reset' 'additional archive details' >&2
+    exit 56 ;;
+  *api.github.com/repos/glade-sh/glade/releases/assets/2*)
+    printf '%s\\n' 'curl: (56) checksum connection reset' 'additional checksum details' >&2
+    exit 56 ;;
   *api.github.com/repos/glade-sh/glade/attestations/*)
     case "$*" in *predicate_type=https%3A%2F%2Fcyclonedx.org%2Fbom*) ;; *) exit 99 ;; esac
     while [ "$1" != -o ]; do shift; done
@@ -64,10 +91,11 @@ exec /usr/bin/curl "$@"
     GLADE_INSTALL_DIR: join(root, "bin"),
     CURL_LOG: curlLog,
     GH_LOG: ghLog,
+    TEST_ARCHIVE: join(release, archive),
   };
   return {
-    run: (overrides = {}) => spawnSync("/bin/sh", [installer], { env: { ...env, ...overrides }, encoding: "utf8", timeout: 10000 }),
-    commands, release, checksums, checksumTool: checksum[0], curlLog, ghLog, tools,
+    run: (overrides = {}, script = installer) => spawnSync("/bin/sh", [script], { env: { ...env, ...overrides }, encoding: "utf8", timeout: 10000 }),
+    root, commands, release, checksums, checksumTool: checksum[0], curlLog, ghLog, tools,
     binary: join(env.GLADE_INSTALL_DIR, "glade"),
   };
 }
@@ -76,7 +104,12 @@ test("installer without gh verifies the checksum and prints one provenance notic
   const f = await fixture(t);
   const result = f.run();
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stderr.match(/provenance was not checked;.*install gh.*verify-release-download\.sh/g)?.length, 1);
+  const notices = result.stderr.split("\n").filter(line => line.startsWith("glade install: SHA-256"));
+  assert.equal(notices.length, 1, result.stderr);
+  assert.match(notices[0], /checksum guards against corrupted downloads/i);
+  assert.match(notices[0], /provenance.*origin.*gh/i);
+  assert.match(notices[0], /https:\/\/glade\.sh\/guide\/security-trust#release-proof/);
+  assert.doesNotMatch(notices[0], /scripts\/verify-release-download\.sh/);
   assert.ok(existsSync(f.binary));
   assert.doesNotMatch(await readFile(f.curlLog, "utf8"), /attestations\/|sigstore\.json/);
 });
@@ -89,7 +122,7 @@ test("installer without gh rejects an invalid or ambiguous checksum", async t =>
     const result = f.run();
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /checksum/);
-    assert.doesNotMatch(result.stderr, /provenance was not checked/);
+    assert.doesNotMatch(result.stderr, /glade install: SHA-256/);
     assert.equal(existsSync(f.binary), false);
   }
 });
@@ -122,12 +155,75 @@ test("installer checks strict provenance and required tools before downloading",
 test("installer reports mirror curl status and reserves the private hint for token users", async t => {
   const f = await fixture(t);
   for (const token of ["", "test-token"]) {
-    const result = f.run({ FAIL_DOWNLOAD: "1", GLADE_GITHUB_TOKEN: token });
+    const result = f.run({ FAIL_DOWNLOAD: "metadata", GLADE_GITHUB_TOKEN: token });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /downloads\.glade\.sh unavailable \(curl exit 28\); trying GitHub Releases/);
+    assert.match(result.stderr, /curl: \(28\) mirror timed out/);
+    assert.match(result.stderr, /curl: \(22\) release metadata unavailable/);
+    assert.doesNotMatch(result.stderr, /additional \w+ details/);
     assert.match(result.stderr, /check your network or proxy/i);
     assert.equal(result.stderr.includes("private repo"), Boolean(token));
   }
+});
+
+test("installer reports one line of curl diagnostics for failed GitHub assets", async t => {
+  const f = await fixture(t);
+  for (const asset of ["archive", "checksum"]) {
+    const result = f.run({ FAIL_DOWNLOAD: asset });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`curl: \\(56\\) ${asset} connection reset`));
+    assert.doesNotMatch(result.stderr, /additional \w+ details/);
+    assert.match(result.stderr, /check your network or proxy/i);
+    assert.equal(existsSync(f.binary), false);
+  }
+});
+
+test("installer parses strict, off, and invalid provenance settings", async t => {
+  const f = await fixture(t);
+  for (const value of ["1", "TrUe", "YeS"]) {
+    const result = f.run({ GLADE_REQUIRE_PROVENANCE: value });
+    assert.notEqual(result.status, 0, value);
+    assert.match(result.stderr, /GLADE_REQUIRE_PROVENANCE=.* requires the GitHub CLI \(gh\)/);
+    assert.equal(existsSync(f.curlLog), false);
+  }
+  for (const value of ["2", "on", " true "]) {
+    const result = f.run({ GLADE_REQUIRE_PROVENANCE: value });
+    assert.notEqual(result.status, 0, value);
+    assert.match(result.stderr, /invalid GLADE_REQUIRE_PROVENANCE value.*1, true, yes.*0, false, no/i);
+    assert.equal(existsSync(f.curlLog), false);
+  }
+  for (const value of ["", "0", "FaLsE", "nO"]) {
+    const result = f.run({ GLADE_REQUIRE_PROVENANCE: value });
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(existsSync(f.binary));
+  }
+});
+
+test("installer rejects the macOS system Python stub before executing it", async t => {
+  const f = await fixture(t);
+  const python = join(f.commands, "python3");
+  const xcodeSelect = join(f.commands, "xcode-select");
+  const uname = join(f.commands, "uname");
+  const pythonLog = join(f.root, "python.log");
+  const xcodeLog = join(f.root, "xcode.log");
+  await rm(python);
+  await rm(uname);
+  await writeFile(uname, `#!/bin/sh\ncase "$1" in -s) echo Darwin ;; -m) echo ${cpu} ;; esac\n`, { mode: 0o755 });
+  await writeFile(python, '#!/bin/sh\nprintf "%s\\n" "$*" > "$PYTHON_LOG"\nexit 1\n', { mode: 0o755 });
+  await writeFile(xcodeSelect, '#!/bin/sh\nprintf "%s\\n" "$*" > "$XCODE_LOG"\nexit 1\n', { mode: 0o755 });
+
+  // Redirect the two system paths in a scratch copy to exercise the real check on any host.
+  const script = join(f.root, "install.sh");
+  const source = await readFile(installer, "utf8");
+  await writeFile(script, source
+    .replace("/usr/bin/python3 ]", `"${python}" ]`)
+    .replace("/usr/bin/xcode-select", `"${xcodeSelect}"`));
+  const result = f.run({ PYTHON_LOG: pythonLog, XCODE_LOG: xcodeLog }, script);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /macOS Python 3 needs the Xcode Command Line Tools.*xcode-select --install/);
+  assert.equal(await readFile(xcodeLog, "utf8"), "-p\n");
+  assert.equal(existsSync(pythonLog), false);
+  assert.equal(existsSync(f.curlLog), false);
 });
 
 test("installer prefers the release provenance bundle and verifies the separate SBOM without login", async t => {
