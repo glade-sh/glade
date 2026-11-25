@@ -1,0 +1,21 @@
+# Native JSON runtime observations
+
+## RUN-FACTS
+
+Synthetic unnamed Developer scratch orgs. Both orgs were deleted after the run.
+Execute Anonymous used the API in the table. The named Apex test class and any
+companion class used the same API. Named tests exposed row data through intentional
+assertion messages. Anonymous Apex emitted one debug message for each case.
+
+| API | Start UTC | End UTC | Routes |
+| --- | --- | --- | --- |
+| 62.0 | 2026-11-25T06:02:39Z | 2026-11-25T06:02:56Z | anonymous, isTest |
+| 67.0 | 2026-11-25T06:02:56Z | 2026-11-25T06:03:12Z | anonymous, isTest |
+| 68.0 | 2026-11-25T06:03:12Z | 2026-11-25T06:03:25Z | anonymous, isTest |
+
+The complete observations are in org.tsv. The replay reads the cases selected
+in cases.tsv. Each selected case has a row at all three APIs in both routes.
+
+## NEIGHBOR PROBES
+
+Malformed input for the computed Integer property and unknown fields keep their existing decoding and diagnostics. Non-JSON reads and dotted implicit receiver reads are outside this capture.
