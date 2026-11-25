@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -3361,6 +3362,15 @@ func (vm *VM) methodResolveCacheKey(kind, typeName, method string, args []Value)
 		b.WriteByte('|')
 	}
 	if entry := vm.testSourceEntry(); entry != nil {
+		b.WriteString("test-entry|")
+		b.WriteString(entry.className)
+		b.WriteByte('|')
+		b.WriteString(entry.file)
+		b.WriteByte('|')
+	} else if entry := vm.testSourceCaller(); entry != nil {
+		b.WriteString("test-source|")
+		b.WriteString(entry.className)
+		b.WriteByte('|')
 		b.WriteString(entry.file)
 		b.WriteByte('|')
 	}
@@ -3381,6 +3391,18 @@ func (vm *VM) testSourceEntry() *testExecutionEntry {
 	return nil
 }
 
+// A source-bound setup and any helpers declared in that occurrence resolve
+// methods of their own class from the same file.
+func (vm *VM) testSourceCaller() *testExecutionEntry {
+	entry := vm.testExecutionEntry
+	if entry != nil && entry.file != "" &&
+		strings.EqualFold(vm.currentMethod.ClassName, entry.className) &&
+		sameMethodFile(vm.currentMethod.File, entry.file) {
+		return entry
+	}
+	return nil
+}
+
 func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool, bool) {
 	if entry := vm.testSourceEntry(); entry != nil {
 		for _, method := range candidates {
@@ -3389,6 +3411,10 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 				return method, true, false
 			}
 		}
+	} else if entry := vm.testSourceCaller(); entry != nil {
+		candidates = slices.DeleteFunc(slices.Clone(candidates), func(method Method) bool {
+			return strings.EqualFold(method.ClassName, entry.className) && !sameMethodFile(method.File, entry.file)
+		})
 	}
 	if vm.capturedUserClassSetOverloadRejection(candidates, args) {
 		vm.lastAmbiguous = nil

@@ -3709,8 +3709,8 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 	return vm.execute(program, className)
 }
 
-// ExecuteTestInClassFromSource scopes setup invocation to its source occurrence.
-// The source unit still controls calls made by the setup body.
+// ExecuteTestInClassFromSource binds the setup and calls within its declaring
+// class to the selected source occurrence.
 func (vm *VM) ExecuteTestInClassFromSource(program ir.Program, className, sourceUnit, file string) (Result, error) {
 	previous := vm.currentMethod.SourceUnit
 	vm.currentMethod.SourceUnit = sourceUnit

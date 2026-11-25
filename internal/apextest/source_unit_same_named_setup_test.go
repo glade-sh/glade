@@ -56,13 +56,15 @@ func TestRunExplicitDuplicateTestClassesInSameSourceUnitRunOwnSetup(t *testing.T
 	for _, marker := range []string{"Amber", "Willow"} {
 		file := filepath.Join(root, "force-app", marker, "OwnedSetupFileTest.cls")
 		body := fmt.Sprintf(`@IsTest private class OwnedSetupFileTest {
- @TestSetup static void seed%[1]s() { insert new Account(Name = '%[1]s'); }
+ @TestSetup static void seed%[1]s() { insert new Account(Name = marker()); }
+ private static String marker() { return '%[1]s'; }
  @IsTest static void check() {
   System.assertEquals(1, [SELECT COUNT() FROM Account]);
-  System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = '%[1]s']);
+  System.assertEquals('%[1]s', [SELECT Name FROM Account LIMIT 1].Name);
  }
 }`, marker)
 		writeFile(t, file, body)
+		writeFile(t, file+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
 		files = append(files, file)
 	}
 	index := typesys.Build(project.Project{Root: root, ApexFiles: files}, schema.Schema{})
