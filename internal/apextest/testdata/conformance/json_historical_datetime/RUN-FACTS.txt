@@ -1,6 +1,6 @@
-# Native JSON runtime observations
+Native JSON runtime observations
 
-## RUN-FACTS
+RUN-FACTS
 
 Synthetic unnamed Developer scratch orgs. The capture orgs were deleted after the run.
 Execute Anonymous used the API in the table. The named Apex test class and any
@@ -16,6 +16,6 @@ assertion messages. Anonymous Apex emitted one debug message for each case.
 The complete observations are in org.tsv. The replay reads the cases selected
 in cases.tsv. Each selected case has a row at all three APIs in both routes.
 
-## NEIGHBOR PROBES
+NEIGHBOR PROBES
 
 The precise invalid-day error text, early-calendar display for year-zero instants before hybrid year 1, date-only input, negative years, offsets crossing into negative years, and JSONParser.getDatetimeValue are outside the fix.

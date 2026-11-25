@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Reading a computed get-only property on a JSON-deserialized Apex object evaluates its getter, and JSON deserialization accepts captured standard child relationship envelopes on custom objects.
+- JSON-deserialized Apex objects evaluate computed get-only properties when read. JSON decoding accepts captured standard child relationship envelopes on unnamespaced custom objects and reads back year-1 Datetime values serialized with Gregorian year zero.
 
 ## v0.3.15
 

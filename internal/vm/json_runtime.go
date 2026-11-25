@@ -4454,6 +4454,13 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		value, err := parseDatetimeTextAllowDateOnly(text)
+		if err != nil && strings.HasPrefix(text, "0000-") {
+			// The Gregorian JSON timestamp can use year zero even for
+			// an instant in year 1 of Apex's hybrid calendar.
+			if parsed, parseErr := time.Parse(time.RFC3339Nano, text); parseErr == nil && parsed.UTC().Year() >= 0 {
+				value, err = parsed, nil
+			}
+		}
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
