@@ -3983,6 +3983,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			return nil, err
 		}
 		vm.applyBeforeDMLDerivedFields(triggerRecords)
+		if kind == "insert" && !allOrNone && options.PreserveCustomKeyUpsertList && externalIDField != "" {
+			vm.normalizeBeforeInsertTriggerText(triggerRecords, externalIDField)
+		}
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
 			ensureRollback(false)

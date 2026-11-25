@@ -804,20 +804,44 @@ func (vm *VM) triggersForOperation(object, timing, op string) []Trigger {
 func newTriggerMatchCache() *triggerMatchCache {
 	return &triggerMatchCache{entries: make(map[string][]Trigger)}
 }
+func (vm *VM) normalizeBeforeInsertTriggerText(records []storage.Record, externalIDField string) {
+	if len(records) == 0 {
+		return
+	}
+	object := records[0].Object
+	if len(vm.triggersForOperation(object, triggerTimingBefore, "insert")) == 0 {
+		return
+	}
+	objectName, ok := vm.resolveObjectName(object)
+	if !ok {
+		return
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	matchField := ""
+	if externalIDField != "" {
+		// The upsert rows cover a custom object and an explicit Text external
+		// ID. Keep that match key intact until the engine resolves it.
+		if !hasSuffixFold(objectName, "__c") || storage.IsCustomSettingDefinition(definition) || vm.hasBeforeSaveFlowForDML(records) {
+			return
+		}
+		matchField, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, externalIDField)
+		field := definition.Fields[matchField]
+		if !ok || !field.ExternalID || field.Type != storage.FieldString || !strings.EqualFold(field.DisplayType, "STRING") || field.AutoNumber {
+			return
+		}
+	}
+	for i := range records {
+		dml.NormalizeTextWrites(definition, vm.Org.Namespace, &records[i], matchField)
+	}
+}
+
 func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, []storage.Record, error) {
 	if len(records) == 0 {
 		return nil, records, nil
 	}
 	runGroup := func(records, oldRecords []storage.Record) ([]dml.Result, error) {
-		if timing == triggerTimingBefore && op == "insert" && len(vm.triggersForOperation(records[0].Object, timing, op)) > 0 {
-			if objectName, ok := vm.resolveObjectName(records[0].Object); ok {
-				// Prepare Trigger.new. The insert engine normalizes text again
-				// after any assignments made by the before trigger.
-				definition := vm.Org.Objects[objectName].Definition
-				for i := range records {
-					dml.NormalizeTextWrites(definition, vm.Org.Namespace, &records[i])
-				}
-			}
+		if timing == triggerTimingBefore && op == "insert" {
+			vm.normalizeBeforeInsertTriggerText(records, "")
 		}
 		return vm.runTriggers(timing, op, records, oldRecords, result)
 	}

@@ -16,7 +16,8 @@ const textWriteTrimSet = " \t"
 // and a value that is empty afterwards is stored as null. Only plain Text fields
 // were captured (Account Name and Site, custom object Name); text areas,
 // picklists, email, phone and URL fields keep their existing behavior.
-func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
+// The canonical match field can be excluded while preparing an upsert trigger.
+func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record, matchField string) {
 	if record == nil {
 		return
 	}
@@ -28,7 +29,7 @@ func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, 
 			continue
 		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
-		if !ok || !isPlainTextWriteField(definition.Fields[canonical]) {
+		if !ok || canonical == matchField || !isPlainTextWriteField(definition.Fields[canonical]) {
 			continue
 		}
 		trimmed := strings.Trim(value.String, textWriteTrimSet)

@@ -14,4 +14,4 @@
 
 - Existing, omitted and soft-deleted lookup targets are controls. Self lookups, required lookups, master-detail, lookup updates, and sparse local schemas keep their existing rules. The separate custom lookup capture covers absent standard parents.
 - The overlong non-key field and deleted parent are controls for attempted-insert upsert failures. The separate external-ID capture covers scalar, padded and supplementary-character keys. Matching-key updates, standard ID-lookup selectors, explicit IDs, access-level overloads and REST responses were outside this supplemental capture.
-- The text cases record caller, stored and trigger values. The runtime change targets plain Text in before-insert triggers. Before-update and Text Area values are observations outside this change.
+- The text cases record caller, stored and trigger values. The runtime change targets plain Text in before-insert triggers, including non-key values on the captured insert path of a partial external-ID upsert list. The upsert selector, matching-key updates, scalar and all-or-none upserts, upserts with before-save Flows, before-update triggers and Text Area fields keep their existing rules.

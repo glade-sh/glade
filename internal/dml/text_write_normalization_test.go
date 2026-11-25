@@ -21,7 +21,7 @@ func TestNormalizeTextWrites(t *testing.T) {
 	}}
 	record.Fields["Industry"] = storage.StringValue("\r\nkeep\v")
 	definition.Fields["Industry"] = storage.Field{APIName: "Industry", Type: storage.FieldString}
-	NormalizeTextWrites(definition, "", &record)
+	NormalizeTextWrites(definition, "", &record, "")
 	if got := record.Fields["Industry"].String; got != "\r\nkeep\v" {
 		t.Fatalf("other control characters changed: %q", got)
 	}
