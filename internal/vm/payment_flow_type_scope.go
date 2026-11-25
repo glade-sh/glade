@@ -21,8 +21,13 @@ func (vm *VM) paymentFlowCapturedInterface(name string) string {
 	if class, ok := vm.lookupClass(name); ok && !class.PlatformType {
 		return ""
 	}
-	if vm.currentClass == "" && vm.currentMethod.ClassName == "" && vm.testContext == nil {
-		return edge
+	if vm.testContext == nil {
+		if vm.currentClass == "" && vm.currentMethod.ClassName == "" {
+			return edge
+		}
+		if vm.currentMethod.anonymousLocal && edge == "commercepayments.GatewayResponse" {
+			return edge
+		}
 	}
 	className := vm.currentMethod.ClassName
 	if className == "" {

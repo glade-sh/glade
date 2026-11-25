@@ -49,3 +49,11 @@ IntegerReferencedRefundRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
 refund	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.ReferencedRefundRequest cannot be constructed directly outside of a test	integer-refund-67.apex
 IntegerAuthorizationReversalRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
 void	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	integer-void-67.apex
+sale	62.0	anonymous	local-response	true	Pass		sale-local-response-62.apex
+saleResponse	62.0	istest	response-identity	true	Pass		Road544Response62.cls
+void	62.0	anonymous	local-response	true	Pass		void-local-response-62.apex
+reversalResponse	62.0	istest	response-identity	true	Pass		Road544Response62.cls
+sale	67.0	anonymous	local-response	true	Pass		sale-local-response-67.apex
+saleResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls
+void	67.0	anonymous	local-response	true	Pass		void-local-response-67.apex
+reversalResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls

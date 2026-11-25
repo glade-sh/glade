@@ -30,8 +30,8 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 51 {
-		t.Fatalf("expected 50 observations, got %d", len(rows)-1)
+	if len(rows) != 59 {
+		t.Fatalf("expected 58 observations, got %d", len(rows)-1)
 	}
 	seen := map[string]bool{}
 	for _, row := range rows[1:] {

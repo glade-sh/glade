@@ -14,3 +14,6 @@ fixture formatting: trailing whitespace normalized after capture; executable sta
 
 Additional capture: Integer and Decimal arguments, API 62.0 and 67.0, anonymous and @IsTest, all five request constructors. Integer: 10 anonymous UnsupportedOperationExceptions and 10 passing test methods. Decimal: all 10 anonymous compilations and both test classes rejected with constructor not defined. Synthetic inputs; fresh developer scratch org deleted after capture.
 current org.tsv sha256: 8043caad92e701d79fc512196411cf23bead32f91909159ad2d2fa2c8d7cdd7c
+
+Follow-up capture, 2026-11-25, APIs 62.0 and 67.0. Sale and AuthorizationReversal response declarations preserve identity inside anonymous local methods and directly inside @IsTest methods. Eight passing rows. Fresh developer scratch org deleted and CLI org list verified the scratch alias was absent.
+current org.tsv sha256: ce1045a15f839165af3212027590fc20169693ebd44c98ca3e29b9632f30feac

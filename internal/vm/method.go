@@ -39,6 +39,7 @@ type Method struct {
 	Unsupported        string
 	RuntimeLowering    bool
 	Dependency         bool
+	anonymousLocal     bool
 	// Present only on the executing trigger frame, never ordinary class methods.
 	triggerLocalMethods []string
 }
