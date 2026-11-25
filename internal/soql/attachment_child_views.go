@@ -107,21 +107,34 @@ func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
 			digest.WriteByte(0)
 		}
 		digest.size(len(definition.Relations))
+		derivedMatch := matchesAttachmentRelationship(org.Namespace, derivedChildRelationshipName(definition))
 		for _, relation := range definition.Relations {
-			digest.relationship(relation)
+			// Unmatched declarations affect candidate preference through
+			// the definition size. Their lookup targets cannot be read.
+			if derivedMatch || matchesAttachmentRelationship(org.Namespace, relation.ChildRelationship) {
+				digest.relationship(relation)
+			}
 		}
 		// These are the field-derived candidates the resolver can consider.
 		// System edges always use the derived name. A ContentDocumentLink's
 		// synthetic edge can enter either view only through that same name.
-		derived := derivedChildRelationshipName(definition)
-		matches := childRelationshipNameMatches(org.Namespace, derived, combinedAttachmentsRelationship) ||
-			childRelationshipNameMatches(org.Namespace, derived, notesAndAttachmentsRelationship)
-		if matches {
+		digest.WriteByte(0)
+		if derivedMatch {
 			visitSyntheticFieldChildRelationships(definition, digest.relationship)
 		}
 		digest.WriteByte(0)
 	}
 	return digest.Sum64()
+}
+
+func matchesAttachmentRelationship(namespace, name string) bool {
+	if strings.EqualFold(name, combinedAttachmentsRelationship) || strings.EqualFold(name, notesAndAttachmentsRelationship) {
+		return true
+	}
+	// Either view can also match a declaration with a namespace or __r.
+	return strings.Contains(name, "__") &&
+		(childRelationshipNameMatches(namespace, name, combinedAttachmentsRelationship) ||
+			childRelationshipNameMatches(namespace, name, notesAndAttachmentsRelationship))
 }
 
 type attachmentRelationshipHash struct{ maphash.Hash }
