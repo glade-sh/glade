@@ -346,3 +346,22 @@ func TestStandardOverlayCheckPlanConcurrentUse(t *testing.T) {
 		t.Errorf("%s: concurrent verdict differs from legacy", name)
 	}
 }
+
+func TestUnappliedStandardOverlayDoesNotBuildCheckPlan(t *testing.T) {
+	const object = "CareProgram"
+	set := currentStandardOverlayCheckPlans()
+	set.plans.Delete(object)
+	defer set.plans.Delete(object)
+
+	for _, definition := range []ObjectDefinition{
+		{APIName: object},
+		{APIName: object, Metadata: map[string]string{standardFieldsOverlayMarker: "MultiCurrency"}},
+	} {
+		if !standardObjectFieldsNeedWrite(definition, "") {
+			t.Fatal("missing or mismatched overlay marker did not request preparation")
+		}
+		if _, built := set.plans.Load(object); built {
+			t.Fatal("overlay check plan built before overlay preparation")
+		}
+	}
+}

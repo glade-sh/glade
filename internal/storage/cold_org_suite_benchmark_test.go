@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
@@ -52,11 +53,15 @@ func BenchmarkColdOrgTestSuite(b *testing.B) {
 		b.Fatal("schema overlay missing")
 	}
 	b.ReportAllocs()
+	var orgBuild time.Duration
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		run := apextest.Run(index, apextest.Options{NoDiskCache: true, Parallelism: 1})
+		run := apextest.Run(index, apextest.Options{NoDiskCache: true, Parallelism: 1, PerfCounters: true})
+		orgBuild += time.Duration(apextest.SnapshotPerfCounters().Phases.OrgBuildNS)
 		if summary := run.Summary(); summary.Total != 20 || summary.Passed != 20 {
 			b.Fatalf("summary = %#v", summary)
 		}
 	}
+	b.ReportMetric(float64(orgBuild.Nanoseconds())/float64(b.N), "ns/org")
+	b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*20), "ns/test")
 }

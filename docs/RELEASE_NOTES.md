@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Cold Apex test runs reuse more of the standard object catalog during org setup.
 
 ## v0.3.15
 
