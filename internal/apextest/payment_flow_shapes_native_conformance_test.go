@@ -105,6 +105,35 @@ func checkPaymentFlowCompilation(t *testing.T, compiled bool, want string, diagn
 	return true
 }
 
+func TestPaymentFlowEquivalentClassAPIVersions(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			class := "RoadPay" + strings.TrimSuffix(api, ".0")
+			path := filepath.Join("testdata", "conformance", "payment_flow_shapes", class+".cls")
+			source, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			index := nativeBoundaryIndexWithClassAPIs(t, api, map[string]string{class: string(source)}, nil, map[string]string{class: api + "0"})
+			if index.HasErrors() {
+				t.Fatalf("invalid class source: %v", index.Diagnostics)
+			}
+			analysis := sema.Analyze(index)
+			if analysis.HasErrors() {
+				t.Fatalf("equivalent class API %s rejected: %v", api+"0", analysis.Diagnostics)
+			}
+			for _, method := range []string{"sale", "void"} {
+				t.Run(method, func(t *testing.T) {
+					run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
+					if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+						t.Fatalf("Glade %+v, suites %+v", summary, run.Suites)
+					}
+				})
+			}
+		})
+	}
+}
+
 // RUN-FACTS.txt records rejected Decimal constructors on both routes and APIs.
 func TestPaymentFlowDecimalConstructorNativeConformance(t *testing.T) {
 	requests := map[string]string{

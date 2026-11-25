@@ -10,7 +10,7 @@ import (
 // Give only captured method bodies a private view of these interface edges.
 // The shared platform table and hydration cache remain at their base shape.
 func semaPaymentFlowView(model *semaTypeMemberView, api string, capturedRoute bool) *semaTypeMemberView {
-	if model == nil || !capturedRoute || (api != "62.0" && api != "67.0") {
+	if model == nil || !capturedRoute || !typesys.PaymentFlowCapturedVersion(api) {
 		return model
 	}
 	result := *model
@@ -38,7 +38,7 @@ func semaPaymentFlowView(model *semaTypeMemberView, api string, capturedRoute bo
 }
 
 func semaPaymentFlowRoute(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView) bool {
-	return (typ.EffectiveAPIVersion == "62.0" || typ.EffectiveAPIVersion == "67.0") && (model.anonymous || (typ.IsTest && member.IsTest))
+	return (model.anonymous || (typ.IsTest && member.IsTest)) && typesys.PaymentFlowCapturedVersion(typ.EffectiveAPIVersion)
 }
 
 func semaPaymentFlowResponseAssignment(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView, target, value string) bool {

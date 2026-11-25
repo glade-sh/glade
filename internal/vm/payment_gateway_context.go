@@ -77,7 +77,7 @@ func (vm *VM) paymentRequestAmountType(e ir.Expr) string {
 // Linked user classes do not inherit this platform-only restriction.
 func (vm *VM) paymentRequestOutsideTestError(typeName string, arity int) error {
 	if vm.testContext != nil || vm.currentClass != "" || vm.currentMethod.ClassName != "" || vm.currentTrigger ||
-		(vm.currentMethod.APIVersion != "62.0" && vm.currentMethod.APIVersion != "67.0") {
+		!typesys.PaymentFlowCapturedVersion(vm.currentMethod.APIVersion) {
 		return nil
 	}
 	names := map[string]struct {

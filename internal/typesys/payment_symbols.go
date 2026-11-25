@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 // Owned named Apex observations at APIs 61, 62 and 67 establish these payment
@@ -27,10 +28,20 @@ var paymentPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "commercepayments.CaptureNotification", SuperClass: "commercepayments.BaseNotification"},
 }
 
+// PaymentFlowCapturedVersion reports whether the source API was captured for
+// the scoped payment request and response behavior.
+func PaymentFlowCapturedVersion(apiVersion string) bool {
+	if strings.TrimSpace(apiVersion) == "" {
+		return false
+	}
+	version, err := apexversion.PreserveSource(apiVersion)
+	return err == nil && (version == "62.0" || version == "67.0")
+}
+
 // PaymentFlowCapturedInterface is limited to the 62.0 and 67.0 source
 // versions observed in payment_flow_shapes. Callers must also gate the route.
 func PaymentFlowCapturedInterface(typeName, apiVersion string) string {
-	if apiVersion != "62.0" && apiVersion != "67.0" {
+	if !PaymentFlowCapturedVersion(apiVersion) {
 		return ""
 	}
 	switch strings.ToLower(strings.TrimSpace(typeName)) {
