@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
 ## v0.3.15
 
