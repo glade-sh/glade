@@ -30,7 +30,8 @@ func TestRunReportsBoundTestSource(t *testing.T) {
 			}
 			writeFile(t, second, `@isTest class `+secondClass+` { @isTest static void check() { System.assert(true); } }`)
 			index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
-			cases := Discover(index, Options{})
+			// Exercise explicit source-bound cases, including both copies.
+			cases := discover(index, Options{}, nil)
 			if len(cases) != 2 {
 				t.Fatalf("cases = %#v", cases)
 			}
@@ -172,4 +173,50 @@ func seedUnlowerableMethod(t *testing.T, index typesys.Index, name string) {
 	runtimeCache[key] = validated
 	runtimeCacheMu.Unlock()
 	t.Cleanup(func() { evictSnapshotCaches(key) })
+}
+
+// Discovery follows the project's lexical source selection before filtering
+// methods. The deployment count and source winner are captured in
+// internal/project/testdata/source_collisions/org.tsv at 62.0 and 67.0.
+func TestRunDiscoversOnlySelectedDuplicateTestClass(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	older := filepath.Join(root, "force-app", "amber", "GorseTrailTest.cls")
+	selected := filepath.Join(root, "force-app", "willow", "GorseTrailTest.cls")
+	writeFile(t, older, `@IsTest private class GorseTrailTest {
+        @TestSetup static void seed() { System.assert(false, 'shadowed setup'); }
+        private static String marker() { return GorseTrailTest.label('amber'); }
+        private static String label(String trail) { return 'amber trail'; }
+        @IsTest static void amberOnly() { System.assert(false, 'shadowed test'); }
+    }`)
+	writeFile(t, selected, `@IsTest private class GorseTrailTest {
+        @TestSetup static void seed() { insert new Account(Name = marker()); }
+        private static String marker() { return GorseTrailTest.label('willow'); }
+        private static String label(Object trail) { return 'wrong overload'; }
+        private static String label(String trail) { return trail + ' trail'; }
+        @IsTest static void willowOnly() {
+            System.assertEquals(1, [SELECT COUNT() FROM Account]);
+            System.assertEquals('willow trail', [SELECT Name FROM Account LIMIT 1].Name);
+        }
+    }`)
+	meta := `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`
+	writeFile(t, older+"-meta.xml", meta)
+	writeFile(t, selected+"-meta.xml", meta)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{selected, older}}, gladeschema.Schema{})
+	for _, opts := range []Options{
+		{NoDiskCache: true},
+		{NoDiskCache: true, SelectedClasses: []string{"GorseTrailTest"}, SelectedMethod: "willowOnly"},
+	} {
+		cases := Discover(index, opts)
+		if len(cases) != 1 || cases[0].File != selected || cases[0].MethodName != "willowOnly" {
+			t.Fatalf("discovered %#v, want only willowOnly from the selected source", cases)
+		}
+		run := RunCasesContext(context.Background(), index, opts, cases)
+		if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+			t.Fatalf("summary = %#v, problem = %q", got, firstRunProblem(run))
+		}
+	}
+	if cases := Discover(index, Options{Filter: "GorseTrailTest.amberOnly"}); len(cases) != 0 {
+		t.Fatalf("filter selected a method from the shadowed source: %#v", cases)
+	}
 }

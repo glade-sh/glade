@@ -48,3 +48,33 @@ func TestRuntimeSameNamedTestClassesRunOwnTestSetup(t *testing.T) {
 		t.Fatalf("summary=%#v problem=%q", got, firstRunProblem(run))
 	}
 }
+
+func TestRunExplicitDuplicateTestClassesInSameSourceUnitRunOwnSetup(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	var files []string
+	for _, marker := range []string{"Amber", "Willow"} {
+		file := filepath.Join(root, "force-app", marker, "OwnedSetupFileTest.cls")
+		body := fmt.Sprintf(`@IsTest private class OwnedSetupFileTest {
+ @TestSetup static void seed%[1]s() { insert new Account(Name = marker()); }
+ private static String marker() { return '%[1]s'; }
+ @IsTest static void check() {
+  System.assertEquals(1, [SELECT COUNT() FROM Account]);
+  System.assertEquals('%[1]s', [SELECT Name FROM Account LIMIT 1].Name);
+ }
+}`, marker)
+		writeFile(t, file, body)
+		writeFile(t, file+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+		files = append(files, file)
+	}
+	index := typesys.Build(project.Project{Root: root, ApexFiles: files}, schema.Schema{})
+	options := Options{NoDiskCache: true, Parallelism: 1}
+	cases := discover(index, options, nil)
+	if len(cases) != len(files) {
+		t.Fatalf("discovered %d explicit cases, want %d", len(cases), len(files))
+	}
+	run := RunCasesContext(context.Background(), index, options, cases)
+	if got := run.Summary(); got.Total != len(files) || got.Passed != len(files) {
+		t.Fatalf("summary=%#v problem=%q", got, firstRunProblem(run))
+	}
+}

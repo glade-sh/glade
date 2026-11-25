@@ -232,6 +232,87 @@ type TestProgress struct {
 }
 
 func Discover(index typesys.Index, opts Options) []TestCase {
+	// The project loader resolves cross-package collisions before indexing.
+	// Only remaining copies within the same SFDX project share precedence.
+	firstFiles := make(map[string]string)
+	duplicates := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.Kind != apexast.DeclarationClass || typ.OwnerName != "" || !typ.HasSourceSnapshot() {
+			continue
+		}
+		key := testClassSourceKey(typ)
+		if first, ok := firstFiles[key]; ok {
+			if first != typ.File {
+				duplicates[key] = true
+			}
+		} else {
+			firstFiles[key] = typ.File
+		}
+	}
+	if len(duplicates) == 0 {
+		return discover(index, opts, nil)
+	}
+
+	type projectClass struct{ root, name string }
+	projectRoots := make(map[string]string)
+	winners := make(map[projectClass]string)
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.Kind != apexast.DeclarationClass || typ.OwnerName != "" || !typ.HasSourceSnapshot() {
+			continue
+		}
+		name := testClassSourceKey(typ)
+		if !duplicates[name] {
+			continue
+		}
+		root, known := projectRoots[typ.File]
+		if !known {
+			sourceRoot := typ.SourceRoot
+			if sourceRoot == "" {
+				sourceRoot = index.Project.Root
+			}
+			root = nearestTestProjectRoot(sourceRoot, typ.File)
+			projectRoots[typ.File] = root
+		}
+		key := projectClass{root: root, name: name}
+		if root != "" && typ.File > winners[key] {
+			winners[key] = typ.File
+		}
+	}
+	return discover(index, opts, func(typ typesys.TypeSymbol) bool {
+		winner := winners[projectClass{root: projectRoots[typ.File], name: testClassSourceKey(typ)}]
+		return winner == "" || typ.File == winner
+	})
+}
+
+func nearestTestProjectRoot(sourceRoot, file string) string {
+	if sourceRoot == "" {
+		return ""
+	}
+	root, rootErr := filepath.Abs(sourceRoot)
+	dir, dirErr := filepath.Abs(filepath.Dir(file))
+	if rootErr != nil || dirErr != nil {
+		return ""
+	}
+	if relative, err := filepath.Rel(root, dir); err != nil || !filepath.IsLocal(relative) {
+		return ""
+	}
+	for {
+		if info, err := os.Stat(filepath.Join(dir, "sfdx-project.json")); err == nil && info.Mode().IsRegular() {
+			return dir
+		}
+		if dir == root {
+			return ""
+		}
+		dir = filepath.Dir(dir)
+	}
+}
+
+func testClassSourceKey(typ typesys.TypeSymbol) string {
+	topLevel, _, _ := strings.Cut(typ.Name, ".")
+	return strings.ToLower(typ.Namespace + "\x00" + topLevel)
+}
+
+func discover(index typesys.Index, opts Options, include func(typesys.TypeSymbol) bool) []TestCase {
 	var out []TestCase
 	filters := testFilters(opts.Filter)
 	selectedClasses := selectedClassSet(opts.SelectedClasses)
@@ -245,6 +326,9 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			continue
 		}
 		if len(selectedClasses) != 0 && !selectedClasses[strings.ToLower(typ.Name)] {
+			continue
+		}
+		if include != nil && !include(typ) {
 			continue
 		}
 		costHint := testCaseCostHintForType(typ)
@@ -2554,10 +2638,12 @@ func expandTestCasesForClasses(index typesys.Index, cases []TestCase) []TestCase
 		return nil
 	}
 	classes := make(map[string]bool)
+	files := make(map[string]bool)
 	for _, testCase := range cases {
 		name := strings.ToLower(strings.TrimSpace(testCase.ClassName))
 		if name != "" {
 			classes[name] = true
+			files[testMethodSourceKey(name, testCase.File)] = true
 		}
 	}
 	if len(classes) == 0 {
@@ -2568,7 +2654,9 @@ func expandTestCasesForClasses(index typesys.Index, cases []TestCase) []TestCase
 		selectedClasses = append(selectedClasses, className)
 	}
 	sort.Strings(selectedClasses)
-	discovered := Discover(index, Options{SelectedClasses: selectedClasses})
+	discovered := discover(index, Options{SelectedClasses: selectedClasses}, func(typ typesys.TypeSymbol) bool {
+		return files[testMethodSourceKey(typ.Name, typ.File)] || files[testMethodSourceKey(typ.Name, "")]
+	})
 	seen := make(map[string]bool, len(cases)+len(discovered))
 	expanded := append([]TestCase(nil), cases...)
 	for _, testCase := range cases {
@@ -2954,58 +3042,57 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 	return err
 }
 
-// splitClassGroupsBySourceUnit gives each source unit of a class name its own
-// run group. Same-named test classes from two package directories each read
-// their own unit's custom metadata, so they cannot share one class org. A
-// class name with one source unit keeps its name as the group key, so other
-// runs are unchanged.
-func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string, map[string]bool) {
+// splitClassGroupsBySourceFile gives each declaration its own setup and org.
+// Keep the class name as the first group's scheduling key.
+func splitClassGroupsBySourceFile(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string) {
 	groupClass := make(map[string]string, len(classOrder))
-	splitClasses := map[string]bool{}
+	needsSplit := false
 	for _, className := range classOrder {
 		groupClass[className] = className
-		units := map[string]bool{}
-		for _, i := range classIndexes[className] {
-			units[planned[i].TestMethod.SourceUnit] = true
+		indexes := classIndexes[className]
+		if len(indexes) < 2 {
+			continue
 		}
-		if len(units) > 1 {
-			splitClasses[className] = true
+		firstFile := filepath.Clean(planned[indexes[0]].TestCase.File)
+		for _, i := range indexes[1:] {
+			if filepath.Clean(planned[i].TestCase.File) != firstFile {
+				needsSplit = true
+				break
+			}
 		}
 	}
-	if len(splitClasses) == 0 {
-		return classOrder, classIndexes, groupClass, splitClasses
+	if !needsSplit {
+		return classOrder, classIndexes, groupClass
 	}
 	order := make([]string, 0, len(classOrder))
 	indexes := make(map[string][]int, len(classIndexes))
-	groupClass = make(map[string]string, len(classOrder))
 	for _, className := range classOrder {
-		var units []string
-		byUnit := map[string][]int{}
+		var files []string
+		byFile := map[string][]int{}
 		for _, i := range classIndexes[className] {
-			unit := planned[i].TestMethod.SourceUnit
-			if _, seen := byUnit[unit]; !seen {
-				units = append(units, unit)
+			file := filepath.Clean(planned[i].TestCase.File)
+			if _, seen := byFile[file]; !seen {
+				files = append(files, file)
 			}
-			byUnit[unit] = append(byUnit[unit], i)
+			byFile[file] = append(byFile[file], i)
 		}
-		for n, unit := range units {
+		for n, file := range files {
 			key := className
 			if n > 0 {
-				key = className + "\x00" + unit
+				key = setupSourceKey(className, file)
 			}
 			order = append(order, key)
-			indexes[key] = byUnit[unit]
+			indexes[key] = byFile[file]
 			groupClass[key] = className
 		}
 	}
-	return order, indexes, groupClass, splitClasses
+	return order, indexes, groupClass
 }
 
-// groupSetups returns the @TestSetup methods, invocations and errors of one
-// run group. A class name split across source units runs only the setup
-// declared in its group's own file.
-func groupSetups(className string, split bool, file string, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error) ([]vm.Method, error, []ir.Program, error) {
-	if !split {
+// groupSetups returns the @TestSetup methods, invocations and errors from
+// the test group's source file.
+func groupSetups(className, file string, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error) ([]vm.Method, error, []ir.Program, error) {
+	if file == "" {
 		return setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className]
 	}
 	var methods []vm.Method
@@ -3025,7 +3112,7 @@ func groupSetups(className string, split bool, file string, setups map[string][]
 }
 
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
-	classOrder, classIndexes, groupClass, splitClasses := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
+	classOrder, classIndexes, groupClass := splitClassGroupsBySourceFile(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -3114,7 +3201,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
 					groupFile = planned[indexes[0]].TestCase.File
 				}
-				classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr := groupSetups(className, splitClasses[className], groupFile, setups, setupErrors, setupInvokePrograms, setupInvokeErrors)
+				classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr := groupSetups(className, groupFile, setups, setupErrors, setupInvokePrograms, setupInvokeErrors)
 				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr, triggerErrors, classOrg, opts, counters, &setupLimits)
 				if setupCancel != nil {
 					setupCancel()
@@ -3605,7 +3692,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		if i >= len(setupPrograms) {
 			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name), false
 		}
-		result, err := machine.ExecuteTestInClassFromSourceUnit(setupPrograms[i], setup.ClassName, setup.SourceUnit)
+		result, err := machine.ExecuteTestInClassFromSource(setupPrograms[i], setup.ClassName, setup.SourceUnit, setup.File)
 		if err != nil {
 			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
@@ -5357,13 +5444,13 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 			}
 			method.IsStatic = true
 			method.SourceUnit = sources.runtimeSourceUnit(typ.File)
-			out[typ.Name] = append(out[typ.Name], method)
 			program, err := vm.CompileAnonymous(method.Name + "();")
 			if err != nil {
 				programErrs[typ.Name] = err
 				programErrs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
+			out[typ.Name] = append(out[typ.Name], method)
 			programs[typ.Name] = append(programs[typ.Name], program)
 		}
 	}
