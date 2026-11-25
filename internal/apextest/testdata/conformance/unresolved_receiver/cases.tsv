@@ -1,0 +1,10 @@
+case	route	source
+missing_static_receiver	anonymous	missing_static_receiver.apex
+missing_qualified_receiver	anonymous	missing_qualified_receiver.apex
+missing_declared_type	anonymous	missing_declared_type.apex
+known_static_receiver	anonymous	known_static_receiver.apex and classes/HarborAvailableDepot.cls
+compile_control	istest	classes/HarborCompileControlTest.cls
+null_routes	istest	classes/HarborNullRoutesTest.cls
+direct	deploy-checkonly	deploy-checks/HarborMissingCallTest.cls and deploy-checks/HarborMissingQualifiedCallTest.cls
+call-root	deploy-checkonly	deploy-checks/HarborInvalidCallRoot.cls and deploy-checks/HarborInvalidCallDependentTest.cls
+type-root	deploy-checkonly	deploy-checks/HarborInvalidTypeRoot.cls and deploy-checks/HarborInvalidTypeDependentTest.cls

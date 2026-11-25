@@ -1,0 +1,7 @@
+id	route	file
+missing_object	anonymous	missing.apex
+missing_generic	anonymous	missing_generic.apex
+standard_control	anonymous	standard.apex
+missing_test	istest-checkonly	force-app/main/default/classes/AbsentObjectTypeTest.cls
+present_custom	anonymous	present.apex
+present_test	istest	force-app/main/default/classes/PresentObjectControlTest.cls

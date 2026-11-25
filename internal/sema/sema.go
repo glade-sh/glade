@@ -207,7 +207,7 @@ func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts Analy
 		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
 	}
 	if incr != nil {
-		incr.begin(index, opts)
+		incr.begin(index, a.queryDeclaredObjects)
 	}
 	result = Result{
 		Project: index.Project,

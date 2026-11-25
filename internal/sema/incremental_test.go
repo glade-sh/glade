@@ -464,3 +464,50 @@ func TestIncrementalAnalysisReuseAndFallback(t *testing.T) {
 		t.Fatalf("body edit that clears an error stats = %+v, want an incremental run", stats)
 	}
 }
+
+func TestIncrementalAnalysisInvalidatesOnDeclaredObjectChange(t *testing.T) {
+	root := t.TempDir()
+	incrementalWrite(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	const class = "force-app/main/default/classes/BuoyTest.cls"
+	incrementalWrite(t, root, class, `@IsTest
+private class BuoyTest {
+    @IsTest static void checkLocal() {
+        AbsentBuoy__c buoy;
+    }
+}
+`)
+	incrementalWrite(t, root, class+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	generation := incrementalLoad(t, root)
+	missing := generation.index
+	present := missing
+	present.Objects = []schema.Object{{Name: "AbsentBuoy__c", Partial: true}}
+	opts := incrementalOptions(&generation.artifacts)
+
+	for _, tc := range []struct {
+		name                 string
+		first, second        typesys.Index
+		wantInvalidLocalType bool
+	}{
+		{"add partial object", missing, present, false},
+		{"remove partial object", present, missing, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			state := NewIncrementalState()
+			state.Analyze(tc.first, opts)
+			want := AnalyzeWithOptions(tc.second, opts)
+			invalidLocalType := false
+			for _, d := range want.Diagnostics {
+				if d.Code == "GLADESEMA006" && d.Message == "Invalid type: AbsentBuoy__c" {
+					invalidLocalType = true
+				}
+			}
+			if invalidLocalType != tc.wantInvalidLocalType {
+				t.Fatalf("fresh diagnostics = %v, want invalid local type = %v", want.Diagnostics, tc.wantInvalidLocalType)
+			}
+			got, stats := state.Analyze(tc.second, opts)
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("incremental result differs from fresh analysis (stats %+v)\n got diagnostics: %v\nwant diagnostics: %v", stats, got.Diagnostics, want.Diagnostics)
+			}
+		})
+	}
+}

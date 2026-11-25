@@ -1,0 +1,4 @@
+id	api	route	compiled	success	outcome	class_api	trigger_api	residue
+price_inputs	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|adjustedNull=true,listNull=true,quantity=3,addressNull=false,exception=System.NullPointerException	62.0	n/a	n/a
+price_inputs	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|adjustedNull=true,listNull=true,quantity=3,addressNull=false,exception=System.NullPointerException	67.0	n/a	n/a
+price_inputs	68.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|adjustedNull=true,listNull=true,quantity=3,addressNull=false,exception=System.NullPointerException	68.0	n/a	n/a
