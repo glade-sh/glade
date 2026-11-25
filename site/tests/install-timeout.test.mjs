@@ -41,7 +41,11 @@ esac
   assert.ok(existsSync(join(xdg, "glade/third_party/lwc/compile.mjs")), result.stdout);
   const downloads = (await readFile(join(root, "curl-log"), "utf8")).trim().split("\n");
   assert.ok(downloads.length >= 3);
-  for (const call of downloads) { assert.match(call, /--connect-timeout/); assert.match(call, /--max-time/); }
+  for (const call of downloads) {
+    assert.match(call, /--connect-timeout 10/);
+    if (call.includes(`/${archive} -o `)) assert.match(call, /--max-time 900 --retry 3/);
+    else assert.match(call, /--max-time 120/);
+  }
   const calls = (await readFile(join(root, "attestations"), "utf8")).trim().split("\n");
   assert.equal(calls.length, 2);
   assert.match(calls[1], /--predicate-type https:\/\/cyclonedx\.org\/bom/);

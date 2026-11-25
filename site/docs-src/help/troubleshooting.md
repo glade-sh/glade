@@ -12,6 +12,30 @@ description: Diagnose project discovery, installation, test selection, and edito
   <p>Start with the symptom you recognize. Confirm project context before changing Apex source or local data.</p>
 </div>
 
+## The installer stops
+
+- **Missing `curl`, `mkfifo`, or a checksum command.** Install the named
+  command and retry. The installer accepts either `shasum` or `sha256sum`.
+- **Missing or unusable Python 3.** Put a working `python3` on `PATH`. On
+  macOS, run `xcode-select --install` to enable the system Python 3, or use
+  another Python 3 installation.
+- **Strict provenance requires `gh`.** Install a current GitHub CLI and
+  retry. Without strict mode, an install without `gh` reports that it
+  checked only the SHA-256 checksum.
+- **Could not fetch public attestations.** GitHub may rate-limit anonymous
+  requests. Run `gh auth login` and try again. A failed signature check
+  stops installation.
+- **Expected exactly one valid checksum, or checksum verification failed.**
+  Download the archive and checksums from the same release. Use the
+  [manual download steps](/guide/installation#manual-download) if the
+  error repeats.
+- **Download timed out or the mirror was unavailable.** The installer
+  reports the curl exit code when it falls back to GitHub Releases. If both
+  downloads fail, check your network or proxy, then retry.
+
+If installation finished and the shell cannot find `glade`, follow the
+[`PATH` steps](/guide/installation#install-and-verify).
+
 ## Glade cannot find my project
 
 Run this from the directory that contains `sfdx-project.json`. The block stops

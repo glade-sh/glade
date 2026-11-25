@@ -14,17 +14,49 @@ need() {
   fi
 }
 
-need curl
-need grep
-need install
-need tar
-need uname
-need awk
-need python3
-need mkfifo
+for tool in curl awk cp install mkdir mkfifo mktemp mv python3 rm sleep tar uname; do
+  need "$tool"
+done
+
+if command -v shasum >/dev/null 2>&1; then
+  checksum_tool=shasum
+elif command -v sha256sum >/dev/null 2>&1; then
+  checksum_tool=sha256sum
+else
+  echo "glade install: missing required command: shasum or sha256sum" >&2
+  exit 1
+fi
+
+have_gh=0
+if command -v gh >/dev/null 2>&1; then
+  have_gh=1
+elif [ "${GLADE_REQUIRE_PROVENANCE:-0}" = 1 ]; then
+  echo "glade install: GLADE_REQUIRE_PROVENANCE=1 requires the GitHub CLI (gh); install gh and retry" >&2
+  exit 1
+fi
+
+os="$(uname -s)"
+arch="$(uname -m)"
+if [ "$os" = Darwin ] && [ "$(command -v python3)" = /usr/bin/python3 ] &&
+    ! /usr/bin/xcode-select -p >/dev/null 2>&1; then
+  echo "glade install: macOS Python 3 needs the Xcode Command Line Tools; run xcode-select --install or put another Python 3 on PATH" >&2
+  exit 1
+fi
+if ! python3 -c 'import fcntl, json' >/dev/null 2>&1; then
+  echo "glade install: a working Python 3 is required for the installation lock; install Python 3 and check PATH" >&2
+  exit 1
+fi
 
 curl() {
-  command curl --connect-timeout 10 --max-time 120 "$@"
+  command curl --connect-timeout 10 "$@"
+}
+
+curl_metadata() {
+  curl --max-time 120 "$@"
+}
+
+curl_archive() {
+  curl --max-time 900 --retry 3 "$@"
 }
 
 curl_github() {
@@ -38,8 +70,6 @@ curl_github() {
   fi
 }
 
-os="$(uname -s)"
-arch="$(uname -m)"
 tmpdir="$(mktemp -d)"
 lock_pid=""
 transaction=""
@@ -331,13 +361,13 @@ PY
 try_static_release() {
   manifest="$tmpdir/release-manifest.json"
   if [ "$version" = "latest" ]; then
-    curl -fsSL "$download_base/index.json" -o "$tmpdir/index.json" >/dev/null 2>&1 || true
+    curl_metadata -fsSL "$download_base/index.json" -o "$tmpdir/index.json" >/dev/null 2>&1 || true
     manifest_url="$download_base/latest/release-manifest.json"
   else
     manifest_url="$download_base/$version/release-manifest.json"
   fi
 
-  curl -fsSL "$manifest_url" -o "$manifest" >/dev/null 2>&1 || return 1
+  curl_metadata -fsSL "$manifest_url" -o "$manifest" >/dev/null 2>&1 || return "$?"
   resolved_version="$(manifest_version "$manifest" 2>/dev/null || true)"
   if [ -z "$resolved_version" ]; then
     echo "glade install: release manifest has no version" >&2
@@ -351,13 +381,13 @@ try_static_release() {
   archive="glade_${resolved_version}_${os}_${arch}.tar.gz"
   url="$download_base/$resolved_version/$archive"
   echo "glade install: downloading $url"
-  if ! curl -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1; then
+  if ! curl_archive -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1; then
     url="$download_base/$archive"
     echo "glade install: downloading $url"
-    curl -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1 || return 1
+    curl_archive -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1 || return "$?"
   fi
-  if ! curl -fsSL "$download_base/$resolved_version/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1; then
-    curl -fsSL "$download_base/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1 || return 1
+  if ! curl_metadata -fsSL "$download_base/$resolved_version/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1; then
+    curl_metadata -fsSL "$download_base/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1 || return "$?"
   fi
   version="$resolved_version"
   return 0
@@ -392,23 +422,34 @@ release_asset_api_url() {
 download_asset() {
   asset="$1"
   output="$2"
+  shift 2
   asset_url="$(release_asset_api_url "$asset")" || {
     echo "glade install: release asset not found: $asset" >&2
-    exit 1
+    return 1
   }
-  curl_github -fL -H "Accept: application/octet-stream" "$asset_url" -o "$output"
+  curl_github "$@" -fL -H "Accept: application/octet-stream" "$asset_url" -o "$output"
+}
+
+download_failed() {
+  echo "glade install: $1. Check your network or proxy, then retry." >&2
+  if [ -n "$github_token" ]; then
+    echo "glade install: for a private repo, check the configured GitHub token has contents:read access" >&2
+  fi
+  exit 1
 }
 
 fetch_release() {
   release_ref="$1"
-  curl_github -fsSL "$api_base/releases/$release_ref" -o "$release_json" || {
-    echo "glade install: could not resolve release $release_ref" >&2
-    echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
-    exit 1
-  }
+  curl_github --max-time 120 -fsSL "$api_base/releases/$release_ref" -o "$release_json" ||
+    download_failed "could not resolve release $release_ref"
 }
 
-if ! try_static_release; then
+if try_static_release; then
+  static_release=1
+else
+  mirror_status=$?
+  static_release=0
+  echo "glade install: downloads.glade.sh unavailable (curl exit $mirror_status); trying GitHub Releases" >&2
   if [ "$version" = "latest" ]; then
     fetch_release latest
     version="$(awk -F '"' '/"tag_name":/ { print $4; exit }' "$release_json")"
@@ -424,39 +465,42 @@ if ! try_static_release; then
   url="https://github.com/$repo/releases/download/$version/$archive"
 
   echo "glade install: downloading $url"
-  download_asset "$archive" "$tmpdir/$archive" || {
-    echo "glade install: archive download failed" >&2
-    echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
-    exit 1
-  }
-  download_asset "SHA256SUMS.txt" "$tmpdir/SHA256SUMS.txt" || {
-    echo "glade install: checksum download failed" >&2
-    echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
-    exit 1
-  }
+  download_asset "$archive" "$tmpdir/$archive" --max-time 900 --retry 3 ||
+    download_failed "could not download $url"
+  download_asset "SHA256SUMS.txt" "$tmpdir/SHA256SUMS.txt" --max-time 120 ||
+    download_failed "could not download SHA256SUMS.txt for $version"
 fi
 
 mkdir -p "$install_dir"
 install_dir="$(cd "$install_dir" && pwd -P)"
 
-checksum_line="$(grep "  \\./$archive\$" "$tmpdir/SHA256SUMS.txt")" || {
-  echo "glade install: checksum not found for $archive" >&2
+digest="$(awk -v wanted="./$archive" '
+  $2 == wanted {
+    n++
+    if (NF != 2 || length($1) != 64 || $1 ~ /[^0-9a-fA-F]/) bad=1
+    digest=$1
+  }
+  END { if (n != 1 || bad) exit 1; print tolower(digest) }
+' "$tmpdir/SHA256SUMS.txt")" || {
+  echo "glade install: expected exactly one valid checksum for $archive" >&2
   exit 1
 }
 
-if command -v shasum >/dev/null 2>&1; then
-  (cd "$tmpdir" && printf '%s\n' "$checksum_line" | shasum -a 256 -c -)
-elif command -v sha256sum >/dev/null 2>&1; then
-  (cd "$tmpdir" && printf '%s\n' "$checksum_line" | sha256sum -c -)
-else
-  echo "glade install: missing required command: shasum or sha256sum" >&2
+printf '%s  ./%s\n' "$digest" "$archive" > "$tmpdir/archive-checksum.txt"
+if ! (
+  cd "$tmpdir"
+  if [ "$checksum_tool" = shasum ]; then
+    shasum -a 256 -c archive-checksum.txt
+  else
+    sha256sum -c archive-checksum.txt
+  fi
+); then
+  echo "glade install: checksum verification failed for $archive" >&2
   exit 1
 fi
 
-need gh
-# gh requires authentication to fetch attestations itself, even for public
-# repositories. Fetch public bundles through the unauthenticated API instead;
-# gh still verifies their signatures and the full release policy below.
+# The published archive bundle contains provenance. Fetch the separately
+# published CycloneDX attestation by digest.
 attestation_bundle() {
   kind="$1"
   case "$kind" in
@@ -466,14 +510,9 @@ attestation_bundle() {
   esac
   bundle="$tmpdir/$kind.jsonl"
   urls="$tmpdir/$kind.urls"
-  digest="$(python3 -c 'import hashlib,sys
-h=hashlib.sha256()
-with open(sys.argv[1], "rb") as f:
-    for chunk in iter(lambda: f.read(1024*1024), b""): h.update(chunk)
-print(h.hexdigest())' "$tmpdir/$archive")" || return 1
-  curl -fsSL -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' \
+  curl_metadata -fsSL -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' \
     "$api_base/attestations/sha256:$digest?predicate_type=$predicate&per_page=100" -o "$tmpdir/$kind-response.json" || return 1
-  python3 - "$tmpdir/$kind-response.json" "$bundle" "$urls" <<'PY'
+  python3 - "$tmpdir/$kind-response.json" "$bundle" "$urls" <<'PY' || return 1
 import json, sys
 try:
     with open(sys.argv[1], encoding="utf-8") as source:
@@ -491,43 +530,86 @@ try:
 except (OSError, ValueError, TypeError, KeyError, AttributeError):
     sys.exit(1)
 PY
-  [ "$?" -eq 0 ] || return 1
   while IFS= read -r bundle_url; do
-    curl --proto '=https' --proto-redir '=https' -fsSL "$bundle_url" -o "$tmpdir/bundle-part.json" || return 1
+    curl_metadata --proto '=https' --proto-redir '=https' -fsSL "$bundle_url" -o "$tmpdir/bundle-part.json" || return 1
     python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1])), separators=(",", ":")))' "$tmpdir/bundle-part.json" >> "$bundle" || return 1
   done < "$urls"
   [ -s "$bundle" ]
 }
-bundle_args_provenance=""
-bundle_args_sbom=""
-if [ -n "$github_token" ]; then
-  GH_TOKEN="$github_token"
-  export GH_TOKEN
-elif ! gh auth status --hostname github.com >/dev/null 2>&1; then
-  attestation_bundle provenance || { echo "glade install: could not fetch public provenance attestations" >&2; exit 1; }
-  attestation_bundle sbom || { echo "glade install: could not fetch public SBOM attestations" >&2; exit 1; }
-  bundle_args_provenance="$tmpdir/provenance.jsonl"
-  bundle_args_sbom="$tmpdir/sbom.jsonl"
-fi
+download_release_bundle() {
+  if [ "$static_release" = 1 ] &&
+      curl_metadata -fsSL "$url.sigstore.json" -o "$release_bundle" 2>/dev/null; then
+    return 0
+  fi
+  if [ "$static_release" = 0 ] || [ "$download_base" = https://downloads.glade.sh ]; then
+    curl_metadata -fsSL "https://github.com/$repo/releases/download/$version/$archive.sigstore.json" \
+      -o "$release_bundle" 2>/dev/null
+  else
+    return 1
+  fi
+}
+
+github_cli() {
+  GH_HOST=github.com GH_TELEMETRY=false GH_NO_UPDATE_NOTIFIER=1 gh "$@"
+}
+
+gh_authenticated() {
+  [ -n "$github_token" ] || github_cli auth status --hostname github.com >/dev/null 2>&1
+}
+
+attestation_source() {
+  if [ "$have_release_bundle" = 0 ] && gh_authenticated; then
+    return 0
+  fi
+  if attestation_bundle "$1"; then
+    printf '%s\n' "$bundle"
+  elif [ "$have_release_bundle" = 0 ] || ! gh_authenticated; then
+    return 1
+  fi
+}
+
 verify_attestation() {
   bundle_path="$1"; shift
   if [ -n "$bundle_path" ]; then
-    gh attestation verify "$tmpdir/$archive" --bundle "$bundle_path" "$@"
-  else
-    gh attestation verify "$tmpdir/$archive" "$@"
+    set -- --bundle "$bundle_path" "$@"
   fi
+  github_cli attestation verify "$tmpdir/$archive" "$@"
 }
-if ! verify_attestation "$bundle_args_provenance" -R "$repo" \
-  --signer-workflow "$repo/.github/workflows/release.yml" \
-  --source-ref "refs/tags/$version"; then
-  echo "glade install: release provenance verification failed" >&2
-  exit 1
-fi
-if ! verify_attestation "$bundle_args_sbom" -R "$repo" \
-  --signer-workflow "$repo/.github/workflows/release.yml" \
-  --source-ref "refs/tags/$version" --predicate-type https://cyclonedx.org/bom; then
-  echo "glade install: release SBOM attestation verification failed" >&2
-  exit 1
+
+if [ "$have_gh" = 1 ]; then
+  if [ -n "$github_token" ]; then
+    GH_TOKEN="$github_token"
+    export GH_TOKEN
+  fi
+  release_bundle="$tmpdir/$archive.sigstore.json"
+  have_release_bundle=0
+  if download_release_bundle; then
+    have_release_bundle=1
+    provenance_bundle="$release_bundle"
+  else
+    provenance_bundle="$(attestation_source provenance)" || {
+      echo "glade install: could not fetch public provenance attestations; try gh auth login and retry" >&2
+      exit 1
+    }
+  fi
+  if ! verify_attestation "$provenance_bundle" -R "$repo" \
+    --signer-workflow "$repo/.github/workflows/release.yml" \
+    --source-ref "refs/tags/$version"; then
+    echo "glade install: release provenance verification failed" >&2
+    exit 1
+  fi
+  sbom_bundle="$(attestation_source sbom)" || {
+    echo "glade install: could not fetch public SBOM attestations; try gh auth login and retry" >&2
+    exit 1
+  }
+  if ! verify_attestation "$sbom_bundle" -R "$repo" \
+    --signer-workflow "$repo/.github/workflows/release.yml" \
+    --source-ref "refs/tags/$version" --predicate-type https://cyclonedx.org/bom; then
+    echo "glade install: release SBOM attestation verification failed" >&2
+    exit 1
+  fi
+else
+  echo "glade install: SHA-256 verified; provenance was not checked; install gh and rerun, or use scripts/verify-release-download.sh (see https://glade.sh/guide/installation)." >&2
 fi
 
 tar -xzf "$tmpdir/$archive" -C "$tmpdir"
