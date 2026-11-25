@@ -47,6 +47,45 @@ func TestFilteredAttachmentChildViewsUseStoredRows(t *testing.T) {
 	}
 }
 
+func TestAttachmentChildViewsReadCurrentRowsWithWarmSchema(t *testing.T) {
+	org, query := attachmentChildViewWorkload(t, 1, false)
+	cache := NewExecutionCache()
+	parentID := storage.ID("a01000000000001")
+	noteID := storage.ID("002000000000001")
+	importedID := storage.ID("00P000000000001")
+	check := func(want storage.ID, context ExecutionContext) {
+		t.Helper()
+		result, err := ExecuteWithCacheAndContext(org, query, cache, context)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(result.Records) != 1 {
+			t.Fatalf("parent rows = %d, want 1", len(result.Records))
+		}
+		const relationship = "CombinedAttachments"
+		if want == "" {
+			if rows := result.Records[0].Children[relationship]; len(rows) != 0 {
+				t.Fatalf("%s = %+v, want an empty child list", relationship, rows)
+			}
+			return
+		}
+		assertAttachmentChildView(t, result.Records[0], relationship, "CombinedAttachment", want)
+	}
+	put := func(name string, id storage.ID) {
+		object := org.Objects[name]
+		object.PutRecord(id, storage.Record{ID: id, Object: name, Fields: map[string]storage.Value{"ParentId": storage.IDValue(parentID)}})
+		org.Objects[name] = object
+	}
+	check("", ExecutionContext{})
+	put("Note", noteID)
+	check(noteID, ExecutionContext{})
+	check("", ExecutionContext{ChildRecordVisible: func(name string, _ storage.Record) bool {
+		return name != "CombinedAttachment"
+	}})
+	put("CombinedAttachment", importedID)
+	check(importedID, ExecutionContext{})
+}
+
 func BenchmarkAttachmentChildViewWorkloads(b *testing.B) {
 	for _, workload := range []struct {
 		name        string

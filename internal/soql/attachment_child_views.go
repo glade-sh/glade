@@ -105,7 +105,9 @@ func attachmentViewRelationshipLoaded(org storage.OrgState, definition storage.O
 			return loaded
 		}
 	}
-	_, _, loaded := loadedChildRelationship(org, definition, relationship)
+	// Reference validation already resolves the loaded and platform edges.
+	// Reuse its schema result instead of scanning the standard spread again.
+	loaded := childRelationshipResolutionCached(org, definition, relationship, cache).loaded
 	if cache != nil {
 		if cache.loadedAttachmentViews == nil {
 			cache.loadedAttachmentViews = make(map[string]bool)

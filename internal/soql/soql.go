@@ -2914,8 +2914,13 @@ func childRelationshipPlainReferenceValue(org storage.OrgState, record storage.R
 }
 
 func childRelationshipCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) (string, storage.Relationship, bool) {
+	resolved := childRelationshipResolutionCached(org, parentDefinition, relationship, childCache)
+	return resolved.childObjectName, resolved.relation, resolved.ok
+}
+
+func childRelationshipResolutionCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) childRelationshipResolution {
 	if childCache == nil || childCache.execution == nil {
-		return childRelationship(org, parentDefinition, relationship)
+		return resolveChildRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
 	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + org.SuppressedSpreadVisibilityStamp()
@@ -2923,19 +2928,19 @@ func childRelationshipCached(org storage.OrgState, parentDefinition storage.Obje
 	cached, found := cache.childRelationships[key]
 	cache.mu.RUnlock()
 	if found {
-		return cached.childObjectName, cached.relation, cached.ok
+		return cached
 	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 	if cached, ok := cache.childRelationships[key]; ok {
-		return cached.childObjectName, cached.relation, cached.ok
+		return cached
 	}
 	if cache.childRelationships == nil {
 		cache.childRelationships = make(map[string]childRelationshipResolution)
 	}
-	childObjectName, relation, ok := childRelationship(org, parentDefinition, relationship)
-	cache.childRelationships[key] = childRelationshipResolution{childObjectName: childObjectName, relation: relation, ok: ok}
-	return childObjectName, relation, ok
+	resolved := resolveChildRelationship(org, parentDefinition, relationship)
+	cache.childRelationships[key] = resolved
+	return resolved
 }
 
 func childRelationshipCacheKey(namespace, parentName, relationship string) string {
@@ -2943,16 +2948,21 @@ func childRelationshipCacheKey(namespace, parentName, relationship string) strin
 }
 
 func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
+	resolved := resolveChildRelationship(org, parentDefinition, relationship)
+	return resolved.childObjectName, resolved.relation, resolved.ok
+}
+
+func resolveChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) childRelationshipResolution {
 	if name, relation, ok := loadedChildRelationship(org, parentDefinition, relationship); ok {
-		return name, relation, true
+		return childRelationshipResolution{childObjectName: name, relation: relation, ok: true, loaded: true}
 	}
 	child, relation, ok := storage.LookupPlatformChildRelationshipAtVersion(parentDefinition, relationship, org.APIVersion)
 	if ok && strings.HasSuffix(strings.ToLower(child), "__share") {
 		if _, loaded := storage.ResolveObjectName(org, child); !loaded {
-			return "", storage.Relationship{}, false
+			return childRelationshipResolution{}
 		}
 	}
-	return child, relation, ok
+	return childRelationshipResolution{childObjectName: child, relation: relation, ok: ok}
 }
 
 func loadedChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
