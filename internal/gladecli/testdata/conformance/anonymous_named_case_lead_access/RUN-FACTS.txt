@@ -1,0 +1,18 @@
+Captured 2026-11-25 in 30-day Developer scratch orgs with Communities enabled.
+Internal sharing models were deployed for Case and Lead with no external model.
+Only observations whose EntityDefinition confirmed the internal model and Private
+external sharing are recorded. Scratch orgs were deleted after the captures.
+The administrator gained a role before creating two Cases and one Lead. The
+Standard User and the Community reader were inserted in a separate transaction.
+The named Guest was created by deploying the inactive Synthetic CustomSite
+from the external_guest_case_lead_access fixture. The local replay creates the
+equivalent unprivileged user on the Sites-seeded Guest profile.
+At APIs 62.0 and 67.0, capture and replay query directly as the administrator
+with one named UserId and one RecordId. The three cells represent an unrelated
+Case, a Case linked to the Community reader's contact, and an unrelated Lead.
+A dash denotes zero rows. A pair denotes the read and edit bits of one row.
+NEIGHBOR PROBES
+API 68.0 and the projection with an added HasDeleteAccess field keep their
+prior missing rows. Private Case still has no anonymous named Community row.
+Anonymous execution as the external actor is a different
+route. The existing IsTest fixtures cover System.runAs and describe.

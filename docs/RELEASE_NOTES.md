@@ -16,11 +16,12 @@
 - Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
 - Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
 - Apex `Map.put` and `Map.remove` now match existing project enum keys passed as method parameters or obtained from `Enum.values()`.
-
 - Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
 - Custom-object inserts reject missing parents for optional lookups that clear on delete and wrong-type IDs in those lookups to custom objects in Apex, and oversized external ID upsert keys report `isCreated() == false`. Before triggers for Apex inserts and updates see trimmed Text, Text Area, and Long Text Area. This also applies to non-key fields on inserts from partial external-ID upsert lists.
 - Partial external-ID upserts keep results in input order and save surviving rows when an oversized key and an after-save automation failure occur in the same batch.
 - Reduce allocation overhead when Apex writes values back to object fields.
+- Customer Community users respect the private external default for Case when a project declares only its internal public sharing model. Anonymous Apex returns the captured named Standard and Community UserRecordAccess rows for Case and Lead records with public internal sharing.
+- EntityDefinition reports the captured internal and external sharing defaults for Case and Lead in Developer scratch orgs with Communities enabled.
 
 ## v0.3.15
 

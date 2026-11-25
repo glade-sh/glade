@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -24,6 +25,7 @@ var parsedQueryCache sync.Map
 
 const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
 const virtualEntitySharingKeyPrefix = "__glade_virtual_entity_sharing:"
+const virtualEntityExternalSharingKeyPrefix = "__glade_virtual_entity_external_sharing:"
 
 func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Query, bool) {
 	return cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC")
@@ -1013,12 +1015,16 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		}
 		objectCount++
 		fieldCount += len(object.Definition.Fields)
-		if model := object.Definition.SharingModel; model != "" {
-			sharingModels = append(sharingModels, object.Definition.APIName+"\x00"+model)
+		internal, external := object.Definition.SharingModel, object.Definition.ExternalSharingModel
+		if internal != "" || external != "" {
+			sharingModels = append(sharingModels, object.Definition.APIName+"\x00"+internal+"\x00"+external)
 		}
 	}
 	sort.Strings(sharingModels)
 	stamp := strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount) + ":" + strings.Join(sharingModels, "\x00")
+	if capturedCaseLeadSharingDefaults(org) {
+		stamp = "case-lead-sharing-defaults:" + stamp
+	}
 	if len(org.StandardSpreadHiddenAccess) != 0 {
 		data, _ := json.Marshal(org.StandardSpreadHiddenAccess)
 		sum := sha256.Sum256(data)
@@ -1042,6 +1048,7 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 	if !ok {
 		return
 	}
+	scratchDefaults := capturedCaseLeadSharingDefaults(*org)
 	dirty := false
 	for objectName, object := range org.Objects {
 		if isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName) || object.Definition.APIName == "" {
@@ -1052,50 +1059,83 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 		if !exists {
 			continue
 		}
-		key := virtualEntitySharingKeyPrefix + object.Definition.APIName
-		previous, generated := entities.Definition.Metadata[key]
-		value, known := capturedEntitySharingModel(object.Definition.SharingModel)
-		current, supplied := record.Fields["InternalSharingModel"]
-		if !generated && (!known || (supplied && current.Kind != storage.ValueNull)) {
-			continue
+		internal, external := capturedEntitySharingModels(object.Definition, scratchDefaults)
+		models := [...]struct{ field, key, value string }{
+			{"InternalSharingModel", virtualEntitySharingKeyPrefix + object.Definition.APIName, internal},
+			{"ExternalSharingModel", virtualEntityExternalSharingKeyPrefix + object.Definition.APIName, external},
 		}
-		if generated && known && previous == value && supplied && current.Kind == storage.ValueString && current.String == value {
-			continue
-		}
-		if !dirty {
-			storage.EnsureMutableObjectDefinition(org, "EntityDefinition")
-			storage.EnsureMutableObjectRecords(org, "EntityDefinition")
-			entities = org.Objects["EntityDefinition"]
-			if entities.Definition.Metadata == nil {
-				entities.Definition.Metadata = make(map[string]string)
+		changed := false
+		for _, model := range models {
+			previous, generated := entities.Definition.Metadata[model.key]
+			current, supplied := record.Fields[model.field]
+			if !generated && (model.value == "" || supplied && current.Kind != storage.ValueNull) {
+				continue
 			}
-			dirty = true
+			if generated && model.value != "" && previous == model.value && supplied && current.Kind == storage.ValueString && current.String == model.value {
+				continue
+			}
+			if !dirty {
+				storage.EnsureMutableObjectDefinition(org, "EntityDefinition")
+				storage.EnsureMutableObjectRecords(org, "EntityDefinition")
+				entities = org.Objects["EntityDefinition"]
+				if entities.Definition.Metadata == nil {
+					entities.Definition.Metadata = make(map[string]string)
+				}
+				dirty = true
+			}
+			if !changed {
+				record = record.Clone()
+				if record.Fields == nil {
+					record.Fields = make(map[string]storage.Value)
+				}
+				changed = true
+			}
+			if model.value != "" {
+				record.Fields[model.field] = storage.StringValue(model.value)
+				entities.Definition.Metadata[model.key] = model.value
+			} else {
+				delete(record.Fields, model.field)
+				delete(entities.Definition.Metadata, model.key)
+			}
 		}
-		record = record.Clone()
-		if record.Fields == nil {
-			record.Fields = make(map[string]storage.Value)
+		if changed {
+			entities.PutRecord(id, record)
 		}
-		if known {
-			record.Fields["InternalSharingModel"] = storage.StringValue(value)
-			entities.Definition.Metadata[key] = value
-		} else {
-			delete(record.Fields, "InternalSharingModel")
-			delete(entities.Definition.Metadata, key)
-		}
-		entities.PutRecord(id, record)
 	}
 	if dirty {
 		org.Objects["EntityDefinition"] = entities
 	}
 }
 
-func capturedEntitySharingModel(model string) (string, bool) {
+func capturedEntitySharingModel(model string) string {
 	switch model {
 	case "Private", "Read", "ReadWrite", "ReadWriteTransfer":
-		return model, true
+		return model
 	default:
-		return "", false
+		return ""
 	}
+}
+
+func capturedCaseLeadSharingDefaults(org storage.OrgState) bool {
+	return slices.Contains(org.Features, project.StandardFieldEditionDeveloper) &&
+		slices.Contains(org.Features, "Communities") && slices.Contains(org.Features, "NetworksEnabled")
+}
+
+// PclModelsTest captures the omitted defaults and the private external model
+// for both public read/write models and Lead's public read model.
+func capturedEntitySharingModels(definition storage.ObjectDefinition, scratchDefaults bool) (string, string) {
+	internal := capturedEntitySharingModel(definition.SharingModel)
+	if definition.APIName != "Case" && definition.APIName != "Lead" {
+		return internal, ""
+	}
+	if scratchDefaults && definition.SharingModel == "" {
+		internal = "ReadWriteTransfer"
+	}
+	if definition.ExternalSharingModel == "" && (internal == "ReadWriteTransfer" ||
+		scratchDefaults && (internal == "ReadWrite" || internal == "Read" && definition.APIName == "Lead")) {
+		return internal, "Private"
+	}
+	return internal, ""
 }
 
 func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {
