@@ -74,7 +74,7 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		for _, row := range rows {
 			id := row.ID
 			if file {
-				id = row.Fields["ContentDocumentId"].ID
+				id = idFromValue(row.Fields["ContentDocumentId"])
 				if id == "" {
 					continue
 				}
