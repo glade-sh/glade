@@ -124,12 +124,13 @@ export class GladeTestController {
     const since = vscode.workspace.getConfiguration("glade").get<string>("changedSince", "origin/main");
     const request = new vscode.TestRunRequest();
     const run = this.controller.createTestRun(request, `Glade changed tests since ${since}`);
+    const startedClasses = new Map(collectionItems(this.controller.items).map((item) => [item.id, item]));
     this.logCommand(changedTestArgs(this.project, since));
     try {
       const result = await runChangedTests(this.project, since);
       this.onRunComplete?.(startHereSummary("Changed tests", result));
       for (const testCase of flattenTestCases(result)) {
-        const item = this.findTestItem(testCase);
+        const item = this.findTestItem(testCase, startedClasses.get(testCase.className));
         if (!item) {
           continue;
         }
@@ -184,7 +185,7 @@ export class GladeTestController {
       const failedMethods = new Set<string>();
       let ownFailure = false;
       for (const testCase of childResults) {
-        const child = this.findTestItem(testCase);
+        const child = data.methodName ? this.currentItem(item) : this.findTestItem(testCase);
         const startedMethod = testCase.methodName ? item.children.get(testCase.id) : undefined;
         if (startedMethod && !this.currentItem(startedMethod)) {
           // Finish the historical run without retaining a removed method for Run Failed.
@@ -297,12 +298,13 @@ export class GladeTestController {
     this.onFailedCountChange?.(this.failedItems.size);
   }
 
-  private findTestItem(result: FlatTestCaseResult): vscode.TestItem | undefined {
+  private findTestItem(result: FlatTestCaseResult, startedClass?: vscode.TestItem): vscode.TestItem | undefined {
     const classItem = this.controller.items.get(result.className);
     if (!classItem || !result.methodName) {
       return classItem;
     }
-    return classItem.children.get(result.id) || classItem;
+    // A method removed during the run can still receive its historical result.
+    return classItem.children.get(result.id) || startedClass?.children.get(result.id) || classItem;
   }
 
   private async debug(request: vscode.TestRunRequest): Promise<void> {
