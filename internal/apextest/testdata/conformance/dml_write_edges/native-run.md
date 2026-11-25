@@ -12,6 +12,6 @@
 
 ## NEIGHBOR PROBES
 
-- Existing, omitted and soft-deleted lookup targets are controls. Self lookups, required lookups, master-detail, lookup updates, sparse local schemas and lookups from custom to standard objects keep their existing rules.
-- The overlong non-key field and deleted parent are controls for attempted-insert upsert failures. Matching-key updates, standard ID-lookup selectors, explicit IDs, scalar and access-level overloads, padded and non-ASCII keys, and REST responses are outside the captured change.
+- Existing, omitted and soft-deleted lookup targets are controls. Self lookups, required lookups, master-detail, lookup updates, and sparse local schemas keep their existing rules. The separate custom lookup capture covers absent standard parents.
+- The overlong non-key field and deleted parent are controls for attempted-insert upsert failures. The separate external-ID capture covers scalar, padded and supplementary-character keys. Matching-key updates, standard ID-lookup selectors, explicit IDs, access-level overloads and REST responses were outside this supplemental capture.
 - The text cases record caller, stored and trigger values. The runtime change targets plain Text in before-insert triggers. Before-update and Text Area values are observations outside this change.

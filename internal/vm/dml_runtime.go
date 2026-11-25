@@ -2567,6 +2567,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if err := vm.generatedHistoryDMLBoundary(op, records); err != nil {
 		return nil, err
 	}
+	options.ApexValidateCustomLookupInsert = op == "insert" && checkApexIdentity
 	options.AllowTestHistoryInsert = options.AllowTestHistoryInsert && op == "insert" && vm.allowTestHistoryInsert()
 	// Identity errors precede writes,
 	// including partial Database DML. This is an Apex entry-point preflight;

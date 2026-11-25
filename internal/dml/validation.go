@@ -1380,8 +1380,10 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 			if requiresSelfLookupInsertTarget(definition, field, id) {
 				return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id)
 			}
-			if operation == referenceValidationInsert && e.requiresCrossObjectLookupInsertTarget(definition, name, field, id) {
-				return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id[:15])
+			if operation == referenceValidationInsert {
+				if err := e.validateUnmatchedLookupInsertTarget(definition, name, field, id); err != nil {
+					return err
+				}
 			}
 		}
 		if !found && allowMissingLocalReference(definition, name, id) {
@@ -1441,31 +1443,53 @@ func requiresSelfLookupInsertTarget(definition storage.ObjectDefinition, field s
 		definition.KeyPrefix != "" && strings.HasPrefix(string(id), definition.KeyPrefix) && storage.ValidateID(id) == nil
 }
 
-// API 62.0 and 67.0 reject a valid but absent ID for an optional cross-object
-// lookup configured to clear on delete.
-func (e *Engine) requiresCrossObjectLookupInsertTarget(definition storage.ObjectDefinition, name string, field storage.Field, id storage.ID) bool {
+// API 62.0 and 67.0 require a valid target for an optional cross-object
+// lookup configured to clear on delete. Existing and deleted records have
+// already been handled by the caller.
+func (e *Engine) validateUnmatchedLookupInsertTarget(definition storage.ObjectDefinition, name string, field storage.Field, id storage.ID) error {
 	if !hasSuffixFold(definition.APIName, "__c") || storage.IsCustomSettingDefinition(definition) ||
 		field.MasterDetail || field.Required || len(field.ReferenceTo) != 1 || storage.ValidateID(id) != nil {
-		return false
+		return nil
 	}
 	target, ok := storage.ResolveObjectName(*e.Org, field.ReferenceTo[0])
 	if !ok || strings.EqualFold(target, definition.APIName) || allowMissingSObjectReferenceTarget(target) {
-		return false
+		return nil
 	}
-	prefix := e.Org.Objects[target].Definition.KeyPrefix
-	if prefix == "" || !strings.HasPrefix(string(id), prefix) {
-		return false
+	parent := e.Org.Objects[target].Definition
+	if parent.KeyPrefix == "" {
+		return nil
 	}
+	clearOnDelete := false
 	for _, relation := range definition.Relations {
-		if !relation.SetNullOnDelete {
-			continue
-		}
-		canonical, ok := storage.ResolveFieldName(definition, e.Org.Namespace, relation.Field)
-		if ok && canonical == name {
-			return true
+		if relation.SetNullOnDelete {
+			canonical, ok := storage.ResolveFieldName(definition, e.Org.Namespace, relation.Field)
+			if ok && canonical == name {
+				clearOnDelete = true
+				break
+			}
 		}
 	}
-	return false
+	if !clearOnDelete {
+		return nil
+	}
+	if strings.HasPrefix(string(id), parent.KeyPrefix) {
+		return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id[:15])
+	}
+	// The wrong-type probe covers a declared custom parent in Apex.
+	if !e.Options.ApexValidateCustomLookupInsert || !hasSuffixFold(target, "__c") || storage.IsCustomSettingDefinition(parent) {
+		return nil
+	}
+	prefix := string(id[:3])
+	for _, object := range e.Org.Objects {
+		if object.Definition.KeyPrefix == prefix {
+			label := field.Label
+			if label == "" {
+				label = name
+			}
+			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "%s: id value of incorrect type: %s", label, id)
+		}
+	}
+	return nil
 }
 
 func allowDescribeOnlyMasterRecordTypeReference(fieldName string, field storage.Field, id storage.ID) bool {

@@ -242,6 +242,8 @@ type Options struct {
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
+	// Validate wrong-type references in the captured Apex cross-object lookup path.
+	ApexValidateCustomLookupInsert bool
 	// Resolved access mode of an Apex update; USER_MODE rejects a record type
 	// the running user's profile does not see (record_type_visibility rows).
 	ApexRecordTypeUpdateMode string
