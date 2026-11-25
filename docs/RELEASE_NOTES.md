@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
 
 ## v0.3.15
