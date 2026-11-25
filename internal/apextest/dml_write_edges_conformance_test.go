@@ -22,6 +22,10 @@ func TestExternalIDUpsertKeyLengthNativeConformance(t *testing.T) {
 	runDMLWriteEdgesNative(t, "upsert")
 }
 
+func TestBeforeInsertTextWriteNativeConformance(t *testing.T) {
+	runDMLWriteEdgesNative(t, "text")
+}
+
 func runDMLWriteEdgesNative(t *testing.T, family string) {
 	t.Helper()
 	rows := readDMLWriteEdgeRows(t, "org.tsv", 4)
@@ -160,7 +164,16 @@ func checkDMLWriteEdges(t *testing.T, rows [][]string, family, api, route, messa
 		}
 		seen[name] = true
 		t.Run(strings.TrimPrefix(name, family+"_"), func(t *testing.T) {
-			if got, present := actual[name]; !present || got != want {
+			got, present := actual[name]
+			if !present {
+				t.Fatalf("missing observation %s", name)
+			}
+			if family == "text" {
+				checkInsertTrigger := name != "text_update"
+				got = plainTextWriteObservation(t, got, checkInsertTrigger)
+				want = plainTextWriteObservation(t, want, checkInsertTrigger)
+			}
+			if got != want {
 				t.Fatalf("Glade %q, native %q", got, want)
 			}
 		})
@@ -168,4 +181,19 @@ func checkDMLWriteEdges(t *testing.T, rows [][]string, family, api, route, messa
 	if len(seen) == 0 || len(seen) != len(actual) {
 		t.Fatalf("captured %d observations, replayed %d", len(seen), len(actual))
 	}
+}
+
+// Replay the plain Text caller and storage fields, plus the before-insert
+// trigger values. The fixture also records Text Area and before-update values.
+func plainTextWriteObservation(t *testing.T, value string, checkInsertTrigger bool) string {
+	t.Helper()
+	fields := strings.Split(value, "|")
+	if len(fields) != 11 {
+		t.Fatalf("expected 11 framed text values, got %q", value)
+	}
+	callerAndStored := strings.Join(fields[:5], "|")
+	if checkInsertTrigger {
+		return callerAndStored + "|" + strings.Join(fields[7:9], "|")
+	}
+	return callerAndStored
 }
