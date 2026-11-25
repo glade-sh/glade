@@ -1113,7 +1113,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 		return "", err
 	}
 	var originalFields map[string]storage.Value
-	if len(capturedInsert) > 0 {
+	// Engine.Insert is the caller that supplies the fields before automation.
+	ordinaryInsert := len(capturedInsert) > 0
+	if ordinaryInsert {
 		originalFields = capturedInsert[0]
 	}
 	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
@@ -1164,7 +1166,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "Parent ID is invalid: null")
 		}
 	}
-	if err := e.validateInsertReferences(object.Definition, record); err != nil {
+	if err := e.validateInsertReferences(object.Definition, record, ordinaryInsert); err != nil {
 		return "", err
 	}
 	if err := e.validateActiveOwner(object.Definition, record.System.OwnerID, ""); err != nil {

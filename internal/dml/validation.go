@@ -1273,15 +1273,24 @@ func isGeneratedPlaceholderInsertID(id storage.ID) bool {
 	return storage.ValidateID(id) != nil
 }
 
+type referenceValidationOperation uint8
+
+const (
+	referenceValidationInternal referenceValidationOperation = iota
+	referenceValidationInsert
+	referenceValidationUpdate
+)
+
 func (e *Engine) validateReferences(definition storage.ObjectDefinition, record storage.Record) error {
-	return e.validateReferencesWithLoadedView(definition, record, false)
+	return e.validateReferencesWithLoadedView(definition, record, referenceValidationInternal)
 }
 
 func (e *Engine) validateUpdateReferences(definition storage.ObjectDefinition, record storage.Record) error {
-	return e.validateReferencesWithLoadedView(definition, record, true)
+	return e.validateReferencesWithLoadedView(definition, record, referenceValidationUpdate)
 }
 
-func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefinition, record storage.Record, update bool) error {
+func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefinition, record storage.Record, operation referenceValidationOperation) error {
+	update := operation == referenceValidationUpdate
 	if err := e.validateFieldPermissionTarget(record); err != nil {
 		return err
 	}
@@ -1367,8 +1376,13 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 		if !found && allowDescribeOnlyMasterRecordTypeReference(name, field, id) {
 			continue
 		}
-		if !found && !update && !isPolymorphicReference(definition, name) && requiresSelfLookupInsertTarget(definition, field, id) {
-			return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id)
+		if !found && !update && !isPolymorphicReference(definition, name) {
+			if requiresSelfLookupInsertTarget(definition, field, id) {
+				return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id)
+			}
+			if operation == referenceValidationInsert && e.requiresCrossObjectLookupInsertTarget(definition, name, field, id) {
+				return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id[:15])
+			}
 		}
 		if !found && allowMissingLocalReference(definition, name, id) {
 			continue
@@ -1425,6 +1439,33 @@ func requiresSelfLookupInsertTarget(definition storage.ObjectDefinition, field s
 		!field.MasterDetail && !field.Required && len(field.ReferenceTo) == 1 &&
 		strings.EqualFold(field.ReferenceTo[0], definition.APIName) &&
 		definition.KeyPrefix != "" && strings.HasPrefix(string(id), definition.KeyPrefix) && storage.ValidateID(id) == nil
+}
+
+// API 62.0 and 67.0 reject a valid but absent ID for an optional cross-object
+// lookup configured to clear on delete.
+func (e *Engine) requiresCrossObjectLookupInsertTarget(definition storage.ObjectDefinition, name string, field storage.Field, id storage.ID) bool {
+	if !hasSuffixFold(definition.APIName, "__c") || storage.IsCustomSettingDefinition(definition) ||
+		field.MasterDetail || field.Required || len(field.ReferenceTo) != 1 || storage.ValidateID(id) != nil {
+		return false
+	}
+	target, ok := storage.ResolveObjectName(*e.Org, field.ReferenceTo[0])
+	if !ok || strings.EqualFold(target, definition.APIName) || allowMissingSObjectReferenceTarget(target) {
+		return false
+	}
+	prefix := e.Org.Objects[target].Definition.KeyPrefix
+	if prefix == "" || !strings.HasPrefix(string(id), prefix) {
+		return false
+	}
+	for _, relation := range definition.Relations {
+		if !relation.SetNullOnDelete {
+			continue
+		}
+		canonical, ok := storage.ResolveFieldName(definition, e.Org.Namespace, relation.Field)
+		if ok && canonical == name {
+			return true
+		}
+	}
+	return false
 }
 
 func allowDescribeOnlyMasterRecordTypeReference(fieldName string, field storage.Field, id storage.ID) bool {
