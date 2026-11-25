@@ -2022,14 +2022,15 @@ var manualReadExtraFieldProjection = regexp.MustCompile(`(?is)^\s*select\s+recor
 // test reads a portal user's HasReadAccess for its own and the child
 // Accounts, APIs 62.0 and 67.0). Only portal and Standard users named by Id in
 // the query qualify (external_user_case_lead_sharing: a named Standard User
-// returns its own rows, APIs 62.0 and 67.0).
+// returns its own rows, APIs 62.0 and 67.0). The anonymous named Case and Lead
+// captures also cover Public Read/Write and Read/Write/Transfer at both APIs.
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
 	if vm.Org == nil {
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
 	api := vm.currentSourceExecutionPolicy().APIVersion
-	deniedControl, anonymousManualShape, anonymousPartnerShape := false, false, false
+	deniedControl, anonymousManualShape, anonymousPartnerShape, anonymousCaseLeadShape := false, false, false, false
 	visualforcePartner := api == "59.0" && vm.capturedPartnerVisualforce59() || api == "67.0" && vm.capturedPartnerVisualforce67()
 	anonymous := vm.currentClass == "" && vm.currentMethod.ClassName == ""
 	if vm.testContext == nil && !vm.currentTrigger && (anonymous && (api == "62.0" || api == "67.0" || api == "68.0") || visualforcePartner) &&
@@ -2039,6 +2040,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		deniedControl = anonymous && (api == "68.0" && standardProjection || api == "67.0" && extraFieldProjection)
 		anonymousManualShape = anonymous && ((api == "62.0" || api == "67.0") && standardProjection || deniedControl)
 		anonymousPartnerShape = extraFieldProjection
+		anonymousCaseLeadShape = anonymous && extraFieldProjection
 	}
 
 	queryLower := ""
@@ -2050,18 +2052,43 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
 		portal := portalUserTypeRecord(user)
 		profile, _ := user.GetField("ProfileId")
-		partner := anonymousPartnerShape && vm.currentProfileName(storageValueIDText(profile)) == "Partner Community User"
+		profileID := storageValueIDText(profile)
+		partner := anonymousPartnerShape && vm.currentProfileName(profileID) == "Partner Community User"
+		standard := vm.namedUserIsCapturedStandard(user)
 
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !partner && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !partner && !standard && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
 			continue
 		}
-		if vm.testContext == nil && !partner && !vm.namedUserIsCapturedStandard(user) {
+		role, _ := user.GetField("UserRoleId")
+		anonymousCaseLead := false
+		if anonymousCaseLeadShape && storageValueIDText(role) == "" {
+			userType, _ := user.GetField("UserType")
+			community := strings.EqualFold(userType.String, "CspLitePortal") &&
+				vm.currentProfileName(profileID) == "Customer Community User" && vm.profileHasLicenseKey(profileID, "PID_Customer_Community")
+			if standard || community {
+				anonymousCaseLead = true
+				profileSet := storage.ID(vm.profileOwnedPermissionSetID(profileID))
+				for _, source := range vm.assignedPermissionSources(string(user.ID), false) {
+					if !storage.IDsEqual(storage.ID(source.ID), profileSet) {
+						anonymousCaseLead = false
+						break
+					}
+				}
+			}
+		}
+		if vm.testContext == nil && !partner && !standard && !anonymousCaseLead {
 			continue
 		}
 		seen[string(user.ID)] = true
 		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
-		role, _ := user.GetField("UserRoleId")
 		for _, objectName := range objectNames {
+			object := vm.Org.Objects[objectName]
+			model := strings.TrimSpace(object.Definition.SharingModel)
+			publicCaseLead := anonymousCaseLead && capturedStandardNamedObject(objectName) &&
+				capturedCaseLeadPublicEditModel(model) && strings.TrimSpace(object.Definition.ExternalSharingModel) == ""
+			if vm.testContext == nil && !partner && !standard && !publicCaseLead {
+				continue
+			}
 			manualRead := anonymousManualShape && storageValueIDText(role) == "" && vm.customObject(objectName) && !storage.IsCustomSettingDefinition(vm.Org.Objects[objectName].Definition) &&
 				strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private") &&
 				!vm.userModeUnrestrictedObject(objectName, string(user.ID)) &&
@@ -2076,16 +2103,15 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			if partner && !partnerLead {
 				continue
 			}
-			if vm.testContext == nil && !manualRead && !partnerLead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+			if vm.testContext == nil && !manualRead && !partnerLead && !publicCaseLead && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(model, "Private")) {
 				continue
 			}
 			// Native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0): a
 			// test reads a named limited user's rows on a custom object too, so
 			// a Standard User's rows include the project's custom objects.
-			if !portal && !manualRead && !partnerLead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+			if !portal && !manualRead && !partnerLead && !publicCaseLead && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(object.Definition)) {
 				continue
 			}
-			object := vm.Org.Objects[objectName]
 			ids := make([]string, 0, len(object.Records))
 			for id, record := range object.Records {
 				if record.ID != "" {
@@ -2117,7 +2143,18 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 						continue
 					}
 				}
+				// anonymous_named_case_lead_access/org.tsv covers live records
+				// created and owned by the administrator running this query.
+				if publicCaseLead && (len(text) < 15 || !strings.Contains(queryLower, strings.ToLower(text[:15])) ||
+					record.System.IsDeleted || !storage.IDsEqual(record.System.OwnerID, storage.ID(current)) ||
+					!storage.IDsEqual(record.System.CreatedByID, storage.ID(current))) {
+					continue
+				}
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
+				if publicCaseLead && standard && strings.EqualFold(model, "ReadWriteTransfer") &&
+					access.Fields["HasReadAccess"].Boolean && vm.currentUserObjectPermission(objectName, "isUpdateable") {
+					access.Fields["HasEditAccess"] = storage.BooleanValue(true)
+				}
 				if partnerLead {
 					access.Fields["HasReadAccess"] = storage.BooleanValue(!record.System.IsDeleted && vm.currentUserHasDirectLeadManualRead(record, string(user.ID)))
 					access.Fields["HasEditAccess"] = storage.BooleanValue(false)
@@ -5246,7 +5283,11 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 	}
 	api := vm.currentSourceExecutionPolicy().APIVersion
 	model := strings.TrimSpace(definition.SharingModel)
-	return (api == "62.0" || api == "67.0") && (strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "ReadWriteTransfer"))
+	return (api == "62.0" || api == "67.0") && capturedCaseLeadPublicEditModel(model)
+}
+
+func capturedCaseLeadPublicEditModel(model string) bool {
+	return strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "ReadWriteTransfer")
 }
 
 // partnerLeadPrivateExternalDefault is the named and with-sharing test shape

@@ -1,0 +1,13 @@
+model	api	route	principal	access
+ReadWriteTransfer	62.0	anonymous	guest	-|-|-
+ReadWriteTransfer	62.0	anonymous	community	00|00|00
+ReadWriteTransfer	62.0	anonymous	standard	11|11|11
+ReadWriteTransfer	67.0	anonymous	guest	-|-|-
+ReadWriteTransfer	67.0	anonymous	community	00|00|00
+ReadWriteTransfer	67.0	anonymous	standard	11|11|11
+ReadWrite	62.0	anonymous	guest	-|-|-
+ReadWrite	62.0	anonymous	community	00|00|00
+ReadWrite	62.0	anonymous	standard	11|11|11
+ReadWrite	67.0	anonymous	guest	-|-|-
+ReadWrite	67.0	anonymous	community	00|00|00
+ReadWrite	67.0	anonymous	standard	11|11|11

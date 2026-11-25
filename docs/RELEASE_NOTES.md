@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Customer Community users respect the private external default for Case when a project declares only its internal public sharing model.
+- Customer Community users respect the private external default for Case when a project declares only its internal public sharing model. Anonymous Apex returns the captured named Standard and Community UserRecordAccess rows for Case and Lead records with public internal sharing.
 
 ## v0.3.15
 
