@@ -1,8 +1,21 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { Resvg } from '@resvg/resvg-js'
+import { pathToFileURL } from 'node:url'
+import { Resvg, initWasm } from '@resvg/resvg-wasm'
+import { decompress } from 'wawoff2'
 
 const publicDir = new URL('../docs-src/public/', import.meta.url)
+const cardFonts = [
+  '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2',
+  '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2'
+]
+await initWasm(readFile(new URL(import.meta.resolve('@resvg/resvg-wasm/index_bg.wasm'))))
+
+// Copy each Latin font out of the decoder's memory before decoding the next.
+const fontBuffers = []
+for (const name of cardFonts) {
+  const font = await readFile(new URL(import.meta.resolve(name)))
+  fontBuffers.push(Buffer.from(await decompress(font)))
+}
 
 export async function renderBrandAssets() {
   const [cardSVG, cardMarkSVG, iconSVG] = await Promise.all(
@@ -11,21 +24,30 @@ export async function renderBrandAssets() {
   )
   // Resolve the source SVG's relative logo reference for the raster renderer.
   const cardMark = renderIcon(cardMarkSVG, 138).toString('base64')
-  const card = new Resvg(cardSVG.toString('utf8').replace(
+  const card = cardSVG.toString('utf8').replace(
     'href="logo-mark.svg"', `href="data:image/png;base64,${cardMark}"`
-  ))
+  )
 
-  const appleIcon = renderIcon(iconSVG, 180)
-  const favicon = renderIcon(iconSVG, 32)
   return {
-    'social-card.png': card.render().asPng(),
-    'apple-touch-icon.png': appleIcon,
-    'favicon.ico': wrapICO(favicon, 32)
+    'social-card.png': renderPNG(card, {
+      font: { fontBuffers, sansSerifFamily: 'Inter', monospaceFamily: 'IBM Plex Mono' }
+    }),
+    'apple-touch-icon.png': renderIcon(iconSVG, 180),
+    'favicon.ico': wrapICO(renderIcon(iconSVG, 32), 32)
   }
 }
 
 function renderIcon(svg, width) {
-  return new Resvg(svg, { fitTo: { mode: 'width', value: width } }).render().asPng()
+  return renderPNG(svg, { fitTo: { mode: 'width', value: width } })
+}
+
+function renderPNG(svg, options) {
+  const renderer = new Resvg(svg, options)
+  const image = renderer.render()
+  const png = Buffer.from(image.asPng())
+  image.free()
+  renderer.free()
+  return png
 }
 
 function wrapICO(png, size) {
@@ -45,6 +67,6 @@ function wrapICO(png, size) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const assets = await renderBrandAssets()
   await Promise.all(Object.entries(assets).map(([name, data]) =>
-    writeFile(fileURLToPath(new URL(name, publicDir)), data)
+    writeFile(new URL(name, publicDir), data)
   ))
 }
