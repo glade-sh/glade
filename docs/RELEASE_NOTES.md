@@ -5,6 +5,7 @@
 - Fix VS Code Test Explorer discovery, selector failures, and excluded tests.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
+- Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
 
 ## v0.3.15
 
@@ -29,7 +30,6 @@ v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recov
 ### Performance
 
 - **No measurable change.** On an 8 GiB Apple-silicon Mac, a cold full `glade test` run of a 4,565-test application took 435.1 s in v0.3.15 and 432.7 s in v0.3.14 (median of three interleaved runs each, within run-to-run variation), with the same peak memory (about 4.0 GiB) and identical test outcomes.
-
 ## v0.3.14
 
 v0.3.14 adds captured Salesforce behavior for Site methods, share rows, custom metadata access, record type defaults, Flow and commerce cart shapes, and `Comparable` sorting, and makes the test daemon, the local LWC shell and several runtime paths faster.
