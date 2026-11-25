@@ -14,7 +14,7 @@ test("interrupting an installer waiting on the lock exits promptly", async () =>
   await mkdir(share, { recursive: true });
   await mkdir(commands);
   const python = spawnSync("which", ["python3"], { encoding: "utf8" }).stdout.trim();
-  await writeFile(join(commands, "python3"), `#!/bin/sh\nprintf '%s' "$$" > "$LOCK_STARTED"\nexec "${python}" "$@"\n`, { mode: 0o755 });
+  await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ] && [ "$#" -gt 3 ]; then printf '%s' "$$" > "$LOCK_STARTED"; fi\nexec "${python}" "$@"\n`, { mode: 0o755 });
   const holder = spawn(python, ["-u", "-c", "import fcntl,sys; f=open(sys.argv[1], 'w'); fcntl.lockf(f, fcntl.LOCK_EX); print('ready', flush=True); sys.stdin.read(1)", join(share, ".install.lock")], { stdio: ["pipe", "pipe", "pipe"] });
   await new Promise((resolve, reject) => { holder.stdout.once("data", resolve); holder.once("error", reject); });
   const env = { ...process.env, PATH: `${commands}:${process.env.PATH}`, LOCK_STARTED: started, HOME: root, XDG_DATA_HOME: xdg, GLADE_INSTALL_DIR: join(root, "bin") };

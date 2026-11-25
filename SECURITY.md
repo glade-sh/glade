@@ -61,14 +61,14 @@ Glade does not send project source to a hosted Glade service.
 
 These workflows can make network requests:
 
-- The installer fetches the script from `glade.sh` and release files from
-  `downloads.glade.sh` or GitHub Releases. `glade update` runs the installer
-  embedded in the installed binary. The installer and verification helper
-  can fetch public attestations from `api.github.com` and GitHub's bundle
-  storage. `gh` can fetch Sigstore trust material and, with a GitHub login,
-  attestations. The current standalone installer and verifier disable
-  GitHub CLI telemetry and its update check. Older embedded installers use
-  your GitHub CLI settings.
+- The install command fetches the script from `glade.sh`. The script fetches
+  release files from `downloads.glade.sh` or GitHub Releases. `glade update`
+  runs the installer embedded in the installed binary. The installer and
+  verification helper can fetch public attestations from `api.github.com`
+  and GitHub's bundle storage. `gh` can fetch Sigstore trust material and,
+  with a GitHub login, attestations. The standalone installer and verifier
+  disable GitHub CLI telemetry and its update check. Older embedded installers
+  use your GitHub CLI settings.
 - Plugin discovery, search, and registry lookups use
   `https://plugins.glade.sh/index.json` or the registry you configured.
   Remote plugin install and restore fetch the selected archive URL.
