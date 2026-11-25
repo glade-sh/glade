@@ -31,6 +31,7 @@ v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recov
 ### Performance
 
 - **No measurable change.** On an 8 GiB Apple-silicon Mac, a cold full `glade test` run of a 4,565-test application took 435.1 s in v0.3.15 and 432.7 s in v0.3.14 (median of three interleaved runs each, within run-to-run variation), with the same peak memory (about 4.0 GiB) and identical test outcomes.
+- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0.
 
 ## v0.3.14
 
