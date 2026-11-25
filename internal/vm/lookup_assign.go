@@ -2827,7 +2827,15 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 	if ok, err := vm.assignRestContextField(name, value); ok || err != nil {
 		return err
 	}
-	parts := strings.Split(name, ".")
+	root, tail, dotted := strings.Cut(name, ".")
+	parts := []string{root}
+	if dotted {
+		if strings.Contains(tail, ".") {
+			parts = strings.Split(name, ".")
+		} else {
+			parts = []string{root, tail}
+		}
+	}
 	if len(parts) > 1 {
 		if strings.EqualFold(parts[0], "super") {
 			if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
@@ -3267,7 +3275,8 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
 	}
-	if vm.isSObjectLikeType(current.Type) && sObjectIDFromFields(current.Fields) != "" {
+	isSObject := vm.isSObjectLikeType(current.Type)
+	if isSObject && sObjectIDFromFields(current.Fields) != "" {
 		if objectName, ok := vm.resolveObjectName(current.Type); ok {
 			if object, exists := vm.Org.Objects[objectName]; exists {
 				canonical := vm.resolveSObjectFieldName(current.Type, fieldName)
@@ -3290,7 +3299,7 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 	if strings.EqualFold(fieldName, "Message") && !current.projectClass && !current.classInstance && vm.replayDescribeStandardEvent(current.Type) && !vm.batchApexErrorEventMessageAssignable() {
 		return newExceptionError("SObjectException", "Field is not writeable: BatchApexErrorEvent.Message")
 	}
-	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueString {
+	if isSObject && value.Kind == ValueString {
 		// User classes can share names with standard sObjects (for example,
 		// Quip's Folder/FolderRef DTOs). Only apply sObject Id validation when
 		// the receiver is not a loaded Apex class with the same runtime name.
@@ -3314,12 +3323,12 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		}
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
-	if vm.isSObjectLikeType(current.Type) && sObjectIDFromFields(current.Fields) != "" {
+	if isSObject && sObjectIDFromFields(current.Fields) != "" {
 		if definition, field, ok := vm.sObjectFieldDefinition(current.Type, fieldName); ok && storage.StandardFieldAssignmentRequiresEmptyID(definition.APIName, field.APIName) {
 			return newExceptionError("SObjectException", fmt.Sprintf("Field is not writeable: %s.%s", definition.APIName, field.APIName))
 		}
 	}
-	if vm.isSObjectLikeType(current.Type) && vm.sObjectParentRelationshipField(current.Type, fieldName) {
+	if isSObject && vm.sObjectParentRelationshipField(current.Type, fieldName) {
 		vm.markCollectionRefsEscaped(value)
 		vm.setExplicitSObjectFieldValue(&current, fieldName, value)
 		markSetSObjectField(&current, fieldName)
@@ -3328,12 +3337,12 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		propagate(current)
 		return nil
 	}
-	if vm.isSObjectLikeType(current.Type) {
+	if isSObject {
 		if err := vm.nonScalarSObjectFieldAssignmentError(current, fieldName, value); err != nil {
 			return err
 		}
 	}
-	if vm.isSObjectLikeType(current.Type) && value.Kind == ValueObject && vm.isSObjectLikeType(value.Type) {
+	if isSObject && value.Kind == ValueObject && vm.isSObjectLikeType(value.Type) {
 		if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, fieldName); exists && fieldDef.Type == storage.FieldReference {
 			relationshipName := vm.parentRelationshipNameForReferenceField(definition, fieldDef)
 			if relationshipName != "" {

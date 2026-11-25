@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Reduce allocation overhead when Apex writes values back to object fields.
 
 ## v0.3.15
 
