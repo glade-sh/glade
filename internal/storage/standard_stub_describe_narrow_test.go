@@ -252,3 +252,23 @@ func TestStandardDescribeNarrowConcurrentLookups(t *testing.T) {
 	}
 	group.Wait()
 }
+
+func TestStandardDescribeNarrowReusesFieldProjection(t *testing.T) {
+	const object = "Account"
+	cache := newStandardDescribeCatalogV2RawCache(nil)
+	cache.narrow = func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeNarrow, error) {
+		return decodeStandardDescribeCatalogV2Narrow(standardDescribeCatalogV2Pack, entry)
+	}
+	fields, found, err := cache.fieldsForName(object)
+	if err != nil || !found || len(fields.Fields) == 0 {
+		t.Fatalf("field projection missing: found=%t, err=%v", found, err)
+	}
+	before := standardDescribeNarrowDecodes.Load()
+	narrow, found, err := cache.narrowForName(object)
+	if err != nil || !found || !reflect.DeepEqual(narrow, standardDescribeNarrowFromDescribe(fields)) {
+		t.Fatalf("narrow projection differs: found=%t, err=%v", found, err)
+	}
+	if n := standardDescribeNarrowDecodes.Load() - before; n != 0 {
+		t.Fatalf("narrow lookup decoded the member %d more times", n)
+	}
+}
