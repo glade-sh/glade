@@ -1891,8 +1891,6 @@ func semaFallbackFieldPathType(fieldName string) string {
 		return "Id"
 	case key == "name":
 		return "String"
-	case strings.HasSuffix(key, "date"):
-		return "Date"
 	case strings.HasSuffix(key, "infos"), strings.HasSuffix(key, "items"), strings.HasSuffix(key, "records"), strings.HasSuffix(key, "list"):
 		return "List<Object>"
 	default:
@@ -3208,22 +3206,6 @@ func semaChainedCallReceiverWithWork(body string, callStart int, scope map[strin
 	}
 	if work != nil {
 		panic(semaReceiverWorkFailure{"oversized receiver missed fallback"})
-	}
-	// A constructed receiver inside an argument belongs to that inner call,
-	// not to the fluent call surrounding the argument.
-	if exprStart > 0 && body[exprStart-1] == '(' && semaConstructorReceiverType(fullReceiverExpr) == "" {
-		methodEnd := exprStart - 1
-		methodStart := methodEnd
-		for methodStart > 0 && isIdentifierByte(body[methodStart-1]) {
-			methodStart--
-		}
-		dotBeforeMethod := methodStart - 1
-		for dotBeforeMethod >= 0 && isWhitespace(body[dotBeforeMethod]) {
-			dotBeforeMethod--
-		}
-		if dotBeforeMethod >= 0 && body[dotBeforeMethod] == '.' {
-			exprStart = semaExpressionStart(body[:methodStart])
-		}
 	}
 	if exprStart > open {
 		exprStart = semaExpressionStart(body[:open])

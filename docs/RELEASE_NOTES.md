@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Fixed a false `Date.getTime()` diagnostic when a `Datetime` method chain is the first argument to a dotted Apex call.
 
 ## v0.3.15
 
