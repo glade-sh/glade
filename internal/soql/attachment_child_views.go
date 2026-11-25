@@ -78,6 +78,15 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 					continue
 				}
 			}
+			if context.ChildRecordVisible != nil {
+				candidate := storage.Record{
+					ID: id, Object: viewName,
+					Fields: map[string]storage.Value{"Id": storage.IDValue(id), "ParentId": storage.IDValue(parent.ID)},
+				}
+				if !context.ChildRecordVisible(viewName, candidate) {
+					continue
+				}
+			}
 			fields := map[string]storage.Value{"Id": storage.IDValue(id)}
 			if parentReadable {
 				fields["ParentId"] = storage.IDValue(parent.ID)
