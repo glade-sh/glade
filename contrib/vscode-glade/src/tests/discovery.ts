@@ -31,32 +31,31 @@ export function currentApexTestAtOffset(file: string, source: string, offset: nu
   if (!discovered) {
     return undefined;
   }
-  let current: string | undefined;
-  for (const method of testMethodPositions(source)) {
-    if (method.offset > offset) {
-      break;
+  const current = testMethodPositions(source).find((method) => offset >= method.offset && offset <= method.end);
+  return current ? { className: discovered.className, methodName: current.name } : undefined;
+}
+
+function testMethodPositions(source: string): Array<{ name: string; offset: number; end: number }> {
+  // Mask comments and strings without changing offsets or interpreting their braces.
+  const code = source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|'(?:\\[\s\S]|[^'\\])*'/g, (text) => text.replace(/[^\r\n]/g, " "));
+  const methods: Array<{ name: string; offset: number; end: number }> = [];
+  const declaration = /\bstatic\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)\s*\{/gi;
+  for (const match of code.matchAll(declaration)) {
+    const start = match.index || 0;
+    const boundary = Math.max(code.lastIndexOf("{", start - 1), code.lastIndexOf("}", start - 1), code.lastIndexOf(";", start - 1));
+    const modifiers = code.slice(boundary + 1, start);
+    if (!/@isTest\b/i.test(modifiers) && !/\btestMethod\b/i.test(modifiers)) {
+      continue;
     }
-    current = method.name;
+    const body = start + match[0].length - 1;
+    let depth = 1;
+    let end = body + 1;
+    while (end < code.length && depth > 0) {
+      if (code[end] === "{") depth++;
+      if (code[end] === "}") depth--;
+      end++;
+    }
+    methods.push({ name: match[1], offset: start, end: end - 1 });
   }
-  return current ? { className: discovered.className, methodName: current } : undefined;
-}
-
-function testMethodPositions(source: string): Array<{ name: string; offset: number }> {
-  const methods: Array<{ name: string; offset: number }> = [];
-  const isTestMethod = /@isTest(?:\s*\([^)]*\))?[\s\S]{0,240}?\bstatic\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/gi;
-  for (const match of source.matchAll(isTestMethod)) {
-    methods.push({ name: match[1], offset: methodNameOffset(match) });
-  }
-  const legacyMethod = /\btestMethod\s+static\s+void\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/gi;
-  for (const match of source.matchAll(legacyMethod)) {
-    methods.push({ name: match[1], offset: methodNameOffset(match) });
-  }
-  methods.sort((a, b) => a.offset - b.offset || a.name.localeCompare(b.name));
   return methods;
-}
-
-function methodNameOffset(match: RegExpMatchArray): number {
-  const text = match[0] || "";
-  const name = match[1] || "";
-  return (match.index || 0) + Math.max(0, text.lastIndexOf(name));
 }

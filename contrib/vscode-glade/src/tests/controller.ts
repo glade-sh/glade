@@ -72,7 +72,7 @@ export class GladeTestController {
       return;
     }
     const run = this.controller.createTestRun(request);
-    const queue = request.include && request.include.length > 0 ? request.include : collectionItems(this.controller.items);
+    const queue = selectedItems(this.controller.items, request.include, request.exclude);
     for (const item of queue) {
       if (token.isCancellationRequested) {
         break;
@@ -157,16 +157,20 @@ export class GladeTestController {
       const result = await runApexTest(this.project, data.className, data.methodName);
       this.onRunComplete?.(startHereSummary("Test Explorer", result));
       const flat = flattenTestCases(result);
-      const childResults = flat.filter((testCase) => testCase.className === data.className);
+      const childResults = flat.filter((testCase) => testCase.className === data.className && (!data.methodName || testCase.methodName === data.methodName));
       for (const testCase of childResults) {
         const child = this.findTestItem(testCase);
         if (child && child !== item) {
           this.recordResult(run, child, testCase);
         }
       }
-      const failed = childResults.find((candidate) => candidate.status !== "pass");
+      const failed = childResults.find((candidate) => candidate.status !== "pass") ||
+        (childResults.length === 0 ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass") : undefined);
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
+        this.setFailedItem(item);
+      } else if (childResults.length === 0) {
+        run.errored(item, new vscode.TestMessage("No matching test result was returned."));
         this.setFailedItem(item);
       } else {
         run.passed(item, result.summary.durationMs);
@@ -237,6 +241,27 @@ export class GladeTestController {
     }
     this.output?.appendLine(`$ glade ${args.join(" ")}`);
   }
+}
+
+function selectedItems(collection: vscode.TestItemCollection, include?: readonly vscode.TestItem[], exclude?: readonly vscode.TestItem[]): vscode.TestItem[] {
+  const excluded = new Set((exclude || []).map((item) => item.id));
+  const included = include === undefined ? undefined : new Set(include.map((item) => item.id));
+  const queue: vscode.TestItem[] = [];
+  const visit = (item: vscode.TestItem, selected: boolean, blocked: boolean): void => {
+    blocked = blocked || excluded.has(item.id);
+    selected = selected || included === undefined || included.has(item.id);
+    if (blocked) return;
+    const children = collectionItems(item.children);
+    const containsExclusion = (candidate: vscode.TestItem): boolean =>
+      excluded.has(candidate.id) || collectionItems(candidate.children).some(containsExclusion);
+    if (selected && !children.some(containsExclusion)) {
+      queue.push(item);
+    } else {
+      for (const child of children) visit(child, selected, blocked);
+    }
+  };
+  for (const item of collectionItems(collection)) visit(item, false, false);
+  return queue;
 }
 
 function collectionItems(collection: vscode.TestItemCollection): vscode.TestItem[] {
