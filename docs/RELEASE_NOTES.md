@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Customer Community users respect the private external default for Case when a project declares only its internal public sharing model. Anonymous Apex returns the captured named Standard and Community UserRecordAccess rows for Case and Lead records with public internal sharing.
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
 ## v0.3.15
 
