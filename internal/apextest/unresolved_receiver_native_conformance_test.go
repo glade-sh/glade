@@ -80,6 +80,9 @@ func TestUnresolvedReceiverNativeConformance(t *testing.T) {
 							t.Fatalf("native status %q, Glade %q: %+v", status, result.Status, result.Problem)
 						}
 						if status == "pass" {
+							if expected != "ok" || result.Problem != nil {
+								t.Fatalf("unexpected passing outcome: native %q, Glade %+v", expected, result.Problem)
+							}
 							return
 						}
 						if result.Problem == nil {
@@ -134,9 +137,9 @@ func TestUnresolvedReceiverNativeConformance(t *testing.T) {
 					}
 					for _, suite := range run.Suites {
 						for _, result := range suite.Cases {
-							want := expected[suite.Name]
-							if result.Status != testreport.StatusCompileError || result.Problem == nil || result.Problem.Message != want {
-								t.Errorf("%s.%s: native %q, Glade %s: %+v", suite.Name, result.MethodName, want, result.Status, result.Problem)
+							want := expected[result.ClassName]
+							if want == "" || result.Status != testreport.StatusCompileError || result.Problem == nil || !strings.Contains(result.Problem.Message, want) {
+								t.Errorf("%s.%s: native %q, Glade %s: %+v", result.ClassName, result.MethodName, want, result.Status, result.Problem)
 							}
 						}
 					}
