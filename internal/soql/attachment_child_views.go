@@ -30,7 +30,7 @@ type attachmentRelationshipSchema struct {
 	spreadSource      string
 	spreadFeatures    string
 	capturedPlain     bool
-	visibility        string
+	lazySpread        bool
 }
 
 type attachmentRelationshipSchemaSnapshot struct {
@@ -46,7 +46,7 @@ type attachmentRelationshipToken struct {
 	customSetting bool
 }
 
-func (cache *childRelationshipQueryCache) attachmentRelationshipToken(org storage.OrgState, parent storage.ObjectDefinition, visibility string) attachmentRelationshipToken {
+func (cache *childRelationshipQueryCache) attachmentRelationshipToken(org storage.OrgState, parent storage.ObjectDefinition) attachmentRelationshipToken {
 	schema := attachmentRelationshipSchema{
 		runtimeGeneration: org.RuntimeGenerationID(),
 		schemaGeneration:  org.SchemaGeneration(),
@@ -56,9 +56,9 @@ func (cache *childRelationshipQueryCache) attachmentRelationshipToken(org storag
 		apiVersion:        org.APIVersion,
 		spreadSource:      org.StandardSpread,
 		capturedPlain:     org.StandardSpreadCapturedPlain,
-		visibility:        visibility,
+		lazySpread:        org.LazyStandardSpreadEnabled(),
 	}
-	if org.StandardSpread != "" {
+	if schema.lazySpread {
 		schema.spreadFeatures = strings.Join(org.Features, "\x00")
 	}
 	// Reuse the digest within one query. Validation may install objects in a
@@ -99,6 +99,13 @@ func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
 		digest.text(definition.PluralLabel)
 		digest.size(len(definition.Fields))
 		digest.size(len(definition.RecordTypes))
+		// Visibility also depends on the definition and record presence
+		// of a suppressed spread object. Use the resolver's predicate.
+		if org.StandardSpreadCapturedPlain && org.SuppressesSpreadObject(name) {
+			digest.WriteByte(1)
+		} else {
+			digest.WriteByte(0)
+		}
 		digest.size(len(definition.Relations))
 		for _, relation := range definition.Relations {
 			digest.relationship(relation)

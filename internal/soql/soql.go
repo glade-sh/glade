@@ -2928,12 +2928,13 @@ func childRelationshipResolutionCached(org storage.OrgState, parentDefinition st
 		return resolveChildRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
-	visibility := org.SuppressedSpreadVisibilityStamp()
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + visibility
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00"
 	var token attachmentRelationshipToken
 	if attachmentView {
 		key += "\x00attachment"
-		token = childCache.attachmentRelationshipToken(org, parentDefinition, visibility)
+		token = childCache.attachmentRelationshipToken(org, parentDefinition)
+	} else {
+		key += org.SuppressedSpreadVisibilityStamp()
 	}
 	cache.mu.RLock()
 	cached, found := cache.childRelationships[key]
