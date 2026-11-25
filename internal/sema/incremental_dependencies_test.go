@@ -203,7 +203,7 @@ func TestIncrementalDependencyInvalidation(t *testing.T) {
 	}
 	gen := incrementalLoad(t, root)
 	run := incrementalRun{artifacts: &typesys.BuildArtifacts{}}
-	run.begin(gen.index, incrementalOptions(&gen.artifacts))
+	run.begin(gen.index, gen.index.Objects)
 	if run.digestsOK || run.reason != "missing captured source" {
 		t.Fatalf("missing source: digestsOK=%v reason=%q", run.digestsOK, run.reason)
 	}

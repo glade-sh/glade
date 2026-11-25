@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -16,11 +17,11 @@ import (
 // input. The state reuses one thing: the per-type method-body diagnostics of
 // the previous generation. A type's body diagnostics are a function of its own
 // source and companion metadata, the member model, the index, and the
-// analysis options. After the enrichment step the index is hashed without
-// source positions. When that hash matches the previous generation's, no
-// signature, member, annotation, schema, dependency or metadata fact changed
-// anywhere; the only difference is which files changed content, and those
-// types, plus the types that name them or extend them, are checked again.
+// analysis options. The cache hashes the enriched index and the original schema
+// objects without source positions. A matching hash means the signatures,
+// members, annotations, schema, dependencies and metadata are unchanged. The
+// analysis then checks types whose files changed and types that name or extend
+// them.
 // Every other type keeps its cached diagnostics. Any other difference runs the
 // whole analysis, as does any run that shows the cache could be stale.
 //
@@ -172,15 +173,17 @@ func (s *IncrementalState) analyzeLocked(index typesys.Index, opts AnalyzeOption
 	return result, run
 }
 
-// begin hashes the enriched index and the per-type source identities and
-// decides whether the previous snapshot can serve this generation.
-func (r *incrementalRun) begin(index typesys.Index, opts AnalyzeOptions) {
-	// Project markers decide which source unit each file belongs to; the member
-	// model reads them from disk, so they are part of the index's identity.
+// begin hashes the index inputs and the per-type source identities to decide
+// whether the previous snapshot can serve this generation.
+func (r *incrementalRun) begin(index typesys.Index, declaredObjects []schema.Object) {
+	// Body checks use the original schema to establish object identity because
+	// enrichment can fill in an identical partial object. Project markers also
+	// affect the member model by determining each file's source unit.
 	r.indexDigest = positionBlindDigest(struct {
-		Index   typesys.Index
-		Markers map[string]bool
-	}{index, anonymousProjectMarkers(index)})
+		Index           typesys.Index
+		DeclaredObjects []schema.Object
+		Markers         map[string]bool
+	}{index, declaredObjects, anonymousProjectMarkers(index)})
 	r.typeDigests = make([][sha256.Size]byte, len(index.Types))
 	r.digestsOK = true
 	for i, typ := range index.Types {
