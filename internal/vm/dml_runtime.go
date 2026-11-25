@@ -3086,6 +3086,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	originalUpdateRecords := records
 	beforeTriggerRecords := records
 	if op == "update" {
+		vm.normalizeBeforeUpdateTriggerText(records)
 		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
 	}
 	if op == "insert" || op == "update" {

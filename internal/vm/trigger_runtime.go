@@ -835,6 +835,25 @@ func (vm *VM) normalizeBeforeInsertTriggerText(records []storage.Record, externa
 	}
 }
 
+// Normalize supplied update values before hydrating Trigger.new so fields
+// omitted from the DML input retain their stored values.
+func (vm *VM) normalizeBeforeUpdateTriggerText(records []storage.Record) {
+	if len(vm.Triggers) == 0 {
+		return
+	}
+	for i := range records {
+		record := &records[i]
+		if len(vm.triggersForOperation(record.Object, triggerTimingBefore, "update")) == 0 {
+			continue
+		}
+		objectName, ok := vm.resolveObjectName(record.Object)
+		if !ok {
+			continue
+		}
+		dml.NormalizeTriggerTextWrites(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, record, "")
+	}
+}
+
 func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, []storage.Record, error) {
 	if len(records) == 0 {
 		return nil, records, nil
