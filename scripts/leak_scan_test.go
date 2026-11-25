@@ -454,13 +454,13 @@ func TestLeakScanRequiredWorkflow(t *testing.T) {
 	}
 	for _, marker := range []string{
 		"runs-on: ubuntu-24.04",
-		"uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"fetch-depth: 0",
-		"persist-credentials: false",
 		"LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}",
 		"LEAK_SCAN_ALLOW_EMPTY_DENYLIST: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork == true || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) && '1' || '0' }}",
-		"merge_group) range=\"$MERGE_GROUP_BASE_SHA..HEAD\"",
-		"scripts/leak-scan.sh --range \"$range\"",
+		"PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}",
+		"MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}",
+		"PUSH_BEFORE: ${{ github.event.before }}",
+		"SCAN_RANGE: ${{ steps.prepare.outputs.range }}",
+		"bash scripts/leak-scan.sh --range \"$SCAN_RANGE\"",
 	} {
 		if !strings.Contains(job, marker) {
 			t.Errorf("leak-scan job missing %q", marker)
@@ -553,28 +553,31 @@ func TestLeakScanUsesTrustedTree(t *testing.T) {
 	git("checkout", "-q", "main")
 	git("merge", "-q", "--no-ff", "-m", "test merge", "candidate")
 	merge := git("rev-parse", "HEAD")
+	git("commit", "-q", "--allow-empty", "-m", "later merge group tip")
+	group := git("rev-parse", "HEAD")
 
-	for _, event := range []string{"pull_request", "merge_group"} {
-		t.Run(event, func(t *testing.T) {
+	for _, tc := range []struct{ event, tip string }{{"pull_request", merge}, {"merge_group", group}} {
+		t.Run(tc.event, func(t *testing.T) {
 			workspace := t.TempDir()
 			output := filepath.Join(t.TempDir(), "output")
 			prepare := exec.Command("bash", "-eo", "pipefail", "-c", steps[0].Run)
 			prepare.Dir = workspace
 			prepare.Env = append(os.Environ(), "GITHUB_SERVER_URL=file://"+server, "GITHUB_REPOSITORY="+repo,
-				"GITHUB_SHA="+merge, "EVENT_NAME="+event, "PR_BASE_SHA="+base, "MERGE_GROUP_BASE_SHA="+base, "GITHUB_OUTPUT="+output)
+				"GITHUB_SHA="+tc.tip, "EVENT_NAME="+tc.event, "PR_BASE_SHA="+base, "MERGE_GROUP_BASE_SHA="+base, "GITHUB_OUTPUT="+output)
 			if out, err := prepare.CombinedOutput(); err != nil {
 				t.Fatalf("prepare trusted workspace: %v: %s", err, out)
 			}
 			bindings, err := os.ReadFile(output)
-			if err != nil || string(bindings) != "range="+base+".."+merge+"\n" {
-				t.Fatalf("scan must use the exact base and merge commits: %v: %q", err, bindings)
+			rangeBinding := strings.TrimSpace(string(bindings))
+			if err != nil || rangeBinding != "range="+base+".."+tc.tip {
+				t.Fatalf("scan must use the exact base and candidate commits: %v: %q", err, bindings)
 			}
 			if _, err := os.Stat(filepath.Join(workspace, "docs", "added.txt")); !os.IsNotExist(err) {
 				t.Fatalf("candidate file must stay out of the worktree: %v", err)
 			}
 			scan := exec.Command("bash", "-eo", "pipefail", "-c", steps[1].Run)
 			scan.Dir = workspace
-			scan.Env = append(os.Environ(), "SCAN_RANGE="+base+".."+merge, "LEAK_SCAN_DENYLIST="+deny, "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0")
+			scan.Env = append(os.Environ(), "SCAN_RANGE="+strings.TrimPrefix(rangeBinding, "range="), "LEAK_SCAN_DENYLIST="+deny, "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0")
 			out, err := scan.CombinedOutput()
 			if err == nil || !strings.Contains(string(out), "1 finding(s) in 1 file(s)") || !strings.Contains(string(out), "denylist") || strings.Contains(string(out), deny) {
 				t.Fatalf("trusted scan must reject and redact one candidate finding: %v: %s", err, out)
