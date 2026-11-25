@@ -3336,7 +3336,9 @@ done
 }
 
 func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
-	workflow, _ := readCIWorkflow(t)
+	workflow, jobs := readCIWorkflow(t)
+	requireStep := workflowStepBlockText(jobs["required-ci"], "      - name: Require all CI jobs")
+	stepWithoutExit := strings.Replace(requireStep, "            exit 1\n", "", 1)
 	mutations := map[string]string{
 		"remove workflow lint":    strings.Replace(workflow, "      - workflow-lint\n", "", 1),
 		"remove history":          strings.Replace(workflow, "      - history\n", "", 1),
@@ -3348,7 +3350,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 		"skip upload":             strings.Replace(workflow, "      - name: Upload CI worker classification\n        if: ${{ always() }}", "      - name: Upload CI worker classification\n        if: false", 1),
 		"success-only condition":  strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5", 1),
 		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
-		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
+		"remove exit":             strings.Replace(workflow, requireStep, stepWithoutExit, 1),
 		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
 		"rename display":          strings.Replace(workflow, "    name: Required CI\n    permissions:\n", "    name: Required Checks\n    permissions:\n", 1),
 		"job continue on error":   strings.Replace(workflow, "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n", "    if: ${{ !cancelled() }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),

@@ -36,6 +36,9 @@ func TestGoToolchainPins(t *testing.T) {
 		if !want.Match(data) {
 			t.Errorf("Dockerfile must pin the Go build image %s by digest", version)
 		}
+		if !regexp.MustCompile(`(?m)^FROM debian:[^\s@]+@sha256:[0-9a-f]{64}$`).Match(data) {
+			t.Error("Dockerfile must pin the Debian runtime image by digest")
+		}
 	})
 	for _, workflow := range []string{"ci", "race", "security", "release", "browser"} {
 		t.Run(workflow+" workflow", func(t *testing.T) {

@@ -12,6 +12,7 @@
 - A test request or daemon warm-up reads each recently changed source once, after its last validation check. A same-size edit inside one timestamp tick during the request fails it with a source snapshot mismatch.
 - Preserve dependency and shim source views when reloading the frontend cache or rebuilding it after a source edit.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
+- Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
 
 ## v0.3.15
 
