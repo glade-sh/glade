@@ -3,6 +3,7 @@ package dml
 import (
 	"fmt"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -408,6 +409,9 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		id, err := e.insertUpsertID(record, statementStamp, false)
 		return id, true, err
 	}
+	if err := validateUpsertTextExternalIDLength(objectName, field, object.Definition.Fields[field], value); err != nil {
+		return "", false, err
+	}
 	matches := make([]storage.ID, 0, 1)
 	for id, stored := range object.Records {
 		if stored.System.IsDeleted {
@@ -437,6 +441,34 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	return record.ID, false, nil
+}
+
+// UpsertTextExternalIDLengthFailure checks an explicit text match key before the
+// Apex runtime classifies the row or applies insert and update options.
+func UpsertTextExternalIDLengthFailure(objectName, fieldName string, field storage.Field, value storage.Value) (Result, bool) {
+	err := validateUpsertTextExternalIDLength(objectName, fieldName, field, value)
+	if err == nil {
+		return Result{}, false
+	}
+	return resultFromError("", err), true
+}
+
+func validateUpsertTextExternalIDLength(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if !field.ExternalID || !isPlainTextWriteField(field) || field.Length <= 0 || value.Kind != storage.ValueString {
+		return nil
+	}
+	key := strings.Trim(value.String, textWriteTrimSet)
+	if len(key) <= field.Length {
+		return nil
+	}
+	length := 0
+	for _, character := range key {
+		length += utf16.RuneLen(character)
+	}
+	if length <= field.Length {
+		return nil
+	}
+	return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", nil, "Specified External ID for %s in entity %s value length is %d which exceeds maximum field length of %d", fieldName, objectName, length, field.Length)
 }
 
 func (e *Engine) insertUpsertID(record storage.Record, statementStamp *string, capturedRulesOnly bool) (storage.ID, error) {

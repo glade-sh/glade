@@ -1,0 +1,10 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <label>Juniper Mark</label>
+    <nameField>
+        <label>Juniper Mark Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Juniper Marks</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
