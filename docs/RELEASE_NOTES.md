@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
 
 ## v0.3.15
 
