@@ -6,6 +6,16 @@ install_dir="${GLADE_INSTALL_DIR:-$HOME/.local/bin}"
 version="${GLADE_VERSION:-latest}"
 github_token="${GLADE_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 download_base="${GLADE_DOWNLOAD_BASE:-https://downloads.glade.sh}"
+require_provenance="${GLADE_REQUIRE_PROVENANCE:-}"
+
+case "$require_provenance" in
+  1|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss]) strict_provenance=1 ;;
+  ''|0|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo]) strict_provenance=0 ;;
+  *)
+    echo "glade install: invalid GLADE_REQUIRE_PROVENANCE value. Use 1, true, yes, 0, false, no, or leave it empty." >&2
+    exit 1
+    ;;
+esac
 
 need() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -30,8 +40,8 @@ fi
 have_gh=0
 if command -v gh >/dev/null 2>&1; then
   have_gh=1
-elif [ "${GLADE_REQUIRE_PROVENANCE:-0}" = 1 ]; then
-  echo "glade install: GLADE_REQUIRE_PROVENANCE=1 requires the GitHub CLI (gh); install gh and retry" >&2
+elif [ "$strict_provenance" = 1 ]; then
+  echo "glade install: GLADE_REQUIRE_PROVENANCE=$require_provenance requires the GitHub CLI (gh); install gh and retry" >&2
   exit 1
 fi
 
@@ -71,6 +81,7 @@ curl_github() {
 }
 
 tmpdir="$(mktemp -d)"
+download_error="$tmpdir/download-error"
 lock_pid=""
 transaction=""
 marker_active=0
@@ -367,7 +378,7 @@ try_static_release() {
     manifest_url="$download_base/$version/release-manifest.json"
   fi
 
-  curl_metadata -fsSL "$manifest_url" -o "$manifest" >/dev/null 2>&1 || return "$?"
+  curl_metadata -fsSL "$manifest_url" -o "$manifest" >/dev/null 2>"$download_error" || return "$?"
   resolved_version="$(manifest_version "$manifest" 2>/dev/null || true)"
   if [ -z "$resolved_version" ]; then
     echo "glade install: release manifest has no version" >&2
@@ -384,10 +395,10 @@ try_static_release() {
   if ! curl_archive -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1; then
     url="$download_base/$archive"
     echo "glade install: downloading $url"
-    curl_archive -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1 || return "$?"
+    curl_archive -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>"$download_error" || return "$?"
   fi
   if ! curl_metadata -fsSL "$download_base/$resolved_version/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1; then
-    curl_metadata -fsSL "$download_base/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1 || return "$?"
+    curl_metadata -fsSL "$download_base/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>"$download_error" || return "$?"
   fi
   version="$resolved_version"
   return 0
@@ -427,10 +438,15 @@ download_asset() {
     echo "glade install: release asset not found: $asset" >&2
     return 1
   }
-  curl_github "$@" -fL -H "Accept: application/octet-stream" "$asset_url" -o "$output"
+  curl_github "$@" -fsSL -H "Accept: application/octet-stream" "$asset_url" -o "$output"
+}
+
+show_download_error() {
+  awk 'NF { gsub(/[[:cntrl:]]/, " "); print substr($0, 1, 240); exit }' "$download_error" >&2
 }
 
 download_failed() {
+  show_download_error
   echo "glade install: $1. Check your network or proxy, then retry." >&2
   if [ -n "$github_token" ]; then
     echo "glade install: for a private repo, check the configured GitHub token has contents:read access" >&2
@@ -440,7 +456,7 @@ download_failed() {
 
 fetch_release() {
   release_ref="$1"
-  curl_github --max-time 120 -fsSL "$api_base/releases/$release_ref" -o "$release_json" ||
+  curl_github --max-time 120 -fsSL "$api_base/releases/$release_ref" -o "$release_json" 2>"$download_error" ||
     download_failed "could not resolve release $release_ref"
 }
 
@@ -450,6 +466,7 @@ else
   mirror_status=$?
   static_release=0
   echo "glade install: downloads.glade.sh unavailable (curl exit $mirror_status); trying GitHub Releases" >&2
+  show_download_error
   if [ "$version" = "latest" ]; then
     fetch_release latest
     version="$(awk -F '"' '/"tag_name":/ { print $4; exit }' "$release_json")"
@@ -465,9 +482,9 @@ else
   url="https://github.com/$repo/releases/download/$version/$archive"
 
   echo "glade install: downloading $url"
-  download_asset "$archive" "$tmpdir/$archive" --max-time 900 --retry 3 ||
+  download_asset "$archive" "$tmpdir/$archive" --max-time 900 --retry 3 2>"$download_error" ||
     download_failed "could not download $url"
-  download_asset "SHA256SUMS.txt" "$tmpdir/SHA256SUMS.txt" --max-time 120 ||
+  download_asset "SHA256SUMS.txt" "$tmpdir/SHA256SUMS.txt" --max-time 120 2>"$download_error" ||
     download_failed "could not download SHA256SUMS.txt for $version"
 fi
 
@@ -609,7 +626,7 @@ if [ "$have_gh" = 1 ]; then
     exit 1
   fi
 else
-  echo "glade install: SHA-256 verified; provenance was not checked; install gh and rerun, or use scripts/verify-release-download.sh (see https://glade.sh/guide/installation)." >&2
+  echo "glade install: SHA-256 checksum verified. The checksum guards against corrupted downloads. Provenance verification proves release origin and requires gh. Install gh and rerun, or see https://glade.sh/guide/security-trust#release-proof" >&2
 fi
 
 tar -xzf "$tmpdir/$archive" -C "$tmpdir"
