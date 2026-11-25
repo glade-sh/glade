@@ -11,3 +11,13 @@ standard_control	68.0	anonymous	True	True	ok	n/a	n/a	0
 missing_test	62.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	62.0 (deployment metadata)	n/a	n/a
 missing_test	67.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	67.0 (deployment metadata)	n/a	n/a
 missing_test	68.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	68.0 (deployment metadata)	n/a	n/a
+missing_test	63.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	63.0 (deployment metadata)	n/a	n/a
+missing_test	64.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	64.0 (deployment metadata)	n/a	n/a
+missing_test	65.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	65.0 (deployment metadata)	n/a	n/a
+missing_test	66.0	istest-checkonly	False	False	Invalid type: AbsentBuoy__c	66.0 (deployment metadata)	n/a	n/a
+present_custom	62.0	anonymous	True	True	ok	n/a	n/a	0
+present_custom	67.0	anonymous	True	True	ok	n/a	n/a	0
+present_custom	68.0	anonymous	True	True	ok	n/a	n/a	0
+present_test	62.0	istest	true	Passed	presentTypesCompile=Pass	62.0	n/a	n/a
+present_test	67.0	istest	true	Passed	presentTypesCompile=Pass	67.0	n/a	n/a
+present_test	68.0	istest	true	Passed	presentTypesCompile=Pass	68.0	n/a	n/a

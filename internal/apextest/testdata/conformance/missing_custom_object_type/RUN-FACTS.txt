@@ -18,3 +18,4 @@ residue: before every anonymous run the state is settled; records found there ta
 residue rows: 0=9
 
 Named-class rows: a separate deployment on a fresh 30-day scratch org reported the same first diagnostic for three versioned test-class copies. The capture wrapper stopped on a subsequent empty deployment and did not query deployed class versions. The rejected classes used the API versions in their deployment metadata. The org was deleted and deletion verified.
+Additional captures: named missing-object deployment rejects at APIs 63-66; present-object anonymous and named controls pass at APIs 62, 67 and 68. Two additional fresh 30-day scratch orgs were deleted and deletion verified. Named rejection rows record deployment-metadata versions; wrapper retries failed after the expected rejection.
