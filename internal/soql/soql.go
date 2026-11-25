@@ -2581,14 +2581,14 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if records, handled, err := executeAttachmentViewQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
 		return records, err
 	}
-	return executeChildRelationshipRows(org, parentDefinition, parent, childQuery, childCache, context, false)
-}
-
-func executeChildRelationshipRows(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, platformOnly bool) ([]storage.Record, error) {
-	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context, platformOnly)
+	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context, false)
 	if err != nil {
 		return nil, err
 	}
+	return executePreparedChildRelationshipRows(org, parentDefinition, parent, childQuery, childCache, context, prepared)
+}
+
+func executePreparedChildRelationshipRows(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, prepared preparedChildRelationshipQuery) ([]storage.Record, error) {
 	childObjectName := prepared.childObjectName
 	org, childObjectName, _ = orgWithLazyChildObject(org, childObjectName)
 	relation := prepared.relation
@@ -2706,7 +2706,12 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 		query.Where = &condition
 	}
-	prepared := preparedChildRelationshipQuery{childObjectName: childObjectName, relation: relation, query: query}
+	prepared := preparedChildRelationshipQuery{
+		childObjectName:       childObjectName,
+		relation:              relation,
+		query:                 query,
+		emptyAttachmentSource: platformOnly && len(childObject.Records) == 0,
+	}
 	if childCache != nil {
 		childCache.prepared[key] = prepared
 	}
@@ -2954,7 +2959,7 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 
 func resolveChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) childRelationshipResolution {
 	if name, relation, ok := loadedChildRelationship(org, parentDefinition, relationship); ok {
-		return childRelationshipResolution{childObjectName: name, relation: relation, ok: true, loaded: true}
+		return childRelationshipResolution{childObjectName: name, relation: relation, ok: true, loaded: true, objectCount: len(org.Objects)}
 	}
 	child, relation, ok := storage.LookupPlatformChildRelationshipAtVersion(parentDefinition, relationship, org.APIVersion)
 	if ok && strings.HasSuffix(strings.ToLower(child), "__share") {
@@ -2962,7 +2967,7 @@ func resolveChildRelationship(org storage.OrgState, parentDefinition storage.Obj
 			return childRelationshipResolution{}
 		}
 	}
-	return childRelationshipResolution{childObjectName: child, relation: relation, ok: ok}
+	return childRelationshipResolution{childObjectName: child, relation: relation, ok: ok, objectCount: len(org.Objects)}
 }
 
 func loadedChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {

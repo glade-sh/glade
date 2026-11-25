@@ -140,20 +140,22 @@ type childRelationshipResolution struct {
 	relation        storage.Relationship
 	ok              bool
 	loaded          bool
+	objectCount     int
 }
 type UnsupportedFeatureError struct {
 	Message string
 }
 type childRelationshipQueryCache struct {
-	indexes               map[string]map[storage.ID][]string
-	prepared              map[string]preparedChildRelationshipQuery
-	execution             *ExecutionCache
-	attachmentSources     *childRelationshipQueryCache
-	loadedAttachmentViews map[string]bool
+	indexes           map[string]map[storage.ID][]string
+	prepared          map[string]preparedChildRelationshipQuery
+	execution         *ExecutionCache
+	attachmentSources *childRelationshipQueryCache
+	attachmentViews   map[attachmentViewPlanKey]*attachmentViewPlan
 }
 type preparedChildRelationshipQuery struct {
-	childObjectName string
-	relation        storage.Relationship
-	query           Query
-	projection      []projectionField
+	childObjectName       string
+	relation              storage.Relationship
+	query                 Query
+	projection            []projectionField
+	emptyAttachmentSource bool
 }
