@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
 
 ## v0.3.15
 
