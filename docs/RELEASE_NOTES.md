@@ -3,6 +3,7 @@
 ## Unreleased
 
 - JSON-deserialized Apex objects evaluate computed get-only properties when read. JSON decoding accepts captured standard child relationship envelopes on unnamespaced custom objects and reads back year-1 Datetime values serialized with Gregorian year zero.
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
 ## v0.3.15
 
