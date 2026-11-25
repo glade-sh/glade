@@ -136,11 +136,11 @@ type sharedChildIndex struct {
 	index map[storage.ID][]string
 }
 type childRelationshipResolution struct {
-	childObjectName  string
-	relation         storage.Relationship
-	ok               bool
-	loaded           bool
-	attachmentSchema attachmentRelationshipSchema
+	childObjectName string
+	relation        storage.Relationship
+	ok              bool
+	loaded          bool
+	attachmentToken attachmentRelationshipToken
 }
 type UnsupportedFeatureError struct {
 	Message string

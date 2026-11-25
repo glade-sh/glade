@@ -1,10 +1,11 @@
 package soql
 
 import (
+	"encoding/binary"
+	"hash/maphash"
 	"maps"
 	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -24,93 +25,123 @@ type attachmentRelationshipSchema struct {
 	schemaGeneration  uint64
 	runtimeStamp      string
 	objectCount       int
+	namespace         string
+	apiVersion        string
 	spreadSource      string
-	spreadInventory   string
 	spreadFeatures    string
-	declarations      string
+	capturedPlain     bool
+	visibility        string
 }
 
 type attachmentRelationshipSchemaSnapshot struct {
-	objects   map[string]storage.ObjectState
-	namespace string
-	schema    attachmentRelationshipSchema
+	objects map[string]storage.ObjectState
+	schema  attachmentRelationshipSchema
+	digest  uint64
 }
 
-func (cache *childRelationshipQueryCache) currentAttachmentRelationshipSchema(org storage.OrgState) attachmentRelationshipSchema {
-	// The storage mutation boundary advances the schema and runtime
-	// generations. External org replacement can detach just the runtime one.
+type attachmentRelationshipToken struct {
+	schema        attachmentRelationshipSchema
+	definitions   uint64
+	parent        string
+	customSetting bool
+}
+
+func (cache *childRelationshipQueryCache) attachmentRelationshipToken(org storage.OrgState, parent storage.ObjectDefinition, visibility string) attachmentRelationshipToken {
 	schema := attachmentRelationshipSchema{
 		runtimeGeneration: org.RuntimeGenerationID(),
 		schemaGeneration:  org.SchemaGeneration(),
 		runtimeStamp:      org.RuntimeSchemaStamp,
 		objectCount:       len(org.Objects),
+		namespace:         org.Namespace,
+		apiVersion:        org.APIVersion,
 		spreadSource:      org.StandardSpread,
+		capturedPlain:     org.StandardSpreadCapturedPlain,
+		visibility:        visibility,
 	}
 	if org.StandardSpread != "" {
 		schema.spreadFeatures = strings.Join(org.Features, "\x00")
 	}
-	// Validation, planning and preparation can reuse the declaration scan
-	// within a query. The map identity distinguishes lazy views of equal size.
+	// Reuse the digest within one query. Validation may install objects in a
+	// separate lazy view or extend the current map before projection.
 	snapshot := cache.attachmentSchema
-	if snapshot != nil && snapshot.namespace == org.Namespace &&
-		reflect.ValueOf(snapshot.objects).Pointer() == reflect.ValueOf(org.Objects).Pointer() {
-		current := snapshot.schema
-		current.spreadInventory, current.declarations = "", ""
-		if current == schema {
-			return snapshot.schema
+	if snapshot == nil || snapshot.schema != schema ||
+		reflect.ValueOf(snapshot.objects).Pointer() != reflect.ValueOf(org.Objects).Pointer() {
+		snapshot = &attachmentRelationshipSchemaSnapshot{
+			objects: org.Objects,
+			schema:  schema,
+			digest:  attachmentRelationshipDefinitions(org),
 		}
+		cache.attachmentSchema = snapshot
 	}
-	if org.StandardSpread != "" {
-		// Source-backed clones can share a generation yet install different
-		// catalog objects. Compare their loaded inventories even at equal size.
-		schema.spreadInventory = strings.Join(slices.Sorted(maps.Keys(org.Objects)), "\x00")
+	return attachmentRelationshipToken{
+		schema:        schema,
+		definitions:   snapshot.digest,
+		parent:        parent.APIName,
+		customSetting: storage.IsCustomSettingDefinition(parent),
 	}
-	schema.declarations = attachmentRelationshipDeclarations(org)
-	cache.attachmentSchema = &attachmentRelationshipSchemaSnapshot{objects: org.Objects, namespace: org.Namespace, schema: schema}
-	return schema
 }
 
-// ExecuteWithCache also accepts org values whose caller edits declarations
-// directly. Compare named overrides using the same name rules as the resolver.
-// Derived names and catalog changes follow the storage schema generation.
-func attachmentRelationshipDeclarations(org storage.OrgState) string {
-	var objects []string
-	for name, object := range org.Objects {
-		definition := object.Definition
-		var edges strings.Builder
+var attachmentRelationshipHashSeed = maphash.MakeSeed()
+
+// ExecuteWithCache accepts mutable definitions whose edits can leave storage's
+// generations intact. Hash the loaded resolver's schema inputs together. The
+// object name is used by the namespace and platform lookups, definition names
+// and labels supply derived relationships, and counts determine name and
+// child-candidate preference. The platform catalog itself is immutable.
+func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
+	var digest attachmentRelationshipHash
+	digest.SetSeed(attachmentRelationshipHashSeed)
+	for _, name := range slices.Sorted(maps.Keys(org.Objects)) {
+		definition := org.Objects[name].Definition
+		digest.text(name)
+		digest.text(definition.APIName)
+		digest.text(definition.Label)
+		digest.text(definition.PluralLabel)
+		digest.size(len(definition.Fields))
+		digest.size(len(definition.RecordTypes))
+		digest.size(len(definition.Relations))
 		for _, relation := range definition.Relations {
-			declared := relation.ChildRelationship
-			if !isAttachmentRelationshipDeclaration(org.Namespace, declared) {
-				continue
-			}
-			edges.WriteString(declared)
-			edges.WriteByte(0)
-			edges.WriteString(relation.Field)
-			edges.WriteByte(0)
-			for _, parent := range relation.ParentObjects {
-				edges.WriteString(parent)
-				edges.WriteByte(0)
-			}
-			edges.WriteByte(0)
+			digest.relationship(relation)
 		}
-		if edges.Len() != 0 {
-			// Resolution prefers the richer definition when matching edges tie.
-			objects = append(objects, strings.Join([]string{
-				name, definition.APIName, strconv.Itoa(len(definition.Fields) + len(definition.Relations)), edges.String(),
-			}, "\x00"))
+		// These are the field-derived candidates the resolver can consider.
+		// System edges always use the derived name. A ContentDocumentLink's
+		// synthetic edge can enter either view only through that same name.
+		derived := derivedChildRelationshipName(definition)
+		matches := childRelationshipNameMatches(org.Namespace, derived, combinedAttachmentsRelationship) ||
+			childRelationshipNameMatches(org.Namespace, derived, notesAndAttachmentsRelationship)
+		if matches {
+			digest.WriteByte(1)
+			for _, relation := range syntheticContentDocumentLinkRelationship(definition) {
+				digest.relationship(relation)
+			}
+			visitSyntheticStandardSystemChildRelationships(definition, digest.relationship)
+			visitSyntheticSystemChildRelationships(definition, digest.relationship)
 		}
+		digest.WriteByte(0)
 	}
-	slices.Sort(objects)
-	return strings.Join(objects, "\x00")
+	return digest.Sum64()
 }
 
-func isAttachmentRelationshipDeclaration(namespace, declared string) bool {
-	if len(declared) == len(combinedAttachmentsRelationship) {
-		return strings.EqualFold(declared, combinedAttachmentsRelationship) || strings.EqualFold(declared, notesAndAttachmentsRelationship)
+type attachmentRelationshipHash struct{ maphash.Hash }
+
+func (h *attachmentRelationshipHash) size(n int) {
+	var encoded [8]byte
+	binary.LittleEndian.PutUint64(encoded[:], uint64(n))
+	h.Write(encoded[:])
+}
+
+func (h *attachmentRelationshipHash) text(value string) {
+	h.size(len(value))
+	h.WriteString(value)
+}
+
+func (h *attachmentRelationshipHash) relationship(relation storage.Relationship) {
+	h.text(relation.Field)
+	h.text(relation.ChildRelationship)
+	h.size(len(relation.ParentObjects))
+	for _, parent := range relation.ParentObjects {
+		h.text(parent)
 	}
-	// A longer spelling can match through a namespace token or __r suffix.
-	return len(declared) > len(combinedAttachmentsRelationship) && strings.Contains(declared, "__") &&
-		(childRelationshipNameMatches(namespace, declared, combinedAttachmentsRelationship) || childRelationshipNameMatches(namespace, declared, notesAndAttachmentsRelationship))
 }
 
 type attachmentViewPlan struct {

@@ -2928,28 +2928,40 @@ func childRelationshipResolutionCached(org storage.OrgState, parentDefinition st
 		return resolveChildRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + org.SuppressedSpreadVisibilityStamp()
-	var schema attachmentRelationshipSchema
+	visibility := org.SuppressedSpreadVisibilityStamp()
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + visibility
+	var token attachmentRelationshipToken
 	if attachmentView {
 		key += "\x00attachment"
-		schema = childCache.currentAttachmentRelationshipSchema(org)
+		token = childCache.attachmentRelationshipToken(org, parentDefinition, visibility)
 	}
 	cache.mu.RLock()
 	cached, found := cache.childRelationships[key]
 	cache.mu.RUnlock()
-	if found && cached.attachmentSchema == schema {
+	if found && cached.attachmentToken == token {
 		return cached
 	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
-	if cached, ok := cache.childRelationships[key]; ok && cached.attachmentSchema == schema {
+	if cached, ok := cache.childRelationships[key]; ok && cached.attachmentToken == token {
 		return cached
+	}
+	resolved := resolveChildRelationship(org, parentDefinition, relationship)
+	if attachmentView {
+		// A parent lookup can install an object in a source-backed org. Do
+		// not publish a resolution under the token from before that install.
+		if len(org.Objects) != token.schema.objectCount {
+			return resolved
+		}
+		// Attachment validation consumes the selected object and row
+		// preparation consumes the lookup field. Keep only those values
+		// across queries so the entry cannot alias mutable metadata.
+		resolved.relation = storage.Relationship{Field: resolved.relation.Field}
+		resolved.attachmentToken = token
 	}
 	if cache.childRelationships == nil {
 		cache.childRelationships = make(map[string]childRelationshipResolution)
 	}
-	resolved := resolveChildRelationship(org, parentDefinition, relationship)
-	resolved.attachmentSchema = schema
 	cache.childRelationships[key] = resolved
 	return resolved
 }
