@@ -24,7 +24,7 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		storage.IsCustomSettingDefinition(definition) || !IsContentChildAttachedIDQuery(child.Query) {
 		return nil, false, nil
 	}
-	if _, _, loaded := loadedChildRelationship(org, definition, child.Relationship); loaded {
+	if attachmentViewRelationshipLoaded(org, definition, child.Relationship, cache) {
 		return nil, false, nil
 	}
 
@@ -95,4 +95,21 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		}
 	}
 	return result, true, nil
+}
+
+func attachmentViewRelationshipLoaded(org storage.OrgState, definition storage.ObjectDefinition, relationship string, cache *childRelationshipQueryCache) bool {
+	key := childRelationshipCacheKey(org.Namespace, definition.APIName, relationship)
+	if cache != nil {
+		if loaded, found := cache.loadedAttachmentViews[key]; found {
+			return loaded
+		}
+	}
+	_, _, loaded := loadedChildRelationship(org, definition, relationship)
+	if cache != nil {
+		if cache.loadedAttachmentViews == nil {
+			cache.loadedAttachmentViews = make(map[string]bool)
+		}
+		cache.loadedAttachmentViews[key] = loaded
+	}
+	return loaded
 }

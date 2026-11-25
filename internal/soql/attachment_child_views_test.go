@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -77,7 +78,42 @@ func TestAttachmentChildViewsCheckReturnedTypeVisibility(t *testing.T) {
 	}
 }
 
-func attachmentChildViewFixture(t *testing.T, objects ...storage.FixtureObject) storage.OrgState {
+func BenchmarkAttachmentChildViews(b *testing.B) {
+	const parentCount = 100
+	parents := make([]storage.FixtureRecord, parentCount)
+	for i := range parents {
+		parents[i].ID = storage.ID(fmt.Sprintf("a01%012d", i+1))
+	}
+	org := attachmentChildViewFixture(b, storage.FixtureObject{Name: "ViewParent__c", Records: parents})
+	storage.EnsureStandardObjectSpread(&org)
+	query, err := Parse("SELECT Id, (SELECT Id FROM CombinedAttachments), (SELECT Id FROM NotesAndAttachments) FROM ViewParent__c")
+	if err != nil {
+		b.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	result, err := ExecuteWithCache(org, query, cache)
+	if err != nil {
+		b.Fatal(err)
+	}
+	if len(result.Records) != parentCount {
+		b.Fatalf("parent rows = %d, want %d", len(result.Records), parentCount)
+	}
+	for _, parent := range result.Records {
+		for _, child := range query.ChildQueries {
+			if rows, ok := parent.Children[child.Relationship]; !ok || len(rows) != 0 {
+				b.Fatalf("parent %s %s = %+v, want an empty child list", parent.ID, child.Relationship, rows)
+			}
+		}
+	}
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := ExecuteWithCache(org, query, cache); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func attachmentChildViewFixture(t testing.TB, objects ...storage.FixtureObject) storage.OrgState {
 	t.Helper()
 	org := storage.NewOrgState()
 	fixture := storage.NewFixture()
