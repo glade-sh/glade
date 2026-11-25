@@ -23,6 +23,7 @@
 - Customer Community users respect the private external default for Case when a project declares only its internal public sharing model. Anonymous Apex returns the captured named Standard and Community UserRecordAccess rows for Case and Lead records with public internal sharing.
 - EntityDefinition reports the captured internal and external sharing defaults for Case and Lead in Developer scratch orgs with Communities enabled.
 - When Glade selects one source file for a duplicate Apex test class within a project, it runs that file’s test methods and setup.
+- Payment adapters can use the captured sale and authorization reversal request and response shapes, and the captured authorize, capture, sale, refund and reversal request constructors match Salesforce in tests and anonymous Apex.
 
 ## v0.3.15
 

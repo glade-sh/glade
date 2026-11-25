@@ -34,15 +34,16 @@ func (vm *VM) registerAnonymousLocalMethods(program ir.Program) (func(), error) 
 			params = append(params, Param{Name: param.Name, Type: param.Type})
 		}
 		method := Method{
-			Name:       anonymousLocalClass + "." + local.Name,
-			ReturnType: local.ReturnType,
-			Params:     params,
-			Program:    ir.Program{Instructions: local.Body, Source: program.Source, APIVersion: program.APIVersion},
-			ClassName:  anonymousLocalClass,
-			IsStatic:   true,
-			Access:     "public",
-			Modifiers:  append([]string{"static"}, local.Modifiers...),
-			APIVersion: program.APIVersion,
+			Name:           anonymousLocalClass + "." + local.Name,
+			ReturnType:     local.ReturnType,
+			Params:         params,
+			Program:        ir.Program{Instructions: local.Body, Source: program.Source, APIVersion: program.APIVersion},
+			ClassName:      anonymousLocalClass,
+			IsStatic:       true,
+			Access:         "public",
+			Modifiers:      append([]string{"static"}, local.Modifiers...),
+			APIVersion:     program.APIVersion,
+			anonymousLocal: true,
 		}
 		methods = append(methods, method)
 		key := local.Name + "#"

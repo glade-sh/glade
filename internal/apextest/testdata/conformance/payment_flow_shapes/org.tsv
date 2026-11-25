@@ -1,0 +1,83 @@
+flow	api	route	shape	compiled	outcome	error	source
+authorize	62.0	istest	both	true	Pass		RoadPay62.cls
+authorize	62.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	authorize-request-62.apex
+authorize	62.0	anonymous	response	true	Pass		authorize-response-62.apex
+capture	62.0	istest	both	true	Pass		RoadPay62.cls
+capture	62.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.CaptureRequest cannot be constructed directly outside of a test	capture-request-62.apex
+capture	62.0	anonymous	response	true	Pass		capture-response-62.apex
+sale	62.0	istest	both	true	Pass		RoadPay62.cls
+sale	62.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-request-62.apex
+sale	62.0	anonymous	response	true	Pass		sale-response-62.apex
+refund	62.0	istest	both	true	Pass		RoadPay62.cls
+refund	62.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.ReferencedRefundRequest cannot be constructed directly outside of a test	refund-request-62.apex
+refund	62.0	anonymous	response	true	Pass		refund-response-62.apex
+void	62.0	istest	both	true	Pass		RoadPay62.cls
+void	62.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-request-62.apex
+void	62.0	anonymous	response	true	Pass		void-response-62.apex
+authorize	67.0	istest	both	true	Pass		RoadPay67.cls
+authorize	67.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	authorize-request-67.apex
+authorize	67.0	anonymous	response	true	Pass		authorize-response-67.apex
+capture	67.0	istest	both	true	Pass		RoadPay67.cls
+capture	67.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.CaptureRequest cannot be constructed directly outside of a test	capture-request-67.apex
+capture	67.0	anonymous	response	true	Pass		capture-response-67.apex
+sale	67.0	istest	both	true	Pass		RoadPay67.cls
+sale	67.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-request-67.apex
+sale	67.0	anonymous	response	true	Pass		sale-response-67.apex
+refund	67.0	istest	both	true	Pass		RoadPay67.cls
+refund	67.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.ReferencedRefundRequest cannot be constructed directly outside of a test	refund-request-67.apex
+refund	67.0	anonymous	response	true	Pass		refund-response-67.apex
+void	67.0	istest	both	true	Pass		RoadPay67.cls
+void	67.0	anonymous	request	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-request-67.apex
+void	67.0	anonymous	response	true	Pass		void-response-67.apex
+IntegerAuthorizationRequest	62.0	istest	integer	true	Pass		Road544Probe62.cls
+authorize	62.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	integer-authorize-62.apex
+IntegerCaptureRequest	62.0	istest	integer	true	Pass		Road544Probe62.cls
+capture	62.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.CaptureRequest cannot be constructed directly outside of a test	integer-capture-62.apex
+IntegerSaleRequest	62.0	istest	integer	true	Pass		Road544Probe62.cls
+sale	62.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	integer-sale-62.apex
+IntegerReferencedRefundRequest	62.0	istest	integer	true	Pass		Road544Probe62.cls
+refund	62.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.ReferencedRefundRequest cannot be constructed directly outside of a test	integer-refund-62.apex
+IntegerAuthorizationReversalRequest	62.0	istest	integer	true	Pass		Road544Probe62.cls
+void	62.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	integer-void-62.apex
+IntegerAuthorizationRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
+authorize	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationRequest cannot be constructed directly outside of a test	integer-authorize-67.apex
+IntegerCaptureRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
+capture	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.CaptureRequest cannot be constructed directly outside of a test	integer-capture-67.apex
+IntegerSaleRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
+sale	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	integer-sale-67.apex
+IntegerReferencedRefundRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
+refund	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.ReferencedRefundRequest cannot be constructed directly outside of a test	integer-refund-67.apex
+IntegerAuthorizationReversalRequest	67.0	istest	integer	true	Pass		Road544Probe67.cls
+void	67.0	anonymous	integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	integer-void-67.apex
+sale	62.0	anonymous	local-response	true	Pass		sale-local-response-62.apex
+saleResponse	62.0	istest	response-identity	true	Pass		Road544Response62.cls
+void	62.0	anonymous	local-response	true	Pass		void-local-response-62.apex
+reversalResponse	62.0	istest	response-identity	true	Pass		Road544Response62.cls
+sale	67.0	anonymous	local-response	true	Pass		sale-local-response-67.apex
+saleResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls
+void	67.0	anonymous	local-response	true	Pass		void-local-response-67.apex
+reversalResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls
+sale	62.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	sale-context-literal-decimal-62.apex
+probe	62.0	istest	sale-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	Road544SaleDecimal62.cls
+sale	62.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-integer-62.apex
+saleInteger	62.0	istest	context-literal-integer	true	Pass		Road544Literal62.cls
+sale	62.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-double-62.apex
+saleDouble	62.0	istest	context-literal-double	true	Pass		Road544Literal62.cls
+void	62.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	void-context-literal-decimal-62.apex
+probe	62.0	istest	void-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	Road544ReversalDecimal62.cls
+void	62.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-integer-62.apex
+reversalInteger	62.0	istest	context-literal-integer	true	Pass		Road544Literal62.cls
+void	62.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-double-62.apex
+reversalDouble	62.0	istest	context-literal-double	true	Pass		Road544Literal62.cls
+sale	67.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	sale-context-literal-decimal-67.apex
+probe	67.0	istest	sale-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	Road544SaleDecimal67.cls
+sale	67.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-integer-67.apex
+saleInteger	67.0	istest	context-literal-integer	true	Pass		Road544Literal67.cls
+sale	67.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-double-67.apex
+saleDouble	67.0	istest	context-literal-double	true	Pass		Road544Literal67.cls
+void	67.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	void-context-literal-decimal-67.apex
+probe	67.0	istest	void-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	Road544ReversalDecimal67.cls
+void	67.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-integer-67.apex
+reversalInteger	67.0	istest	context-literal-integer	true	Pass		Road544Literal67.cls
+void	67.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-double-67.apex
+reversalDouble	67.0	istest	context-literal-double	true	Pass		Road544Literal67.cls

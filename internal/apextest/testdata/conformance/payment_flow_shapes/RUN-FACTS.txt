@@ -1,0 +1,22 @@
+capture: payment-flow constructor, context and response shapes
+started: 2026-11-24T15:09:25.960656+00:00
+finished: 2026-11-24T15:14:41.861912+00:00
+apis: 62.0 67.0
+routes: anonymous istest
+org: fresh developer scratch org; payment types verified by successful native deployment and execution
+cli: @salesforce/cli/2.159.7
+mode: live; class API version set in deployed metadata to match each row
+rows: 30; 10 passing test methods, 10 passing anonymous response cases, 10 anonymous constructor exceptions
+inputs: project-owned synthetic values; no DML, callouts or asynchronous work
+original org.tsv sha256: 8687362c750be306681593a28ae32863c37d1fccc78918f64ed89463a20c4f65
+cleanup: scratch org deleted; CLI org list verified no matching scratch alias
+fixture formatting: trailing whitespace normalized after capture; executable statements unchanged
+
+Additional capture: Integer and Decimal arguments, API 62.0 and 67.0, anonymous and @IsTest, all five request constructors. Integer: 10 anonymous UnsupportedOperationExceptions and 10 passing test methods. Decimal: all 10 anonymous compilations and both test classes rejected with constructor not defined. Synthetic inputs; fresh developer scratch org deleted after capture.
+after Integer capture org.tsv sha256: 8043caad92e701d79fc512196411cf23bead32f91909159ad2d2fa2c8d7cdd7c
+
+Follow-up capture, 2026-11-25, APIs 62.0 and 67.0. Sale and AuthorizationReversal response declarations preserve identity inside anonymous local methods and directly inside @IsTest methods. Eight passing rows. Fresh developer scratch org deleted and CLI org list verified the scratch alias was absent.
+after response capture org.tsv sha256: ce1045a15f839165af3212027590fc20169693ebd44c98ca3e29b9632f30feac
+
+Same scratch org, APIs 62.0 and 67.0, 24 literal request and context rows. Decimal literals were rejected at compile time on both routes. Integer literals and explicit Double casts raised the request constructor exception in anonymous Apex. Direct @IsTest methods constructed the context and retrieved the original request by identity.
+current org.tsv sha256: bf46dbb5b2c4918ddd337492bcae14a9808baf2ab49fe66333c770118a27beeb

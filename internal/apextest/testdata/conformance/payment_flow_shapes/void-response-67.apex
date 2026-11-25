@@ -1,0 +1,1 @@
+Double amount=7.25; String ref='synthetic-ref'; commercepayments.AuthorizationReversalResponse res = new commercepayments.AuthorizationReversalResponse(); res.setAmount(amount); res.setGatewayReferenceNumber(ref); res.setGatewayResultCode('ok'); res.setGatewayMessage('accepted'); commercepayments.GatewayResponse gateway = res; System.assert(gateway != null);

@@ -1371,7 +1371,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
 		bindings := scopes.flatAtCopy(value.start)
 		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, bindings)
-		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) && !semaChildRelationshipSingletonAssignable(resolvedTypeName, valueType, value.text, bindings, model) {
+		if valueType != "" && valueType != "null" && !(simpleIdentifierPattern.MatchString(strings.TrimSpace(value.text)) && semaPaymentFlowResponseAssignment(typ, member, model, resolvedTypeName, valueType)) && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) && !semaChildRelationshipSingletonAssignable(resolvedTypeName, valueType, value.text, bindings, model) {
 			message := fmt.Sprintf("%s %q initializes %s local %q with %s", member.Kind, member.Name, typeName, name, valueType)
 			code := "GLADESEMA018"
 			message = semaRelationshipAssignmentMessage(resolvedTypeName, valueType, value.text, bindings, model, message)
