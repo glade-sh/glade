@@ -31,6 +31,10 @@ lookup_wrong	62.0	anonymous	FIELD_INTEGRITY_EXCEPTION
 lookup_wrong	62.0	isTest	FIELD_INTEGRITY_EXCEPTION
 lookup_wrong	67.0	anonymous	FIELD_INTEGRITY_EXCEPTION
 lookup_wrong	67.0	isTest	FIELD_INTEGRITY_EXCEPTION
+lookup_wrong_detail	62.0	anonymous	Lantern__c|Lantern: id value of incorrect type: <reference>
+lookup_wrong_detail	62.0	isTest	Lantern__c|Lantern: id value of incorrect type: <reference>
+lookup_wrong_detail	67.0	anonymous	Lantern__c|Lantern: id value of incorrect type: <reference>
+lookup_wrong_detail	67.0	isTest	Lantern__c|Lantern: id value of incorrect type: <reference>
 text_blank	62.0	anonymous	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
 text_blank	62.0	isTest	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
 text_blank	67.0	anonymous	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
@@ -55,10 +59,18 @@ upsert_long_key	62.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key	62.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key	67.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key	67.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_message	62.0	anonymous	Specified External ID for Token__c in entity Pebble__c value length is 6 which exceeds maximum field length of 5
+upsert_long_key_message	62.0	isTest	Specified External ID for Token__c in entity Pebble__c value length is 6 which exceeds maximum field length of 5
+upsert_long_key_message	67.0	anonymous	Specified External ID for Token__c in entity Pebble__c value length is 6 which exceeds maximum field length of 5
+upsert_long_key_message	67.0	isTest	Specified External ID for Token__c in entity Pebble__c value length is 6 which exceeds maximum field length of 5
 upsert_long_key_mixed	62.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key_mixed	62.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key_mixed	67.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
 upsert_long_key_mixed	67.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_trigger	62.0	anonymous	0
+upsert_long_key_trigger	62.0	isTest	0
+upsert_long_key_trigger	67.0	anonymous	0
+upsert_long_key_trigger	67.0	isTest	0
 upsert_long_value	62.0	anonymous	created|no-id|STRING_TOO_LONG|Short__c
 upsert_long_value	62.0	isTest	created|no-id|STRING_TOO_LONG|Short__c
 upsert_long_value	67.0	anonymous	created|no-id|STRING_TOO_LONG|Short__c

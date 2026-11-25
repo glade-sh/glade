@@ -8,8 +8,10 @@
 - The probe permission set was assigned before either route. An anonymous debug marker and an intentional terminal assertion in each named method carried the observations. The exporter decoded the CLI's escaped pipe characters and masked the synthetic lookup ID in the error. Blank brackets and spaces are significant.
 - Both API versions and both routes returned the same result for every primary case.
 
+- The checked-in source was deployed again at 07:31:03 UTC and 07:32:08 UTC, respectively, to two fresh scratch orgs. These runs confirmed all prior rows and added the wrong-type lookup message, overlength key message and before-insert trigger count. Both scratch org deletions were verified.
+
 ## NEIGHBOR PROBES
 
 - Existing, omitted and soft-deleted lookup targets are controls. Self lookups, required lookups, master-detail, lookup updates, sparse local schemas and lookups from custom to standard objects keep their existing rules.
-- The overlong non-key field and deleted parent are controls for attempted-insert upsert failures. Matching-key updates, standard ID-lookup selectors, explicit IDs and REST responses are outside the captured change.
+- The overlong non-key field and deleted parent are controls for attempted-insert upsert failures. Matching-key updates, standard ID-lookup selectors, explicit IDs, scalar and access-level overloads, padded and non-ASCII keys, and REST responses are outside the captured change.
 - The text cases record caller, stored and trigger values. The runtime change targets plain Text in before-insert triggers. Before-update and Text Area values are observations outside this change.

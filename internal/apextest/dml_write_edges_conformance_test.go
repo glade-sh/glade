@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,9 +18,23 @@ func TestCustomLookupInsertNativeConformance(t *testing.T) {
 	runDMLWriteEdgesNative(t, "lookup")
 }
 
+func TestExternalIDUpsertKeyLengthNativeConformance(t *testing.T) {
+	runDMLWriteEdgesNative(t, "upsert")
+}
+
 func runDMLWriteEdgesNative(t *testing.T, family string) {
 	t.Helper()
 	rows := readDMLWriteEdgeRows(t, "org.tsv", 4)
+	cases := readDMLWriteEdgeRows(t, "cases.tsv", 5)
+	if len(rows) != len(cases) {
+		t.Fatalf("captured %d observations for %d cases", len(rows), len(cases))
+	}
+	for i, row := range rows {
+		spec := cases[i]
+		if row[0] != spec[0] || row[1] != spec[1] || row[2] != spec[2] || row[3] != spec[4] || spec[3] == "" {
+			t.Fatalf("case table does not match the capture for %s/%s/%s", row[0], row[1], row[2])
+		}
+	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := dmlWriteEdgesProject(t, api)
@@ -116,20 +129,14 @@ func readDMLWriteEdgeRows(t *testing.T, file string, width int) [][]string {
 	reader := csv.NewReader(data)
 	reader.Comma = '\t'
 	reader.FieldsPerRecord = width
-	if _, err := reader.Read(); err != nil {
+	rows, err := reader.ReadAll()
+	if err != nil {
 		t.Fatal(err)
 	}
-	var rows [][]string
-	for {
-		row, err := reader.Read()
-		if err == io.EOF {
-			return rows
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
-		rows = append(rows, row)
+	if len(rows) < 2 || rows[0][0] != "case" {
+		t.Fatalf("missing case rows in %s", file)
 	}
+	return rows[1:]
 }
 
 func checkDMLWriteEdges(t *testing.T, rows [][]string, family, api, route, message string) {

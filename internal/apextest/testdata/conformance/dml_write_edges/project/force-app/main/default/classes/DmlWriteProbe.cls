@@ -1,4 +1,5 @@
 public class DmlWriteProbe {
+    public static Integer insertHits = 0;
     private static String saveResult(Database.SaveResult result) {
         return result.isSuccess() ? 'ok' : String.valueOf(result.getErrors()[0].getStatusCode());
     }
@@ -28,6 +29,8 @@ public class DmlWriteProbe {
         } else {
             rows.put('lookup_missing_detail', 'ok');
         }
+        Database.Error wrongIssue = results[2].getErrors()[0];
+        rows.put('lookup_wrong_detail', String.join(wrongIssue.getFields(), ',') + '|' + maskId(wrongIssue.getMessage(), wrong));
         try {
             insert new Pebble__c(Name = 'statement', Lantern__c = missing);
             rows.put('lookup_statement', 'ok');
@@ -56,6 +59,8 @@ public class DmlWriteProbe {
             new Pebble__c(Name = 'long key', Token__c = 'excess')
         }, Pebble__c.Fields.Token__c, false);
         rows.put('upsert_long_key', upsertResult(results[0]));
+        rows.put('upsert_long_key_message', results[0].getErrors()[0].getMessage());
+        rows.put('upsert_long_key_trigger', String.valueOf(insertHits));
 
         Lantern__c removed = new Lantern__c(Name = 'removed');
         insert removed;
