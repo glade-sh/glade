@@ -141,3 +141,7 @@ func decodeJSONRuntimeRows(t *testing.T, message string) map[string]json.RawMess
 func TestJSONComputedGetterNativeConformance(t *testing.T) {
 	runJSONRuntimeNativeRows(t, "json_computed_getter", "classes/QuartzPayload.cls")
 }
+
+func TestJSONCustomPlatformChildrenNativeConformance(t *testing.T) {
+	runJSONRuntimeNativeRows(t, "json_custom_platform_children", "objects/QuartzNote__c/QuartzNote__c.object-meta.xml")
+}

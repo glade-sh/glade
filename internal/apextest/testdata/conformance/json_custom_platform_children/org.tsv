@@ -1,0 +1,499 @@
+api	route	case	observed
+62.0	anonymous	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+62.0	anonymous	AttachedContentDocuments_generic_serialized	true
+62.0	anonymous	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+62.0	anonymous	AttachedContentDocuments_lax_serialized	true
+62.0	anonymous	AttachedContentDocuments_soql	1
+62.0	anonymous	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+62.0	anonymous	AttachedContentDocuments_strict_serialized	true
+62.0	anonymous	Attachments_generic	"[1,""Attachment""]"
+62.0	anonymous	Attachments_generic_serialized	true
+62.0	anonymous	Attachments_lax	"[1,""Attachment""]"
+62.0	anonymous	Attachments_lax_serialized	true
+62.0	anonymous	Attachments_soql	1
+62.0	anonymous	Attachments_strict	"[1,""Attachment""]"
+62.0	anonymous	Attachments_strict_serialized	true
+62.0	anonymous	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+62.0	anonymous	CombinedAttachments_generic_serialized	true
+62.0	anonymous	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+62.0	anonymous	CombinedAttachments_lax_serialized	true
+62.0	anonymous	CombinedAttachments_soql	3
+62.0	anonymous	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+62.0	anonymous	CombinedAttachments_strict_serialized	true
+62.0	anonymous	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+62.0	anonymous	ContentDocumentLinks_generic_serialized	true
+62.0	anonymous	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+62.0	anonymous	ContentDocumentLinks_lax_serialized	true
+62.0	anonymous	ContentDocumentLinks_soql	1
+62.0	anonymous	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+62.0	anonymous	ContentDocumentLinks_strict_serialized	true
+62.0	anonymous	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+62.0	anonymous	NotesAndAttachments_generic_serialized	true
+62.0	anonymous	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+62.0	anonymous	NotesAndAttachments_lax_serialized	true
+62.0	anonymous	NotesAndAttachments_soql	2
+62.0	anonymous	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+62.0	anonymous	NotesAndAttachments_strict_serialized	true
+62.0	anonymous	Notes_generic	"[1,""Note""]"
+62.0	anonymous	Notes_generic_serialized	true
+62.0	anonymous	Notes_lax	"[1,""Note""]"
+62.0	anonymous	Notes_lax_serialized	true
+62.0	anonymous	Notes_soql	1
+62.0	anonymous	Notes_strict	"[1,""Note""]"
+62.0	anonymous	Notes_strict_serialized	true
+62.0	anonymous	empty_links_generic	[0,null]
+62.0	anonymous	empty_links_generic_serialized	true
+62.0	anonymous	empty_links_lax	[0,null]
+62.0	anonymous	empty_links_lax_serialized	true
+62.0	anonymous	empty_links_strict	[0,null]
+62.0	anonymous	empty_links_strict_serialized	true
+62.0	anonymous	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	anonymous	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	anonymous	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	anonymous	lower_links_generic	[null,null]
+62.0	anonymous	lower_links_generic_serialized	false
+62.0	anonymous	lower_links_lax	[null,null]
+62.0	anonymous	lower_links_lax_serialized	false
+62.0	anonymous	lower_links_strict	[null,null]
+62.0	anonymous	lower_links_strict_serialized	false
+62.0	anonymous	lower_populated_links_generic	[null,null]
+62.0	anonymous	lower_populated_links_generic_serialized	false
+62.0	anonymous	lower_populated_links_lax	[null,null]
+62.0	anonymous	lower_populated_links_lax_serialized	false
+62.0	anonymous	lower_populated_links_strict	[null,null]
+62.0	anonymous	lower_populated_links_strict_serialized	false
+62.0	anonymous	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+62.0	anonymous	manual_CombinedAttachment_generic_serialized	true
+62.0	anonymous	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+62.0	anonymous	manual_CombinedAttachment_lax_serialized	true
+62.0	anonymous	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+62.0	anonymous	manual_CombinedAttachment_strict_serialized	true
+62.0	anonymous	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+62.0	anonymous	manual_NoteAndAttachment_generic_serialized	true
+62.0	anonymous	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+62.0	anonymous	manual_NoteAndAttachment_lax_serialized	true
+62.0	anonymous	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+62.0	anonymous	manual_NoteAndAttachment_strict_serialized	true
+62.0	anonymous	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	anonymous	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	anonymous	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	anonymous	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+62.0	anonymous	unknown_empty_generic_serialized	false
+62.0	anonymous	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+62.0	anonymous	unknown_empty_lax_serialized	false
+62.0	anonymous	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
+62.0	isTest	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+62.0	isTest	AttachedContentDocuments_generic_serialized	true
+62.0	isTest	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+62.0	isTest	AttachedContentDocuments_lax_serialized	true
+62.0	isTest	AttachedContentDocuments_soql	1
+62.0	isTest	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+62.0	isTest	AttachedContentDocuments_strict_serialized	true
+62.0	isTest	Attachments_generic	"[1,""Attachment""]"
+62.0	isTest	Attachments_generic_serialized	true
+62.0	isTest	Attachments_lax	"[1,""Attachment""]"
+62.0	isTest	Attachments_lax_serialized	true
+62.0	isTest	Attachments_soql	1
+62.0	isTest	Attachments_strict	"[1,""Attachment""]"
+62.0	isTest	Attachments_strict_serialized	true
+62.0	isTest	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+62.0	isTest	CombinedAttachments_generic_serialized	true
+62.0	isTest	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+62.0	isTest	CombinedAttachments_lax_serialized	true
+62.0	isTest	CombinedAttachments_soql	3
+62.0	isTest	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+62.0	isTest	CombinedAttachments_strict_serialized	true
+62.0	isTest	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+62.0	isTest	ContentDocumentLinks_generic_serialized	true
+62.0	isTest	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+62.0	isTest	ContentDocumentLinks_lax_serialized	true
+62.0	isTest	ContentDocumentLinks_soql	1
+62.0	isTest	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+62.0	isTest	ContentDocumentLinks_strict_serialized	true
+62.0	isTest	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+62.0	isTest	NotesAndAttachments_generic_serialized	true
+62.0	isTest	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+62.0	isTest	NotesAndAttachments_lax_serialized	true
+62.0	isTest	NotesAndAttachments_soql	2
+62.0	isTest	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+62.0	isTest	NotesAndAttachments_strict_serialized	true
+62.0	isTest	Notes_generic	"[1,""Note""]"
+62.0	isTest	Notes_generic_serialized	true
+62.0	isTest	Notes_lax	"[1,""Note""]"
+62.0	isTest	Notes_lax_serialized	true
+62.0	isTest	Notes_soql	1
+62.0	isTest	Notes_strict	"[1,""Note""]"
+62.0	isTest	Notes_strict_serialized	true
+62.0	isTest	empty_links_generic	[0,null]
+62.0	isTest	empty_links_generic_serialized	true
+62.0	isTest	empty_links_lax	[0,null]
+62.0	isTest	empty_links_lax_serialized	true
+62.0	isTest	empty_links_strict	[0,null]
+62.0	isTest	empty_links_strict_serialized	true
+62.0	isTest	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	isTest	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	isTest	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+62.0	isTest	lower_links_generic	[null,null]
+62.0	isTest	lower_links_generic_serialized	false
+62.0	isTest	lower_links_lax	[null,null]
+62.0	isTest	lower_links_lax_serialized	false
+62.0	isTest	lower_links_strict	[null,null]
+62.0	isTest	lower_links_strict_serialized	false
+62.0	isTest	lower_populated_links_generic	[null,null]
+62.0	isTest	lower_populated_links_generic_serialized	false
+62.0	isTest	lower_populated_links_lax	[null,null]
+62.0	isTest	lower_populated_links_lax_serialized	false
+62.0	isTest	lower_populated_links_strict	[null,null]
+62.0	isTest	lower_populated_links_strict_serialized	false
+62.0	isTest	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+62.0	isTest	manual_CombinedAttachment_generic_serialized	true
+62.0	isTest	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+62.0	isTest	manual_CombinedAttachment_lax_serialized	true
+62.0	isTest	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+62.0	isTest	manual_CombinedAttachment_strict_serialized	true
+62.0	isTest	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+62.0	isTest	manual_NoteAndAttachment_generic_serialized	true
+62.0	isTest	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+62.0	isTest	manual_NoteAndAttachment_lax_serialized	true
+62.0	isTest	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+62.0	isTest	manual_NoteAndAttachment_strict_serialized	true
+62.0	isTest	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	isTest	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	isTest	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+62.0	isTest	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+62.0	isTest	unknown_empty_generic_serialized	false
+62.0	isTest	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+62.0	isTest	unknown_empty_lax_serialized	false
+62.0	isTest	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
+67.0	anonymous	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+67.0	anonymous	AttachedContentDocuments_generic_serialized	true
+67.0	anonymous	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+67.0	anonymous	AttachedContentDocuments_lax_serialized	true
+67.0	anonymous	AttachedContentDocuments_soql	1
+67.0	anonymous	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+67.0	anonymous	AttachedContentDocuments_strict_serialized	true
+67.0	anonymous	Attachments_generic	"[1,""Attachment""]"
+67.0	anonymous	Attachments_generic_serialized	true
+67.0	anonymous	Attachments_lax	"[1,""Attachment""]"
+67.0	anonymous	Attachments_lax_serialized	true
+67.0	anonymous	Attachments_soql	1
+67.0	anonymous	Attachments_strict	"[1,""Attachment""]"
+67.0	anonymous	Attachments_strict_serialized	true
+67.0	anonymous	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+67.0	anonymous	CombinedAttachments_generic_serialized	true
+67.0	anonymous	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+67.0	anonymous	CombinedAttachments_lax_serialized	true
+67.0	anonymous	CombinedAttachments_soql	3
+67.0	anonymous	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+67.0	anonymous	CombinedAttachments_strict_serialized	true
+67.0	anonymous	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+67.0	anonymous	ContentDocumentLinks_generic_serialized	true
+67.0	anonymous	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+67.0	anonymous	ContentDocumentLinks_lax_serialized	true
+67.0	anonymous	ContentDocumentLinks_soql	1
+67.0	anonymous	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+67.0	anonymous	ContentDocumentLinks_strict_serialized	true
+67.0	anonymous	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+67.0	anonymous	NotesAndAttachments_generic_serialized	true
+67.0	anonymous	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+67.0	anonymous	NotesAndAttachments_lax_serialized	true
+67.0	anonymous	NotesAndAttachments_soql	2
+67.0	anonymous	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+67.0	anonymous	NotesAndAttachments_strict_serialized	true
+67.0	anonymous	Notes_generic	"[1,""Note""]"
+67.0	anonymous	Notes_generic_serialized	true
+67.0	anonymous	Notes_lax	"[1,""Note""]"
+67.0	anonymous	Notes_lax_serialized	true
+67.0	anonymous	Notes_soql	1
+67.0	anonymous	Notes_strict	"[1,""Note""]"
+67.0	anonymous	Notes_strict_serialized	true
+67.0	anonymous	empty_links_generic	[0,null]
+67.0	anonymous	empty_links_generic_serialized	true
+67.0	anonymous	empty_links_lax	[0,null]
+67.0	anonymous	empty_links_lax_serialized	true
+67.0	anonymous	empty_links_strict	[0,null]
+67.0	anonymous	empty_links_strict_serialized	true
+67.0	anonymous	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	anonymous	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	anonymous	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	anonymous	lower_links_generic	[null,null]
+67.0	anonymous	lower_links_generic_serialized	false
+67.0	anonymous	lower_links_lax	[null,null]
+67.0	anonymous	lower_links_lax_serialized	false
+67.0	anonymous	lower_links_strict	[null,null]
+67.0	anonymous	lower_links_strict_serialized	false
+67.0	anonymous	lower_populated_links_generic	[null,null]
+67.0	anonymous	lower_populated_links_generic_serialized	false
+67.0	anonymous	lower_populated_links_lax	[null,null]
+67.0	anonymous	lower_populated_links_lax_serialized	false
+67.0	anonymous	lower_populated_links_strict	[null,null]
+67.0	anonymous	lower_populated_links_strict_serialized	false
+67.0	anonymous	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+67.0	anonymous	manual_CombinedAttachment_generic_serialized	true
+67.0	anonymous	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+67.0	anonymous	manual_CombinedAttachment_lax_serialized	true
+67.0	anonymous	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+67.0	anonymous	manual_CombinedAttachment_strict_serialized	true
+67.0	anonymous	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+67.0	anonymous	manual_NoteAndAttachment_generic_serialized	true
+67.0	anonymous	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+67.0	anonymous	manual_NoteAndAttachment_lax_serialized	true
+67.0	anonymous	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+67.0	anonymous	manual_NoteAndAttachment_strict_serialized	true
+67.0	anonymous	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	anonymous	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	anonymous	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	anonymous	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+67.0	anonymous	unknown_empty_generic_serialized	false
+67.0	anonymous	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+67.0	anonymous	unknown_empty_lax_serialized	false
+67.0	anonymous	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
+67.0	isTest	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+67.0	isTest	AttachedContentDocuments_generic_serialized	true
+67.0	isTest	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+67.0	isTest	AttachedContentDocuments_lax_serialized	true
+67.0	isTest	AttachedContentDocuments_soql	1
+67.0	isTest	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+67.0	isTest	AttachedContentDocuments_strict_serialized	true
+67.0	isTest	Attachments_generic	"[1,""Attachment""]"
+67.0	isTest	Attachments_generic_serialized	true
+67.0	isTest	Attachments_lax	"[1,""Attachment""]"
+67.0	isTest	Attachments_lax_serialized	true
+67.0	isTest	Attachments_soql	1
+67.0	isTest	Attachments_strict	"[1,""Attachment""]"
+67.0	isTest	Attachments_strict_serialized	true
+67.0	isTest	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+67.0	isTest	CombinedAttachments_generic_serialized	true
+67.0	isTest	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+67.0	isTest	CombinedAttachments_lax_serialized	true
+67.0	isTest	CombinedAttachments_soql	3
+67.0	isTest	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+67.0	isTest	CombinedAttachments_strict_serialized	true
+67.0	isTest	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+67.0	isTest	ContentDocumentLinks_generic_serialized	true
+67.0	isTest	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+67.0	isTest	ContentDocumentLinks_lax_serialized	true
+67.0	isTest	ContentDocumentLinks_soql	1
+67.0	isTest	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+67.0	isTest	ContentDocumentLinks_strict_serialized	true
+67.0	isTest	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+67.0	isTest	NotesAndAttachments_generic_serialized	true
+67.0	isTest	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+67.0	isTest	NotesAndAttachments_lax_serialized	true
+67.0	isTest	NotesAndAttachments_soql	2
+67.0	isTest	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+67.0	isTest	NotesAndAttachments_strict_serialized	true
+67.0	isTest	Notes_generic	"[1,""Note""]"
+67.0	isTest	Notes_generic_serialized	true
+67.0	isTest	Notes_lax	"[1,""Note""]"
+67.0	isTest	Notes_lax_serialized	true
+67.0	isTest	Notes_soql	1
+67.0	isTest	Notes_strict	"[1,""Note""]"
+67.0	isTest	Notes_strict_serialized	true
+67.0	isTest	empty_links_generic	[0,null]
+67.0	isTest	empty_links_generic_serialized	true
+67.0	isTest	empty_links_lax	[0,null]
+67.0	isTest	empty_links_lax_serialized	true
+67.0	isTest	empty_links_strict	[0,null]
+67.0	isTest	empty_links_strict_serialized	true
+67.0	isTest	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	isTest	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	isTest	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+67.0	isTest	lower_links_generic	[null,null]
+67.0	isTest	lower_links_generic_serialized	false
+67.0	isTest	lower_links_lax	[null,null]
+67.0	isTest	lower_links_lax_serialized	false
+67.0	isTest	lower_links_strict	[null,null]
+67.0	isTest	lower_links_strict_serialized	false
+67.0	isTest	lower_populated_links_generic	[null,null]
+67.0	isTest	lower_populated_links_generic_serialized	false
+67.0	isTest	lower_populated_links_lax	[null,null]
+67.0	isTest	lower_populated_links_lax_serialized	false
+67.0	isTest	lower_populated_links_strict	[null,null]
+67.0	isTest	lower_populated_links_strict_serialized	false
+67.0	isTest	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+67.0	isTest	manual_CombinedAttachment_generic_serialized	true
+67.0	isTest	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+67.0	isTest	manual_CombinedAttachment_lax_serialized	true
+67.0	isTest	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+67.0	isTest	manual_CombinedAttachment_strict_serialized	true
+67.0	isTest	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+67.0	isTest	manual_NoteAndAttachment_generic_serialized	true
+67.0	isTest	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+67.0	isTest	manual_NoteAndAttachment_lax_serialized	true
+67.0	isTest	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+67.0	isTest	manual_NoteAndAttachment_strict_serialized	true
+67.0	isTest	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	isTest	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	isTest	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+67.0	isTest	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+67.0	isTest	unknown_empty_generic_serialized	false
+67.0	isTest	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+67.0	isTest	unknown_empty_lax_serialized	false
+67.0	isTest	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
+68.0	anonymous	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+68.0	anonymous	AttachedContentDocuments_generic_serialized	true
+68.0	anonymous	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+68.0	anonymous	AttachedContentDocuments_lax_serialized	true
+68.0	anonymous	AttachedContentDocuments_soql	1
+68.0	anonymous	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+68.0	anonymous	AttachedContentDocuments_strict_serialized	true
+68.0	anonymous	Attachments_generic	"[1,""Attachment""]"
+68.0	anonymous	Attachments_generic_serialized	true
+68.0	anonymous	Attachments_lax	"[1,""Attachment""]"
+68.0	anonymous	Attachments_lax_serialized	true
+68.0	anonymous	Attachments_soql	1
+68.0	anonymous	Attachments_strict	"[1,""Attachment""]"
+68.0	anonymous	Attachments_strict_serialized	true
+68.0	anonymous	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+68.0	anonymous	CombinedAttachments_generic_serialized	true
+68.0	anonymous	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+68.0	anonymous	CombinedAttachments_lax_serialized	true
+68.0	anonymous	CombinedAttachments_soql	3
+68.0	anonymous	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+68.0	anonymous	CombinedAttachments_strict_serialized	true
+68.0	anonymous	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+68.0	anonymous	ContentDocumentLinks_generic_serialized	true
+68.0	anonymous	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+68.0	anonymous	ContentDocumentLinks_lax_serialized	true
+68.0	anonymous	ContentDocumentLinks_soql	1
+68.0	anonymous	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+68.0	anonymous	ContentDocumentLinks_strict_serialized	true
+68.0	anonymous	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+68.0	anonymous	NotesAndAttachments_generic_serialized	true
+68.0	anonymous	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+68.0	anonymous	NotesAndAttachments_lax_serialized	true
+68.0	anonymous	NotesAndAttachments_soql	2
+68.0	anonymous	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+68.0	anonymous	NotesAndAttachments_strict_serialized	true
+68.0	anonymous	Notes_generic	"[1,""Note""]"
+68.0	anonymous	Notes_generic_serialized	true
+68.0	anonymous	Notes_lax	"[1,""Note""]"
+68.0	anonymous	Notes_lax_serialized	true
+68.0	anonymous	Notes_soql	1
+68.0	anonymous	Notes_strict	"[1,""Note""]"
+68.0	anonymous	Notes_strict_serialized	true
+68.0	anonymous	empty_links_generic	[0,null]
+68.0	anonymous	empty_links_generic_serialized	true
+68.0	anonymous	empty_links_lax	[0,null]
+68.0	anonymous	empty_links_lax_serialized	true
+68.0	anonymous	empty_links_strict	[0,null]
+68.0	anonymous	empty_links_strict_serialized	true
+68.0	anonymous	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	anonymous	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	anonymous	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	anonymous	lower_links_generic	[null,null]
+68.0	anonymous	lower_links_generic_serialized	false
+68.0	anonymous	lower_links_lax	[null,null]
+68.0	anonymous	lower_links_lax_serialized	false
+68.0	anonymous	lower_links_strict	[null,null]
+68.0	anonymous	lower_links_strict_serialized	false
+68.0	anonymous	lower_populated_links_generic	[null,null]
+68.0	anonymous	lower_populated_links_generic_serialized	false
+68.0	anonymous	lower_populated_links_lax	[null,null]
+68.0	anonymous	lower_populated_links_lax_serialized	false
+68.0	anonymous	lower_populated_links_strict	[null,null]
+68.0	anonymous	lower_populated_links_strict_serialized	false
+68.0	anonymous	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+68.0	anonymous	manual_CombinedAttachment_generic_serialized	true
+68.0	anonymous	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+68.0	anonymous	manual_CombinedAttachment_lax_serialized	true
+68.0	anonymous	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+68.0	anonymous	manual_CombinedAttachment_strict_serialized	true
+68.0	anonymous	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+68.0	anonymous	manual_NoteAndAttachment_generic_serialized	true
+68.0	anonymous	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+68.0	anonymous	manual_NoteAndAttachment_lax_serialized	true
+68.0	anonymous	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+68.0	anonymous	manual_NoteAndAttachment_strict_serialized	true
+68.0	anonymous	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	anonymous	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	anonymous	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	anonymous	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+68.0	anonymous	unknown_empty_generic_serialized	false
+68.0	anonymous	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+68.0	anonymous	unknown_empty_lax_serialized	false
+68.0	anonymous	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
+68.0	isTest	AttachedContentDocuments_generic	"[1,""AttachedContentDocument""]"
+68.0	isTest	AttachedContentDocuments_generic_serialized	true
+68.0	isTest	AttachedContentDocuments_lax	"[1,""AttachedContentDocument""]"
+68.0	isTest	AttachedContentDocuments_lax_serialized	true
+68.0	isTest	AttachedContentDocuments_soql	1
+68.0	isTest	AttachedContentDocuments_strict	"[1,""AttachedContentDocument""]"
+68.0	isTest	AttachedContentDocuments_strict_serialized	true
+68.0	isTest	Attachments_generic	"[1,""Attachment""]"
+68.0	isTest	Attachments_generic_serialized	true
+68.0	isTest	Attachments_lax	"[1,""Attachment""]"
+68.0	isTest	Attachments_lax_serialized	true
+68.0	isTest	Attachments_soql	1
+68.0	isTest	Attachments_strict	"[1,""Attachment""]"
+68.0	isTest	Attachments_strict_serialized	true
+68.0	isTest	CombinedAttachments_generic	"[3,""CombinedAttachment""]"
+68.0	isTest	CombinedAttachments_generic_serialized	true
+68.0	isTest	CombinedAttachments_lax	"[3,""CombinedAttachment""]"
+68.0	isTest	CombinedAttachments_lax_serialized	true
+68.0	isTest	CombinedAttachments_soql	3
+68.0	isTest	CombinedAttachments_strict	"[3,""CombinedAttachment""]"
+68.0	isTest	CombinedAttachments_strict_serialized	true
+68.0	isTest	ContentDocumentLinks_generic	"[1,""ContentDocumentLink""]"
+68.0	isTest	ContentDocumentLinks_generic_serialized	true
+68.0	isTest	ContentDocumentLinks_lax	"[1,""ContentDocumentLink""]"
+68.0	isTest	ContentDocumentLinks_lax_serialized	true
+68.0	isTest	ContentDocumentLinks_soql	1
+68.0	isTest	ContentDocumentLinks_strict	"[1,""ContentDocumentLink""]"
+68.0	isTest	ContentDocumentLinks_strict_serialized	true
+68.0	isTest	NotesAndAttachments_generic	"[2,""NoteAndAttachment""]"
+68.0	isTest	NotesAndAttachments_generic_serialized	true
+68.0	isTest	NotesAndAttachments_lax	"[2,""NoteAndAttachment""]"
+68.0	isTest	NotesAndAttachments_lax_serialized	true
+68.0	isTest	NotesAndAttachments_soql	2
+68.0	isTest	NotesAndAttachments_strict	"[2,""NoteAndAttachment""]"
+68.0	isTest	NotesAndAttachments_strict_serialized	true
+68.0	isTest	Notes_generic	"[1,""Note""]"
+68.0	isTest	Notes_generic_serialized	true
+68.0	isTest	Notes_lax	"[1,""Note""]"
+68.0	isTest	Notes_lax_serialized	true
+68.0	isTest	Notes_soql	1
+68.0	isTest	Notes_strict	"[1,""Note""]"
+68.0	isTest	Notes_strict_serialized	true
+68.0	isTest	empty_links_generic	[0,null]
+68.0	isTest	empty_links_generic_serialized	true
+68.0	isTest	empty_links_lax	[0,null]
+68.0	isTest	empty_links_lax_serialized	true
+68.0	isTest	empty_links_strict	[0,null]
+68.0	isTest	empty_links_strict_serialized	true
+68.0	isTest	invalid_links_generic	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	isTest	invalid_links_lax	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	isTest	invalid_links_strict	"[""deserialize"",""System.JSONException"",""No such column 'Title' on sobject of type ContentDocumentLink""]"
+68.0	isTest	lower_links_generic	[null,null]
+68.0	isTest	lower_links_generic_serialized	false
+68.0	isTest	lower_links_lax	[null,null]
+68.0	isTest	lower_links_lax_serialized	false
+68.0	isTest	lower_links_strict	[null,null]
+68.0	isTest	lower_links_strict_serialized	false
+68.0	isTest	lower_populated_links_generic	[null,null]
+68.0	isTest	lower_populated_links_generic_serialized	false
+68.0	isTest	lower_populated_links_lax	[null,null]
+68.0	isTest	lower_populated_links_lax_serialized	false
+68.0	isTest	lower_populated_links_strict	[null,null]
+68.0	isTest	lower_populated_links_strict_serialized	false
+68.0	isTest	manual_CombinedAttachment_generic	"[1,""CombinedAttachment""]"
+68.0	isTest	manual_CombinedAttachment_generic_serialized	true
+68.0	isTest	manual_CombinedAttachment_lax	"[1,""CombinedAttachment""]"
+68.0	isTest	manual_CombinedAttachment_lax_serialized	true
+68.0	isTest	manual_CombinedAttachment_strict	"[1,""CombinedAttachment""]"
+68.0	isTest	manual_CombinedAttachment_strict_serialized	true
+68.0	isTest	manual_NoteAndAttachment_generic	"[1,""NoteAndAttachment""]"
+68.0	isTest	manual_NoteAndAttachment_generic_serialized	true
+68.0	isTest	manual_NoteAndAttachment_lax	"[1,""NoteAndAttachment""]"
+68.0	isTest	manual_NoteAndAttachment_lax_serialized	true
+68.0	isTest	manual_NoteAndAttachment_strict	"[1,""NoteAndAttachment""]"
+68.0	isTest	manual_NoteAndAttachment_strict_serialized	true
+68.0	isTest	naked_links_generic	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	isTest	naked_links_lax	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	isTest	naked_links_strict	"[""deserialize"",""System.JSONException"",""QueryResult must start with '{'""]"
+68.0	isTest	unknown_empty_generic	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+68.0	isTest	unknown_empty_generic_serialized	false
+68.0	isTest	unknown_empty_lax	"[""access"",""System.SObjectException"",""Invalid aggregate relationship MissingRelationship for QuartzNote__c""]"
+68.0	isTest	unknown_empty_lax_serialized	false
+68.0	isTest	unknown_empty_strict	"[""deserialize"",""System.JSONException"",""No such column 'MissingRelationship' on sobject of type QuartzNote__c""]"
