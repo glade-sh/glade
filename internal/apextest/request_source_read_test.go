@@ -8,8 +8,10 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/testreport"
@@ -160,6 +162,52 @@ func TestWarmRequestReadsAndHashesEachSourceOnce(t *testing.T) {
 		if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 || !summary.OK() {
 			t.Fatalf("warm run summary = %#v, want the prime run's %#v", summary, primeSummary)
 		}
+	}
+}
+
+func TestWarmRequestRevalidatesRacySourcesAcrossRequests(t *testing.T) {
+	skipWithoutStamps(t)
+	resetFileDigestTrust()
+	t.Cleanup(resetFileDigestTrust)
+	t.Cleanup(InvalidateRuntimeCaches)
+	f := writeRequestReadFixture(t, 4)
+	target := f.sources[0]
+	stamp, ok := filestamp.Stat(target)
+	if !ok {
+		t.Fatal("missing source stamp")
+	}
+	t.Cleanup(setFileDigestClockForTesting(func() time.Time {
+		return time.Unix(0, max(stamp.Mtime, stamp.Ctime))
+	}))
+	// Model a coarse filesystem reporting the same lookup stamp on both
+	// sides of the next save.
+	stat := func(path string) (filestamp.Stamp, bool) {
+		if path == target {
+			return stamp, true
+		}
+		return filestamp.Stat(path)
+	}
+	previous := requestDigestStatHook.Swap(&stat)
+	t.Cleanup(func() { requestDigestStatHook.Store(previous) })
+
+	reads, stop := f.countReads(t)
+	prime := RunCasesContext(context.Background(), f.index, f.options, f.cases)
+	stop()
+	if summary := prime.Summary(); summary.Total != 1 || summary.Passed != 1 || !summary.OK() {
+		t.Fatalf("first request failed: %#v", summary)
+	}
+	f.assertReadOnce(t, reads)
+
+	edited := strings.Replace(f.contents[target], "return 0;", "return 7;", 1)
+	if err := os.WriteFile(target, []byte(edited), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reads, stop = f.countReads(t)
+	run := RunCasesContext(context.Background(), f.index, f.options, f.cases)
+	stop()
+	if reads[target] != 1 || run.Summary().CompileErrors == 0 ||
+		!strings.Contains(testreportRunDetails(run), "source snapshot mismatch for "+filepath.ToSlash(target)) {
+		t.Fatalf("second request read the source %d times: %s", reads[target], testreportRunDetails(run))
 	}
 }
 
