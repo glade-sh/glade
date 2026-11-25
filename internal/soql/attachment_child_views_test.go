@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -251,6 +252,28 @@ func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
 			wantBefore: "ContactPointOttSvc", wantAfter: "",
 			prepare: func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.APIVersion = "68.0" },
 			change:  func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.APIVersion = "67.0" },
+		},
+		{
+			name: "legacy lazy spread visibility", wantBefore: "careprogram", wantAfter: "CombinedAttachment",
+			prepare: func(org *storage.OrgState, def *storage.ObjectDefinition) {
+				org.StandardSpreadCapturedPlain = true
+				org.Features = []string{project.PlainDeveloperObjectShape}
+				org.Objects["careprogram"] = storage.ObjectState{Definition: *def}
+				def.Relations = nil
+			},
+			change: func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.EnableLazyStandardSpread() },
+		},
+		{
+			name: "legacy lazy spread features", wantBefore: "careprogram", wantAfter: "CombinedAttachment",
+			prepare: func(org *storage.OrgState, def *storage.ObjectDefinition) {
+				org.StandardSpreadCapturedPlain = true
+				org.EnableLazyStandardSpread()
+				org.Objects["careprogram"] = storage.ObjectState{Definition: *def}
+				def.Relations = nil
+			},
+			change: func(org *storage.OrgState, _ *storage.ObjectDefinition) {
+				org.Features = []string{project.PlainDeveloperObjectShape}
+			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
