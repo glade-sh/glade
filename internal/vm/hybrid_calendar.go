@@ -279,21 +279,22 @@ func dateLabelFromGregorian(value time.Time) string {
 	return value.Format("2006-01-02")
 }
 
-var englishWeekdays = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+type hybridDatetimeFields struct {
+	year, dayOfYear, weekOfYear, weekOfMonth, weekdayOccurrence int
+	weekday                                                     time.Weekday
+	englishLocale, observedLocale                               bool
+}
 
-// hybridPatternLiterals rewrites the calendar tokens of a format pattern (year,
-// day of year, week of year and of month, day of week in month, weekday name and
-// number) into quoted literals computed from the hybrid calendar for a date
-// before 1583, because the Gregorian time the formatter reads is a label shifted
-// from the real day (native FmtJulian rows: 1500-02-29 is a Saturday, day 60,
-// week 9). Sunday-first weeks with one minimal day (en_US). The other tokens
-// keep reading the label.
-func hybridPatternLiterals(pattern string, localDays int64, locale, api string) string {
+// newHybridDatetimeFields computes pattern fields for a date before 1583.
+// The time used for the remaining tokens carries a shifted civil label, so
+// calendar fields must come from the real day (native FmtJulian rows:
+// 1500-02-29 is a Saturday, day 60, week 9). Weeks start on Sunday with
+// a minimum of one day (en_US).
+func newHybridDatetimeFields(localDays int64, locale, api string) *hybridDatetimeFields {
 	year, month, _ := hybridCivil(localDays)
 	if year < 1 {
-		return pattern
+		return nil
 	}
-	english := strings.HasPrefix(strings.ToLower(locale), "en")
 	// The native pattern formatter uses English weekday names in each of the
 	// captured profiles, independently of the user's locale and language.
 	observedLocale := false
@@ -307,7 +308,8 @@ func hybridPatternLiterals(pattern string, localDays int64, locale, api string) 
 	weekday := int(((localDays+4)%7 + 7) % 7) // Sunday = 0
 	firstOfMonth := hybridDays(year, month, 1)
 	monthDow := int(((firstOfMonth+4)%7 + 7) % 7)
-	index := int(localDays-firstOfMonth) + 1 // the day's place in its month, counting the days the cutover skipped as absent
+	// Count days from the start of the month, excluding those the cutover skipped.
+	daysIntoMonth := int(localDays - firstOfMonth)
 	jan1 := hybridDays(year, 1, 1)
 	jan1Dow := int(((jan1+4)%7 + 7) % 7)
 	doy := int(localDays-jan1) + 1
@@ -315,74 +317,54 @@ func hybridPatternLiterals(pattern string, localDays int64, locale, api string) 
 	if nextJan1 := hybridDays(year+1, 1, 1); nextJan1-localDays <= int64(6-weekday) {
 		week = 1
 	}
-	pad := func(n, width int) string { return fmt.Sprintf("%0*d", width, n) }
-	var out strings.Builder
-	for i := 0; i < len(pattern); {
-		ch := pattern[i]
-		if ch == '\'' {
-			j := i + 1
-			for j < len(pattern) {
-				if pattern[j] == '\'' {
-					if j+1 < len(pattern) && pattern[j+1] == '\'' {
-						j += 2
-						continue
-					}
-					break
-				}
-				j++
-			}
-			if j >= len(pattern) {
-				j = len(pattern) - 1
-			}
-			out.WriteString(pattern[i : j+1])
-			i = j + 1
-			continue
-		}
-		j := i + 1
-		for j < len(pattern) && pattern[j] == ch {
-			j++
-		}
-		count := j - i
-		literal := ""
-		switch ch {
-		case 'y':
-			if count == 2 {
-				literal = pad(year%100, 2)
-			} else {
-				literal = pad(year, count)
-			}
-		case 'D':
-			literal = pad(doy, count)
-		case 'w':
-			literal = pad(week, count)
-		case 'W':
-			literal = pad((index-1+monthDow)/7+1, count)
-		case 'F':
-			literal = pad((index-1)/7+1, count)
-		case 'E':
-			if english || (observedLocale && count <= 5) {
-				literal = englishWeekdays[weekday]
-				if count < 4 {
-					literal = literal[:3]
-				}
-			}
-		case 'u':
-			if english || (observedLocale && count == 1) {
-				n := weekday
-				if n == 0 {
-					n = 7
-				}
-				literal = pad(n, count)
-			}
-		}
-		if literal == "" {
-			out.WriteString(pattern[i:j])
-		} else {
-			out.WriteString("'" + literal + "'")
-		}
-		i = j
+	return &hybridDatetimeFields{
+		year:              year,
+		dayOfYear:         doy,
+		weekOfYear:        week,
+		weekOfMonth:       (daysIntoMonth+monthDow)/7 + 1,
+		weekdayOccurrence: daysIntoMonth/7 + 1,
+		weekday:           time.Weekday(weekday),
+		englishLocale:     strings.HasPrefix(strings.ToLower(locale), "en"),
+		observedLocale:    observedLocale,
 	}
-	return out.String()
+}
+
+// formatToken returns an empty string when the token uses the regular formatter.
+func (fields *hybridDatetimeFields) formatToken(token string) string {
+	count := len(token)
+	switch token[0] {
+	case 'y':
+		year := fields.year
+		if count == 2 {
+			year %= 100
+		}
+		return formatPaddedDateNumber(year, count)
+	case 'D':
+		return formatPaddedDateNumber(fields.dayOfYear, count)
+	case 'w':
+		return formatPaddedDateNumber(fields.weekOfYear, count)
+	case 'W':
+		return formatPaddedDateNumber(fields.weekOfMonth, count)
+	case 'F':
+		return formatPaddedDateNumber(fields.weekdayOccurrence, count)
+	case 'E':
+		if fields.englishLocale || (fields.observedLocale && count <= 5) {
+			name := fields.weekday.String()
+			if count < 4 {
+				return name[:3]
+			}
+			return name
+		}
+	case 'u':
+		if fields.englishLocale || (fields.observedLocale && count == 1) {
+			weekday := int(fields.weekday)
+			if fields.weekday == time.Sunday {
+				weekday = 7
+			}
+			return formatPaddedDateNumber(weekday, count)
+		}
+	}
+	return ""
 }
 
 // hybridLocal returns the civil wall clock of a zone-local time in the hybrid

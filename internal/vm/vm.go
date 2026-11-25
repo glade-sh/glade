@@ -1719,7 +1719,7 @@ func formatPlatformDate(value time.Time) string {
 	return value.UTC().Format("2006-01-02")
 }
 
-func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration, locale string) (string, error) {
+func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration, locale string, hybridFields *hybridDatetimeFields) (string, error) {
 	var b strings.Builder
 	for i := 0; i < len(pattern); {
 		ch := pattern[i]
@@ -1742,12 +1742,18 @@ func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel strin
 			j++
 		}
 		token := pattern[i:j]
+		i = j
+		if hybridFields != nil {
+			if text := hybridFields.formatToken(token); text != "" {
+				b.WriteString(text)
+				continue
+			}
+		}
 		text, err := formatApexDatetimeToken(value, token, zoneID, zoneLabel, offset, locale)
 		if err != nil {
 			return "", fmt.Errorf("Unrecognized format: %s", pattern)
 		}
 		b.WriteString(text)
-		i = j
 	}
 	return b.String(), nil
 }
