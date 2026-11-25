@@ -55,7 +55,7 @@ func tryLoadDiskRuntimeWithSourceDigests(index typesys.Index, digests *typesys.S
 	return tryLoadDiskRuntimeWithValidatedInput(index, key, input)
 }
 
-func tryLoadDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput) (runtimeCacheEntry, bool) {
+func tryLoadDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput, current ...startupcache.CurrentDigests) (runtimeCacheEntry, bool) {
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
@@ -64,7 +64,7 @@ func tryLoadDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheK
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, err := startupcache.ReadFreshRuntimeWithValidatedInput(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input)
+	entry, err := startupcache.ReadFreshRuntimeWithValidatedInput(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input, current...)
 	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
@@ -82,7 +82,7 @@ func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	return tryLoadDiskRuntimeWithPerfValidatedInput(index, key, input, counters)
 }
 
-func tryLoadDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+func tryLoadDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCacheKey, input *startupcache.ValidatedInput, counters *runPerfCounters, current ...startupcache.CurrentDigests) (runtimeCacheEntry, bool) {
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
@@ -91,7 +91,7 @@ func tryLoadDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCa
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, stats, err := startupcache.ReadFreshRuntimeWithValidatedInputAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input)
+	entry, stats, err := startupcache.ReadFreshRuntimeWithValidatedInputAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), input, current...)
 	counters.phases.cacheValidateNS.Add(stats.ValidationNS)
 	counters.phases.cacheDecodeNS.Add(stats.DecodeNS)
 	if err != nil || entry == nil {

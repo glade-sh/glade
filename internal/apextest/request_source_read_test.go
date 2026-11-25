@@ -133,16 +133,15 @@ func (f *requestReadFixture) assertReadOnce(t *testing.T, reads map[string]int) 
 		}
 	}
 	if len(unexpected) != 0 {
-		t.Fatalf("one warm request read and hashed files more than once, want exactly 1 read per file:\n%s", strings.Join(unexpected, "\n"))
+		t.Fatalf("want exactly one digest computation per file:\n%s", strings.Join(unexpected, "\n"))
 	}
 }
 
 // TestWarmRequestReadsAndHashesEachSourceOnce proves one daemon-shaped request
 // reads and hashes every captured source and companion metadata file exactly
-// once, reusing that digest at every later validation boundary of the same
-// request. Files are first rewritten with identical bytes, so each is racily
-// clean and no boundary may shortcut on a trusted old stamp: the request
-// right after a save is the measured shape.
+// once to compute its digest. Later boundaries can compare current bytes
+// without hashing them again. Files are rewritten with identical bytes so
+// no boundary may shortcut on a trusted old stamp.
 func TestWarmRequestReadsAndHashesEachSourceOnce(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
 	t.Cleanup(resetFileDigestTrust)
@@ -317,6 +316,33 @@ func TestWarmRuntimeWithBuildArtifactsHashesEachRecentInputOnce(t *testing.T) {
 	stop()
 	if err != nil {
 		t.Fatal(err)
+	}
+	f.assertReadOnce(t, reads)
+}
+
+func TestDiskRuntimeHitHashesEachRecentInputOnce(t *testing.T) {
+	t.Cleanup(EnableDiskCacheForTesting())
+	t.Cleanup(InvalidateRuntimeCaches)
+	t.Cleanup(resetFileDigestTrust)
+	t.Cleanup(ResetPerfCounters)
+	resetFileDigestTrust()
+	f := writeRequestReadFixture(t, 4)
+	f.options.NoDiskCache = false
+	f.options.PerfCounters = true
+	if prime := RunCasesContext(context.Background(), f.index, f.options, f.cases); prime.Summary().Passed != 1 {
+		t.Fatalf("prime run: %s", testreportRunDetails(prime))
+	}
+	InvalidateRuntimeCaches()
+	ResetPerfCounters()
+	f.rewriteIdentical(t)
+	reads, stop := f.countReads(t)
+	run := RunCasesContext(context.Background(), f.index, f.options, f.cases)
+	stop()
+	if run.Summary().Passed != 1 {
+		t.Fatalf("disk-backed run: %s", testreportRunDetails(run))
+	}
+	if phases := SnapshotPerfCounters().Phases; phases.DiskCacheHits != 1 || phases.CacheMisses != 0 {
+		t.Fatalf("expected a disk hit, got %#v", phases)
 	}
 	f.assertReadOnce(t, reads)
 }

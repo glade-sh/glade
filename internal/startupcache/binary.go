@@ -292,7 +292,7 @@ func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expe
 	}, stats, nil
 }
 
-func readFreshSplitTestRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, ReadStats, error) {
+func readFreshSplitTestRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput, current ...CurrentDigests) (*Entry, ReadStats, error) {
 	var stats ReadStats
 	validationStarted := time.Now()
 	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
@@ -316,7 +316,7 @@ func readFreshSplitTestRuntimeWithValidatedInput(projectRoot, subdir string, exp
 		!validPayloadFileName(header.PayloadFile, header.PayloadSHA256) || header.PayloadSize < 0 ||
 		expectedRuntimeABI == "" || header.RuntimeABI != expectedRuntimeABI ||
 		expectedRuntimeKey == "" || header.RuntimeKey != expectedRuntimeKey ||
-		!freshManifestWithValidatedInput(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, expectedVersion, input) {
+		!freshManifestWithValidatedInput(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, expectedVersion, input, current...) {
 		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
 		return nil, stats, nil
 	}

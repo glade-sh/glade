@@ -1,6 +1,7 @@
 package startupcache
 
 import (
+	"crypto/sha256"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,48 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+func TestValidatedInputLiveFallbackUsesScopedCurrentDigest(t *testing.T) {
+	root := t.TempDir()
+	configPath := filepath.Join(root, "sfdx-project.json")
+	sourcePath := filepath.Join(root, "force-app", "main", "default", "classes", "Proof.cls")
+	const source = "public class Proof { Integer value = 1; }"
+	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
+	writeStartupCacheTestFile(t, sourcePath, source)
+	proof, err := ValidateInputWithSourceDigests(root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := proof.Manifest()
+	saved.GeneratedAt = 0 // Force the live fallback, even on a coarse filesystem.
+	sourceDigest := sha256.Sum256([]byte(source))
+	reads := 0
+	lookup := CurrentDigests{
+		Eligible: func(path string) bool { return path == sourcePath },
+		Lookup: func(path string) ([sha256.Size]byte, bool) {
+			if path != sourcePath {
+				t.Fatalf("looked up ineligible path %s", path)
+			}
+			reads++
+			return sourceDigest, true
+		},
+	}
+	fresh := func() bool {
+		return freshManifestWithValidatedInput(Version, root, currentPlatformABI(), saved, root, Version, proof, lookup)
+	}
+	if !fresh() || reads != 1 {
+		t.Fatalf("unchanged input should hit with one scoped lookup, got %d lookups", reads)
+	}
+	sourceDigest = sha256.Sum256([]byte("public class Proof { Integer value = 2; }"))
+	if fresh() || reads != 2 {
+		t.Fatalf("changed source should miss after a fresh lookup, got %d lookups", reads)
+	}
+	sourceDigest = sha256.Sum256([]byte(source))
+	writeStartupCacheTestFile(t, configPath, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	if fresh() {
+		t.Fatal("scoped source digest masked a changed project configuration")
+	}
+}
 
 func TestValidatedInputDrivesFreshReadWithoutRebuildingManifest(t *testing.T) {
 	root := t.TempDir()

@@ -409,7 +409,6 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // beside the semantic gate panicked.
 func prepareRunSources(index typesys.Index, opts Options, runState *runExecution) (*sourceCache, runtimeGeneration, *typesys.SourceDigestSet, error) {
 	sources := newSourceCache()
-	sources.requestDigests.reuseRecent = true
 	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
 	// A matching snapshot selects the already-loaded project graph for runtime
@@ -1175,7 +1174,7 @@ func validateBuildArtifacts(index typesys.Index, artifacts *typesys.BuildArtifac
 // inputs against an artifact snapshot. It is intentionally separate from the
 // compiler source cache: callers use it immediately before cache returns and
 // publications, while compilation consumes the captured arena bytes. request
-// memoizes the physical reads across one request's validation boundaries.
+// avoids repeat hashing when the current bytes still match.
 func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.BuildArtifacts, request *requestFileDigests) error {
 	if artifacts == nil {
 		return nil
@@ -1582,6 +1581,33 @@ func (generation runtimeMetadataGeneration) visualforceDigestLookup() *runtimeDi
 	}
 }
 
+func (generation runtimeGeneration) apexDigestLookup(request *requestFileDigests) startupcache.CurrentDigests {
+	return startupcache.CurrentDigests{
+		Eligible: func(path string) bool {
+			_, source := generation.source.inputs[path]
+			return source || generation.metadata.inputs[path].Present
+		},
+		Lookup: func(path string) ([sha256.Size]byte, bool) {
+			digest, err := request.digest(path)
+			return digest, err == nil
+		},
+	}
+}
+
+func (generation runtimeGeneration) diskInputDigestLookup(apex startupcache.CurrentDigests) *runtimeDigestLookup {
+	return &runtimeDigestLookup{
+		eligible: func(path string) bool {
+			return apex.Eligible(path) || generation.metadata.visualforceInputs[path]
+		},
+		current: func(path string) ([sha256.Size]byte, bool) {
+			if apex.Eligible(path) {
+				return apex.Lookup(path)
+			}
+			return generation.metadata.trustedVisualforceDigest(path)
+		},
+	}
+}
+
 type runtimeSourceInput struct {
 	digest [sha256.Size]byte
 	raw    string
@@ -1970,6 +1996,9 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
+	sources.requestDigests.mu.Lock()
+	sources.requestDigests.sources = source.inputs
+	sources.requestDigests.mu.Unlock()
 	metadata, err := sources.prepareMetadataGeneration(index)
 	if err != nil {
 		return runtimeGeneration{}, err
@@ -2103,11 +2132,13 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		}
 	}
 
-	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
+	var digestLookup *runtimeDigestLookup
 	if diskCacheAllowed {
+		apexLookup := generation.apexDigestLookup(sources.requestDigests)
+		digestLookup = generation.diskInputDigestLookup(apexLookup)
 		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
-		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
+		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput, apexLookup); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				if !accepted() {
 					return key, zero, errRuntimeAbandoned
@@ -2295,13 +2326,15 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		return key, cached, nil
 	}
 
-	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
+	var digestLookup *runtimeDigestLookup
 	if diskCacheAllowed {
+		apexLookup := generation.apexDigestLookup(sources.requestDigests)
+		digestLookup = generation.diskInputDigestLookup(apexLookup)
 		lookupStarted := time.Now()
 		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(lookupStarted))
-		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
+		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters, apexLookup); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
 				if err := sources.validateCapturedSourceGeneration(); err != nil {

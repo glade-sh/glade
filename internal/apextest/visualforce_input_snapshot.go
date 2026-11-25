@@ -1,7 +1,6 @@
 package apextest
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
 	"io"
@@ -86,20 +85,24 @@ func rememberRecentVisualforceInput(path string, input recentVisualforceInput) {
 // matches reads all current bytes and verifies the open file and its path still
 // name the same trusted identity. Equal timestamps alone never prove equality.
 func (input recentVisualforceInput) matches(path string) bool {
+	return matchesRecentFile(path, input.content)
+}
+
+func matchesRecentFile[T ~[]byte | ~string](path string, content T) bool {
 	f, err := os.Open(path) // #nosec G304 -- an input captured by this generation.
 	if err != nil {
 		return false
 	}
 	defer f.Close()
 	before, ok := filestamp.Fstat(f)
-	if !ok || before.Size != int64(len(input.content)) {
+	if !ok || before.Size != int64(len(content)) {
 		return false
 	}
 	buffer := recentVisualforceBuffers.Get().(*[recentVisualforceCompareChunk]byte)
 	defer recentVisualforceBuffers.Put(buffer)
-	for offset := 0; offset < len(input.content); {
-		n := min(len(buffer), len(input.content)-offset)
-		if _, err := io.ReadFull(f, buffer[:n]); err != nil || !bytes.Equal(buffer[:n], input.content[offset:offset+n]) {
+	for offset := 0; offset < len(content); {
+		n := min(len(buffer), len(content)-offset)
+		if _, err := io.ReadFull(f, buffer[:n]); err != nil || string(buffer[:n]) != string(content[offset:offset+n]) {
 			return false
 		}
 		offset += n

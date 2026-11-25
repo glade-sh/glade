@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"crypto/sha256"
+	"io"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -52,9 +53,9 @@ func requestDigestStat(path string) (filestamp.Stamp, bool) {
 	return filestamp.Stat(path)
 }
 
-// SetFileDigestReadHookForTesting observes every physical read a source
-// digest validation performs. The returned function restores the previous
-// hook. Cross-package tests use it to prove per-request read counts.
+// SetFileDigestReadHookForTesting observes reads that compute a source digest.
+// Byte comparisons that confirm an existing digest do not compute one.
+// The returned function restores the previous hook.
 func SetFileDigestReadHookForTesting(hook func(path string)) func() {
 	var next *func(string)
 	if hook != nil {
@@ -147,12 +148,17 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 // stamp is still on disk. stamped is false when the read failed or the file
 // could not be proven unchanged; such a digest must never be memoized.
 func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.Stamp, bool) {
+	digest, err, stamp, stamped, _ := readFileDigest(path, 0)
+	return digest, err, stamp, stamped
+}
+
+func readFileDigest(path string, remaining int64) ([sha256.Size]byte, error, filestamp.Stamp, bool, []byte) {
 	if trusted, stamp, ok := trustedCurrentFileDigestStamped(path); ok {
-		return trusted, nil, stamp, true
+		return trusted, nil, stamp, true, nil
 	}
 	file, err := os.Open(path) // #nosec G304 -- indexed source or its fixed metadata companion.
 	if err != nil {
-		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
+		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false, nil
 	}
 	defer file.Close()
 	if hook := fileDigestReadHook.Load(); hook != nil {
@@ -160,17 +166,27 @@ func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.
 	}
 	hashedAt := fileDigestNow()
 	before, beforeOK := filestamp.Fstat(file)
-	hash := sha256.New()
-	if _, err := filestamp.CopyPooled(hash, file); err != nil {
-		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
-	}
+	old := beforeOK && before.OlderThan(hashedAt, fileDigestTrustAge)
 	var digest [sha256.Size]byte
-	hash.Sum(digest[:0])
+	var content []byte
+	if remaining > 0 && !old && beforeOK && before.Size >= 0 && before.Size <= min(remaining, recentVisualforceFileLimit) {
+		content = make([]byte, int(before.Size))
+		if _, err := io.ReadFull(file, content); err != nil {
+			return digest, err, filestamp.Stamp{}, false, nil
+		}
+		digest = sha256.Sum256(content)
+	} else {
+		hash := sha256.New()
+		if _, err := filestamp.CopyPooled(hash, file); err != nil {
+			return digest, err, filestamp.Stamp{}, false, nil
+		}
+		hash.Sum(digest[:0])
+	}
 	after, afterOK := filestamp.Fstat(file)
 	if !beforeOK || !afterOK || before != after {
-		return digest, nil, filestamp.Stamp{}, false
+		return digest, nil, filestamp.Stamp{}, false, nil
 	}
-	if after.OlderThan(hashedAt, fileDigestTrustAge) {
+	if old {
 		fileDigestTrustMu.Lock()
 		if len(fileDigestTrust) >= fileDigestTrustMaxEntries {
 			clear(fileDigestTrust)
@@ -178,27 +194,27 @@ func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.
 		fileDigestTrust[path] = trustedFileDigest{stamp: after, digest: digest}
 		fileDigestTrustMu.Unlock()
 	}
-	return digest, nil, after, true
+	return digest, nil, after, true, content
 }
 
-// requestFileDigests remembers, for one request, the stat stamp and digest of
-// every source file already validated. Test runs can reuse a recent digest
-// within their captured generation while the file reports the same stamp.
-// That evidence never leaves the request. A later request still goes through
-// the process-wide trust check, which admits only old stamps.
+// requestFileDigests validates old inputs by stamp and recent inputs by byte
+// equality. Apex bodies can reuse the bytes already captured for compilation.
+// Extra copies for other inputs are bounded by the snapshot budget.
 type requestFileDigests struct {
 	mu          sync.Mutex
 	entries     map[string]requestFileDigestEntry
-	reuseRecent bool
+	sources     map[string]runtimeSourceInput
+	recentBytes int64
 }
 
 type requestFileDigestEntry struct {
-	stamp  filestamp.Stamp
-	digest [sha256.Size]byte
+	stamp          filestamp.Stamp
+	digest         [sha256.Size]byte
+	recent         []byte
+	capturedSource bool
 }
 
-// digest returns the SHA-256 of path's current content, reusing this
-// request's earlier read while the file reports the same unchanged stamp.
+// digest returns the SHA-256 of path's current content.
 func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
 	if r == nil {
 		return currentFileDigest(path)
@@ -206,21 +222,41 @@ func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	entry, hit := r.entries[path]
+	source, captured := r.sources[path]
 	if hit {
-		if stamp, ok := requestDigestStat(path); ok && entry.stamp == stamp {
-			return entry.digest, nil
+		switch {
+		case entry.capturedSource:
+			if captured && source.digest == entry.digest && matchesRecentFile(path, source.raw) {
+				return entry.digest, nil
+			}
+		case entry.recent != nil:
+			if matchesRecentFile(path, entry.recent) {
+				return entry.digest, nil
+			}
+		default:
+			if stamp, ok := requestDigestStat(path); ok && entry.stamp == stamp {
+				return entry.digest, nil
+			}
 		}
 	}
-	var generation time.Time
-	if !r.reuseRecent {
-		generation = fileDigestNow()
+	generation := fileDigestNow()
+	remaining := recentVisualforceBudget - r.recentBytes + int64(len(entry.recent))
+	if captured {
+		remaining = 0
 	}
-	digest, err, stamp, stamped := currentFileDigestStamped(path)
-	if stamped && err == nil && (r.reuseRecent || stamp.OlderThan(generation, fileDigestTrustAge)) {
-		if r.entries == nil {
-			r.entries = make(map[string]requestFileDigestEntry)
+	digest, err, stamp, stamped, content := readFileDigest(path, remaining)
+	if stamped && err == nil {
+		old := stamp.OlderThan(generation, fileDigestTrustAge)
+		useSource := !old && captured && source.digest == digest
+		if old || useSource || content != nil {
+			if r.entries == nil {
+				r.entries = make(map[string]requestFileDigestEntry)
+			}
+			r.entries[path] = requestFileDigestEntry{
+				stamp: stamp, digest: digest, recent: content, capturedSource: useSource,
+			}
+			r.recentBytes += int64(len(content) - len(entry.recent))
 		}
-		r.entries[path] = requestFileDigestEntry{stamp: stamp, digest: digest}
 	}
 	return digest, err
 }

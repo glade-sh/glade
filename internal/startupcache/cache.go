@@ -108,6 +108,13 @@ type ValidatedInput struct {
 	digest      string
 }
 
+// CurrentDigests provides freshly validated digests for selected paths during
+// a cache read. A miss falls back to fingerprinting the file directly.
+type CurrentDigests struct {
+	Eligible func(string) bool
+	Lookup   func(string) ([sha256.Size]byte, bool)
+}
+
 // ValidateInputWithSourceDigests builds one full content-hash proof for the
 // current project generation. A complete Apex source digest snapshot avoids
 // rereading those source bodies; all other inputs are hashed from disk.
@@ -239,23 +246,23 @@ func ReadFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expec
 }
 
 // ReadFreshRuntimeWithValidatedInput compares a cache entry against a
-// previously established immutable input proof. It performs no project load,
-// directory walk, or input hashing.
-func ReadFreshRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, error) {
-	entry, _, err := ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input)
+// previously established immutable input proof. When the proof needs a live
+// fallback, current can supply freshly checked digests for selected paths.
+func ReadFreshRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput, current ...CurrentDigests) (*Entry, error) {
+	entry, _, err := ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input, current...)
 	return entry, err
 }
 
 // ReadFreshRuntimeWithValidatedInputAndStats is the measured variant of
 // ReadFreshRuntimeWithValidatedInput.
-func ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, ReadStats, error) {
+func ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput, current ...CurrentDigests) (*Entry, ReadStats, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return nil, ReadStats{}, err
 	}
 	root = filepath.Clean(root)
 	if subdir == SubdirTest {
-		return readFreshSplitTestRuntimeWithValidatedInput(root, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input)
+		return readFreshSplitTestRuntimeWithValidatedInput(root, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input, current...)
 	}
 	started := time.Now()
 	entry, err := readJSON(root, subdir)
@@ -264,7 +271,7 @@ func ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir string, expe
 		return entry, stats, err
 	}
 	validationStarted := time.Now()
-	if !freshManifestWithValidatedInput(entry.Version, entry.ProjectRoot, entry.PlatformABI, entry.Manifest, root, expectedVersion, input) ||
+	if !freshManifestWithValidatedInput(entry.Version, entry.ProjectRoot, entry.PlatformABI, entry.Manifest, root, expectedVersion, input, current...) ||
 		expectedRuntimeKey == "" || entry.RuntimeKey != expectedRuntimeKey ||
 		(expectedRuntimeABI != "" && entry.RuntimeABI != expectedRuntimeABI) {
 		stats.ValidationNS += time.Since(validationStarted).Nanoseconds()
@@ -400,7 +407,7 @@ func freshManifest(version int, entryProjectRoot, entryPlatformABI string, manif
 	return freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, projectRoot, expectedVersion, nil, nil)
 }
 
-func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) bool {
+func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), lookups ...CurrentDigests) bool {
 	if version != expectedVersion || entryPlatformABI == "" || entryPlatformABI != currentPlatformABI() {
 		return false
 	}
@@ -439,6 +446,10 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 	savedFiles := append(append([]File(nil), manifest.Files...), manifest.ConfigFiles...)
 	currentFiles := append(append([]File(nil), current.Files...), current.ConfigFiles...)
 	generatedAt := time.Unix(0, manifest.GeneratedAt)
+	var lookup CurrentDigests
+	if len(lookups) != 0 {
+		lookup = lookups[0]
+	}
 	for i, fp := range savedFiles {
 		// A reused source digest is tied to its original generation. If the
 		// timestamp changed, hash the current file rather than trusting it.
@@ -458,6 +469,13 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 				continue
 			}
 		}
+		if lookup.Eligible != nil && lookup.Eligible(absPath) {
+			live, err := fingerprintInputWithScopedDigest(nil, root, absPath, true, [sha256.Size]byte{}, false, readFile, lookup.Eligible, lookup.Lookup)
+			if err != nil || live != fp {
+				return false
+			}
+			continue
+		}
 		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, false, readFile) {
 			return false
 		}
@@ -465,7 +483,7 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 	return true
 }
 
-func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, input *ValidatedInput) bool {
+func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, input *ValidatedInput, current ...CurrentDigests) bool {
 	if input == nil || input.digest == "" || version != expectedVersion || entryPlatformABI == "" || entryPlatformABI != currentPlatformABI() {
 		return false
 	}
@@ -493,7 +511,7 @@ func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatfor
 	// A supplied source-digest snapshot can predate a timestamp change.
 	// Validate against live bytes before relaxing cross-generation timestamps.
 	return sameManifestContent(manifest, input.manifest) &&
-		freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, root, expectedVersion, nil, nil)
+		freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, root, expectedVersion, nil, nil, current...)
 }
 
 // equalManifestIdentity compares the persisted identity without its generation
