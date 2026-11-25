@@ -279,3 +279,10 @@ policy.
 Use the signed provenance to identify the release workflow, source commit,
 and tag. Use the matching SBOM to review the inventory for that platform
 archive.
+
+### Historical example
+
+The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
+with `vcs.modified=false`. The per-archive SBOMs inventory 128–129 components,
+with 32–33 Go modules and 96 bundled LWC/Babel and VSIX npm packages. The
+macOS archives contain 33 Go modules and the Linux archives contain 32.

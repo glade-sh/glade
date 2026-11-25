@@ -126,8 +126,8 @@ The environment guard keeps self-replacement explicit.
 ## Continue in a project
 
 `glade doctor` is project-aware. Do not use it as the binary installation
-check. For your first local check, follow the [Quickstart](/guide/quickstart).
-It enters or initializes a Salesforce DX project before running:
+check. Follow the [first local check](/guide/quickstart) in the Quickstart.
+Enter or initialize a Salesforce DX project before running:
 
 ```bash
 glade doctor --project .
