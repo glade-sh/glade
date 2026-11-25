@@ -1,0 +1,33 @@
+capture: road-563-custom-lookup-insert
+started: 2026-11-25T06:23:19Z
+finished: 2026-11-25T06:28:08Z
+sf: @salesforce/cli/2.159.7
+org: Developer edition scratch org from a configured Dev Hub, deleted after capture
+mode: live Salesforce
+apis: 62.0, 67.0
+routes: executeAnonymous and @IsTest
+scenarios: 6 in each cell, 24 observations
+
+Deployed the synthetic project at API 62.0 and assigned LookupFinchCapture
+to the scratch runner so executeAnonymous could access both lookup fields.
+Re-deployed the owned test class at API 67.0. Queried ApexClass.ApiVersion
+through the Tooling API after each deploy and confirmed 62.0 and 67.0.
+Invoked sf apex run and sf apex run test with the corresponding --api-version.
+The @IsTest method reports observations through an intentional assertion.
+Anonymous Apex rolls back its records before the debug observation.
+In the observations, <target15> stands for the first 15 characters of
+the absent target ID. Successful rows record the presence of assigned IDs.
+
+The partial insert sends five rows in one batch. Its results record success,
+presence of result ID, presence of input ID and error count. A failure also
+records status code, fields and message. The scalar insert reports whether
+it threw DmlException, presence of input ID, error count, failing row index,
+status code, fields and message.
+
+NEIGHBOR PROBES
+- Same-object self lookup uses the existing self_lookup_insert native fixture.
+- Wrong-prefix IDs, malformed local placeholders, required or master-detail
+  lookups, polymorphic references, lookup references to User, and other lookup
+  delete policies were outside this capture and retain main behavior.
+- Update, upsert, workflow and direct Flow create or field-update routes were
+  outside this capture and retain main behavior.

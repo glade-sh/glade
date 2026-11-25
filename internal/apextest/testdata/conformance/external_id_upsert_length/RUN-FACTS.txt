@@ -1,0 +1,45 @@
+surface=Salesforce scratch org, Developer edition
+capture_date_utc=2026-11-25
+source_api=62.0,67.0
+route=anonymous,isTest
+helper_class_api=matched source API
+wrapper_class_api=matched source API
+deployment_success=true
+scratch_org_deleted=true
+native_complete=true
+rows=4
+observations=40
+observation=success|created|hasId|statusCode:fields with exact message appended for FIELD_INTEGRITY_EXCEPTION
+anonymous_transport=System.debug with execution rolled back after recording rows
+isTest_transport=deliberate System.AssertException with the recorded rows
+
+Deploy the project at each API after setting sourceApiVersion and both class
+apiVersion values to that API. Assign JuniperMarkProbe to the scratch user.
+Run anonymous.apex via Execute Anonymous and JuniperUpsertProbeTest via the
+Apex test runner at the same API. The native capture named the wrapper method
+observeRows and used the ROAD563_UPSERT| observation prefix. The replay uses
+observe and OBS| to match the shared conformance runner. Both routes invoke
+the same probe body.
+
+NEIGHBOR PROBES
+Exact-length and padded exact-length keys insert successfully. The
+supplementary character contributes two UTF-16 units. An oversized key takes
+priority over another oversized field and fails even with the record's
+allowFieldTruncation option set. A long non-key field on the explicit
+selector's insert path and the long field with implicit Id matching keep
+STRING_TOO_LONG and isCreated=true. The R133 missing-required Account
+control keeps isCreated=true on the insert path. Explicit Id selection,
+ID-lookup fields and updates by populated record Id were outside this capture.
+
+REPLAY SOURCE SHA-256
+648299a3a19ba09a20caefee4b76c86716321c3ebab9c3c076702b0a03d3a709  anonymous.apex
+9d9b39dc23a1d4d9b6a0b41f9077a0fb572477c6c5bc21c511c029e4d2b6bbc3  project/force-app/main/default/classes/JuniperUpsertProbe.cls
+3728a55fd1d5104ab5cb5cd48d4ef31b62e4699c9bf97613d95f059485099bab  project/force-app/main/default/classes/JuniperUpsertProbe.cls-meta.xml
+73effd056ef8366037c0ed2f006569382a0d24b119ee6ab0d863d37574abde93  project/force-app/main/default/classes/JuniperUpsertProbeTest.cls
+3728a55fd1d5104ab5cb5cd48d4ef31b62e4699c9bf97613d95f059485099bab  project/force-app/main/default/classes/JuniperUpsertProbeTest.cls-meta.xml
+111f41b2d3f185bc933afd67dbe69e868607b621ea5e54426f7cd5661778db28  project/force-app/main/default/objects/Juniper_Mark__c/Juniper_Mark__c.object-meta.xml
+7b7e9bd0ee7541f55f229306cb7703a7e387d5217cff268013b196c1afad3492  project/force-app/main/default/objects/Juniper_Mark__c/fields/Mark_Key__c.field-meta.xml
+02612951f4da418b7ba0fc3fa5f3a237a578c3a8943543c9778419d61f2f1270  project/force-app/main/default/objects/Juniper_Mark__c/fields/Note__c.field-meta.xml
+e38f3b4e66cb3404e9ee8bd19dd2855dfa3f36c94f7ca512527a26ca99c39f1e  project/force-app/main/default/permissionsets/JuniperMarkProbe.permissionset-meta.xml
+34776dcb40bcaa1b9d436a72d0b942c65e1a2c066a9b4731e7c8c1beb029344b  project/glade.yml
+47fd4e3d65afc00ac1a86262c1cc0cc4b2796cf9040d28190754d2be65006729  project/sfdx-project.json

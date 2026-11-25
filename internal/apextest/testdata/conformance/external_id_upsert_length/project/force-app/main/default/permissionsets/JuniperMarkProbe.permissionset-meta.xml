@@ -1,0 +1,13 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Juniper_Mark__c.Mark_Key__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Juniper_Mark__c.Note__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <label>Juniper Mark Probe</label>
+</PermissionSet>

@@ -17,6 +17,10 @@
 
 - Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
 
+- Custom-object inserts reject missing parents for optional lookups that clear on delete and wrong-type IDs in those lookups to custom objects in Apex, and oversized external ID upsert keys report `isCreated() == false`. Before triggers for Apex inserts and updates see trimmed Text, Text Area, and Long Text Area. This also applies to non-key fields on inserts from partial external-ID upsert lists.
+
+- Partial external-ID upserts keep results in input order and save surviving rows when an oversized key and an after-save automation failure occur in the same batch.
+
 ## v0.3.15
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.
