@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Reading a computed get-only property on a JSON-deserialized Apex object evaluates its getter.
+- Reading a computed get-only property on a JSON-deserialized Apex object evaluates its getter, and JSON deserialization accepts captured standard child relationship envelopes on custom objects.
 
 ## v0.3.15
 
