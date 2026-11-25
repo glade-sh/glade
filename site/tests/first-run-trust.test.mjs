@@ -127,7 +127,7 @@ test("CLI, JSON schema, and release notes describe first-run contracts", () => {
 });
 
 test("manual verification uses one fail-closed, verification-only helper", () => {
-  assert.match(siteSecurityTrust, /^<<< \.\.\/\.\.\/\.\.\/scripts\/verify-release-download\.sh\{sh\}$/m);
+  assert.match(siteSecurityTrust, /^<!-- release-verifier:start -->\n```sh\n#!\/bin\/sh$/m);
   assert.match(securityPolicy, /release-verifier:start/);
   assert.match(releaseVerifier, /manifest must contain a stable vMAJOR\.MINOR\.PATCH version/);
   assert.match(releaseVerifier, /Not extracted, installed, or executed/);

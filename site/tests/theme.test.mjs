@@ -461,7 +461,7 @@ test("manual archive verification selects one checksummed asset and fails closed
   assert.doesNotMatch(releaseVerifier, /\btar\s+-|\.\/glade\s+version/);
   assert.match(repoSecurityPolicy, /release-verifier:start/);
   assert.match(releaseVerifier, /Not extracted, installed, or executed/);
-  assert.match(securityTrust, /^<<< \.\.\/\.\.\/\.\.\/scripts\/verify-release-download\.sh\{sh\}$/m);
+  assert.match(securityTrust, /^<!-- release-verifier:start -->\n```sh\n#!\/bin\/sh$/m);
   for (const pointerDocs of [repoInstallDocs, repoSecurityTrust]) {
     assert.match(pointerDocs, /sh scripts\/verify-release-download\.sh/);
   }

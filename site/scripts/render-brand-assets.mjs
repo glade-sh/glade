@@ -9,9 +9,11 @@ export async function renderBrandAssets() {
     ['social-card.svg', 'logo-mark.svg', 'logo-mark-topo.svg']
       .map(name => readFile(new URL(name, publicDir)))
   )
-  const card = new Resvg(cardSVG)
-  const cardMark = new Resvg(cardMarkSVG).render().asPng()
-  card.resolveImage('logo-mark.svg', cardMark)
+  // Resolve the source SVG's relative logo reference for the raster renderer.
+  const cardMark = renderIcon(cardMarkSVG, 138).toString('base64')
+  const card = new Resvg(cardSVG.toString('utf8').replace(
+    'href="logo-mark.svg"', `href="data:image/png;base64,${cardMark}"`
+  ))
 
   const appleIcon = renderIcon(iconSVG, 180)
   const favicon = renderIcon(iconSVG, 32)
