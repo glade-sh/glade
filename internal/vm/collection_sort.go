@@ -238,6 +238,40 @@ func (vm *VM) resolvedMapLookupKey(receiver Value, key Value) (string, error) {
 	}
 	return encoded, nil
 }
+
+// enumMapMutationKey finds an existing project enum key when equivalent enum
+// values have different encodings, such as a literal and a values() element.
+func (vm *VM) enumMapMutationKey(receiver, key Value, encoded string) string {
+	if key.Kind != ValueObject || key.Text == "" || len(receiver.MapKeys) == 0 {
+		return encoded
+	}
+	if _, exists := receiver.Map[encoded]; exists {
+		return encoded
+	}
+	keyType, _, typed := mapTypeArgs(receiver.Type)
+	if !typed {
+		return encoded
+	}
+	declared, ok := vm.resolveEnumClass(keyType)
+	if !ok || declared.PlatformType {
+		return encoded
+	}
+	enumName := runtimeClassName(declared)
+	if class, ok := vm.resolveEnumClass(key.Type); !ok || !strings.EqualFold(runtimeClassName(class), enumName) {
+		return encoded
+	}
+	for _, rawKey := range orderedValueMapKeys(receiver) {
+		stored := receiver.MapKeys[rawKey]
+		if stored.Kind != ValueObject || stored.Text != key.Text {
+			continue
+		}
+		if class, ok := vm.resolveEnumClass(stored.Type); ok && strings.EqualFold(runtimeClassName(class), enumName) {
+			return rawKey
+		}
+	}
+	return encoded
+}
+
 func caseInsensitiveStringMapStoredKey(receiver Value, key Value) (string, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return "", false

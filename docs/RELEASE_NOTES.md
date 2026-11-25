@@ -13,6 +13,7 @@
 - Cold Apex test runs reuse more of the standard object catalog during org setup.
 - Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
 - Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
+- Apex `Map.put` and `Map.remove` now match existing project enum keys passed as method parameters or obtained from `Enum.values()`.
 
 ## v0.3.15
 
