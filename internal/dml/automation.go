@@ -825,6 +825,7 @@ func (e *Engine) newFlowStepFrame(flowName string, record *storage.Record, defin
 	frame := newFlowFrame()
 	for _, rule := range definition.FlowRules {
 		if rule.Name == flowName {
+			frame.apiVersion = rule.APIVersion
 			frame.stepTargets = rule.StepTargets
 			frame.templateAPIFormulas = rule.TemplateAPIFormulas
 			frame.apiTemplateEnabled = strings.EqualFold(rule.TriggerType, "RecordAfterSave") && (strings.EqualFold(rule.RecordTriggerType, "Create") || strings.EqualFold(rule.RecordTriggerType, "Update"))
@@ -877,6 +878,7 @@ type flowRecordCollection struct {
 }
 
 type flowFrame struct {
+	apiVersion              string
 	processInterview        bool
 	processUnmodeled        bool
 	processOutcomes         map[string]bool
@@ -4376,7 +4378,7 @@ func (e *Engine) evaluateFlowLookupCriteriaCached(criterion *storage.WorkflowCri
 			if !resolved.valueOK && frame != nil && frame.saveDecisions {
 				// Create and Update after-save frames agree, with a missing parent
 				// reading as null (flow_record_lookup_parent_ref/org.tsv, 62.0 and 67.0).
-				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition)
+				resolved.value, resolved.valueOK = e.flowLookupParentReferenceValue(item.SourceField, source, sourceDefinition, frame.apiVersion)
 			}
 		}
 		if cache != nil {
