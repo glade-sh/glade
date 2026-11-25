@@ -236,3 +236,43 @@ commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGateway
 		})
 	}
 }
+
+func TestPaymentFlowAnonymousContextRequiresRejectedRequestDeclaration(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, flow := range []struct {
+			request, args, kind string
+		}{
+			{"SaleRequest", "amount", "Sale"},
+			{"AuthorizationReversalRequest", "amount, ref", "AuthorizationReversal"},
+		} {
+			t.Run(api+"/"+flow.kind, func(t *testing.T) {
+				const prefix = "Double amount = 7.25; String ref = 'ref'; "
+				request := "commercepayments." + flow.request
+				constructor := "new " + request + "(" + flow.args + "); "
+				declared := prefix + request + " req = " + constructor
+				context := "commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType." + flow.kind + ");"
+				index := nativeBoundaryIndex(t, api, nil, nil)
+				result := sema.AnalyzeAnonymous(index, declared+context, api)
+				if result.HasErrors() {
+					t.Fatalf("captured request declaration rejected: %v", result.Diagnostics)
+				}
+				for name, body := range map[string]string{
+					"assignment":   prefix + request + " req; req = " + constructor + context,
+					"local-method": "void probe() { " + declared + context + " } probe();",
+					"null":         request + " req = null; " + context,
+				} {
+					t.Run(name, func(t *testing.T) {
+						result := sema.AnalyzeAnonymous(index, body, api)
+						want := "Constructor not defined: [commercepayments.PaymentGatewayContext].<Constructor>(" + request + ", commercepayments.RequestType)"
+						for _, d := range result.Diagnostics {
+							if d.Severity == diagnostic.Error && d.Code == "GLADESEMA028" && d.Message == want {
+								return
+							}
+						}
+						t.Fatalf("expected context constructor rejection %q, got %v", want, result.Diagnostics)
+					})
+				}
+			})
+		}
+	}
+}

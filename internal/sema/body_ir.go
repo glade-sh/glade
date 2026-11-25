@@ -833,9 +833,10 @@ const (
 )
 
 type irSemaBinding struct {
-	typ                string
-	origin             irSemaOrigin
-	rejectedCollection bool
+	typ                    string
+	origin                 irSemaOrigin
+	rejectedCollection     bool
+	paymentRequestRejected bool
 }
 
 type irSemaScope struct {
@@ -1600,8 +1601,13 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			} else if (semaAPI67RejectedPlatformType(inst.Type) || semaPlatformTypeUnavailableInModel(typ.EffectiveAPIVersion, inst.Type, model)) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
 				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
 			}
+			paymentRequestRejected := false
 			if !rejectedCollection {
-				if message := a.semaPaymentFlowDecimalLiteralInitializer(typ, member, inst, *scope, model); message != "" {
+				message := a.semaPaymentFlowDecimalLiteralInitializer(typ, member, inst, *scope, model)
+				if model.anonymous && !model.anonymousLocalMethod {
+					paymentRequestRejected = message != "" || a.semaPaymentRequestDeclarationOutsideTest(typ, inst, *scope, model)
+				}
+				if message != "" {
 					pos := bodyOffset + inst.Expr.Pos
 					d := typeContractNativeDiagnostic(typ, message, pos, pos+len(inst.Type), source)
 					d.NativeMessage = message
@@ -1617,13 +1623,17 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			}
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
 				diagnostics = append(diagnostics, irRedeclareDiagnostic(typ, member, inst.Name, inst.Pos, bodyOffset, source))
-			} else if rejectedCollection {
-				frame := scope.frames[len(scope.frames)-1]
-				binding := frame[normalizeName(inst.Name)]
-				binding.rejectedCollection = true
-				frame[normalizeName(inst.Name)] = binding
-			} else if semaIRDeclaredFinal(source, bodyOffset+inst.Pos) {
-				scope.markFinalLocal(inst.Name)
+			} else {
+				if rejectedCollection || paymentRequestRejected {
+					frame := scope.frames[len(scope.frames)-1]
+					binding := frame[normalizeName(inst.Name)]
+					binding.rejectedCollection = rejectedCollection
+					binding.paymentRequestRejected = paymentRequestRejected
+					frame[normalizeName(inst.Name)] = binding
+				}
+				if !rejectedCollection && semaIRDeclaredFinal(source, bodyOffset+inst.Pos) {
+					scope.markFinalLocal(inst.Name)
+				}
 			}
 		case ir.OpBlock:
 			scope.push()

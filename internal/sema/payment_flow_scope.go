@@ -5,6 +5,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 // Give only captured method bodies a private view of these interface edges.
@@ -63,6 +64,15 @@ func (a *Analyzer) semaPaymentFlowContextInitializer(typ typesys.TypeSymbol, mem
 		!semaPaymentFlowRoute(typ, member, model) {
 		return false
 	}
+	if model.anonymous {
+		// Anonymous execution stops at the captured request declaration.
+		// If the request can reach the context constructor, the VM needs
+		// a constructor available on the base platform hierarchy.
+		request, ok := scope.binding(expr.Args[0].Name)
+		if model.anonymousLocalMethod || !ok || !request.paymentRequestRejected {
+			return false
+		}
+	}
 	args := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 	request := strings.ToLower(args[0])
 	expected := ""
@@ -83,6 +93,24 @@ func (a *Analyzer) semaPaymentFlowContextInitializer(typ typesys.TypeSymbol, mem
 	}
 	requestType, ok := model.lookup(normalizeName(args[0]))
 	return ok && requestType.platform
+}
+
+func (a *Analyzer) semaPaymentRequestDeclarationOutsideTest(typ typesys.TypeSymbol, inst ir.Instruction, scope irSemaScope, model *semaTypeMemberView) bool {
+	if !strings.HasPrefix(strings.ToLower(inst.Expr.Callee), "new:commercepayments.") ||
+		typesys.PaymentFlowCapturedInterface(inst.Type, typ.EffectiveAPIVersion) != "commercepayments.PaymentGatewayRequest" {
+		return false
+	}
+	target, ok := model.lookup(normalizeName(inst.Type))
+	if !ok || !target.platform {
+		return false
+	}
+	return vm.PaymentRequestDeclarationOutsideTestShape(inst, typ.EffectiveAPIVersion, func(arg ir.Expr) string {
+		if arg.Kind == ir.ExprVariable {
+			declared, _ := scope.lookup(arg.Name)
+			return declared
+		}
+		return a.inferIRExprType(arg, scope, model, typ.Name)
+	})
 }
 
 // The literal context probes declare the concrete request before passing it
