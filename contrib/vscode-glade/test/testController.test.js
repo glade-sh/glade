@@ -17,6 +17,7 @@ class Item {
 const events = [];
 const controller = { items: new Collection(), createRunProfile() {}, createTestRun() { return { started() {}, passed: item => events.push(['passed', item.id]), failed: (item, msg) => events.push(['failed', item.id, msg.message]), errored: (item, msg) => events.push(['errored', item.id, msg.message]), end() {} }; } };
 const vscode = { CancellationTokenSource: class { constructor() { this.token = { isCancellationRequested: false }; } dispose() {} }, TestRunRequest: class { constructor(include) { this.include = include; } }, tests: { createTestController: () => controller }, TestRunProfileKind: { Run: 1, Debug: 2 }, TestMessage: class { constructor(message) { this.message = message; } }, workspace: {}, window: {} };
+vscode.RelativePattern = class {};
 Module._load = function(request, parent, isMain) { return request === 'vscode' ? vscode : originalLoad.call(this, request, parent, isMain); };
 const runner = require('../out/tests/runner');
 const { GladeTestController } = require('../out/tests/controller');
@@ -76,7 +77,6 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
   try {
     const source = path.join(root, 'Example.cls');
     fs.writeFileSync(source, '@IsTest class Example { @IsTest static void b() {} }');
-    vscode.RelativePattern = class {};
     vscode.workspace.findFiles = async () => [{ fsPath: source }];
     controller.createTestItem = id => new Item(id);
     const messages = [];
