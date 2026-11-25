@@ -80,7 +80,7 @@ func TestL12ObserverSchedulesAndReportsFaults(t *testing.T) {
 	}
 	run := func(parallel bool, fault string) ([]byte, string) {
 		t.Helper()
-		config, err := json.Marshal(map[string]any{"url": "http://localhost/", "ids": []string{"a", "b", "c"}, "playwrightModule": mock, "parallel": parallel})
+		config, err := json.Marshal(map[string]any{"url": "http://localhost/", "ids": []string{"a", "b", "c", "d"}, "playwrightModule": mock, "parallel": parallel})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +97,7 @@ func TestL12ObserverSchedulesAndReportsFaults(t *testing.T) {
 	}
 	serial, serialPages := run(false, "")
 	parallel, parallelPages := run(true, "")
-	if !bytes.Equal(serial, parallel) || strings.Count(serialPages, "page\n") != 1 || strings.Count(parallelPages, "page\n") != 2 {
+	if !bytes.Equal(serial, parallel) || strings.Count(serialPages, "page\n") != 1 || strings.Count(parallelPages, "page\n") != 4 {
 		t.Fatalf("success output or page count differs: serial=%s parallel=%s pages=%q/%q", serial, parallel, serialPages, parallelPages)
 	}
 	for _, fault := range []string{"startup", "row"} {
