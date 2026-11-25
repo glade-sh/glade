@@ -2671,19 +2671,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.UTC()
 			}
 			pattern := args[0].Text
+			locale := vm.currentUserInfoField("LocaleSidKey", "en_US")
 			if rawInstant.Before(hybridYearEnd) {
 				seconds := rawInstant.UTC().Unix() + int64(offset/time.Second)
 				localDays := seconds / 86400
 				if seconds%86400 < 0 {
 					localDays--
 				}
-				pattern = hybridPatternLiterals(pattern, localDays, vm.currentUserInfoField("LocaleSidKey", "en_US"), vm.regexDateCapturedAPI())
+				pattern = hybridPatternLiterals(pattern, localDays, locale, vm.currentSourceExecutionPolicy().APIVersion)
 				if _, ok := julianOnlyLeapDay(rawInstant, offset); ok {
 					// 1500-02-29 has no Gregorian twin: month and day read 2000-02-29.
 					t = time.Date(2000, time.February, 29, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 				}
 			}
-			formatted, err := formatApexDatetimePattern(t, pattern, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+			formatted, err := formatApexDatetimePattern(t, pattern, tzID, zoneLabel, offset, locale)
 			if err != nil {
 				return Null, receiver, false, true, newExceptionError("System.StringException", err.Error())
 			}

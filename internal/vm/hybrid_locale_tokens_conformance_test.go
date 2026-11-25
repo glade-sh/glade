@@ -76,11 +76,12 @@ func testHybridLocaleTokens(t *testing.T, locale string) {
 
 func TestHybridLocaleTokensUncapturedNeighbor(t *testing.T) {
 	days := hybridDays(1500, 2, 28)
-	for _, tc := range []struct{ pattern, locale string }{
-		{"E|EE|EEEEE|uu", "fr_FR"},
-		{"EEE|EEEE|u", "es_ES"},
+	for _, tc := range []struct{ pattern, locale, api string }{
+		{"EEEEEE|uu", "fr_FR", "67.0"},
+		{"EEE|EEEE|u", "es_MX", "67.0"},
+		{"EEE|EEEE|u", "fr_FR", "61.0"},
 	} {
-		if got := hybridPatternLiterals(tc.pattern, days, tc.locale, true); got != tc.pattern {
+		if got := hybridPatternLiterals(tc.pattern, days, tc.locale, tc.api); got != tc.pattern {
 			t.Errorf("locale %s: got %q, want unchanged %q", tc.locale, got, tc.pattern)
 		}
 	}

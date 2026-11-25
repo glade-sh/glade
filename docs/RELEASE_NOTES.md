@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
 
 ## v0.3.15
 
