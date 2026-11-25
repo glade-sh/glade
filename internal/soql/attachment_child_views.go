@@ -107,7 +107,7 @@ func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
 			digest.WriteByte(0)
 		}
 		digest.size(len(definition.Relations))
-		derivedMatch := matchesAttachmentRelationship(org.Namespace, derivedChildRelationshipName(definition))
+		derivedMatch := matchesDerivedAttachmentRelationship(org.Namespace, definition)
 		for _, relation := range definition.Relations {
 			// Unmatched declarations affect candidate preference through
 			// the definition size. Their lookup targets cannot be read.
@@ -135,6 +135,23 @@ func matchesAttachmentRelationship(namespace, name string) bool {
 	return strings.Contains(name, "__") &&
 		(childRelationshipNameMatches(namespace, name, combinedAttachmentsRelationship) ||
 			childRelationshipNameMatches(namespace, name, notesAndAttachmentsRelationship))
+}
+
+func matchesDerivedAttachmentRelationship(namespace string, definition storage.ObjectDefinition) bool {
+	source := childRelationshipNameSource(definition)
+	if len(source) < len(combinedAttachmentsRelationship)-2 {
+		return false
+	}
+	// Normalization may remove spaces and pluralize the end of the label.
+	// A different initial letter can match only after stripping a namespace.
+	switch source[0] {
+	case 'C', 'c', 'N', 'n':
+	default:
+		if !strings.Contains(source, "_") {
+			return false
+		}
+	}
+	return matchesAttachmentRelationship(namespace, normalizeDerivedChildRelationshipName(source))
 }
 
 type attachmentRelationshipHash struct{ maphash.Hash }

@@ -206,7 +206,7 @@ func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
 		{
 			name: "plural label", wantBefore: childName, wantAfter: "CombinedAttachment",
 			prepare: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
-				def.PluralLabel, def.Relations[0].ChildRelationship = view, ""
+				def.PluralLabel, def.Relations[0].ChildRelationship = "Combined Attachments", ""
 			},
 			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { def.PluralLabel = "Other Children" },
 		},

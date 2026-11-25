@@ -3314,16 +3314,17 @@ func relationshipNameMatchRank(namespace, canonical, candidate string) (int, boo
 }
 
 func derivedChildRelationshipName(definition storage.ObjectDefinition) string {
-	if strings.TrimSpace(definition.PluralLabel) != "" {
-		return normalizeDerivedChildRelationshipName(definition.PluralLabel)
+	return normalizeDerivedChildRelationshipName(childRelationshipNameSource(definition))
+}
+
+func childRelationshipNameSource(definition storage.ObjectDefinition) string {
+	if name := strings.TrimSpace(definition.PluralLabel); name != "" {
+		return name
 	}
-	if strings.TrimSpace(definition.Label) != "" {
-		return normalizeDerivedChildRelationshipName(definition.Label)
+	if name := strings.TrimSpace(definition.Label); name != "" {
+		return name
 	}
-	if definition.APIName != "" {
-		return normalizeDerivedChildRelationshipName(definition.APIName)
-	}
-	return ""
+	return strings.TrimSpace(definition.APIName)
 }
 
 func normalizeDerivedChildRelationshipName(name string) string {
