@@ -27,7 +27,12 @@ func semaPaymentFlowView(model *semaTypeMemberView, api string, capturedRoute bo
 		if !ok || !members.platform {
 			continue
 		}
-		members.interfaces = append(append([]string(nil), members.interfaces...), typesys.PaymentFlowCapturedInterface(name, api))
+		edge := typesys.PaymentFlowCapturedInterface(name, api)
+		target, ok := model.lookup(normalizeName(edge))
+		if !ok || !target.platform {
+			continue
+		}
+		members.interfaces = append(append([]string(nil), members.interfaces...), edge)
 		result.current[key] = members
 	}
 	return &result

@@ -155,3 +155,35 @@ commercepayments.GatewayResponse gateway = response;`
 		})
 	}
 }
+
+func TestPaymentFlowContextRejectsProjectRequestInterface(t *testing.T) {
+	const body = `Double amount = 7.25;
+commercepayments.SaleRequest req = new commercepayments.SaleRequest(amount);
+commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.Sale);`
+	const mismatch = "Constructor not defined: [commercepayments.PaymentGatewayContext].<Constructor>(commercepayments.SaleRequest, commercepayments.RequestType)"
+
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			index := nativeBoundaryIndex(t, api, map[string]string{
+				"commercepayments": "public class commercepayments { public interface PaymentGatewayRequest {} }",
+				"Probe":            "@IsTest private class Probe { @IsTest static void run() { " + body + " } }",
+			}, nil)
+			if index.HasErrors() {
+				t.Fatalf("invalid project fixture: %v", index.Diagnostics)
+			}
+			for route, analysis := range map[string]sema.Result{
+				"anonymous": sema.AnalyzeAnonymous(index, body, api),
+				"istest":    sema.Analyze(index),
+			} {
+				t.Run(route, func(t *testing.T) {
+					for _, d := range analysis.Diagnostics {
+						if d.Severity == diagnostic.Error && d.Code == "GLADESEMA028" && strings.EqualFold(d.Message, mismatch) {
+							return
+						}
+					}
+					t.Fatalf("expected constructor to reject the project interface; got %v", analysis.Diagnostics)
+				})
+			}
+		})
+	}
+}
