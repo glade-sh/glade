@@ -2311,6 +2311,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				continue
 			}
 			obj.Fields[fieldName] = value
+			if obj.classInstance && field.Property && field.Getter != nil && !field.HasSetter {
+				obj.jsonDecodedPropertyBacking = true
+			}
 			vm.fillDuplicateFieldSlots(obj, owner, field, fieldName, value)
 			continue
 		}

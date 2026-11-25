@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Reading a computed get-only property on a JSON-deserialized Apex object evaluates its getter.
 
 ## v0.3.15
 

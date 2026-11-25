@@ -906,6 +906,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.platformHTTPDTO == after.platformHTTPDTO &&
 		before.projectClass == after.projectClass &&
 		before.classInstance == after.classInstance &&
+		before.jsonDecodedPropertyBacking == after.jsonDecodedPropertyBacking &&
 		before.lexicalClassLiteral == after.lexicalClassLiteral &&
 		before.dependencyClassLiteral == after.dependencyClassLiteral &&
 		before.exceptionAnonymousCallerLine == after.exceptionAnonymousCallerLine &&
