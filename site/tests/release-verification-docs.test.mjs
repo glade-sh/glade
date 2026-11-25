@@ -15,15 +15,12 @@ const securityGuide = await readFile(new URL('../docs-src/guide/security-trust.m
 function embeddedVerifier(source) {
   const match = source.match(/<!-- release-verifier:start -->\s*```(?:bash|sh)\n([\s\S]*?)```\s*<!-- release-verifier:end -->/)
   assert.ok(match, 'documentation should contain the marked release verifier')
-  return match[1].trim()
+  return match[1]
 }
 
-test('published release-verification instructions use the checked helper', async () => {
-  assert.equal(embeddedVerifier(securityPolicy), helper.trim())
-  const snippet = securityGuide.match(/^<<< (.+)\{sh\}$/m)
-  assert.ok(snippet, 'the site should render the checked verifier as a code snippet')
-  const guideURL = new URL('../docs-src/guide/security-trust.md', import.meta.url)
-  assert.equal(await readFile(new URL(snippet[1], guideURL), 'utf8'), helper)
+test('published release-verification instructions use the checked helper', () => {
+  assert.equal(embeddedVerifier(securityPolicy), helper)
+  assert.equal(embeddedVerifier(securityGuide), helper)
 })
 
 test('manual verification fails closed and never extracts or executes the archive', () => {
