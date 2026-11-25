@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/dml"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -1021,6 +1022,9 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 	}
 	sort.Strings(sharingModels)
 	stamp := strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount) + ":" + strings.Join(sharingModels, "\x00")
+	if capturedCaseLeadSharingDefaults(org) {
+		stamp = "case-lead-sharing-defaults:" + stamp
+	}
 	if len(org.StandardSpreadHiddenAccess) != 0 {
 		data, _ := json.Marshal(org.StandardSpreadHiddenAccess)
 		sum := sha256.Sum256(data)
@@ -1044,6 +1048,7 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 	if !ok {
 		return
 	}
+	scratchDefaults := capturedCaseLeadSharingDefaults(*org)
 	dirty := false
 	for objectName, object := range org.Objects {
 		if isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName) || object.Definition.APIName == "" {
@@ -1054,8 +1059,7 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 		if !exists {
 			continue
 		}
-		internal := capturedEntitySharingModel(object.Definition.SharingModel)
-		external := capturedEntityExternalSharingModel(object.Definition)
+		internal, external := capturedEntitySharingModels(object.Definition, scratchDefaults)
 		models := [...]struct{ field, key, value string }{
 			{"InternalSharingModel", virtualEntitySharingKeyPrefix + object.Definition.APIName, internal},
 			{"ExternalSharingModel", virtualEntityExternalSharingKeyPrefix + object.Definition.APIName, external},
@@ -1112,14 +1116,26 @@ func capturedEntitySharingModel(model string) string {
 	}
 }
 
-// PclModelsTest observes Private for Case and Lead with an explicit internal
-// ReadWriteTransfer model and omitted external metadata at APIs 62.0 and 67.0.
-func capturedEntityExternalSharingModel(definition storage.ObjectDefinition) string {
-	if (definition.APIName == "Case" || definition.APIName == "Lead") &&
-		definition.SharingModel == "ReadWriteTransfer" && definition.ExternalSharingModel == "" {
-		return "Private"
+func capturedCaseLeadSharingDefaults(org storage.OrgState) bool {
+	return slices.Contains(org.Features, project.StandardFieldEditionDeveloper) &&
+		slices.Contains(org.Features, "Communities") && slices.Contains(org.Features, "NetworksEnabled")
+}
+
+// PclModelsTest captures the omitted defaults and the private external model
+// for both public read/write models and Lead's public read model.
+func capturedEntitySharingModels(definition storage.ObjectDefinition, scratchDefaults bool) (string, string) {
+	internal := capturedEntitySharingModel(definition.SharingModel)
+	if definition.APIName != "Case" && definition.APIName != "Lead" {
+		return internal, ""
 	}
-	return ""
+	if scratchDefaults && definition.SharingModel == "" {
+		internal = "ReadWriteTransfer"
+	}
+	if definition.ExternalSharingModel == "" && (internal == "ReadWriteTransfer" ||
+		scratchDefaults && (internal == "ReadWrite" || internal == "Read" && definition.APIName == "Lead")) {
+		return internal, "Private"
+	}
+	return internal, ""
 }
 
 func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {
