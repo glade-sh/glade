@@ -31,9 +31,8 @@ func executeContentChildAttachedQuery(org storage.OrgState, parentDefinition sto
 // Both reference validation and preparation resolve the same captured view.
 func contentChildRelationshipForQuery(org storage.OrgState, parent storage.ObjectDefinition, child ChildQuery, cache *childRelationshipQueryCache) (string, storage.Relationship, bool) {
 	if attachmentViewName(parent, child) != "" {
-		// Validation and the stored-row path must see the same current
-		// declarations as attachment view planning.
-		return childRelationship(org, parent, child.Relationship)
+		resolved := childRelationshipResolutionCached(org, parent, child.Relationship, cache, true)
+		return resolved.childObjectName, resolved.relation, resolved.ok
 	}
 	if isContentChildAttachedQuery(parent, child) {
 		if name, relation, ok := loadedChildRelationship(org, parent, child.Relationship); ok {

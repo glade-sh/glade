@@ -108,6 +108,15 @@ func TestAttachmentChildViewPlanRechecksLoadedRelationshipsAfterLazyInstall(t *t
 	if got := planAttachmentView(org, parent, relationship, view, newChildRelationshipQueryCache(cache)); !got.loaded {
 		t.Fatal("expected to use the newly visible loaded edge")
 	}
+
+	// Independent lazy views can expose different objects at the same count
+	// without advancing the shared runtime generation.
+	neighbor := org.Clone()
+	delete(neighbor.Objects, "ViewChild__c")
+	neighbor.Objects["OtherChild__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "OtherChild__c"}}
+	if got := planAttachmentView(neighbor, parent, relationship, view, newChildRelationshipQueryCache(cache)); got.loaded {
+		t.Fatal("expected the platform fallback in the same-size neighbor view")
+	}
 }
 
 func TestAttachmentChildViewsFindCandidatesWithAndWithoutStorageIndex(t *testing.T) {

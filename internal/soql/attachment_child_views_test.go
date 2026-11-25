@@ -2,6 +2,7 @@ package soql
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -49,8 +50,15 @@ func TestAttachmentChildViewsReadCurrentRelationshipsWithWarmCache(t *testing.T)
 		{"CombinedAttachments", "CombinedAttachment"},
 		{"NotesAndAttachments", "NoteAndAttachment"},
 	}
-	for _, advanceGeneration := range []bool{true, false} {
-		t.Run(fmt.Sprintf("advance schema generation=%t", advanceGeneration), func(t *testing.T) {
+	for _, invalidation := range []struct {
+		name  string
+		apply func(*storage.OrgState)
+	}{
+		{"schema edit", (*storage.OrgState).ClearRuntimeSchemaStamp},
+		{"external org update", (*storage.OrgState).InvalidateRuntimeGeneration},
+		{"direct declaration edit", func(*storage.OrgState) {}},
+	} {
+		t.Run(invalidation.name, func(t *testing.T) {
 			org := attachmentChildViewFixture(t,
 				storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
 				storage.FixtureObject{Name: "ViewChild__c", Records: []storage.FixtureRecord{
@@ -92,15 +100,20 @@ func TestAttachmentChildViewsReadCurrentRelationshipsWithWarmCache(t *testing.T)
 			}
 			check(true)
 			org.Objects["ViewChild__c"] = child
-			if advanceGeneration {
-				org.ClearRuntimeSchemaStamp()
-			}
+			invalidation.apply(&org)
 			check(false)
 			org.Objects["ViewChild__c"] = declared
-			if advanceGeneration {
-				org.ClearRuntimeSchemaStamp()
-			}
+			invalidation.apply(&org)
 			check(true)
+
+			retargeted := declared
+			retargeted.Definition.Relations = slices.Clone(declared.Definition.Relations)
+			for i := range retargeted.Definition.Relations {
+				retargeted.Definition.Relations[i].ParentObjects = []string{"OtherParent__c"}
+			}
+			org.Objects["ViewChild__c"] = retargeted
+			invalidation.apply(&org)
+			check(false)
 		})
 	}
 }

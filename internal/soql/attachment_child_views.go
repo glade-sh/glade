@@ -1,6 +1,10 @@
 package soql
 
 import (
+	"maps"
+	"reflect"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -8,6 +12,105 @@ import (
 
 type attachmentViewPlanKey struct {
 	parent, view string
+}
+
+const (
+	combinedAttachmentsRelationship = "CombinedAttachments"
+	notesAndAttachmentsRelationship = "NotesAndAttachments"
+)
+
+type attachmentRelationshipSchema struct {
+	runtimeGeneration uint64
+	schemaGeneration  uint64
+	runtimeStamp      string
+	objectCount       int
+	spreadSource      string
+	spreadInventory   string
+	spreadFeatures    string
+	declarations      string
+}
+
+type attachmentRelationshipSchemaSnapshot struct {
+	objects   map[string]storage.ObjectState
+	namespace string
+	schema    attachmentRelationshipSchema
+}
+
+func (cache *childRelationshipQueryCache) currentAttachmentRelationshipSchema(org storage.OrgState) attachmentRelationshipSchema {
+	// The storage mutation boundary advances the schema and runtime
+	// generations. External org replacement can detach just the runtime one.
+	schema := attachmentRelationshipSchema{
+		runtimeGeneration: org.RuntimeGenerationID(),
+		schemaGeneration:  org.SchemaGeneration(),
+		runtimeStamp:      org.RuntimeSchemaStamp,
+		objectCount:       len(org.Objects),
+		spreadSource:      org.StandardSpread,
+	}
+	if org.StandardSpread != "" {
+		schema.spreadFeatures = strings.Join(org.Features, "\x00")
+	}
+	// Validation, planning and preparation can reuse the declaration scan
+	// within a query. The map identity distinguishes lazy views of equal size.
+	snapshot := cache.attachmentSchema
+	if snapshot != nil && snapshot.namespace == org.Namespace &&
+		reflect.ValueOf(snapshot.objects).Pointer() == reflect.ValueOf(org.Objects).Pointer() {
+		current := snapshot.schema
+		current.spreadInventory, current.declarations = "", ""
+		if current == schema {
+			return snapshot.schema
+		}
+	}
+	if org.StandardSpread != "" {
+		// Source-backed clones can share a generation yet install different
+		// catalog objects. Compare their loaded inventories even at equal size.
+		schema.spreadInventory = strings.Join(slices.Sorted(maps.Keys(org.Objects)), "\x00")
+	}
+	schema.declarations = attachmentRelationshipDeclarations(org)
+	cache.attachmentSchema = &attachmentRelationshipSchemaSnapshot{objects: org.Objects, namespace: org.Namespace, schema: schema}
+	return schema
+}
+
+// ExecuteWithCache also accepts org values whose caller edits declarations
+// directly. Compare named overrides using the same name rules as the resolver.
+// Derived names and catalog changes follow the storage schema generation.
+func attachmentRelationshipDeclarations(org storage.OrgState) string {
+	var objects []string
+	for name, object := range org.Objects {
+		definition := object.Definition
+		var edges strings.Builder
+		for _, relation := range definition.Relations {
+			declared := relation.ChildRelationship
+			if !isAttachmentRelationshipDeclaration(org.Namespace, declared) {
+				continue
+			}
+			edges.WriteString(declared)
+			edges.WriteByte(0)
+			edges.WriteString(relation.Field)
+			edges.WriteByte(0)
+			for _, parent := range relation.ParentObjects {
+				edges.WriteString(parent)
+				edges.WriteByte(0)
+			}
+			edges.WriteByte(0)
+		}
+		if edges.Len() != 0 {
+			// Resolution prefers the richer definition when matching edges tie.
+			objects = append(objects, strings.Join([]string{
+				name, definition.APIName, strconv.Itoa(len(definition.Fields) + len(definition.Relations)), edges.String(),
+			}, "\x00"))
+		}
+	}
+	slices.Sort(objects)
+	return strings.Join(objects, "\x00")
+}
+
+func isAttachmentRelationshipDeclaration(namespace, declared string) bool {
+	if len(declared) == len(combinedAttachmentsRelationship) {
+		return strings.EqualFold(declared, combinedAttachmentsRelationship) || strings.EqualFold(declared, notesAndAttachmentsRelationship)
+	}
+	// A longer spelling can match through a namespace token or __r suffix.
+	return len(declared) > len(combinedAttachmentsRelationship) && strings.Contains(declared, "__") &&
+		(childRelationshipNameMatches(namespace, declared, combinedAttachmentsRelationship) || childRelationshipNameMatches(namespace, declared, notesAndAttachmentsRelationship))
 }
 
 type attachmentViewPlan struct {
@@ -157,11 +260,8 @@ func planAttachmentView(org storage.OrgState, definition storage.ObjectDefinitio
 			return plan
 		}
 	}
-	// The execution cache can outlive the declarations and cannot identify
-	// which objects a validation-only lazy schema view materialized. Resolve
-	// against the projection's schema once per query.
-	_, _, loaded := loadedChildRelationship(org, definition, relationship)
-	plan := &attachmentViewPlan{loaded: loaded}
+	resolution := childRelationshipResolutionCached(org, definition, relationship, cache, true)
+	plan := &attachmentViewPlan{loaded: resolution.loaded}
 	if !plan.loaded {
 		if name, ok := storage.ResolveObjectName(org, view); ok && len(org.Objects[name].Records) > 0 {
 			plan.importedObject = name
