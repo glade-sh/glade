@@ -18,4 +18,7 @@ in cases.tsv. Each selected case has a row at all three APIs in both routes.
 
 NEIGHBOR PROBES
 
-SOQL seeding and aggregation for CombinedAttachments and NotesAndAttachments, mismatch errors for a child of the wrong type, other standard edges, and namespaced parents remain outside the assertions.
+The seeded attachment view rows use Id-only subqueries and assert child counts,
+child types, and serialized keys. Child identities and ordering, other mismatched
+child payloads, other standard edges, and namespaced parents remain outside the
+assertions.

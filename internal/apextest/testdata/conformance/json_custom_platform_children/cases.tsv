@@ -13,6 +13,13 @@ Attachments_lax_serialized	probe.apex
 Attachments_soql	probe.apex
 Attachments_strict	probe.apex
 Attachments_strict_serialized	probe.apex
+CombinedAttachments_generic	probe.apex
+CombinedAttachments_generic_serialized	probe.apex
+CombinedAttachments_lax	probe.apex
+CombinedAttachments_lax_serialized	probe.apex
+CombinedAttachments_soql	probe.apex
+CombinedAttachments_strict	probe.apex
+CombinedAttachments_strict_serialized	probe.apex
 ContentDocumentLinks_generic	probe.apex
 ContentDocumentLinks_generic_serialized	probe.apex
 ContentDocumentLinks_lax	probe.apex
@@ -20,6 +27,13 @@ ContentDocumentLinks_lax_serialized	probe.apex
 ContentDocumentLinks_soql	probe.apex
 ContentDocumentLinks_strict	probe.apex
 ContentDocumentLinks_strict_serialized	probe.apex
+NotesAndAttachments_generic	probe.apex
+NotesAndAttachments_generic_serialized	probe.apex
+NotesAndAttachments_lax	probe.apex
+NotesAndAttachments_lax_serialized	probe.apex
+NotesAndAttachments_soql	probe.apex
+NotesAndAttachments_strict	probe.apex
+NotesAndAttachments_strict_serialized	probe.apex
 Notes_generic	probe.apex
 Notes_generic_serialized	probe.apex
 Notes_lax	probe.apex

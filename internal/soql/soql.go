@@ -2578,6 +2578,9 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if records, handled, err := executeContentChildAttachedQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
 		return records, err
 	}
+	if records, handled, err := executeAttachmentViewQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
+		return records, err
+	}
 	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context)
 	if err != nil {
 		return nil, err
