@@ -6,4 +6,4 @@ Both scratch orgs were created with a 30-day duration. Rows are in `internal/ape
 
 A third fresh 30-day org rejected the named class at deployment metadata APIs 63.0 through 66.0 with the same first diagnostic. As above, the wrapper retried an empty deployment and exited with an infrastructure error; no class API was queried. A fourth fresh 30-day org contained a deployed synthetic custom object. Anonymous Apex and a named test using it passed at APIs 62.0, 67.0 and 68.0. Both orgs were deleted and deletion verified.
 
-The named missing-object rows expose a difference, not a complete-project absence proof: Glade currently infers referenced object shapes when local object metadata is empty, because a local project can omit schema that exists in its org. The test pins this existing open-schema behavior separately; it does not claim parity with Salesforce's rejection. Resolving the difference requires a reliable way to establish schema completeness or a coordinated contract decision.
+The replay checks that semantic analysis and the test runner reject the named missing-object class with the recorded deployment diagnostic.

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- At Apex APIs 62.0 through 68.0, a named test that declares an uninitialized local of an absent custom object type now reports the Salesforce compile error.
 
 ## v0.3.15
 

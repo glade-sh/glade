@@ -1562,6 +1562,21 @@ func semaNormalizeMemberTypes(model *semaTypeMemberView, owner string, member ty
 	return member
 }
 
+// A bare local declaration in a named test does not establish the identity
+// of a custom object. Open-schema inference may have added a placeholder
+// for that very declaration.
+func (a *Analyzer) rejectsUninitializedTestSObjectLocal(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, model *semaTypeMemberView) bool {
+	name := inst.Type
+	if inst.Expr.Kind != "" || !semaHasAPISuffixFold(name, "__c") || strings.Contains(name, ".") ||
+		!typ.IsTest || !member.IsTest || !semaNamedApexSourceType(typ) ||
+		semaIsExternalManagedPackageAPIName(a.namespace, name) ||
+		!(apexversion.Range{Since: 62, Until: 69}).Allows(typ.EffectiveAPIVersion) {
+		return false
+	}
+	members, ok := model.lookupName(resolveNestedTypeReference(model, typ.Name, name))
+	return ok && members.sobject && members.partialSObject && !semaSObjectIdentityEstablished(a, name, model)
+}
+
 func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope *irSemaScope, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for instructionIndex, inst := range instructions {
@@ -1582,6 +1597,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			if message, hidden := a.nestedTypeVisibilityMessage(model, typ, inst.Type); hidden {
 				diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))))
 			}
+			rejectedSObject := a.rejectsUninitializedTestSObjectLocal(typ, member, inst, model)
 			references := extractTypeNames(inst.Type)
 			for _, ref := range references {
 				resolved := resolveNestedTypeReference(model, typ.Name, ref)
@@ -1591,7 +1607,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 				}
 				if message, code, rejected := a.dependencySourceTypeRejection(model, ref); rejected {
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: code, Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))})
-				} else if (!strings.Contains(ref, ".") && !a.hasKnown(resolved)) || !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) || a.qualifiedLifecycleLocalTypeRejected(typ.Name, ref, model) {
+				} else if rejectedSObject || (!strings.Contains(ref, ".") && !a.hasKnown(resolved)) || !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) || a.qualifiedLifecycleLocalTypeRejected(typ.Name, ref, model) {
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA006", Message: "Invalid type: " + ref, NativeMessage: "Invalid type: " + ref, File: typ.File, Range: semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))})
 				}
 			}
