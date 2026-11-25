@@ -9,6 +9,7 @@
 - Add Salesforce conformance coverage for inactive Visualforce Sites in anonymous Apex and tests.
 - Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery.
 - Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
+- A test request or daemon warm-up reads each recently changed source once, after its last validation check. A same-size edit inside one timestamp tick during the request fails it with a source snapshot mismatch.
 - Preserve dependency and shim source views when reloading the frontend cache or rebuilding it after a source edit.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 

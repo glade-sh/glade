@@ -33,6 +33,7 @@ func WarmRuntimeWithBuildArtifacts(ctx context.Context, index typesys.Index, art
 		return err
 	}
 	sources := newSourceCache()
+	sources.requestDigests.deferRecentReads()
 	if err := sources.seedBuildArtifacts(index, artifacts); err != nil {
 		return err
 	}
@@ -47,8 +48,11 @@ func WarmRuntimeWithBuildArtifacts(ctx context.Context, index typesys.Index, art
 	if err := semanticCompileErrorWithHooks(ctx, index, artifacts, sources, generation, semanticGateHooks{}, true); err != nil {
 		return err
 	}
-	_, _, err = runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, &generation, cloneRuntimeCacheEntryChecked, true)
-	return err
+	key, _, err := runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, &generation, cloneRuntimeCacheEntryChecked, true)
+	if err != nil {
+		return err
+	}
+	return sealRequestSources(sources, key)
 }
 
 // InvalidateRuntimeCaches drops compiled runtime and test caches. Call after

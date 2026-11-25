@@ -988,8 +988,16 @@ func TestRunCasesContextArtifactSnapshotRejectsMutationBeforeWarmRuntimeReuse(t 
 	if problem := firstRunProblem(mutated); !strings.Contains(problem, "source snapshot mismatch") {
 		t.Fatalf("mutated problem = %q", problem)
 	}
+	// One read after the run's last validation boundary decides it, so the
+	// warm runtime is looked up before the mismatch is known. The run executes
+	// nothing, and the rejected generation must not keep that runtime.
+	ResetPerfCounters()
+	again := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, PerfCounters: true, BuildArtifacts: &artifacts}, cases)
+	if summary := again.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("repeated mutated summary = %#v problem=%q", summary, firstRunProblem(again))
+	}
 	if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 0 || phases.DiskCacheHits != 0 {
-		t.Fatalf("mutated run reused runtime cache: %#v", phases)
+		t.Fatalf("rejected generation kept its warm runtime: %#v", phases)
 	}
 }
 

@@ -2,11 +2,13 @@ package apextest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -138,10 +141,9 @@ func (f *requestReadFixture) assertReadOnce(t *testing.T, reads map[string]int) 
 }
 
 // TestWarmRequestReadsAndHashesEachSourceOnce proves one daemon-shaped request
-// reads and hashes every captured source and companion metadata file exactly
-// once to compute its digest. Later boundaries can compare current bytes
-// without hashing them again. Files are rewritten with identical bytes so
-// no boundary may shortcut on a trusted old stamp.
+// reads every captured source and companion metadata file exactly once, at
+// any validation boundary or at the seal. Files are rewritten with identical
+// bytes so no boundary may shortcut on a trusted old stamp.
 func TestWarmRequestReadsAndHashesEachSourceOnce(t *testing.T) {
 	t.Cleanup(InvalidateRuntimeCaches)
 	t.Cleanup(resetFileDigestTrust)
@@ -301,6 +303,195 @@ func TestWarmRequestRejectsSameStampEditBetweenValidations(t *testing.T) {
 	if run.Summary().CompileErrors == 0 ||
 		!strings.Contains(testreportRunDetails(run), "source snapshot mismatch for "+filepath.ToSlash(target)) {
 		t.Fatalf("request accepted a same-stamp edit: %s", testreportRunDetails(run))
+	}
+}
+
+// holdRequestStamp pins the file digest clock to path's stamp, so the file
+// stays recent, and makes request validation see that one stamp on both sides
+// of any later write: a same-size write inside one coarse timestamp tick.
+func holdRequestStamp(t *testing.T, path string) {
+	t.Helper()
+	stamp, ok := filestamp.Stat(path)
+	if !ok {
+		t.Fatal("missing source stamp")
+	}
+	t.Cleanup(setFileDigestClockForTesting(func() time.Time {
+		return time.Unix(0, max(stamp.Mtime, stamp.Ctime))
+	}))
+	stat := func(p string) (filestamp.Stamp, bool) {
+		if p == path {
+			return stamp, true
+		}
+		return filestamp.Stat(p)
+	}
+	previous := requestDigestStatHook.Swap(&stat)
+	t.Cleanup(func() { requestDigestStatHook.Store(previous) })
+}
+
+// validationStages runs once and returns the distinct validation stages the
+// run announced, in order.
+func validationStages(t *testing.T, run func()) []string {
+	t.Helper()
+	var mu sync.Mutex
+	var stages []string
+	seen := map[string]bool{}
+	stop := setSnapshotValidationHookForTesting(func(stage string) {
+		mu.Lock()
+		if !seen[stage] {
+			seen[stage] = true
+			stages = append(stages, stage)
+		}
+		mu.Unlock()
+	})
+	run()
+	stop()
+	return stages
+}
+
+// editAtStage rewrites path with content the first time a run announces
+// stage, and reports whether it did.
+func editAtStage(t *testing.T, stage, path, content string) (edited func() bool) {
+	t.Helper()
+	var once sync.Once
+	var done atomic.Bool
+	t.Cleanup(setSnapshotValidationHookForTesting(func(current string) {
+		if current != stage {
+			return
+		}
+		once.Do(func() {
+			if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+				t.Error(err)
+			}
+			done.Store(true)
+		})
+	}))
+	return done.Load
+}
+
+// TestRequestRejectsSameStampEditAtEveryValidationStage saves a same-size,
+// same-stamp edit at each validation stage a request announces, in turn. The
+// request must fail on every one, and must still read the file only once.
+func TestRequestRejectsSameStampEditAtEveryValidationStage(t *testing.T) {
+	skipWithoutStamps(t)
+	for _, disk := range []bool{false, true} {
+		name := "memory"
+		if disk {
+			name = "disk"
+		}
+		t.Run(name, func(t *testing.T) {
+			if disk {
+				t.Cleanup(EnableDiskCacheForTesting())
+			}
+			t.Cleanup(InvalidateRuntimeCaches)
+			t.Cleanup(resetFileDigestTrust)
+			resetFileDigestTrust()
+			f := writeRequestReadFixture(t, 4)
+			f.options.NoDiskCache = !disk
+			target := f.sources[0]
+			original := f.contents[target]
+			edited := strings.Replace(original, "return 0;", "return 7;", 1)
+			holdRequestStamp(t, target)
+			request := func() testreport.Run {
+				return RunCasesContext(context.Background(), f.index, f.options, f.cases)
+			}
+			// Cold, warm in memory, and (with the disk cache) warm on disk only.
+			shapes := []func(){func() {
+				InvalidateRuntimeCaches()
+				if disk {
+					if err := startupcache.Clear(f.root, startupcache.SubdirTest); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}, func() {}}
+			if disk {
+				shapes = append(shapes, func() {
+					if prime := request(); prime.Summary().Passed != 1 {
+						t.Fatalf("disk prime: %s", testreportRunDetails(prime))
+					}
+					InvalidateRuntimeCaches()
+				})
+			}
+			probed := map[string]bool{}
+			for _, prepare := range shapes {
+				prepare()
+				var stages []string
+				stages = validationStages(t, func() {
+					if prime := request(); prime.Summary().Passed != 1 {
+						t.Fatalf("prime run: %s", testreportRunDetails(prime))
+					}
+				})
+				for _, stage := range stages {
+					prepare()
+					didEdit := editAtStage(t, stage, target, edited)
+					reads, stop := f.countReads(t)
+					run := request()
+					stop()
+					if !didEdit() {
+						// The warm request before it took another path.
+						if err := os.WriteFile(target, []byte(original), 0o644); err != nil {
+							t.Fatal(err)
+						}
+						continue
+					}
+					if run.Summary().CompileErrors == 0 ||
+						!strings.Contains(testreportRunDetails(run), "source snapshot mismatch for "+filepath.ToSlash(target)) {
+						t.Fatalf("request accepted a same-stamp edit at %s: %s", stage, testreportRunDetails(run))
+					}
+					if reads[target] != 1 {
+						t.Fatalf("request read the edited source %d times at %s, want 1", reads[target], stage)
+					}
+					probed[stage] = true
+					if err := os.WriteFile(target, []byte(original), 0o644); err != nil {
+						t.Fatal(err)
+					}
+					if restored := request(); restored.Summary().Passed != 1 {
+						t.Fatalf("restored source after %s: %s", stage, testreportRunDetails(restored))
+					}
+				}
+			}
+			want := []string{"semantic_after_initial_validation", "semantic_before_cache_return", "runtime_after_initial_validation",
+				"runtime_before_memory_cache_publication", "runtime_before_memory_cache_return",
+				"setup_before_cache_publication", "setup_before_cache_return", "test_before_cache_publication", "test_before_cache_return"}
+			if disk {
+				want = append(want, "runtime_before_disk_cache_publication", "runtime_before_disk_cache_return")
+			}
+			for _, stage := range want {
+				if !probed[stage] {
+					t.Errorf("no request was edited and rejected at validation stage %s", stage)
+				}
+			}
+		})
+	}
+}
+
+// TestWarmRuntimeRejectsSameStampEditBetweenValidations is the warm-up form:
+// the warm-up must not publish a generation whose source changed under an
+// unchanged stamp after its first validation.
+func TestWarmRuntimeRejectsSameStampEditBetweenValidations(t *testing.T) {
+	skipWithoutStamps(t)
+	t.Cleanup(EnableDiskCacheForTesting())
+	t.Cleanup(InvalidateRuntimeCaches)
+	t.Cleanup(resetFileDigestTrust)
+	resetFileDigestTrust()
+	f := writeRequestReadFixture(t, 4)
+	target := f.sources[0]
+	holdRequestStamp(t, target)
+	didEdit := editAtStage(t, "runtime_after_initial_validation", target, strings.Replace(f.contents[target], "return 0;", "return 7;", 1))
+	reads, stop := f.countReads(t)
+	err := WarmRuntimeWithBuildArtifacts(context.Background(), f.index, f.options.BuildArtifacts)
+	stop()
+	if !didEdit() {
+		t.Fatal("warm-up never reached runtime_after_initial_validation")
+	}
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) || mismatch.File != target {
+		t.Fatalf("warm-up accepted a same-stamp edit: %v", err)
+	}
+	if reads[target] != 1 {
+		t.Fatalf("warm-up read the edited source %d times, want 1", reads[target])
+	}
+	if stats := semanticResults.Stats(); stats.Entries != 0 {
+		t.Fatalf("rejected warm-up kept its semantic result: %#v", stats)
 	}
 }
 

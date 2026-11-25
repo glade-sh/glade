@@ -53,10 +53,10 @@ func writeDaemonRequestFixture(t *testing.T, serviceCount int) (root string, wat
 }
 
 // TestDaemonRunRequestReadsEachSourceOnce proves one daemon run request reads
-// and hashes every captured source and companion metadata file exactly once,
-// reusing that digest at every later validation boundary of the same request.
-// Files are rewritten with identical bytes first, so each is racily clean and
-// the request right after a save is the measured shape.
+// and hashes every captured source and companion metadata file exactly once
+// for all of its validation boundaries. Files are rewritten with identical
+// bytes first, so each is racily clean and the request right after a save is
+// the measured shape.
 func TestDaemonRunRequestReadsEachSourceOnce(t *testing.T) {
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	root, watchPaths, rewrite := writeDaemonRequestFixture(t, 4)
@@ -103,6 +103,41 @@ func TestDaemonRunRequestReadsEachSourceOnce(t *testing.T) {
 		}
 		if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 || !summary.OK() {
 			t.Fatalf("warm run summary = %#v, want the prime run's %#v", summary, primeSummary)
+		}
+	}
+}
+
+// TestDaemonWarmReadsEachSourceOnce is the warm-up form: warming a generation
+// whose files are all racily clean reads each of them once.
+func TestDaemonWarmReadsEachSourceOnce(t *testing.T) {
+	t.Cleanup(apextest.InvalidateRuntimeCaches)
+	root, watchPaths, rewrite := writeDaemonRequestFixture(t, 4)
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		apextest.InvalidateRuntimeCaches()
+		rewrite()
+		var mu sync.Mutex
+		reads := make(map[string]int, len(watchPaths))
+		stop := apextest.SetFileDigestReadHookForTesting(func(path string) {
+			mu.Lock()
+			reads[path]++
+			mu.Unlock()
+		})
+		err := d.Warm()
+		stop()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, path := range watchPaths {
+			if strings.HasSuffix(path, "sfdx-project.json") {
+				continue
+			}
+			if got := reads[path]; got != 1 {
+				t.Errorf("warm-up read %s %d times, want 1", filepath.Base(path), got)
+			}
 		}
 	}
 }

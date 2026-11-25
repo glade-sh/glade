@@ -2,8 +2,8 @@ package apextest
 
 import (
 	"crypto/sha256"
-	"io"
 	"os"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -53,9 +53,9 @@ func requestDigestStat(path string) (filestamp.Stamp, bool) {
 	return filestamp.Stat(path)
 }
 
-// SetFileDigestReadHookForTesting observes reads that compute a source digest.
-// Byte comparisons that confirm an existing digest do not compute one.
-// The returned function restores the previous hook.
+// SetFileDigestReadHookForTesting observes every physical read a source
+// digest validation performs. The returned function restores the previous
+// hook. Cross-package tests use it to prove per-request read counts.
 func SetFileDigestReadHookForTesting(hook func(path string)) func() {
 	var next *func(string)
 	if hook != nil {
@@ -144,21 +144,15 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 }
 
 // currentFileDigestStamped also reports the stat stamp proven unchanged
-// across the read, so a request memo can reuse the digest while the same
-// stamp is still on disk. stamped is false when the read failed or the file
-// could not be proven unchanged; such a digest must never be memoized.
+// across the read. stamped is false when the read failed or the file could
+// not be proven unchanged; such a digest must never be memoized.
 func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.Stamp, bool) {
-	digest, err, stamp, stamped, _ := readFileDigest(path, 0)
-	return digest, err, stamp, stamped
-}
-
-func readFileDigest(path string, remaining int64) ([sha256.Size]byte, error, filestamp.Stamp, bool, []byte) {
 	if trusted, stamp, ok := trustedCurrentFileDigestStamped(path); ok {
-		return trusted, nil, stamp, true, nil
+		return trusted, nil, stamp, true
 	}
 	file, err := os.Open(path) // #nosec G304 -- indexed source or its fixed metadata companion.
 	if err != nil {
-		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false, nil
+		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
 	}
 	defer file.Close()
 	if hook := fileDigestReadHook.Load(); hook != nil {
@@ -166,27 +160,17 @@ func readFileDigest(path string, remaining int64) ([sha256.Size]byte, error, fil
 	}
 	hashedAt := fileDigestNow()
 	before, beforeOK := filestamp.Fstat(file)
-	old := beforeOK && before.OlderThan(hashedAt, fileDigestTrustAge)
-	var digest [sha256.Size]byte
-	var content []byte
-	if remaining > 0 && !old && beforeOK && before.Size >= 0 && before.Size <= min(remaining, recentVisualforceFileLimit) {
-		content = make([]byte, int(before.Size))
-		if _, err := io.ReadFull(file, content); err != nil {
-			return digest, err, filestamp.Stamp{}, false, nil
-		}
-		digest = sha256.Sum256(content)
-	} else {
-		hash := sha256.New()
-		if _, err := filestamp.CopyPooled(hash, file); err != nil {
-			return digest, err, filestamp.Stamp{}, false, nil
-		}
-		hash.Sum(digest[:0])
+	hash := sha256.New()
+	if _, err := filestamp.CopyPooled(hash, file); err != nil {
+		return [sha256.Size]byte{}, err, filestamp.Stamp{}, false
 	}
+	var digest [sha256.Size]byte
+	hash.Sum(digest[:0])
 	after, afterOK := filestamp.Fstat(file)
 	if !beforeOK || !afterOK || before != after {
-		return digest, nil, filestamp.Stamp{}, false, nil
+		return digest, nil, filestamp.Stamp{}, false
 	}
-	if old {
+	if after.OlderThan(hashedAt, fileDigestTrustAge) {
 		fileDigestTrustMu.Lock()
 		if len(fileDigestTrust) >= fileDigestTrustMaxEntries {
 			clear(fileDigestTrust)
@@ -194,69 +178,159 @@ func readFileDigest(path string, remaining int64) ([sha256.Size]byte, error, fil
 		fileDigestTrust[path] = trustedFileDigest{stamp: after, digest: digest}
 		fileDigestTrustMu.Unlock()
 	}
-	return digest, nil, after, true, content
+	return digest, nil, after, true
 }
 
-// requestFileDigests validates old inputs by stamp and recent inputs by byte
-// equality. Apex bodies can reuse the bytes already captured for compilation.
-// Extra copies for other inputs are bounded by the snapshot budget.
+// requestFileDigests is one request's view of the files behind its captured
+// generation. Every validation boundary of the request asks it for a file's
+// current digest, and it reads each file at most once.
+//
+// A file whose stamp is safely older than the read that hashed it is proven
+// by that stamp: any later write moves the stamp. The read happens at the
+// first boundary and later boundaries compare the stamp.
+//
+// A recent file is racy: a same-size write inside one timestamp tick can keep
+// the full stamp, so no stamp comparison proves its bytes. A request that
+// seals accepts such a file on the digest its generation captured, without
+// reading, at every boundary, and seal reads it once after the last boundary.
+// A write that lands between any two boundaries is therefore still in front
+// of the one read that decides the request, whether or not it moved the
+// stamp. A request that does not seal reads a recent file at every boundary.
 type requestFileDigests struct {
-	mu          sync.Mutex
-	entries     map[string]requestFileDigestEntry
-	sources     map[string]runtimeSourceInput
-	recentBytes int64
+	mu      sync.Mutex
+	entries map[string]requestFileDigestEntry
+	// seals is set before the first boundary by a request that calls seal
+	// before it reports a result.
+	seals  bool
+	sealed bool
 }
 
 type requestFileDigestEntry struct {
-	stamp          filestamp.Stamp
-	digest         [sha256.Size]byte
-	recent         []byte
-	capturedSource bool
+	stamp  filestamp.Stamp
+	digest [sha256.Size]byte
+	state  requestFileDigestState
+}
+
+type requestFileDigestState uint8
+
+const (
+	// requestDigestProven: digest was read under stamp, and stamp was old
+	// enough at that read for a later match to prove the same bytes.
+	requestDigestProven requestFileDigestState = iota
+	// requestDigestPending: digest is the captured digest of a recent file,
+	// accepted without a read. seal reads the file.
+	requestDigestPending
+	// requestDigestSealed: seal read digest under stamp. The request is
+	// decided; a later match serves only what the request publishes.
+	requestDigestSealed
+)
+
+// deferRecentReads starts a validation phase that ends in seal. Call it
+// before the phase's first boundary. Digests an earlier phase sealed are
+// dropped: they decided that phase, not this one.
+func (r *requestFileDigests) deferRecentReads() {
+	if r == nil {
+		return
+	}
+	r.mu.Lock()
+	r.seals, r.sealed = true, false
+	for path, entry := range r.entries {
+		if entry.state == requestDigestSealed {
+			delete(r.entries, path)
+		}
+	}
+	r.mu.Unlock()
 }
 
 // digest returns the SHA-256 of path's current content.
 func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
+	return r.resolve(path, nil)
+}
+
+// current returns the SHA-256 of path's current content for a caller that
+// will compare it with captured, the digest its generation holds for path.
+// In a request that seals, a recent file returns captured unread and is
+// queued for seal.
+func (r *requestFileDigests) current(path string, captured [sha256.Size]byte) ([sha256.Size]byte, error) {
+	return r.resolve(path, &captured)
+}
+
+func (r *requestFileDigests) resolve(path string, captured *[sha256.Size]byte) ([sha256.Size]byte, error) {
 	if r == nil {
 		return currentFileDigest(path)
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	now := fileDigestNow()
+	stamp, statOK := requestDigestStat(path)
 	entry, hit := r.entries[path]
-	source, captured := r.sources[path]
-	if hit {
-		switch {
-		case entry.capturedSource:
-			if captured && source.digest == entry.digest && matchesRecentFile(path, source.raw) {
-				return entry.digest, nil
-			}
-		case entry.recent != nil:
-			if matchesRecentFile(path, entry.recent) {
-				return entry.digest, nil
-			}
-		default:
-			if stamp, ok := requestDigestStat(path); ok && entry.stamp == stamp {
-				return entry.digest, nil
-			}
+	if hit && statOK && entry.stamp == stamp {
+		if entry.state != requestDigestPending || (captured != nil && *captured == entry.digest) {
+			return entry.digest, nil
 		}
 	}
-	generation := fileDigestNow()
-	remaining := recentVisualforceBudget - r.recentBytes + int64(len(entry.recent))
-	if captured {
-		remaining = 0
+	// A stamp this request has not seen for path is a possible write: read
+	// now, so a changed file fails at this boundary. Only a file first seen
+	// recent, with a captured digest to stand in, waits for seal.
+	if !hit && statOK && captured != nil && r.seals && !r.sealed && !stamp.OlderThan(now, fileDigestTrustAge) {
+		r.store(path, requestFileDigestEntry{stamp: stamp, digest: *captured, state: requestDigestPending})
+		return *captured, nil
 	}
-	digest, err, stamp, stamped, content := readFileDigest(path, remaining)
-	if stamped && err == nil {
-		old := stamp.OlderThan(generation, fileDigestTrustAge)
-		useSource := !old && captured && source.digest == digest
-		if old || useSource || content != nil {
-			if r.entries == nil {
-				r.entries = make(map[string]requestFileDigestEntry)
-			}
-			r.entries[path] = requestFileDigestEntry{
-				stamp: stamp, digest: digest, recent: content, capturedSource: useSource,
-			}
-			r.recentBytes += int64(len(content) - len(entry.recent))
+	digest, err, readStamp, stamped := currentFileDigestStamped(path)
+	if err != nil || !stamped {
+		return digest, err
+	}
+	switch {
+	case readStamp.OlderThan(now, fileDigestTrustAge):
+		r.store(path, requestFileDigestEntry{stamp: readStamp, digest: digest})
+	case captured != nil && digest == *captured && r.seals && !r.sealed:
+		// Rewritten with the captured bytes. The new stamp is recent, so
+		// this read proves nothing about later boundaries.
+		r.store(path, requestFileDigestEntry{stamp: readStamp, digest: digest, state: requestDigestPending})
+	}
+	return digest, nil
+}
+
+func (r *requestFileDigests) store(path string, entry requestFileDigestEntry) {
+	if r.entries == nil {
+		r.entries = make(map[string]requestFileDigestEntry)
+	}
+	r.entries[path] = entry
+}
+
+// seal reads every file the request accepted on its captured digest and
+// reports the first whose bytes differ. Call it after the request's last
+// validation boundary and before the request reports a result. Boundaries
+// that run after seal belong to work the request publishes later; they reuse
+// a sealed digest while its stamp still matches.
+func (r *requestFileDigests) seal() error {
+	if r == nil {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	pending := make([]string, 0, len(r.entries))
+	for path, entry := range r.entries {
+		if entry.state == requestDigestPending {
+			pending = append(pending, path)
 		}
 	}
-	return digest, err
+	sort.Strings(pending)
+	for _, path := range pending {
+		captured := r.entries[path].digest
+		digest, err, stamp, stamped := currentFileDigestStamped(path)
+		if err != nil {
+			return sourceSnapshotMismatch(path, captured, nil, err)
+		}
+		if digest != captured {
+			return sourceSnapshotMismatch(path, captured, &digest, nil)
+		}
+		if stamped {
+			r.entries[path] = requestFileDigestEntry{stamp: stamp, digest: digest, state: requestDigestSealed}
+		} else {
+			delete(r.entries, path)
+		}
+	}
+	r.sealed = true
+	return nil
 }

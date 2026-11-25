@@ -409,6 +409,8 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // beside the semantic gate panicked.
 func prepareRunSources(index typesys.Index, opts Options, runState *runExecution) (*sourceCache, runtimeGeneration, *typesys.SourceDigestSet, error) {
 	sources := newSourceCache()
+	// The run seals before it executes a test: see sealRequestSources.
+	sources.requestDigests.deferRecentReads()
 	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
 	// A matching snapshot selects the already-loaded project graph for runtime
@@ -505,6 +507,11 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		sources, generation = fresh, freshGeneration
 	}
 	if compileErr != nil {
+		// The diagnostics describe the captured generation. Prove it is the
+		// one on disk before reporting them.
+		if err := sealRequestSources(sources, generation.key); err != nil {
+			return compileErrorRun(cases, err, started, opts)
+		}
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
 	runtimeKey, runtime, runtimeErr := result.key, result.runtime, result.err
@@ -542,6 +549,11 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors, testSourceErr := compileTestsCached(index, opts.SourceDigests, runtimeKey, cases, sources)
 	if testSourceErr != nil {
 		return compileErrorRun(cases, testSourceErr, started, opts)
+	}
+	// Every validation boundary of the run is behind it. Decide the run on
+	// one read of each file those boundaries accepted unread.
+	if err := sealRequestSources(sources, runtimeKey); err != nil {
+		return compileErrorRun(cases, err, started, opts)
 	}
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.testCompileNS, time.Since(testCompileStarted))
@@ -1005,6 +1017,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 		if identityErr != nil {
 			return nil, identityErr
 		}
+		sources.rememberSemanticResult(identity)
 		cachePath := semanticResultCachePath(identity)
 		if cacheSlot != "" {
 			cachePath = strings.TrimSuffix(cachePath, ".json") + "-" + cacheSlot + ".json"
@@ -1174,7 +1187,7 @@ func validateBuildArtifacts(index typesys.Index, artifacts *typesys.BuildArtifac
 // inputs against an artifact snapshot. It is intentionally separate from the
 // compiler source cache: callers use it immediately before cache returns and
 // publications, while compilation consumes the captured arena bytes. request
-// avoids repeat hashing when the current bytes still match.
+// keeps the physical reads of one request's boundaries to one per file.
 func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.BuildArtifacts, request *requestFileDigests) error {
 	if artifacts == nil {
 		return nil
@@ -1195,7 +1208,7 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		actual, err := request.digest(file)
+		actual, err := request.current(file, expected)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
@@ -1226,7 +1239,13 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 }
 
 func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput, request *requestFileDigests) error {
-	actual, err := request.digest(path)
+	var actual [sha256.Size]byte
+	var err error
+	if expected.Present {
+		actual, err = request.current(path, expected.Digest)
+	} else {
+		actual, err = request.digest(path)
+	}
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
@@ -1581,14 +1600,31 @@ func (generation runtimeMetadataGeneration) visualforceDigestLookup() *runtimeDi
 	}
 }
 
+// apexDigestLookup serves the startup cache the request's view of this
+// generation's Apex sources and their companion metadata. Visualforce inputs
+// are excluded: their digests have their own trusted and persisted lookup.
 func (generation runtimeGeneration) apexDigestLookup(request *requestFileDigests) startupcache.CurrentDigests {
+	captured := func(path string) ([sha256.Size]byte, bool) {
+		if source, ok := generation.source.inputs[path]; ok {
+			return source.digest, true
+		}
+		if generation.metadata.visualforceInputs[path] {
+			return [sha256.Size]byte{}, false
+		}
+		input := generation.metadata.inputs[path]
+		return input.Digest, input.Present
+	}
 	return startupcache.CurrentDigests{
 		Eligible: func(path string) bool {
-			_, source := generation.source.inputs[path]
-			return source || generation.metadata.inputs[path].Present
+			_, ok := captured(path)
+			return ok
 		},
 		Lookup: func(path string) ([sha256.Size]byte, bool) {
-			digest, err := request.digest(path)
+			expected, ok := captured(path)
+			if !ok {
+				return [sha256.Size]byte{}, false
+			}
+			digest, err := request.current(path, expected)
 			return digest, err == nil
 		},
 	}
@@ -1910,7 +1946,7 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		actual, err := request.digest(file)
+		actual, err := request.current(file, expected)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
@@ -1996,9 +2032,6 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
-	sources.requestDigests.mu.Lock()
-	sources.requestDigests.sources = source.inputs
-	sources.requestDigests.mu.Unlock()
 	metadata, err := sources.prepareMetadataGeneration(index)
 	if err != nil {
 		return runtimeGeneration{}, err
@@ -2034,8 +2067,21 @@ func runtimeFromIndexForExecutionWithSourceDigests(index typesys.Index, digests 
 	return runtimeFromIndexWithSourceDigestsProjected(index, digests, sources, runtimeExecutionProjection, useDiskCache...)
 }
 
+// runtimeFromIndexWithSourceDigestsProjected prepares its own generation, so
+// this one call holds every validation boundary of its request and seals it.
 func runtimeFromIndexWithSourceDigestsProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
-	return runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, nil, project, useDiskCache...)
+	if sources == nil {
+		sources = newSourceCache()
+	}
+	sources.requestDigests.deferRecentReads()
+	key, projected, err := runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, nil, project, useDiskCache...)
+	if err == nil {
+		if err = sealRequestSources(sources, key); err != nil {
+			var zero T
+			projected = zero
+		}
+	}
+	return key, projected, err
 }
 
 func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, prepared *runtimeGeneration, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
@@ -2274,7 +2320,18 @@ func runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index typesys.Index, d
 }
 
 func runtimeFromIndexWithSourceDigestsAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
-	return runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, digests, sources, nil, diskCacheAllowed, counters, project)
+	if sources == nil {
+		sources = newSourceCache()
+	}
+	sources.requestDigests.deferRecentReads()
+	key, projected, err := runtimeFromIndexWithPreparedGenerationAndPerfProjected(index, digests, sources, nil, diskCacheAllowed, counters, project)
+	if err == nil {
+		if err = sealRequestSources(sources, key); err != nil {
+			var zero T
+			projected = zero
+		}
+	}
+	return key, projected, err
 }
 
 func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, prepared *runtimeGeneration, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
@@ -4292,10 +4349,13 @@ type sourceCache struct {
 	allowVisualforceDiskDigests bool
 	recentVisualforce           map[string]recentVisualforceInput
 	generationValidator         func() error
-	// requestDigests memoizes physical source reads for the one request this
-	// cache serves, so every validation boundary of that request reuses the
-	// first read of an unchanged file.
+	// requestDigests is the one request's view of the files on disk. Every
+	// validation boundary of the request reads through it; see
+	// requestFileDigests for how one read per file serves them all.
 	requestDigests *requestFileDigests
+	// semanticResults are the semantic results this request read or
+	// published. A failed seal evicts them with the request's other caches.
+	semanticResults []semanticcache.Identity
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -4597,6 +4657,38 @@ func (cache *sourceCache) metadataGeneration() runtimeMetadataGeneration {
 	return generation
 }
 
+// sealRequestSources ends the validation phase of a request whose source
+// cache defers recent reads. A file that differs from the captured generation
+// fails the request exactly as a mismatch at a boundary does.
+func sealRequestSources(sources *sourceCache, key runtimeCacheKey) error {
+	if sources == nil {
+		return nil
+	}
+	err := sources.requestDigests.seal()
+	if err == nil {
+		return nil
+	}
+	sources.mu.RLock()
+	identities := append([]semanticcache.Identity(nil), sources.semanticResults...)
+	sources.mu.RUnlock()
+	for _, identity := range identities {
+		semanticResults.Evict(identity)
+	}
+	if !sources.privateRuntime {
+		evictSnapshotCaches(key)
+	}
+	return err
+}
+
+func (cache *sourceCache) rememberSemanticResult(identity semanticcache.Identity) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	cache.semanticResults = append(cache.semanticResults, identity)
+	cache.mu.Unlock()
+}
+
 // validateCapturedSourceGeneration prevents an older BuildArtifacts snapshot
 // from returning an in-memory or disk runtime after its source generation has
 // changed on disk. It deliberately reads the current physical files while
@@ -4624,7 +4716,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	recent := cache.recentVisualforce
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		actual, err := cache.requestDigests.digest(file)
+		actual, err := cache.requestDigests.current(file, expected)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
