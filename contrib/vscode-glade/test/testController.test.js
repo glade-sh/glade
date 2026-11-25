@@ -142,22 +142,22 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
     report = makeReport(suite([row('a', 'pass'), row('b', 'pass')]));
     await runClass();
     assert.strictEqual(failedCounts.at(-1), 0);
-    // Refresh discovery after the class run starts and before its report arrives.
-    const runAcrossRefresh = async results => {
+    // Refresh discovery after the run starts and before its report arrives.
+    const runAcrossRefresh = async (results, startRun = runClass, runnerName = 'runApexTest') => {
       fs.writeFileSync(source, both);
       await instance.discover();
-      const normalRunner = runner.runApexTest;
+      const normalRunner = runner[runnerName];
       let finish;
-      runner.runApexTest = () => new Promise(resolve => { finish = resolve; });
+      runner[runnerName] = () => new Promise(resolve => { finish = resolve; });
       try {
-        const pending = runClass();
+        const pending = startRun();
         assert.strictEqual(typeof finish, 'function');
         fs.writeFileSync(source, onlyB);
         await instance.discover();
         finish(makeReport(suite(results)));
         await pending;
       } finally {
-        runner.runApexTest = normalRunner;
+        runner[runnerName] = normalRunner;
       }
     };
     await runAcrossRefresh([row('a', 'fail', 'removed during run'), row('b', 'pass')]);
@@ -176,6 +176,24 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
     await instance.runFailed();
     assert.deepStrictEqual(calls, [['Example', undefined]]);
     assert.strictEqual(failedCounts.at(-1), 0);
+
+    const removedMethodFailure = row('a', 'fail', 'removed during run');
+    const runSelectedMethod = () => run([controller.items.get('Example').children.get('Example.a')]);
+    vscode.workspace.getConfiguration = () => ({ get: (_name, fallback) => fallback });
+    const runChanged = () => { events.length = 0; return instance.runChanged(); };
+    for (const [scope, startRun, runnerName, results] of [
+      ['Selected method', runSelectedMethod, 'runApexTest', [removedMethodFailure]],
+      ['Changed tests', runChanged, 'runChangedTests', [removedMethodFailure, row('b', 'pass')]],
+    ]) {
+      await runAcrossRefresh(results, startRun, runnerName);
+      const failedEvents = events.filter(e => e[0] === 'failed');
+      calls.length = 0; messages.length = 0;
+      await instance.runFailed();
+      assert.deepStrictEqual(calls, [], scope);
+      assert.deepStrictEqual(messages, ['Glade has no failed local Apex tests to rerun.'], scope);
+      assert.strictEqual(failedCounts.at(-1), 0, scope);
+      assert.deepStrictEqual(failedEvents, [['failed', 'Example.a', 'removed during run']], scope);
+    }
 
     report = makeReport([{ name: 'test selector', cases: [{ name: 'selector', status: 'runtime_error', problem: { type: 'Selector', message: 'no test method matched' } }] }]);
     await runClass();
