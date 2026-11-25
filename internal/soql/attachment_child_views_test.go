@@ -78,6 +78,38 @@ func TestAttachmentChildViewsCheckReturnedTypeVisibility(t *testing.T) {
 	}
 }
 
+func TestCombinedAttachmentsUsesPlatformFileLinks(t *testing.T) {
+	const parentID = "a01000000000001"
+	const customChildID = "a02000000000001"
+	org := attachmentChildViewFixture(t,
+		storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
+		storage.FixtureObject{Name: "CustomLink__c", Records: []storage.FixtureRecord{
+			{ID: customChildID, Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parentID)}},
+		}},
+	)
+	customLink := org.Objects["CustomLink__c"]
+	customLink.Definition.Fields["Parent__c"] = storage.Field{
+		APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"ViewParent__c"},
+	}
+	customLink.Definition.Relations = []storage.Relationship{
+		{Field: "Parent__c", ParentObjects: []string{"ViewParent__c"}, ChildRelationship: "ContentDocumentLinks__r"},
+	}
+	org.Objects["CustomLink__c"] = customLink
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id FROM CombinedAttachments), (SELECT Id FROM ContentDocumentLinks__r) FROM ViewParent__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("parent rows = %d, want 1", len(result.Records))
+	}
+	parent := result.Records[0]
+	if rows := parent.Children["CombinedAttachments"]; len(rows) != 0 {
+		t.Errorf("CombinedAttachments = %+v, want an empty child list", rows)
+	}
+	assertAttachmentChildView(t, parent, "ContentDocumentLinks__r", "CustomLink__c", customChildID)
+}
+
 func BenchmarkAttachmentChildViews(b *testing.B) {
 	const parentCount = 100
 	parents := make([]storage.FixtureRecord, parentCount)
