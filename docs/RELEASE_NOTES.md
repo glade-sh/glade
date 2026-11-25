@@ -12,6 +12,7 @@
 - Match captured Flow profile comparisons and parent lookup filters at API 62.0 through 67.0. A before-save lookup of an 18-character reference to a deleted parent reaches the `ENTITY_IS_DELETED` save error at API 62.0, 63.0, and 67.0.
 - Cold Apex test runs reuse more of the standard object catalog during org setup.
 - Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
+- Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
 
 ## v0.3.15
 
