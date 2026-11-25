@@ -1,0 +1,18 @@
+Capture: live Salesforce Developer scratch org on a separate authorized Dev Hub
+Window: 2026-11-25T04:12:17Z to 2026-11-25T04:13:19Z
+APIs: 62.0 66.0 67.0
+Routes: execute anonymous and deployed @IsTest
+Scratch org deletion: confirmed
+
+Each row evaluated Datetime.newInstanceGmt(1500,2,28,12,0,0).format(pattern,'GMT').
+The scratch user was set to the listed locale, GMT, and the de, es, or fr
+language, respectively. Anonymous Apex checked UserInfo before logging the
+observation. Each matching @IsTest used a temporary user with those settings in
+System.runAs, checked UserInfo, and reported the same value using an assertion.
+The test class for each API was deployed with that API in its ApexClass metadata.
+
+NEIGHBOR PROBES
+- API 66.0 French and German EEEE/u use the hybrid date's Friday on the formerly
+  uncaptured 1500-02-28 case.
+- Spanish EEE/EEEE/u on the same date is Friday at both endpoint APIs and 66.0.
+- The extended sweep's RUN-FACTS lists the retained forms outside this capture.

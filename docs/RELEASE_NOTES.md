@@ -15,6 +15,8 @@
 - Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
 - Apex `Map.put` and `Map.remove` now match existing project enum keys passed as method parameters or obtained from `Enum.values()`.
 
+- Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
+
 ## v0.3.15
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.

@@ -1,0 +1,39 @@
+Capture: live Salesforce Developer scratch org on an authorized Dev Hub
+Window: 2026-11-25 04:05–04:10 UTC
+CLI: @salesforce/cli/2.159.7
+APIs: 62.0 63.0 64.0 65.0 66.0 67.0 68.0
+Routes: execute anonymous and deployed @IsTest
+Scratch org deletion: confirmed
+
+The profiles.tsv pairs each ran at every listed API on both routes. The
+anonymous requests set the scratch user profile in a separate transaction and
+checked the locale, language, and GMT from UserInfo in the observation. Each
+of the 70 observation requests compiled and succeeded. No observation request
+persisted writes.
+
+The deployed classes used one class per API. Tooling API ApexClass.ApiVersion
+confirmed all seven class versions. is_test.cls is the class template. Replace
+__CLASS__ with Road473Locale plus the API major version. __DATES__ is
+observe.apex through the date setup, before the first System.debug. Generate
+one __METHODS__ entry per profile and section (0, 1, 2), calling
+observe(locale, language, section). The test creates a temporary user in each
+test transaction and checks the locale, language and time zone inside runAs.
+Each of the 210 tests deliberately asserts with its eight token rows after
+checking that all three format overloads agree. The assertions returned the
+full expected 24 rows for every API and profile, identical to anonymous Apex.
+
+org.tsv records all 24 samples in observe.apex order. The rows are identical
+for every captured profile and API on both routes and for all three overloads,
+so the shared token rows appear once. The observation column contains E through
+EEEEE, M and L at widths 3–5, and u. Both month families returned English
+names, which Glade already rendered. Native weekdays used the hybrid date and
+English names for all of these locales at all seven APIs.
+
+NEIGHBOR PROBES
+- Previously matched en_CA/en_GB, de_DE/fr_FR EEE/EEEE/u at API 62.0 and 67.0,
+  month text, and date samples after the cutover were checked as controls.
+- Six or more E characters, u at widths two and up, and locales outside
+  profiles.tsv remain on the prior path (including the existing English
+  prefix rule). The test pins representative uncaptured forms.
+- Numeric month tokens, other format tokens, default formatting, non-GMT
+  timezone resolution, and APIs outside 62.0–68.0 were outside this capture.
