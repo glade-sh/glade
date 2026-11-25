@@ -173,3 +173,39 @@ func seedUnlowerableMethod(t *testing.T, index typesys.Index, name string) {
 	runtimeCacheMu.Unlock()
 	t.Cleanup(func() { evictSnapshotCaches(key) })
 }
+
+// Discovery follows the project's lexical source selection before filtering
+// methods. The deployment count and source winner are captured in
+// internal/project/testdata/source_collisions/org.tsv at 62.0 and 67.0.
+func TestRunDiscoversOnlySelectedDuplicateTestClass(t *testing.T) {
+	root := t.TempDir()
+	older := filepath.Join(root, "amber", "GorseTrailTest.cls")
+	selected := filepath.Join(root, "willow", "GorseTrailTest.cls")
+	writeFile(t, older, `@IsTest private class GorseTrailTest {
+        @TestSetup static void seedAmber() { System.assert(false, 'shadowed setup'); }
+        @IsTest static void amberOnly() { System.assert(false, 'shadowed test'); }
+    }`)
+	writeFile(t, selected, `@IsTest private class GorseTrailTest {
+        @TestSetup static void seedWillow() { insert new Account(Name = 'willow trail'); }
+        @IsTest static void willowOnly() {
+            System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'willow trail']);
+        }
+    }`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{selected, older}}, gladeschema.Schema{})
+	for _, opts := range []Options{
+		{NoDiskCache: true},
+		{NoDiskCache: true, SelectedClasses: []string{"GorseTrailTest"}, SelectedMethod: "willowOnly"},
+	} {
+		cases := Discover(index, opts)
+		if len(cases) != 1 || cases[0].File != selected || cases[0].MethodName != "willowOnly" {
+			t.Fatalf("discovered %#v, want only willowOnly from the selected source", cases)
+		}
+		run := RunCasesContext(context.Background(), index, opts, cases)
+		if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+			t.Fatalf("summary = %#v, problem = %q", got, firstRunProblem(run))
+		}
+	}
+	if cases := Discover(index, Options{Filter: "GorseTrailTest.amberOnly"}); len(cases) != 0 {
+		t.Fatalf("filter selected a method from the shadowed source: %#v", cases)
+	}
+}
