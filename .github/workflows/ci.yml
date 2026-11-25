@@ -1914,11 +1914,53 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+      # Keep this job free of actions and caches. A Dependabot PR can change
+      # Action pins, and only base repository code may run for a candidate.
+      - name: Prepare trusted scan code and candidate Git objects
+        id: prepare
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          git init --quiet --template=
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git fetch --quiet --no-tags --no-recurse-submodules --depth=2 origin "$GITHUB_SHA"
+
+          scanner_ref="$GITHUB_SHA"
+          case "$EVENT_NAME" in
+            pull_request)
+              base=$(git rev-parse "$GITHUB_SHA^1")
+              if [[ "$base" != "$PR_BASE_SHA" ]]; then
+                echo "Leak scan: PR merge commit does not match the event base" >&2
+                exit 1
+              fi
+              scanner_ref="$base"
+              ;;
+            merge_group)
+              base="$MERGE_GROUP_BASE_SHA"
+              scanner_ref="$base"
+              ;;
+            push)
+              base="$PUSH_BEFORE"
+              if [[ -z "$base" || "$base" =~ ^0+$ ]]; then base=$(git rev-parse "$GITHUB_SHA^1"); fi
+              ;;
+            schedule|workflow_dispatch) base=$(git rev-parse "$GITHUB_SHA^1") ;;
+            *) echo "Leak scan: unsupported event" >&2; exit 1 ;;
+          esac
+          if [[ ! "$base" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Leak scan: missing or invalid base commit" >&2
+            exit 1
+          fi
+          if ! git cat-file -e "$base^{commit}"; then
+            git fetch --quiet --no-tags --no-recurse-submodules --depth=1 origin "$base"
+          fi
+          git checkout --quiet --detach "$scanner_ref"
+          printf 'range=%s..%s\n' "$base" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
       - name: Scan added lines for private material
+        shell: bash
         env:
           LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}
           # A pull request from a fork (or any head repository other than the
@@ -1926,18 +1968,8 @@ jobs:
           # is expected there; every other event must have the secret and
           # fails without it.
           LEAK_SCAN_ALLOW_EMPTY_DENYLIST: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork == true || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) && '1' || '0' }}
-          EVENT_NAME: ${{ github.event_name }}
-          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
-          PUSH_BEFORE: ${{ github.event.before }}
-        run: |
-          case "$EVENT_NAME" in
-            pull_request) git fetch -q origin "$PR_BASE_REF"; range="origin/$PR_BASE_REF...HEAD" ;;
-            merge_group) range="$MERGE_GROUP_BASE_SHA..HEAD" ;;
-            push) if [[ -z "$PUSH_BEFORE" || "$PUSH_BEFORE" =~ ^0+$ ]]; then range="HEAD~1..HEAD"; else range="$PUSH_BEFORE..HEAD"; fi ;;
-            *) range="HEAD~1..HEAD" ;;
-          esac
-          scripts/leak-scan.sh --range "$range"
+          SCAN_RANGE: ${{ steps.prepare.outputs.range }}
+        run: bash scripts/leak-scan.sh --range "$SCAN_RANGE"
 
   early-guards:
     if: github.event_name == 'pull_request'

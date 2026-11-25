@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 // TestLeakScan exercises scripts/leak-scan.sh on a throwaway repository: a
@@ -452,13 +454,13 @@ func TestLeakScanRequiredWorkflow(t *testing.T) {
 	}
 	for _, marker := range []string{
 		"runs-on: ubuntu-24.04",
-		"uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"fetch-depth: 0",
-		"persist-credentials: false",
 		"LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}",
 		"LEAK_SCAN_ALLOW_EMPTY_DENYLIST: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork == true || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) && '1' || '0' }}",
-		"merge_group) range=\"$MERGE_GROUP_BASE_SHA..HEAD\"",
-		"scripts/leak-scan.sh --range \"$range\"",
+		"PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}",
+		"MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}",
+		"PUSH_BEFORE: ${{ github.event.before }}",
+		"SCAN_RANGE: ${{ steps.prepare.outputs.range }}",
+		"bash scripts/leak-scan.sh --range \"$SCAN_RANGE\"",
 	} {
 		if !strings.Contains(job, marker) {
 			t.Errorf("leak-scan job missing %q", marker)
@@ -469,5 +471,117 @@ func TestLeakScanRequiredWorkflow(t *testing.T) {
 	}
 	if !strings.Contains(jobs["required-ci"], "      - leak-scan\n") {
 		t.Error("required-ci must depend on leak-scan")
+	}
+}
+
+// TestLeakScanUsesTrustedTree runs the workflow's shell steps against a local
+// Git remote. Candidate commits are inputs to the scan, never the source of
+// the scanner, gzip helper or allowlist for a PR or merge group.
+func TestLeakScanUsesTrustedTree(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", ".github", "workflows", "ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workflow struct {
+		Jobs map[string]struct {
+			Steps []struct {
+				Run  string            `yaml:"run"`
+				Uses string            `yaml:"uses"`
+				Env  map[string]string `yaml:"env"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		t.Fatal(err)
+	}
+	steps := workflow.Jobs["leak-scan"].Steps
+	if len(steps) != 2 || steps[0].Run == "" || steps[1].Run == "" || steps[0].Uses != "" || steps[1].Uses != "" {
+		t.Fatal("leak scan must prepare and scan with runner shell commands only")
+	}
+	if steps[0].Env["LEAK_SCAN_DENYLIST"] != "" || steps[1].Env["LEAK_SCAN_DENYLIST"] != "${{ secrets.LEAK_SCAN_DENYLIST }}" {
+		t.Fatal("only the scan step may receive the denylist")
+	}
+
+	server := t.TempDir()
+	const repo = "example/scan"
+	source := filepath.Join(server, repo+".git")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = source
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.invalid", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.invalid")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v: %s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	write := func(path string, content []byte) {
+		t.Helper()
+		path = filepath.Join(source, path)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, content, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git("init", "-q", "-b", "main")
+	for _, file := range []string{"leak-scan.sh", "leak-scan-expand-gzip.py"} {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		write("scripts/"+file, content)
+	}
+	write(".github/leak-scan-allow.txt", []byte("docs/safe/\n"))
+	git("add", "-A")
+	git("commit", "-qm", "trusted base")
+	base := git("rev-parse", "HEAD")
+	git("checkout", "-qb", "candidate")
+	write("scripts/leak-scan.sh", []byte("#!/bin/bash\nexit 0\n"))
+	write("scripts/leak-scan-expand-gzip.py", []byte("raise SystemExit(42)\n"))
+	write(".github/leak-scan-allow.txt", []byte("docs/\n"))
+	const deny = "synthetic-guard-term"
+	write("docs/added.txt", []byte(deny+"\n"))
+	write("docs/safe/allowed.txt", []byte(deny+"\n"))
+	git("add", "-A")
+	git("commit", "-qm", "candidate")
+	git("checkout", "-q", "main")
+	git("merge", "-q", "--no-ff", "-m", "test merge", "candidate")
+	merge := git("rev-parse", "HEAD")
+	git("commit", "-q", "--allow-empty", "-m", "later merge group tip")
+	group := git("rev-parse", "HEAD")
+
+	for _, tc := range []struct{ event, tip string }{{"pull_request", merge}, {"merge_group", group}} {
+		t.Run(tc.event, func(t *testing.T) {
+			workspace := t.TempDir()
+			output := filepath.Join(t.TempDir(), "output")
+			prepare := exec.Command("bash", "-eo", "pipefail", "-c", steps[0].Run)
+			prepare.Dir = workspace
+			prepare.Env = append(os.Environ(), "GITHUB_SERVER_URL=file://"+server, "GITHUB_REPOSITORY="+repo,
+				"GITHUB_SHA="+tc.tip, "EVENT_NAME="+tc.event, "PR_BASE_SHA="+base, "MERGE_GROUP_BASE_SHA="+base, "GITHUB_OUTPUT="+output)
+			if out, err := prepare.CombinedOutput(); err != nil {
+				t.Fatalf("prepare trusted workspace: %v: %s", err, out)
+			}
+			bindings, err := os.ReadFile(output)
+			rangeBinding := strings.TrimSpace(string(bindings))
+			if err != nil || rangeBinding != "range="+base+".."+tc.tip {
+				t.Fatalf("scan must use the exact base and candidate commits: %v: %q", err, bindings)
+			}
+			if _, err := os.Stat(filepath.Join(workspace, "docs", "added.txt")); !os.IsNotExist(err) {
+				t.Fatalf("candidate file must stay out of the worktree: %v", err)
+			}
+			scan := exec.Command("bash", "-eo", "pipefail", "-c", steps[1].Run)
+			scan.Dir = workspace
+			scan.Env = append(os.Environ(), "SCAN_RANGE="+strings.TrimPrefix(rangeBinding, "range="), "LEAK_SCAN_DENYLIST="+deny, "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0")
+			out, err := scan.CombinedOutput()
+			if err == nil || !strings.Contains(string(out), "1 finding(s) in 1 file(s)") || !strings.Contains(string(out), "denylist") || strings.Contains(string(out), deny) {
+				t.Fatalf("trusted scan must reject and redact one candidate finding: %v: %s", err, out)
+			}
+		})
 	}
 }
