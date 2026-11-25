@@ -117,7 +117,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			}
 			coerced, err := vm.coerceAssignable(inst.Type, value)
 			if err != nil && inst.Expr.Kind == ir.ExprVariable && !strings.Contains(inst.Expr.Name, ".") && strings.EqualFold(inst.Type, "commercepayments.GatewayResponse") && strings.EqualFold(vm.paymentFlowCapturedInterface(value.Type), inst.Type) {
-				coerced, err = value, nil
+				if class, found := vm.lookupClassRaw(inst.Type); !found || class.PlatformType {
+					coerced, err = value, nil
+				}
 			}
 			if err != nil {
 				return execOutcome{}, fmt.Errorf("%s %s: %w", inst.Type, inst.Name, err)

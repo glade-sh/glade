@@ -117,3 +117,41 @@ func TestPaymentFlowDecimalConstructorNativeConformance(t *testing.T) {
 		}
 	}
 }
+
+func TestPaymentFlowResponseAssignmentRejectsProjectShadow(t *testing.T) {
+	const body = `commercepayments.SaleResponse response = new commercepayments.SaleResponse();
+commercepayments.GatewayResponse gateway = response;`
+	const mismatch = "commercepayments.SaleResponse to commercepayments.GatewayResponse"
+
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			index := nativeBoundaryIndex(t, api, map[string]string{
+				"commercepayments": "public class commercepayments { public class GatewayResponse {} }",
+			}, nil)
+			if index.HasErrors() {
+				t.Fatalf("invalid project fixture: %v", index.Diagnostics)
+			}
+			t.Run("sema", func(t *testing.T) {
+				result := sema.AnalyzeAnonymous(index, body, api)
+				for _, d := range result.Diagnostics {
+					if d.Severity == diagnostic.Error && d.Code == "GLADESEMA018" && strings.EqualFold(d.NativeMessage, "Illegal assignment from "+mismatch) {
+						return
+					}
+				}
+				t.Fatalf("expected illegal assignment to the project type; got %v", result.Diagnostics)
+			})
+			t.Run("vm", func(t *testing.T) {
+				program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				org := orgFromIndex(index)
+				org.APIVersion = api
+				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				if _, err = runner.execute(program); err == nil || !strings.Contains(strings.ToLower(err.Error()), strings.ToLower("cannot assign "+mismatch)) {
+					t.Fatalf("expected assignment failure to the project type; got %v", err)
+				}
+			})
+		})
+	}
+}

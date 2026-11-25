@@ -1,10 +1,11 @@
 package sema
 
 import (
-	"github.com/glade-sh/glade/internal/ir"
-	"github.com/glade-sh/glade/internal/typesys"
 	"regexp"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // Give only captured method bodies a private view of these interface edges.
@@ -40,8 +41,12 @@ func semaPaymentFlowResponseAssignment(typ typesys.TypeSymbol, member typesys.Me
 	if !semaPaymentFlowRoute(typ, member, model) || !strings.EqualFold(target, "commercepayments.GatewayResponse") || !strings.EqualFold(typesys.PaymentFlowCapturedInterface(value, typ.EffectiveAPIVersion), target) {
 		return false
 	}
-	m, ok := model.lookup(normalizeName(value))
-	return ok && m.platform
+	targetMembers, ok := model.lookup(normalizeName(target))
+	if !ok || !targetMembers.platform {
+		return false
+	}
+	valueMembers, ok := model.lookup(normalizeName(value))
+	return ok && valueMembers.platform
 }
 
 var paymentFlowContextDeclaration = regexp.MustCompile(`(?i)^\s*commercepayments\.PaymentGatewayContext\s+[a-z_$][a-z0-9_$]*\s*=\s*$`)
