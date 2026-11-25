@@ -113,6 +113,7 @@ func TestSharingClassNamesOrgConformance(t *testing.T) {
 					continue
 				}
 				t.Run("isTest/"+row.ID, func(t *testing.T) {
+					t.Parallel()
 					root := t.TempDir()
 					writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+api+`"}`)
 					base := filepath.Join(root, "force-app/main/default")

@@ -31,6 +31,7 @@ func TestDoctorSyntaxEvidenceRoutes(t *testing.T) {
 		for _, api := range []string{"62.0", "67.0"} {
 			for _, route := range []string{"doctorJSON", "doctorText", "failedTestHint", "failedTestCommand", "execAnonymous", "testNamed"} {
 				t.Run(route+"/"+api+"/"+tc.Route, func(t *testing.T) {
+					t.Parallel()
 					root := t.TempDir()
 					body := "System.assertEquals('" + tc.Want + "', " + tc.Class + ".observe());"
 					if route != "testNamed" {

@@ -103,6 +103,7 @@ System.debug('end ' + Limits.getHeapSize());`,
 }
 
 func TestStrictHeapReviewProbesMatchFullWalk(t *testing.T) {
+	fixture := newStrictShapeFixture(t)
 	sync, _ := vm.LimitCapsForProfile("default")
 	for name, source := range strictHeapReviewProbes {
 		t.Run(name, func(t *testing.T) {
@@ -112,7 +113,7 @@ func TestStrictHeapReviewProbesMatchFullWalk(t *testing.T) {
 						panicked = fmt.Sprint(r)
 					}
 				}()
-				out, priced, walked = runStrictShape(t, source, c, off)
+				out, priced, walked = fixture.run(t, source, c, off)
 				return
 			}
 			base, _, _, p := run(sync, true)
@@ -126,7 +127,10 @@ func TestStrictHeapReviewProbesMatchFullWalk(t *testing.T) {
 				if cap != 0 {
 					c.HeapSize = cap
 				}
-				want, _, _, p1 := run(c, true)
+				want, p1 := base, ""
+				if cap != 0 {
+					want, _, _, p1 = run(c, true)
+				}
 				got, priced, walked, p2 := run(c, false)
 				if p1 != "" || p2 != "" {
 					t.Errorf("cap %d: panic off=%q on=%q (priced %d walked %d)", cap, p1, p2, priced, walked)

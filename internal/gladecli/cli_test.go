@@ -423,8 +423,21 @@ func useDoctorTestToolchain(t *testing.T) {
 	t.Setenv("GLADE_ROOT", "")
 }
 
+// These routes assert the output and flags for a ready API 65 project.
+func chdirDoctorTestProject(t *testing.T) {
+	t.Helper()
+	root := t.TempDir()
+	writeDoctorFixture(t, root, map[string]string{
+		"sfdx-project.json": `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`,
+		"glade.yml":         "project:\n  root: .\n  packageDirs: [force-app]\n",
+		"force-app/main/default/classes/Ready.cls": "public class Ready {}",
+	})
+	t.Chdir(root)
+}
+
 func TestRunDoctorReportsParser(t *testing.T) {
 	useDoctorTestToolchain(t)
+	chdirDoctorTestProject(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor"}, &stdout, &stderr)
 	if code != 0 {
@@ -443,6 +456,7 @@ func TestRunDoctorReportsParser(t *testing.T) {
 
 func TestRunDoctorJSON(t *testing.T) {
 	useDoctorTestToolchain(t)
+	chdirDoctorTestProject(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor", "--json"}, &stdout, &stderr)
 	if code != 0 {
@@ -644,6 +658,7 @@ func TestRunDoctorMalformedConfigReturnsStructuredJSON(t *testing.T) {
 
 func TestRunDoctorShortFlags(t *testing.T) {
 	useDoctorTestToolchain(t)
+	chdirDoctorTestProject(t)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor", "-p", ".", "-j"}, &stdout, &stderr)
 	if code != 0 {

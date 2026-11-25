@@ -96,3 +96,29 @@ func TestListWritebackSharedBackingScansOnlyTail(t *testing.T) {
 		t.Fatal("nested child in appended tail remained local-only")
 	}
 }
+
+// A two-segment local field target should cost the same to write as its
+// already-split path. Raster list appends write this target for each pixel.
+func TestLocalFieldWritebackDoesNotAllocatePath(t *testing.T) {
+	machine := New(nil)
+	holder := Object("PixelBuffer")
+	holder.Fields["pixel"] = Int(0)
+	machine.Globals["buffer"] = holder
+
+	direct := testing.AllocsPerRun(100, func() {
+		if err := machine.assignPath(holder, []string{"pixel"}, Int(6)); err != nil {
+			t.Fatal(err)
+		}
+	})
+	dotted := testing.AllocsPerRun(100, func() {
+		if err := machine.assignValue("buffer.pixel", Int(7), false); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if pixel := machine.Globals["buffer"].Fields["pixel"]; pixel.Kind != ValueInt || pixel.Int != 7 {
+		t.Fatalf("stored pixel = %v, want 7", pixel)
+	}
+	if dotted > direct {
+		t.Fatalf("dotted writeback allocated %.0f times, split path allocated %.0f times", dotted, direct)
+	}
+}
