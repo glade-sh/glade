@@ -186,6 +186,23 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
     calls.length = 0;
     await instance.runFailed();
     assert.deepStrictEqual(calls, [['Example', undefined]]);
+
+    vscode.workspace.findFiles = async () => [];
+    await instance.discover();
+    assert.strictEqual(failedCounts.at(-1), 0);
+
+    fs.writeFileSync(source, both);
+    vscode.workspace.findFiles = async () => [{ fsPath: source }];
+    await instance.discover();
+    report = makeReport(suite([row('a', 'fail', 'before project switch'), row('b', 'pass')]));
+    await runClass();
+    assert.strictEqual(failedCounts.at(-1), 2);
+    instance.setProject({ projectRoot: path.join(root, 'other-project') });
+    await instance.discover();
+    assert.strictEqual(failedCounts.at(-1), 0);
+    calls.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, []);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
