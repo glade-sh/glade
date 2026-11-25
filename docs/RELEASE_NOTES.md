@@ -4,6 +4,8 @@
 
 - Fixed a false `Date.getTime()` diagnostic when a `Datetime` method chain is the first argument to a dotted Apex call.
 
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
+
 ## v0.3.15
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.
