@@ -11,8 +11,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Salesforce's results are in org.tsv. The named missing-type case also pins
-// the current open-schema behavior, which differs from the native rejection.
+// Salesforce's results are in org.tsv.
 func TestMissingCustomObjectTypeNativeConformance(t *testing.T) {
 	const dir = "testdata/conformance/missing_custom_object_type"
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -55,15 +54,16 @@ func TestMissingCustomObjectTypeNativeConformance(t *testing.T) {
 				index := namespaceFamilyProject(t, "", api, map[string]string{"AbsentObjectTypeTest": string(source)})
 				analysis := sema.Analyze(index)
 				got := namespaceFamilyFileErrors(analysis.Diagnostics, "AbsentObjectTypeTest")
-				// An empty source schema is not proof that the org lacks this
-				// object. Pin the existing open-schema behavior separately from
-				// the native row, pending a way to establish schema completeness.
-				if outcome != "Invalid type: AbsentBuoy__c" || len(got) != 0 {
+				if !slices.Contains(got, outcome) {
 					t.Errorf("named diagnostics=%q, native=%q", got, outcome)
 				}
 				run := Run(index, Options{SelectedClasses: []string{"AbsentObjectTypeTest"}, SelectedMethod: "typeIsMissing", NoDiskCache: true, Parallelism: 1})
-				if run.Summary().Passed != 1 || run.Summary().CompileErrors != 0 {
-					t.Errorf("open-schema runner summary=%+v, problem=%s", run.Summary(), firstRunProblem(run))
+				if run.Summary().Passed != 0 || run.Summary().CompileErrors != 1 {
+					t.Errorf("runner summary=%+v, problem=%s", run.Summary(), firstRunProblem(run))
+				} else {
+					if len(run.ExcludedClasses) != 1 || run.ExcludedClasses[0].Message != outcome {
+						t.Errorf("excluded classes=%+v, native=%q", run.ExcludedClasses, outcome)
+					}
 				}
 				return
 			}
