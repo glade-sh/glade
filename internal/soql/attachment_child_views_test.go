@@ -41,6 +41,70 @@ func TestAttachmentChildViewsPreserveImportedRows(t *testing.T) {
 	}
 }
 
+func TestAttachmentChildViewsReadCurrentRelationshipsWithWarmCache(t *testing.T) {
+	const parentID = "a01000000000001"
+	const childID = "a02000000000001"
+	const noteID = "002000000000001"
+	views := []struct{ relationship, object string }{
+		{"CombinedAttachments", "CombinedAttachment"},
+		{"NotesAndAttachments", "NoteAndAttachment"},
+	}
+	for _, advanceGeneration := range []bool{true, false} {
+		t.Run(fmt.Sprintf("advance schema generation=%t", advanceGeneration), func(t *testing.T) {
+			org := attachmentChildViewFixture(t,
+				storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
+				storage.FixtureObject{Name: "ViewChild__c", Records: []storage.FixtureRecord{
+					{ID: childID, Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parentID)}},
+				}},
+				storage.FixtureObject{Name: "Note", Records: []storage.FixtureRecord{
+					{ID: noteID, Fields: map[string]storage.Value{"ParentId": storage.IDValue(parentID)}},
+				}},
+			)
+			query, err := Parse("SELECT Id, (SELECT Id FROM CombinedAttachments), (SELECT Id FROM NotesAndAttachments) FROM ViewParent__c")
+			if err != nil {
+				t.Fatal(err)
+			}
+			cache := NewExecutionCache()
+			child := org.Objects["ViewChild__c"]
+			declared := child
+			for _, view := range views {
+				declared.Definition.Relations = append(declared.Definition.Relations, storage.Relationship{
+					Field: "Parent__c", ParentObjects: []string{"ViewParent__c"}, ChildRelationship: view.relationship,
+				})
+			}
+			org.Objects["ViewChild__c"] = declared
+			check := func(wantDeclared bool) {
+				t.Helper()
+				result, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(result.Records) != 1 || result.Records[0].ID != parentID {
+					t.Fatalf("parent rows = %+v, want %s", result.Records, parentID)
+				}
+				for _, view := range views {
+					object, id := view.object, storage.ID(noteID)
+					if wantDeclared {
+						object, id = "ViewChild__c", childID
+					}
+					assertAttachmentChildView(t, result.Records[0], view.relationship, object, id)
+				}
+			}
+			check(true)
+			org.Objects["ViewChild__c"] = child
+			if advanceGeneration {
+				org.ClearRuntimeSchemaStamp()
+			}
+			check(false)
+			org.Objects["ViewChild__c"] = declared
+			if advanceGeneration {
+				org.ClearRuntimeSchemaStamp()
+			}
+			check(true)
+		})
+	}
+}
+
 func TestAttachmentChildViewsCheckReturnedTypeVisibility(t *testing.T) {
 	const parentID = "a01000000000001"
 	const noteID = "002000000000001"
