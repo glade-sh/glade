@@ -288,7 +288,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	vm.adminStandardFLSRoute = savedFLSRoute || defaultMode
 	// The license denial precedes the API 67 secure-default object check, which
 	// would otherwise raise QueryException (external_user_query_denial, 67.0).
-	securityErr := vm.licenseExcludedObjectError(query.Object)
+	emptyLeadCount := defaultMode && ordinaryQuery && !directAccessLevel && !explicitBindAccessLevel &&
+		vm.capturedCommunityLeadCountReturnsZero(query)
+	var securityErr error
+	if !emptyLeadCount {
+		securityErr = vm.licenseExcludedObjectError(query.Object)
+	}
 	if securityErr == nil {
 		securityErr = vm.enforceSOQLSecurity(query, permissionSetID)
 	}
@@ -296,7 +301,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	if securityErr != nil {
 		return nil, securityErr
 	}
-	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
+	if err := vm.enforceSOQLObjectAvailability(query, !emptyLeadCount); err != nil {
 		return nil, err
 	}
 	// Ordinary queries and pagination queries share the captured Mine scope.
@@ -317,6 +322,16 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	}
 	vm.normalizeSOQLRelationshipGroupBy(&executeQuery)
 	executeOrg := vm.Org
+	if emptyLeadCount {
+		// The license still denies access to the records. Execute against an
+		// empty input to preserve ordinary COUNT validation and accounting.
+		empty := vm.Org.CloneObjectsShallow(0)
+		lead := empty.Objects["Lead"]
+		lead.SetRecords(nil)
+		lead.Indexes = nil
+		empty.Objects["Lead"] = lead
+		executeOrg = &empty
+	}
 	// Native Document isolation is captured for ordinary, direct SOQL. Query
 	// handles retain their live source org and must not receive a filtered copy.
 	if accounting == soqlOrdinaryAccounting && strings.EqualFold(executeQuery.Object, "Document") {
@@ -463,7 +478,7 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// Ordinary aggregate inputs already respect sharing. Keep their row
 	// provenance when the later output filter handles other query routes.
 	aggregateInputRows := result.AggregateInputRows
-	if !ordinaryHierarchyQuery {
+	if !ordinaryHierarchyQuery && !emptyLeadCount {
 		if defaultMode && vm.capturedPartnerLeadAnonymousQuery(query) && vm.capturedPartnerLeadAnonymousResult(result) {
 			result = vm.filterCapturedPartnerLeadAnonymous(result)
 		} else {
@@ -2335,14 +2350,34 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 	return rows, true, nil
 }
 
-// currentUserLicenseExcludesObject reports a Customer Community, Community Plus
-// or Community Login user querying Lead, and a Guest-type user querying Case or
-// Lead. external_user_case_lead_sharing and external_guest_case_lead_access
-// (APIs 62.0 and 67.0): the countQuery raises under runAs as each of these
-// users, at the floor as well as 67.0, where the unqualified-query defaults do
-// not apply, so the license excludes the object rather than a CRUD check
-// denying it. The exception is SecurityException "Access to entity 'Case' denied"
-// (external_user_query_denial/org.tsv).
+// capturedCommunityLeadCountReturnsZero covers the API 62.0 transfer rows
+// in external_user_case_lead_sharing. The default Database.countQuery by Id
+// returns zero for the two Community profiles even though Lead is inaccessible.
+func (vm *VM) capturedCommunityLeadCountReturnsZero(query soql.Query) bool {
+	if vm.currentTrigger || vm.testContext == nil || vm.testContext.RunAsDepth == 0 ||
+		vm.dynamicSOQLBindRoute != "Database.countQuery" || vm.currentSourceExecutionPolicy().APIVersion != "62.0" ||
+		!strings.EqualFold(query.Object, "Lead") || !runAsCountDenialShape(query) ||
+		query.Where == nil || !strings.EqualFold(query.Where.Field, "Id") {
+		return false
+	}
+	definition := vm.Org.Objects["Lead"].Definition
+	if !strings.EqualFold(strings.TrimSpace(definition.SharingModel), "ReadWriteTransfer") || strings.TrimSpace(definition.ExternalSharingModel) != "" {
+		return false
+	}
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	switch vm.currentProfileName(profileID) {
+	case "Customer Community User":
+		return vm.profileHasLicenseKey(profileID, "PID_Customer_Community")
+	case "Customer Community Login User":
+		return vm.profileHasLicenseKey(profileID, "PID_Customer_Community_Login")
+	default:
+		return false
+	}
+}
+
+// The Community licenses deny queries on Lead, and Guest denies Case and Lead
+// under runAs (external_user_case_lead_sharing, external_guest_case_lead_access
+// and external_user_query_denial, APIs 62.0 and 67.0).
 func (vm *VM) licenseExcludedObjectError(objectName string) error {
 	if vm != nil && vm.Org != nil {
 		if resolved, ok := vm.resolveObjectName(objectName); ok {
@@ -2371,6 +2406,11 @@ func (vm *VM) currentUserLicenseExcludesObject(objectName string) bool {
 }
 
 func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
+	return vm.enforceSOQLObjectAvailability(query, true)
+}
+
+// checkRootLicense can be skipped for a count whose input is empty by license.
+func (vm *VM) enforceSOQLObjectAvailability(query soql.Query, checkRootLicense bool) error {
 	if vm == nil || vm.Org == nil {
 		return nil
 	}
@@ -2383,8 +2423,10 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
 		return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
 	}
-	if err := vm.licenseExcludedObjectError(objectName); err != nil {
-		return err
+	if checkRootLicense {
+		if err := vm.licenseExcludedObjectError(objectName); err != nil {
+			return err
+		}
 	}
 	for _, child := range query.ChildQueries {
 		childQuery := child.Query
