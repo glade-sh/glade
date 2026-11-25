@@ -48,8 +48,9 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 	if viewName == "CombinedAttachment" {
 		sources = append(sources, "ContentDocumentLinks")
 	}
-	// Keep the implicit projections separate from sibling subqueries on the
-	// same source relationships, which can select different fields.
+	// Keep the platform backing edges and their implicit projections separate
+	// from sibling subqueries, which can resolve custom relationships or select
+	// different fields.
 	if cache != nil {
 		if cache.attachmentSources == nil {
 			cache.attachmentSources = newChildRelationshipQueryCache(cache.execution)
@@ -66,7 +67,7 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		if file {
 			source.Query.Fields = []string{"Id", "ContentDocumentId"}
 		}
-		rows, err := executeChildRelationshipQuery(org, definition, parent, source, cache, context)
+		rows, err := executeChildRelationshipRows(org, definition, parent, source, cache, context, true)
 		if err != nil {
 			return nil, true, err
 		}
