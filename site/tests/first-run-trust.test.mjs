@@ -67,13 +67,16 @@ test("installation choices link to canonical task guides", () => {
   }
 });
 
-test("installation docs disclose both destinations and the observed footprint", () => {
+test("installation docs disclose both destinations, shell setup, and strict verification", () => {
   for (const installationDoc of [siteInstallation, repoInstallation]) {
     assert.match(installationDoc, /GLADE_INSTALL_DIR/);
     assert.match(installationDoc, /GLADE_HOME/);
     assert.match(installationDoc, /binary, including parser support/);
     assert.match(installationDoc, /LWC runtime\/toolchain and bundled editor assets/);
-    assert.match(installationDoc, /about 229 MB on disk/i);
+    assert.doesNotMatch(installationDoc, /about 229 MB on disk/i);
+    assert.match(installationDoc, /\.zshrc/);
+    assert.match(installationDoc, /\.bashrc/);
+    assert.match(installationDoc, /GLADE_REQUIRE_PROVENANCE=1/);
   }
 });
 

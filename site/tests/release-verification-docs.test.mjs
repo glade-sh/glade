@@ -29,7 +29,7 @@ test('published release-verification instructions use the checked helper', async
 test('manual verification fails closed and never extracts or executes the archive', () => {
   assert.match(helper, /^set -eu$/m)
   assert.match(helper, /curl --proto '=https' --proto-redir '=https' --tlsv1\.2/)
-  assert.match(helper, /--fail --show-error --silent --location --max-time 60/)
+  assert.match(helper, /--fail --show-error --silent --location --connect-timeout 10/)
   assert.match(helper, /gh attestation verify "\$archive" -R glade-sh\/glade/)
   assert.equal((helper.match(/--signer-workflow glade-sh\/glade\/\.github\/workflows\/release\.yml/g) || []).length, 2)
   assert.equal((helper.match(/--source-ref "refs\/tags\/\$\{version\}"/g) || []).length, 2)
@@ -72,6 +72,20 @@ case "$url" in
 $entry"
     test "$MOCK_CASE" = checksum_bad_hex && body='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ./glade_v0.2.15_linux_amd64.tar.gz'
     ;;
+  *downloads.glade.sh/*.sigstore.json)
+    case "$MOCK_CASE" in github_bundle|legacy_bundle|legacy_login|login_required) exit 22;; esac
+    body='{"fixture":"provenance"}'
+    ;;
+  *github.com/*/*.sigstore.json)
+    test "$MOCK_CASE" = github_bundle || exit 22
+    body='{"fixture":"provenance"}'
+    ;;
+  *api.github.com/*/attestations/*)
+    case "$MOCK_CASE" in legacy_login|login_required) exit 22;; esac
+    body='{"attestations":[{"bundle":{"fixture":"attestation"}}]}'
+    test "$MOCK_CASE" = url_bundle && body='{"attestations":[{"bundle_url":"https://example.test/bundle"}]}'
+    ;;
+  https://example.test/bundle) body='{"fixture":"sbom"}' ;;
   *) body='synthetic archive' ;;
 esac
 printf '%s\\n' "$body" >"$output"
@@ -92,6 +106,11 @@ const fakeGh = `#!/bin/sh
   for arg in "$@"; do printf ' <%s>' "$arg"; done
   printf '\n'
 } >>"$MOCK_LOG"
+[ "$GH_TELEMETRY" = false ] && [ "$GH_NO_UPDATE_NOTIFIER" = 1 ] || exit 1
+if [ "$1" = auth ]; then
+  test "$MOCK_CASE" = legacy_login
+  exit $?
+fi
 predicate=0
 for arg in "$@"; do test "$arg" = --predicate-type && predicate=1; done
 test "$MOCK_CASE" = provenance_fail && test "$predicate" -eq 0 && exit 1
@@ -117,10 +136,12 @@ test('release verifier stops at every synthetic download and trust failure', asy
     'checksum_bad_hex',
     'checksum_mismatch',
     'provenance_fail',
-    'cyclonedx_fail'
+    'cyclonedx_fail',
+    'login_required'
   ]
+  const successModes = ['success', 'github_bundle', 'legacy_bundle', 'legacy_login', 'url_bundle']
 
-  for (const mode of [...failureModes, 'success']) {
+  for (const mode of [...failureModes, ...successModes]) {
     const root = await mkdtemp(join(tmpdir(), 'glade-verifier-test-'))
     const bin = join(root, 'bin')
     const downloads = join(root, 'downloads')
@@ -145,19 +166,31 @@ test('release verifier stops at every synthetic download and trust failure', asy
       }
     })
 
-    assert.equal(result.status === 0, mode === 'success', `${mode}: ${result.stderr}`)
+    assert.equal(result.status === 0, successModes.includes(mode), `${mode}: ${result.stderr}`)
     const calls = await readFile(log, 'utf8')
     if (mode === 'checksum_mismatch') assert.doesNotMatch(calls, /^gh(?: |$)/m)
     if (mode === 'provenance_fail') assert.equal(calls.match(/^gh(?: |$)/gm)?.length, 1)
+    if (mode === 'login_required') assert.match(result.stderr, /run gh auth login/)
+    if (mode === 'github_bundle') {
+      assert.match(calls, /https:\/\/github\.com\/glade-sh\/glade\/releases\/download\/v0\.2\.15\/[^>]+\.sigstore\.json/)
+      assert.match(calls, /^gh .*<--bundle> <[^>]+\.sigstore\.json>/m)
+    }
+    if (mode === 'legacy_bundle') assert.match(calls, /^gh .*<--bundle> <provenance\.jsonl>/m)
+    if (mode === 'legacy_login') {
+      assert.match(calls, /^gh <auth> <status>/m)
+      assert.doesNotMatch(calls, /^gh .*<--bundle>/m)
+    }
+    if (mode === 'url_bundle') assert.match(calls, /<https:\/\/example\.test\/bundle>/)
     if (mode === 'success') {
       const curlCalls = calls.match(/^curl.*$/gm) || []
-      assert.equal(curlCalls.length, 3)
+      assert.equal(curlCalls.length, 5)
       for (const call of curlCalls) {
         assert.match(call, /<--proto> <=https> <--proto-redir> <=https> <--tlsv1\.2>/)
-        assert.match(call, /<--fail> <--show-error> <--silent> <--location> <--max-time> <60>/)
+        assert.match(call, /<--fail> <--show-error> <--silent> <--location> <--connect-timeout> <10> <--max-time> <(?:60|900)>/)
       }
       assert.match(curlCalls[0], /<--output> <manifest\.json> <https:\/\/downloads\.glade\.sh\/latest\/release-manifest\.json>$/)
       assert.match(curlCalls[1], /<--output> <glade_v0\.2\.15_linux_amd64\.tar\.gz> <https:\/\/downloads\.glade\.sh\/v0\.2\.15\/glade_v0\.2\.15_linux_amd64\.tar\.gz>$/)
+      assert.match(curlCalls[1], /<--max-time> <900> <--retry> <3>/)
       assert.match(curlCalls[2], /<--output> <SHA256SUMS\.txt> <https:\/\/downloads\.glade\.sh\/v0\.2\.15\/SHA256SUMS\.txt>$/)
       assert.match(calls, /^checksum <-a> <256> <-c> <selected-checksum\.txt>$/m)
       const ghCalls = calls.match(/^gh.*$/gm) || []
@@ -167,6 +200,8 @@ test('release verifier stops at every synthetic download and trust failure', asy
         assert.match(call, /<--signer-workflow> <glade-sh\/glade\/\.github\/workflows\/release\.yml>/)
         assert.match(call, /<--source-ref> <refs\/tags\/v0\.2\.15>/)
       }
+      assert.match(ghCalls[0], /<--bundle> <glade_v0\.2\.15_linux_amd64\.tar\.gz\.sigstore\.json>/)
+      assert.match(ghCalls[1], /<--bundle> <sbom\.jsonl>/)
       assert.match(ghCalls[1], /<--predicate-type> <https:\/\/cyclonedx\.org\/bom>/)
       assert.match(result.stdout, /Not extracted, installed, or executed/)
     }

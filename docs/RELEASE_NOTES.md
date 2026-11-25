@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The installer and `glade update` check for corrupted downloads with SHA-256 and verify release provenance and SBOM attestations when `gh` is available. Set `GLADE_REQUIRE_PROVENANCE` to `1`, `true`, or `yes` to require `gh` and provenance verification. Download failures include a short curl diagnostic.
 - Updated the Quickstart, CI examples, and release evidence on the site. Added a guide to known limitations.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
