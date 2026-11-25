@@ -33,6 +33,9 @@ empty_links_lax	probe.apex
 empty_links_lax_serialized	probe.apex
 empty_links_strict	probe.apex
 empty_links_strict_serialized	probe.apex
+invalid_links_generic	probe.apex
+invalid_links_lax	probe.apex
+invalid_links_strict	probe.apex
 lower_links_generic	probe.apex
 lower_links_generic_serialized	probe.apex
 lower_links_lax	probe.apex

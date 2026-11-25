@@ -771,6 +771,9 @@ type jsonTypedInput struct {
 	// Schema relationship mapping must retain record provenance recursively,
 	// even when a loaded user class shadows the relationship's record type.
 	sObjectRecord bool
+	// A catalog-backed ContentDocumentLinks envelope validates its child columns
+	// even when the surrounding decode is lax.
+	checkSObjectColumns bool
 }
 
 func jsonArrayInputStarts(input jsonTypedInput) []int {
@@ -2022,9 +2025,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		starts := jsonArrayInputStarts(input)
 		for i, item := range items {
 			if i < len(starts) {
-				item = jsonTypedInput{value: item, source: input.source, start: starts[i], sObjectRecord: input.sObjectRecord}
+				item = jsonTypedInput{value: item, source: input.source, start: starts[i], sObjectRecord: input.sObjectRecord, checkSObjectColumns: input.checkSObjectColumns}
 			} else if input.sObjectRecord {
-				item = jsonTypedInput{value: item, sObjectRecord: true}
+				item = jsonTypedInput{value: item, sObjectRecord: true, checkSObjectColumns: input.checkSObjectColumns}
 			}
 			value, err := vm.typedValueFromJSON(elementType, item, strict)
 			if err != nil {
@@ -2148,7 +2151,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
 	}
-	if strict || vm.isPlatformJSONHeader(typeName) {
+	if strict || input.checkSObjectColumns || vm.isPlatformJSONHeader(typeName) {
 		if err := vm.jsonStrictObjectFieldsError(typeName, raw); err != nil {
 			return Null, err
 		}
@@ -3449,6 +3452,7 @@ func (vm *VM) jsonCustomPlatformChildRelationship(typeName, name string) (string
 
 func (vm *VM) applyJSONSObjectChildField(obj *Value, typeName, name string, raw any, strict bool) (bool, error) {
 	relationshipType, known := vm.jsonSObjectChildRelationshipType(typeName, name)
+	checkColumns := false
 	if !known {
 		child, relation, known := vm.jsonCustomPlatformChildRelationship(typeName, name)
 		if !known {
@@ -3460,8 +3464,9 @@ func (vm *VM) applyJSONSObjectChildField(obj *Value, typeName, name string, raw 
 			return true, nil
 		}
 		relationshipType = "List<" + child + ">"
+		checkColumns = name == "ContentDocumentLinks"
 	}
-	value, handled, err := vm.jsonSObjectChildValueFromJSON(relationshipType, raw, strict)
+	value, handled, err := vm.jsonSObjectChildValueFromJSON(relationshipType, raw, strict, checkColumns)
 	if handled && err == nil {
 		vm.markCollectionRefsEscaped(value)
 		obj.Fields[name] = value
@@ -3470,7 +3475,7 @@ func (vm *VM) applyJSONSObjectChildField(obj *Value, typeName, name string, raw 
 	return handled, err
 }
 
-func (vm *VM) jsonSObjectChildValueFromJSON(typeName string, raw any, strict bool) (Value, bool, error) {
+func (vm *VM) jsonSObjectChildValueFromJSON(typeName string, raw any, strict, checkColumns bool) (Value, bool, error) {
 	if _, isArray := raw.([]any); isArray {
 		return Null, true, jsonDeserializeException("QueryResult must start with '{'")
 	}
@@ -3490,7 +3495,7 @@ func (vm *VM) jsonSObjectChildValueFromJSON(typeName string, raw any, strict boo
 	} else if _, isArray := records.([]any); !isArray {
 		return Null, false, nil
 	}
-	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: records, sObjectRecord: true}, strict)
+	value, err := vm.typedValueFromJSON(typeName, jsonTypedInput{value: records, sObjectRecord: true, checkSObjectColumns: checkColumns}, strict)
 	if err != nil {
 		return Null, true, err
 	}
