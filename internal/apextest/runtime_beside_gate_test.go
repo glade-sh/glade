@@ -152,14 +152,14 @@ func TestRuntimeBesideGateRunWaitsForAbandonedBuild(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
-	testOnlyRuntimeBesideGateStartHook = func() {
+	opts := Options{NoDiskCache: true, BuildArtifacts: &artifacts, testBuildHooks: new(runtimeBuildHooks)}
+	opts.testBuildHooks.start = func() {
 		once.Do(func() { close(started) })
 		<-release
 	}
-	t.Cleanup(func() { testOnlyRuntimeBesideGateStartHook = nil })
 	runDone := make(chan testreport.Run, 1)
 	go func() {
-		runDone <- RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+		runDone <- RunCasesContext(context.Background(), index, opts, cases)
 	}()
 	<-started
 	select {
@@ -239,15 +239,11 @@ func TestRuntimeBesideGateBuildPanicIsFailSafe(t *testing.T) {
 			defer runtime.GOMAXPROCS(previous)
 
 			log := &besideGateLogBuffer{}
-			testOnlyRuntimeBesideGateLog = log
-			testOnlyRuntimeBesideGateStartHook = func() {
+			opts.testBuildHooks = &runtimeBuildHooks{log: log}
+			opts.testBuildHooks.start = func() {
 				var missing *struct{ value int }
 				_ = missing.value
 			}
-			t.Cleanup(func() {
-				testOnlyRuntimeBesideGateStartHook = nil
-				testOnlyRuntimeBesideGateLog = nil
-			})
 			InvalidateRuntimeCaches()
 			var besideGate testreport.Run
 			func() {
@@ -346,8 +342,8 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 			log := &besideGateLogBuffer{}
 			var failedMethods map[string]bool
 			failedPayload := ""
-			testOnlyRuntimeBesideGateLog = log
-			testOnlyRuntimeBesideGateStageHook = func(stage string) {
+			opts.testBuildHooks = &runtimeBuildHooks{log: log}
+			opts.testBuildHooks.stage = func(stage string) {
 				if stage != at {
 					return
 				}
@@ -359,10 +355,6 @@ func TestRuntimeBesideGatePartialBuildPanicDiscardsItsWrites(t *testing.T) {
 				}
 				panic("partial build panic at " + stage)
 			}
-			t.Cleanup(func() {
-				testOnlyRuntimeBesideGateStageHook = nil
-				testOnlyRuntimeBesideGateLog = nil
-			})
 			var run testreport.Run
 			func() {
 				defer func() {

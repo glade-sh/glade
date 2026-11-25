@@ -26,23 +26,74 @@ func EnableSourceScanMemo() { sourceScanMemoEnabled.Store(true) }
 var (
 	backgroundPublications     sync.Mutex
 	backgroundPublicationsDone sync.WaitGroup
-	backgroundPublicationSeq   atomic.Uint64
-	backgroundPublished        = map[string]uint64{}
+	publicationRootsMu         sync.Mutex
+	publicationRoots           = map[string]*publicationRoot{}
 )
 
 func publishInBackground(root string, publish func()) {
-	seq := backgroundPublicationSeq.Add(1)
+	write := orderedPublication(root, publish)
 	backgroundPublicationsDone.Add(1)
 	go func() {
 		defer backgroundPublicationsDone.Done()
+		// Keep detached disk I/O serialized across projects.
 		backgroundPublications.Lock()
 		defer backgroundPublications.Unlock()
-		if backgroundPublished[root] > seq {
+		write()
+	}()
+}
+
+// A root retains ordering state only while a write is queued or running.
+// issued and pending belong to publicationRootsMu; written belongs to mu.
+type publicationRoot struct {
+	mu              sync.Mutex
+	issued, written uint64
+	pending         int
+}
+
+func orderedPublication(root string, publish func()) func() {
+	order, seq := claimPublicationRoot(root)
+	return func() {
+		defer order.release(root)
+		order.mu.Lock()
+		defer order.mu.Unlock()
+		if order.written > seq {
 			return
 		}
+		order.written = seq
 		publish()
-		backgroundPublished[root] = seq
-	}()
+	}
+}
+
+// Direct writers take the rollback lock but never supersede a queued write
+// or skip their own write because another request finished first.
+func publishSynchronously(root string, publish func()) {
+	order, _ := claimPublicationRoot(root)
+	defer order.release(root)
+	order.mu.Lock()
+	defer order.mu.Unlock()
+	publish()
+}
+
+func claimPublicationRoot(root string) (*publicationRoot, uint64) {
+	publicationRootsMu.Lock()
+	defer publicationRootsMu.Unlock()
+	order := publicationRoots[root]
+	if order == nil {
+		order = new(publicationRoot)
+		publicationRoots[root] = order
+	}
+	order.issued++
+	order.pending++
+	return order, order.issued
+}
+
+func (order *publicationRoot) release(root string) {
+	publicationRootsMu.Lock()
+	defer publicationRootsMu.Unlock()
+	order.pending--
+	if order.pending == 0 {
+		delete(publicationRoots, root)
+	}
 }
 
 // sourceScanMemoLimit and sourceScanMemoByteLimit bound a memo by entries

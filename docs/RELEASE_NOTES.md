@@ -2,7 +2,32 @@
 
 ## Unreleased
 
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Payment adapters can use the captured sale and authorization reversal request and response shapes, and the captured authorize, capture, sale, refund and reversal request constructors match Salesforce in tests and anonymous Apex.
+
+## v0.3.15
+
+v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.
+
+### Upgrade notes
+
+- **Caches.** The test-runtime cache uses `apextest-runtime-v57` and the debugger project cache uses version 24 (`dapCacheVersion`), up from v56 and 23 in v0.3.14. The first run after upgrading rebuilds those caches.
+
+### Apex
+
+- Added native conformance coverage for locale-specific SOQL text ordering at API 62.0 and 67.0.
+
+### Changes
+
+- The experimental runtime build uses the sequential path for Visualforce projects. Cancellation joins compile and scan workers, and cache publication is coordinated with recovery.
+
+- DAP startup detects changes to dependency artifacts and Flow metadata while validating the frontend cache, and retries with consistent inputs.
+
+- **Visualforce digest cache.** When the project root is not private, Glade warns once that persistent digest caching is disabled and explains how to make the directory private.
+
+### Performance
+
+- **No measurable change.** On an 8 GiB Apple-silicon Mac, a cold full `glade test` run of a 4,565-test application took 435.1 s in v0.3.15 and 432.7 s in v0.3.14 (median of three interleaved runs each, within run-to-run variation), with the same peak memory (about 4.0 GiB) and identical test outcomes.
 
 ## v0.3.14
 

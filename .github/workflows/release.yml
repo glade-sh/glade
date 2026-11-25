@@ -319,6 +319,7 @@ jobs:
           name: glade-release-platform-${{ matrix.artifact }}
           path: dist
       - name: Attest platform archive
+        id: attest-archive
         uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
         with:
           subject-path: dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz
@@ -330,12 +331,29 @@ jobs:
       - name: Verify platform attestations
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ github.ref_name }}
+          ARCHIVE_BUNDLE: ${{ steps.attest-archive.outputs.bundle-path }}
         run: |
           archive="dist/glade_${VERSION}_${{ matrix.archive }}.tar.gz"
           gh attestation verify "$archive" -R "$GITHUB_REPOSITORY"
           gh attestation verify "$archive" -R "$GITHUB_REPOSITORY" \
             --predicate-type https://cyclonedx.org/bom
+
+          bundle="${archive}.sigstore.json"
+          existing_assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')"
+          # A retry can produce a fresh signature for the same archive. Reuse
+          # the original asset bytes only after verifying them below.
+          if grep -Fxq -- "${bundle##*/}" <<<"$existing_assets"; then
+            gh release download "$GITHUB_REF_NAME" --pattern "${bundle##*/}" --output "$bundle"
+          else
+            cp -- "$ARCHIVE_BUNDLE" "$bundle"
+          fi
+          gh attestation verify "$archive" --bundle "$bundle" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+            --source-digest "$GITHUB_SHA" \
+            --source-ref "$GITHUB_REF"
       - name: Upload platform release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -345,6 +363,7 @@ jobs:
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz \
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sha256 \
             dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json \
+            dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sigstore.json \
             dist/release-manifest-${{ matrix.artifact }}.json
 
   publish:
@@ -367,7 +386,9 @@ jobs:
           mkdir -p dist
           gh release download "$GITHUB_REF_NAME" \
             --dir dist \
-            --pattern 'glade_*' \
+            --pattern 'glade_*.tar.gz' \
+            --pattern 'glade_*.tar.gz.sha256' \
+            --pattern 'glade_*.tar.gz.sbom.json' \
             --pattern 'release-manifest-*.json' \
             --clobber
       - name: Download Required CI approval
@@ -478,15 +499,19 @@ jobs:
             "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz" \
             "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz.sbom.json" \
             "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_darwin_amd64.tar.gz.sigstore.json" \
             "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz" \
             "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz.sbom.json" \
             "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_darwin_arm64.tar.gz.sigstore.json" \
             "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz" \
             "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz.sbom.json" \
             "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_linux_amd64.tar.gz.sigstore.json" \
             "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz" \
             "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sbom.json" \
             "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sha256" \
+            "glade_${GITHUB_REF_NAME}_linux_arm64.tar.gz.sigstore.json" \
             "index.json" \
             "required-ci-attestation.json" \
             "salesforce-release-authority.json" \

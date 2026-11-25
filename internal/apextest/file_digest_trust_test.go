@@ -13,15 +13,46 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// setFileDigestClockForTesting changes the clock used by digest validation.
+func setFileDigestClockForTesting(now func() time.Time) func() {
+	previous := fileDigestClock.Swap(&now)
+	return func() { fileDigestClock.Store(previous) }
+}
+
+func TestFileDigestClockRestoreDuringRead(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Clock.cls")
+	if err := os.WriteFile(path, []byte("public class Clock {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	start, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		<-start
+		for range 1000 {
+			restore := setFileDigestClockForTesting(time.Now)
+			restore()
+		}
+	}()
+	close(start)
+	for range 50 {
+		if _, err := currentFileDigest(path); err != nil {
+			<-done
+			t.Fatal(err)
+		}
+	}
+	<-done
+}
+
 // trustedClock makes every file look old enough to trust, as in a daemon that
 // validates sources edited long ago.
 func trustedClock(t *testing.T) {
 	t.Helper()
 	resetFileDigestTrust()
-	oldNow, oldHook := fileDigestNow, fileDigestReadHook
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
+	oldNow, oldHook := fileDigestClock.Load(), fileDigestReadHook.Load()
+	setFileDigestClockForTesting(func() time.Time { return time.Now().Add(time.Hour) })
 	t.Cleanup(func() {
-		fileDigestNow, fileDigestReadHook = oldNow, oldHook
+		fileDigestClock.Store(oldNow)
+		fileDigestReadHook.Store(oldHook)
 		resetFileDigestTrust()
 	})
 }
@@ -29,16 +60,25 @@ func trustedClock(t *testing.T) {
 func countReads(t *testing.T, path string) *int {
 	t.Helper()
 	reads := new(int)
-	fileDigestReadHook = func(p string) {
+	SetFileDigestReadHookForTesting(func(p string) {
 		if p == path {
 			*reads++
 		}
-	}
+	})
 	return reads
 }
 
 // ctimeTick separates two writes so a coarse filesystem clock cannot give them one ctime.
-func ctimeTick() { time.Sleep(30 * time.Millisecond) }
+func ctimeTick(t *testing.T, path string) {
+	t.Helper()
+	if stamp, ok := filestamp.Stat(path); ok && stamp.Ctime%int64(time.Second) == 0 {
+		// HFS+ records ctime to whole seconds. A shorter delay can leave
+		// a same-size rewrite with the exact stamp the test just recorded.
+		time.Sleep(1100 * time.Millisecond)
+		return
+	}
+	time.Sleep(30 * time.Millisecond)
+}
 
 // skipWithoutStamps skips tests of the trusted path on file systems whose
 // ctime cannot be relied on (exFAT, network mounts); there every validation
@@ -104,8 +144,8 @@ func TestCurrentFileDigestSkipsRereadOfUnchangedOldFile(t *testing.T) {
 func TestCurrentFileDigestRehashesRecentlyModifiedFile(t *testing.T) {
 	resetFileDigestTrust()
 	t.Cleanup(resetFileDigestTrust)
-	oldHook := fileDigestReadHook
-	t.Cleanup(func() { fileDigestReadHook = oldHook })
+	oldHook := fileDigestReadHook.Load()
+	t.Cleanup(func() { fileDigestReadHook.Store(oldHook) })
 	path := filepath.Join(t.TempDir(), "A.cls")
 	if err := os.WriteFile(path, []byte("public class A {}"), 0o600); err != nil {
 		t.Fatal(err)
@@ -191,7 +231,7 @@ func TestCurrentFileDigestSeesEveryKindOfEdit(t *testing.T) {
 			if err != nil || first != sha256.Sum256(original) {
 				t.Fatalf("first digest %x, %v", first, err)
 			}
-			ctimeTick()
+			ctimeTick(t, path)
 			edit(t, path)
 			got, err := currentFileDigest(path)
 			content, readErr := os.ReadFile(path)
@@ -253,14 +293,14 @@ func TestValidatorsDetectEditAfterTrustedPass(t *testing.T) {
 		t.Fatalf("source read %d times in total across 4 validations of an unchanged old file, want 1", *reads)
 	}
 
-	ctimeTick()
+	ctimeTick(t, source)
 	if err := os.WriteFile(source, []byte("public class A { Integer x = 2; }"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := cache.validateCapturedSourceGenerationRaw(); err == nil {
 		t.Fatal("raw generation accepted an edited source")
 	}
-	ctimeTick()
+	ctimeTick(t, meta)
 	if err := os.WriteFile(meta, []byte("<ApexClass><apiVersion>66.0</apiVersion></ApexClass>"), 0o600); err != nil {
 		t.Fatal(err)
 	}

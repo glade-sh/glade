@@ -47,8 +47,8 @@ func captureRecentVisualforceInput(path string, remaining int64) (recentVisualfo
 	if !ok || before != stamp {
 		return recentVisualforceInput{}, true, sourceSnapshotMismatch(path, [sha256.Size]byte{}, nil, errors.New("input changed while opening"))
 	}
-	if fileDigestReadHook != nil {
-		fileDigestReadHook(path)
+	if hook := fileDigestReadHook.Load(); hook != nil {
+		(*hook)(path)
 	}
 	data := make([]byte, int(stamp.Size))
 	_, err = io.ReadFull(f, data)
