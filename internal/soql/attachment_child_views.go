@@ -1,15 +1,196 @@
 package soql
 
 import (
+	"encoding/binary"
+	"hash/maphash"
+	"maps"
+	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// The Id-only attachment views on ordinary custom records read from their
-// backing child relationships. Run those selections through the normal child
-// path so they share its parent matching and visibility rules.
-func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectDefinition, parent storage.Record, child ChildQuery, cache *childRelationshipQueryCache, context ExecutionContext) ([]storage.Record, bool, error) {
+type attachmentViewPlanKey struct {
+	parent, view string
+}
+
+const (
+	combinedAttachmentsRelationship = "CombinedAttachments"
+	notesAndAttachmentsRelationship = "NotesAndAttachments"
+)
+
+type attachmentRelationshipSchema struct {
+	runtimeGeneration uint64
+	schemaGeneration  uint64
+	runtimeStamp      string
+	objectCount       int
+	namespace         string
+	apiVersion        string
+	spreadSource      string
+	spreadFeatures    string
+	capturedPlain     bool
+	lazySpread        bool
+}
+
+type attachmentRelationshipSchemaSnapshot struct {
+	objects map[string]storage.ObjectState
+	schema  attachmentRelationshipSchema
+	digest  uint64
+}
+
+type attachmentRelationshipToken struct {
+	schema        attachmentRelationshipSchema
+	definitions   uint64
+	parent        string
+	customSetting bool
+}
+
+func (cache *childRelationshipQueryCache) attachmentRelationshipToken(org storage.OrgState, parent storage.ObjectDefinition) attachmentRelationshipToken {
+	schema := attachmentRelationshipSchema{
+		runtimeGeneration: org.RuntimeGenerationID(),
+		schemaGeneration:  org.SchemaGeneration(),
+		runtimeStamp:      org.RuntimeSchemaStamp,
+		objectCount:       len(org.Objects),
+		namespace:         org.Namespace,
+		apiVersion:        org.APIVersion,
+		spreadSource:      org.StandardSpread,
+		capturedPlain:     org.StandardSpreadCapturedPlain,
+		lazySpread:        org.LazyStandardSpreadEnabled(),
+	}
+	if schema.lazySpread {
+		schema.spreadFeatures = strings.Join(org.Features, "\x00")
+	}
+	// Reuse the digest within one query. Validation may install objects in a
+	// separate lazy view or extend the current map before projection.
+	snapshot := cache.attachmentSchema
+	if snapshot == nil || snapshot.schema != schema ||
+		reflect.ValueOf(snapshot.objects).Pointer() != reflect.ValueOf(org.Objects).Pointer() {
+		snapshot = &attachmentRelationshipSchemaSnapshot{
+			objects: org.Objects,
+			schema:  schema,
+			digest:  attachmentRelationshipDefinitions(org),
+		}
+		cache.attachmentSchema = snapshot
+	}
+	return attachmentRelationshipToken{
+		schema:        schema,
+		definitions:   snapshot.digest,
+		parent:        parent.APIName,
+		customSetting: storage.IsCustomSettingDefinition(parent),
+	}
+}
+
+var attachmentRelationshipHashSeed = maphash.MakeSeed()
+
+// ExecuteWithCache accepts mutable definitions whose edits can leave storage's
+// generations intact. Hash the loaded resolver's schema inputs together. The
+// object name is used by the namespace and platform lookups, definition names
+// and labels supply derived relationships, and counts determine name and
+// child-candidate preference. The platform catalog itself is immutable.
+func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
+	var digest attachmentRelationshipHash
+	digest.SetSeed(attachmentRelationshipHashSeed)
+	for _, name := range slices.Sorted(maps.Keys(org.Objects)) {
+		definition := org.Objects[name].Definition
+		digest.text(name)
+		digest.text(definition.APIName)
+		digest.text(definition.Label)
+		digest.text(definition.PluralLabel)
+		digest.size(len(definition.Fields))
+		digest.size(len(definition.RecordTypes))
+		// Visibility also depends on the definition and record presence
+		// of a suppressed spread object. Use the resolver's predicate.
+		if org.StandardSpreadCapturedPlain && org.SuppressesSpreadObject(name) {
+			digest.WriteByte(1)
+		} else {
+			digest.WriteByte(0)
+		}
+		digest.size(len(definition.Relations))
+		derivedMatch := matchesDerivedAttachmentRelationship(org.Namespace, definition)
+		for _, relation := range definition.Relations {
+			// Unmatched declarations affect candidate preference through
+			// the definition size. Their lookup targets cannot be read.
+			if derivedMatch || matchesAttachmentRelationship(org.Namespace, relation.ChildRelationship) {
+				digest.relationship(relation)
+			}
+		}
+		// These are the field-derived candidates the resolver can consider.
+		// System edges always use the derived name. A ContentDocumentLink's
+		// synthetic edge can enter either view only through that same name.
+		digest.WriteByte(0)
+		if derivedMatch {
+			visitSyntheticFieldChildRelationships(definition, digest.relationship)
+		}
+		digest.WriteByte(0)
+	}
+	return digest.Sum64()
+}
+
+func matchesAttachmentRelationship(namespace, name string) bool {
+	if strings.EqualFold(name, combinedAttachmentsRelationship) || strings.EqualFold(name, notesAndAttachmentsRelationship) {
+		return true
+	}
+	// Either view can also match a declaration with a namespace or __r.
+	return strings.Contains(name, "__") &&
+		(childRelationshipNameMatches(namespace, name, combinedAttachmentsRelationship) ||
+			childRelationshipNameMatches(namespace, name, notesAndAttachmentsRelationship))
+}
+
+func matchesDerivedAttachmentRelationship(namespace string, definition storage.ObjectDefinition) bool {
+	source := childRelationshipNameSource(definition)
+	if len(source) < len(combinedAttachmentsRelationship)-2 {
+		return false
+	}
+	// Normalization may remove spaces and pluralize the end of the label.
+	// A different initial letter can match only after stripping a namespace.
+	switch source[0] {
+	case 'C', 'c', 'N', 'n':
+	default:
+		if !strings.Contains(source, "_") {
+			return false
+		}
+	}
+	return matchesAttachmentRelationship(namespace, normalizeDerivedChildRelationshipName(source))
+}
+
+type attachmentRelationshipHash struct{ maphash.Hash }
+
+func (h *attachmentRelationshipHash) size(n int) {
+	var encoded [8]byte
+	binary.LittleEndian.PutUint64(encoded[:], uint64(n))
+	h.Write(encoded[:])
+}
+
+func (h *attachmentRelationshipHash) text(value string) {
+	h.size(len(value))
+	h.WriteString(value)
+}
+
+func (h *attachmentRelationshipHash) relationship(relation storage.Relationship) {
+	h.WriteByte(1)
+	h.text(relation.Field)
+	h.text(relation.ChildRelationship)
+	h.size(len(relation.ParentObjects))
+	for _, parent := range relation.ParentObjects {
+		h.text(parent)
+	}
+}
+
+type attachmentViewPlan struct {
+	loaded          bool
+	importedObject  string
+	importedIndex   map[storage.ID][]string
+	sourcesPrepared bool
+	sources         []attachmentViewSource
+}
+
+type attachmentViewSource struct {
+	child ChildQuery
+	index map[storage.ID][]string
+}
+
+func attachmentViewName(definition storage.ObjectDefinition, child ChildQuery) string {
 	var viewName string
 	switch strings.ToLower(child.Relationship) {
 	case "notesandattachments":
@@ -17,36 +198,47 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 	case "combinedattachments":
 		viewName = "CombinedAttachment"
 	default:
-		return nil, false, nil
+		return ""
 	}
 	if !strings.HasSuffix(strings.ToLower(definition.APIName), "__c") ||
 		storage.StripAnyNamespaceToken(definition.APIName) != definition.APIName ||
 		storage.IsCustomSettingDefinition(definition) || !IsContentChildAttachedIDQuery(child.Query) {
+		return ""
+	}
+	return viewName
+}
+
+// The Id-only attachment views on ordinary custom records read from their
+// backing child relationships. Run those selections through the normal child
+// path so they share its parent matching and visibility rules.
+func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectDefinition, parent storage.Record, child ChildQuery, cache *childRelationshipQueryCache, context ExecutionContext) ([]storage.Record, bool, error) {
+	viewName := attachmentViewName(definition, child)
+	if viewName == "" {
 		return nil, false, nil
 	}
-	if attachmentViewRelationshipLoaded(org, definition, child.Relationship, cache) {
+	plan := planAttachmentView(org, definition, child.Relationship, viewName, cache)
+	if plan.loaded {
 		return nil, false, nil
 	}
 
 	// Fixture imports can populate the view table while its relationship is
 	// still resolved by the platform catalog. Use the stored rows for that
 	// parent, with ordinary child visibility and projection.
-	if viewObjectName, loaded := storage.ResolveObjectName(org, viewName); loaded {
-		viewObject := org.Objects[viewObjectName]
-		if len(viewObject.Records) > 0 {
-			index := childRelationshipIndex(org, viewObjectName, viewObject, "ParentId", cache)
-			for _, id := range index[storage.IDIndexKey(parent.ID)] {
-				row := viewObject.Records[storage.ID(id)]
-				if parentID, ok := recordValue(org, viewObject.Definition, row, "ParentId"); ok && equalValues(parentID, storage.IDValue(parent.ID)) {
-					return nil, false, nil
-				}
+	parentKey := storage.IDIndexKey(parent.ID)
+	if imported := plan.importedIndex[parentKey]; len(imported) > 0 {
+		viewObject := org.Objects[plan.importedObject]
+		for _, id := range imported {
+			row := viewObject.Records[storage.ID(id)]
+			if parentID, ok := recordValue(org, viewObject.Definition, row, "ParentId"); ok && equalValues(parentID, storage.IDValue(parent.ID)) {
+				return nil, false, nil
 			}
 		}
 	}
 
-	sources := []string{"Notes", "Attachments"}
-	if viewName == "CombinedAttachment" {
-		sources = append(sources, "ContentDocumentLinks")
+	result := make([]storage.Record, 0)
+	parentReadable := context.ChildFieldReadable != nil && context.ChildFieldReadable(viewName, "ParentId")
+	if plan.sourcesPrepared && len(plan.sources) == 0 {
+		return result, true, nil
 	}
 	// Keep the platform backing edges and their implicit projections separate
 	// from sibling subqueries, which can resolve custom relationships or select
@@ -58,19 +250,45 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		}
 		cache = cache.attachmentSources
 	}
-	result := make([]storage.Record, 0)
-	parentReadable := context.ChildFieldReadable != nil && context.ChildFieldReadable(viewName, "ParentId")
-	for _, relationship := range sources {
-		source := child
-		source.Relationship = relationship
-		file := relationship == "ContentDocumentLinks"
-		if file {
-			source.Query.Fields = []string{"Id", "ContentDocumentId"}
+	sources := plan.sources
+	if !plan.sourcesPrepared {
+		note, attachment, link := child, child, child
+		note.Relationship = "Notes"
+		attachment.Relationship = "Attachments"
+		sources = []attachmentViewSource{{child: note}, {child: attachment}}
+		if viewName == "CombinedAttachment" {
+			link.Relationship = "ContentDocumentLinks"
+			link.Query.Fields = []string{"Id", "ContentDocumentId"}
+			sources = append(sources, attachmentViewSource{child: link})
 		}
-		rows, err := executeChildRelationshipRows(org, definition, parent, source, cache, context, true)
+	}
+	for _, source := range sources {
+		if !plan.sourcesPrepared {
+			prepared, err := prepareChildRelationshipQuery(org, definition, source.child, cache, context, true)
+			if err != nil {
+				return nil, true, err
+			}
+			if prepared.emptyAttachmentSource {
+				continue
+			}
+			field := prepared.relation.Field
+			// The ordinary row executor uses its parent index when there is
+			// no matching storage index. Reuse that index to skip misses.
+			if object, loaded := org.Objects[prepared.childObjectName]; loaded && !isSystemRelationshipField(field) {
+				if _, indexed := storage.LookupIndex(object, field, storage.IDValue(parent.ID)); !indexed {
+					source.index = childRelationshipIndex(org, prepared.childObjectName, object, field, cache)
+				}
+			}
+			plan.sources = append(plan.sources, source)
+		}
+		if source.index != nil && len(source.index[parentKey]) == 0 {
+			continue
+		}
+		rows, err := executeChildRelationshipRows(org, definition, parent, source.child, cache, context, true)
 		if err != nil {
 			return nil, true, err
 		}
+		file := source.child.Relationship == "ContentDocumentLinks"
 		for _, row := range rows {
 			id := row.ID
 			if file {
@@ -95,22 +313,30 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 			result = append(result, storage.Record{ID: id, Object: viewName, Fields: fields})
 		}
 	}
+	plan.sourcesPrepared = true
 	return result, true, nil
 }
 
-func attachmentViewRelationshipLoaded(org storage.OrgState, definition storage.ObjectDefinition, relationship string, cache *childRelationshipQueryCache) bool {
-	key := childRelationshipCacheKey(org.Namespace, definition.APIName, relationship)
+func planAttachmentView(org storage.OrgState, definition storage.ObjectDefinition, relationship, view string, cache *childRelationshipQueryCache) *attachmentViewPlan {
+	key := attachmentViewPlanKey{parent: definition.APIName, view: view}
 	if cache != nil {
-		if loaded, found := cache.loadedAttachmentViews[key]; found {
-			return loaded
+		if plan := cache.attachmentViews[key]; plan != nil {
+			return plan
 		}
 	}
-	_, _, loaded := loadedChildRelationship(org, definition, relationship)
-	if cache != nil {
-		if cache.loadedAttachmentViews == nil {
-			cache.loadedAttachmentViews = make(map[string]bool)
+	resolution := childRelationshipResolutionCached(org, definition, relationship, cache, true)
+	plan := &attachmentViewPlan{loaded: resolution.loaded}
+	if !plan.loaded {
+		if name, ok := storage.ResolveObjectName(org, view); ok && len(org.Objects[name].Records) > 0 {
+			plan.importedObject = name
+			plan.importedIndex = childRelationshipIndex(org, name, org.Objects[name], "ParentId", cache)
 		}
-		cache.loadedAttachmentViews[key] = loaded
 	}
-	return loaded
+	if cache != nil {
+		if cache.attachmentViews == nil {
+			cache.attachmentViews = make(map[attachmentViewPlanKey]*attachmentViewPlan)
+		}
+		cache.attachmentViews[key] = plan
+	}
+	return plan
 }

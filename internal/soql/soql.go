@@ -2746,7 +2746,12 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 		query.Where = &condition
 	}
-	prepared := preparedChildRelationshipQuery{childObjectName: childObjectName, relation: relation, query: query}
+	prepared := preparedChildRelationshipQuery{
+		childObjectName:       childObjectName,
+		relation:              relation,
+		query:                 query,
+		emptyAttachmentSource: platformOnly && len(childObject.Records) == 0,
+	}
 	if childCache != nil {
 		childCache.prepared[key] = prepared
 	}
@@ -2954,28 +2959,52 @@ func childRelationshipPlainReferenceValue(org storage.OrgState, record storage.R
 }
 
 func childRelationshipCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) (string, storage.Relationship, bool) {
+	resolved := childRelationshipResolutionCached(org, parentDefinition, relationship, childCache, false)
+	return resolved.childObjectName, resolved.relation, resolved.ok
+}
+
+func childRelationshipResolutionCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache, attachmentView bool) childRelationshipResolution {
 	if childCache == nil || childCache.execution == nil {
-		return childRelationship(org, parentDefinition, relationship)
+		return resolveChildRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + org.SuppressedSpreadVisibilityStamp()
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00"
+	var token attachmentRelationshipToken
+	if attachmentView {
+		key += "\x00attachment"
+		token = childCache.attachmentRelationshipToken(org, parentDefinition)
+	} else {
+		key += org.SuppressedSpreadVisibilityStamp()
+	}
 	cache.mu.RLock()
 	cached, found := cache.childRelationships[key]
 	cache.mu.RUnlock()
-	if found {
-		return cached.childObjectName, cached.relation, cached.ok
+	if found && cached.attachmentToken == token {
+		return cached
 	}
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
-	if cached, ok := cache.childRelationships[key]; ok {
-		return cached.childObjectName, cached.relation, cached.ok
+	if cached, ok := cache.childRelationships[key]; ok && cached.attachmentToken == token {
+		return cached
+	}
+	resolved := resolveChildRelationship(org, parentDefinition, relationship)
+	if attachmentView {
+		// A parent lookup can install an object in a source-backed org. Do
+		// not publish a resolution under the token from before that install.
+		if len(org.Objects) != token.schema.objectCount {
+			return resolved
+		}
+		// Attachment validation consumes the selected object and row
+		// preparation consumes the lookup field. Keep only those values
+		// across queries so the entry cannot alias mutable metadata.
+		resolved.relation = storage.Relationship{Field: resolved.relation.Field}
+		resolved.attachmentToken = token
 	}
 	if cache.childRelationships == nil {
 		cache.childRelationships = make(map[string]childRelationshipResolution)
 	}
-	childObjectName, relation, ok := childRelationship(org, parentDefinition, relationship)
-	cache.childRelationships[key] = childRelationshipResolution{childObjectName: childObjectName, relation: relation, ok: ok}
-	return childObjectName, relation, ok
+	cache.childRelationships[key] = resolved
+	return resolved
 }
 
 func childRelationshipCacheKey(namespace, parentName, relationship string) string {
@@ -2983,16 +3012,21 @@ func childRelationshipCacheKey(namespace, parentName, relationship string) strin
 }
 
 func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
+	resolved := resolveChildRelationship(org, parentDefinition, relationship)
+	return resolved.childObjectName, resolved.relation, resolved.ok
+}
+
+func resolveChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) childRelationshipResolution {
 	if name, relation, ok := loadedChildRelationship(org, parentDefinition, relationship); ok {
-		return name, relation, true
+		return childRelationshipResolution{childObjectName: name, relation: relation, ok: true, loaded: true}
 	}
 	child, relation, ok := storage.LookupPlatformChildRelationshipAtVersion(parentDefinition, relationship, org.APIVersion)
 	if ok && strings.HasSuffix(strings.ToLower(child), "__share") {
 		if _, loaded := storage.ResolveObjectName(org, child); !loaded {
-			return "", storage.Relationship{}, false
+			return childRelationshipResolution{}
 		}
 	}
-	return child, relation, ok
+	return childRelationshipResolution{childObjectName: child, relation: relation, ok: ok}
 }
 
 func loadedChildRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
@@ -3038,11 +3072,7 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 			consider(relation)
 		}
 		storage.VisitStandardObjectRelationships(childDefinition.APIName, nil, consider)
-		for _, relation := range syntheticContentDocumentLinkRelationship(childDefinition) {
-			consider(relation)
-		}
-		visitSyntheticStandardSystemChildRelationships(childDefinition, consider)
-		visitSyntheticSystemChildRelationships(childDefinition, consider)
+		visitSyntheticFieldChildRelationships(childDefinition, consider)
 		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
 			consider(relation)
 		}
@@ -3051,6 +3081,14 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 		return bestObject, bestRelation, true
 	}
 	return "", storage.Relationship{}, false
+}
+
+func visitSyntheticFieldChildRelationships(definition storage.ObjectDefinition, visit func(storage.Relationship)) {
+	for _, relation := range syntheticContentDocumentLinkRelationship(definition) {
+		visit(relation)
+	}
+	visitSyntheticStandardSystemChildRelationships(definition, visit)
+	visitSyntheticSystemChildRelationships(definition, visit)
 }
 
 func syntheticPrefixedCustomChildRelationship(org storage.OrgState, parentDefinition, childDefinition storage.ObjectDefinition, queryName string) (storage.Relationship, bool) {
@@ -3316,16 +3354,17 @@ func relationshipNameMatchRank(namespace, canonical, candidate string) (int, boo
 }
 
 func derivedChildRelationshipName(definition storage.ObjectDefinition) string {
-	if strings.TrimSpace(definition.PluralLabel) != "" {
-		return normalizeDerivedChildRelationshipName(definition.PluralLabel)
+	return normalizeDerivedChildRelationshipName(childRelationshipNameSource(definition))
+}
+
+func childRelationshipNameSource(definition storage.ObjectDefinition) string {
+	if name := strings.TrimSpace(definition.PluralLabel); name != "" {
+		return name
 	}
-	if strings.TrimSpace(definition.Label) != "" {
-		return normalizeDerivedChildRelationshipName(definition.Label)
+	if name := strings.TrimSpace(definition.Label); name != "" {
+		return name
 	}
-	if definition.APIName != "" {
-		return normalizeDerivedChildRelationshipName(definition.APIName)
-	}
-	return ""
+	return strings.TrimSpace(definition.APIName)
 }
 
 func normalizeDerivedChildRelationshipName(name string) string {
