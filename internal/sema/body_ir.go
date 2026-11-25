@@ -3902,6 +3902,11 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 		if d, ok := semaMatcherToMatchResultDiagnostic(typ, member, platformType, receiverMode, method, args, bodyOffset+pos, source); ok {
 			return []diagnostic.Diagnostic{d}, true
 		}
+		// A Date or Datetime initializer does not add addDays to Object's method set.
+		if receiverMode == "instance" && len(args) == 1 &&
+			strings.EqualFold(platformType, "Object") && strings.EqualFold(method, "addDays") {
+			return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
+		}
 		if strings.EqualFold(platformType, "String") ||
 			(receiverMode == "instance" && len(args) == 0 && strings.EqualFold(platformType, "Integer") && !increment) {
 			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source), receiverType, method, irCallArgTypes(a, args, scope, model, typ.Name), model)}, true

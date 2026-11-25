@@ -12,60 +12,72 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// The local contract is that a call argument uses the same receiver type as
-// the same expression at statement level. The direct Date rejection text is
-// captured in surf_collections_strings/org.tsv (dth_date_gettime, API 62/67).
+// Check the captured Date rejection alongside local regressions for the
+// declared receiver type inside and outside a call argument.
 func TestChainedArgumentReceiver(t *testing.T) {
+	t.Run("DateGetTimeAnonymousNativeConformance", checkDateGetTimeAnonymousCapture)
 	const dateRejection = "Method does not exist or incorrect signature: void getTime() from the type Date"
 	cases := []struct {
-		name        string
-		declaration string
-		statement   string
-		wantDate    bool
-		wantClean   bool
+		name                 string
+		declaration          string
+		statement            string
+		wantRejectedReceiver string
 	}{
-		{"datetime/first", "Datetime lastDate = Datetime.now();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", false, true},
-		{"datetime/standalone", "Datetime lastDate = Datetime.now();", "Long t = lastDate.addDays(2).getTime();", false, true},
-		{"datetime/later", "Datetime lastDate = Datetime.now();", "System.assertEquals(0L, lastDate.addDays(2).getTime());", false, true},
-		{"date/first", "Date lastDate = Date.today();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", true, false},
-		{"date/standalone", "Date lastDate = Date.today();", "Long t = lastDate.addDays(2).getTime();", true, false},
-		{"date/direct", "Date lastDate = Date.newInstance(2024, 1, 15);", "Long t = lastDate.getTime();", true, false},
-		{"date/null", "Date lastDate = null;", "Long t = lastDate.getTime();", true, false},
-		{"object/first", "Object lastDate = Date.today();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", false, false},
-		{"object/standalone", "Object lastDate = Date.today();", "Long t = lastDate.addDays(2).getTime();", false, false},
+		{"datetime/first", "Datetime lastDate = Datetime.now();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", ""},
+		{"datetime/standalone", "Datetime lastDate = Datetime.now();", "Long t = lastDate.addDays(2).getTime();", ""},
+		{"datetime/later", "Datetime lastDate = Datetime.now();", "System.assertEquals(0L, lastDate.addDays(2).getTime());", ""},
+		{"date/first", "Date lastDate = Date.today();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", "Date"},
+		{"date/standalone", "Date lastDate = Date.today();", "Long t = lastDate.addDays(2).getTime();", "Date"},
+		{"date/direct", "Date lastDate = Date.newInstance(2024, 1, 15);", "Long t = lastDate.getTime();", "Date"},
+		{"date/null", "Date lastDate = null;", "Long t = lastDate.getTime();", "Date"},
+		{"object/first", "Object lastDate = Date.today();", "Datetime q = Datetime.newInstance(lastDate.addDays(2).getTime());", "Object"},
+		{"object/standalone", "Object lastDate = Date.today();", "Long t = lastDate.addDays(2).getTime();", "Object"},
 	}
-	for _, api := range []string{"50.0", "62.0", "67.0"} {
+	for _, api := range []string{"50.0", "62.0", "67.0", "68.0"} {
 		for _, tc := range cases {
 			body := tc.declaration + "\n" + tc.statement
 			check := func(t *testing.T, result Result) {
 				t.Helper()
-				if tc.wantClean && result.HasErrors() {
-					t.Fatalf("valid Datetime chain rejected: %+v", result.Diagnostics)
-				}
-				var dateDiagnostic bool
-				for _, d := range result.Diagnostics {
-					dateDiagnostic = dateDiagnostic || d.NativeMessage == dateRejection
-					if !tc.wantDate && (d.NativeMessage == dateRejection || strings.Contains(d.Message, "Date.getTime")) {
-						t.Fatalf("call was incorrectly checked on a Date receiver: %+v", d)
+				switch tc.wantRejectedReceiver {
+				case "":
+					if result.HasErrors() {
+						t.Fatalf("valid Datetime chain rejected: %+v", result.Diagnostics)
 					}
-				}
-				if tc.wantDate && !dateDiagnostic {
+				case "Date":
+					for _, d := range result.Diagnostics {
+						if d.NativeMessage == dateRejection {
+							return
+						}
+					}
 					t.Fatalf("missing Date rejection %q: %+v", dateRejection, result.Diagnostics)
+				case "Object":
+					if len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != "GLADESEMA008" ||
+						!strings.HasSuffix(result.Diagnostics[0].Message, `calls unknown method "Object.addDays"`) {
+						t.Fatalf("want one missing-method error for Object.addDays: %+v", result.Diagnostics)
+					}
 				}
 			}
 			t.Run(api+"/"+tc.name+"/anonymous", func(t *testing.T) {
 				check(t, AnalyzeAnonymous(typesys.Index{}, body, api))
 			})
-			t.Run(api+"/"+tc.name+"/isTest", func(t *testing.T) {
-				root := t.TempDir()
-				path := filepath.Join(root, "ReceiverProbe.cls")
-				writeSemaFile(t, path, "@IsTest private class ReceiverProbe { @IsTest static void probe() {\n"+body+"\n} }")
-				index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
-				if len(index.Diagnostics) != 0 {
-					t.Fatalf("index diagnostics: %+v", index.Diagnostics)
-				}
-				check(t, Analyze(index))
-			})
+			for _, route := range []struct {
+				name   string
+				source string
+			}{
+				{"named", "public class ReceiverProbe { public static void probe() {\n" + body + "\n} }"},
+				{"isTest", "@IsTest private class ReceiverProbe { @IsTest static void probe() {\n" + body + "\n} }"},
+			} {
+				t.Run(api+"/"+tc.name+"/"+route.name, func(t *testing.T) {
+					root := t.TempDir()
+					path := filepath.Join(root, "ReceiverProbe.cls")
+					writeSemaFile(t, path, route.source)
+					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+					if len(index.Diagnostics) != 0 {
+						t.Fatalf("index diagnostics: %+v", index.Diagnostics)
+					}
+					check(t, Analyze(index))
+				})
+			}
 		}
 	}
 }
@@ -78,7 +90,7 @@ func TestUnresolvedDottedDateHasNoInferredType(t *testing.T) {
 	}
 }
 
-func TestDateGetTimeAnonymousNativeConformance(t *testing.T) {
+func checkDateGetTimeAnonymousCapture(t *testing.T) {
 	const dir = "../apextest/testdata/conformance/surf_collections_strings"
 	const caseID = "dth_date_gettime"
 	source, err := os.ReadFile(filepath.Join(dir, caseID+".apex"))
