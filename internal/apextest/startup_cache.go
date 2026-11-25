@@ -441,11 +441,12 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 }
 
 type standardFieldScan struct {
-	org           *storage.OrgState
-	relationships *childRelationshipLookup
-	inferred      map[string]map[string]storage.Field
-	customObjects map[string]struct{}
-	seen          map[standardFieldName]struct{}
+	org              *storage.OrgState
+	relationships    *childRelationshipLookup
+	inferred         map[string]map[string]storage.Field
+	customObjects    map[string]struct{}
+	seen             map[standardFieldName]struct{}
+	fieldNameScratch []byte
 }
 
 type standardFieldName struct{ object, field string }
@@ -457,8 +458,27 @@ func (s *standardFieldScan) recordInferredField(objectName, fieldName string, fi
 	}
 	// The scanner's field-name captures contain only ASCII characters. Keep
 	// the first spelling and shape in the result while deduplicating by case.
-	key := standardFieldName{object: objectName, field: strings.ToLower(fieldName)}
-	if _, exists := s.seen[key]; exists {
+	key := standardFieldName{object: objectName, field: fieldName}
+	var folded []byte
+	for i := 0; i < len(fieldName); i++ {
+		c := fieldName[i]
+		if c < 'A' || c > 'Z' {
+			continue
+		}
+		if folded == nil {
+			s.fieldNameScratch = append(s.fieldNameScratch[:0], fieldName...)
+			folded = s.fieldNameScratch
+		}
+		folded[i] = c + ('a' - 'A')
+	}
+	if folded != nil {
+		// The temporary string in the map lookup can use the scratch
+		// bytes directly. Copy them only when retaining a new key.
+		if _, exists := s.seen[standardFieldName{object: objectName, field: string(folded)}]; exists {
+			return
+		}
+		key.field = string(folded)
+	} else if _, exists := s.seen[key]; exists {
 		return
 	}
 	if s.seen == nil {
