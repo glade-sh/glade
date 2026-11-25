@@ -6,6 +6,8 @@
 
 - Custom-object inserts reject missing parents for optional lookups that clear on delete and wrong-type IDs in those lookups to custom objects in Apex, oversized external ID upsert keys report `isCreated() == false`, and before-insert triggers see trimmed Text, including non-key Text on inserts from partial external-ID upsert lists.
 
+- Partial external-ID upserts keep results in input order and save surviving rows when an oversized key and an after-save automation failure occur in the same batch.
+
 ## v0.3.15
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.

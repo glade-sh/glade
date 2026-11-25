@@ -3905,8 +3905,12 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				return failures, nil
 			}
 			defer func() {
-				if outErr == nil {
+				switch retry := outErr.(type) {
+				case nil:
 					out = mergeDMLResults(failures, out)
+				case *processUpsertRetry:
+					// The retry snapshot still includes the rows removed by preflight.
+					retry.results = mergeDMLResults(failures, retry.results)
 				}
 			}()
 		}
