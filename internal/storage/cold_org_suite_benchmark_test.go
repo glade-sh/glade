@@ -54,10 +54,19 @@ func BenchmarkColdOrgTestSuite(b *testing.B) {
 	}
 	b.ReportAllocs()
 	var orgBuild time.Duration
+	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		apextest.InvalidateRuntimeCaches()
+		b.StartTimer()
 		run := apextest.Run(index, apextest.Options{NoDiskCache: true, Parallelism: 1, PerfCounters: true})
-		orgBuild += time.Duration(apextest.SnapshotPerfCounters().Phases.OrgBuildNS)
+		b.StopTimer()
+		phases := apextest.SnapshotPerfCounters().Phases
+		if phases.CacheMisses != 1 || phases.MemoryCacheHits != 0 || phases.DiskCacheHits != 0 {
+			b.Fatalf("iteration %d runtime cache misses=%d memory hits=%d disk hits=%d, want 1/0/0",
+				i+1, phases.CacheMisses, phases.MemoryCacheHits, phases.DiskCacheHits)
+		}
+		orgBuild += time.Duration(phases.OrgBuildNS)
 		if summary := run.Summary(); summary.Total != 20 || summary.Passed != 20 {
 			b.Fatalf("summary = %#v", summary)
 		}
