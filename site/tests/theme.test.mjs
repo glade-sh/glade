@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { test } from "node:test";
 import vm from "node:vm";
+import { renderBrandAssets } from "../scripts/render-brand-assets.mjs";
 
 const baseCss = await readFile(new URL("../.vitepress/theme/custom.css", import.meta.url), "utf8");
 const homeCss = await readFile(new URL("../docs-src/public/css/home.css", import.meta.url), "utf8");
@@ -130,7 +131,6 @@ const checkHelpScreenshotsScript = await readFile(new URL("../scripts/check-help
 const helpProjectSetupScript = await readFile(new URL("../scripts/help-project/setup.mjs", import.meta.url), "utf8").catch(() => "");
 const logoMark = await readFile(new URL("../docs-src/public/logo-mark.svg", import.meta.url), "utf8");
 const logoMarkOpen = await readFile(new URL("../docs-src/public/logo-mark-open.svg", import.meta.url), "utf8");
-const socialCardPng = await readFile(new URL("../docs-src/public/social-card.png", import.meta.url)).catch(() => Buffer.alloc(0));
 
 async function readSiteSourceFiles(relativeDir) {
   const dir = new URL(relativeDir, import.meta.url);
@@ -487,9 +487,21 @@ test("site exposes system, light, and dark appearance selection", () => {
   assert.match(tokensCss, /:root/);
 });
 
-test("social share metadata exposes a raster preview card and route identity", () => {
+test("social share metadata exposes a raster preview card and route identity", async () => {
+  const { "social-card.png": socialCardPng, "apple-touch-icon.png": appleIcon, "favicon.ico": favicon } =
+    await renderBrandAssets();
   assert.equal(socialCardPng.toString("ascii", 1, 4), "PNG");
   assert.ok(socialCardPng.length > 10_000, "social card should be a real raster asset");
+  assert.equal(socialCardPng.readUInt32BE(16), 1200);
+  assert.equal(socialCardPng.readUInt32BE(20), 630);
+  assert.equal(appleIcon.toString("ascii", 1, 4), "PNG");
+  assert.equal(appleIcon.readUInt32BE(16), 180);
+  assert.equal(appleIcon.readUInt32BE(20), 180);
+  assert.equal(favicon.readUInt16LE(2), 1);
+  assert.equal(favicon.readUInt16LE(4), 1);
+  assert.equal(favicon[6], 32);
+  assert.equal(favicon[7], 32);
+  assert.equal(favicon.toString("ascii", favicon.readUInt32LE(18) + 1, favicon.readUInt32LE(18) + 4), "PNG");
   assert.match(config, /const canonical = `https:\/\/glade\.sh\$\{route\}`/);
   assert.match(config, /\['meta', \{ property: 'og:site_name', content: 'Glade' \}\]/);
   assert.match(config, /\['meta', \{ property: 'og:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
@@ -1416,6 +1428,8 @@ test('theme uses bundled fonts, readable type, and task-oriented navigation', ()
 test("Cloudflare Pages build publishes the install route itself", () => {
   assert.match(packageJson.scripts.build, /npm run verify/);
   assert.match(packageJson.scripts.build, /npm run build:site/);
+  assert.equal(packageJson.scripts["prebuild:site"], "node scripts/render-brand-assets.mjs");
+  assert.equal(packageJson.scripts.predev, "node scripts/render-brand-assets.mjs");
   assert.match(packageJson.scripts["build:site"], /^node scripts\/sync-release-manifest\.mjs && vitepress build \./);
   assert.match(packageJson.scripts.dev, /^node scripts\/sync-release-manifest\.mjs && vitepress dev \./);
   assert.match(packageJson.scripts["build:site"], /cp install\.sh \.vitepress\/dist\/install\.sh/);
