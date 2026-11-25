@@ -23,12 +23,21 @@ func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 	if err != nil || len(rows) != 49 {
 		t.Fatalf("native rows: %d, %v", len(rows), err)
 	}
+	companions := make(map[string]string, 2)
+	for _, name := range []string{"Holder.cls", "ReceiverValues.cls"} {
+		data, err := os.ReadFile(filepath.Join(fixture, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		companions[name] = string(data)
+	}
 	for _, row := range rows[1:] {
 		if row[1] == "anonymous" {
 			continue
 		}
 		for _, namespace := range []string{"", "orchard"} {
 			t.Run(strings.Join(row[:3], "/")+"/namespace="+namespace, func(t *testing.T) {
+				t.Parallel()
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"namespace":%q,"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, namespace, row[0]))
 				write := func(name, source string) {
@@ -40,12 +49,8 @@ func TestStaticObjectChainProjectNamedTestAndTriggerRoutes(t *testing.T) {
 					writeFile(t, path, source)
 					writeFile(t, path+"-meta.xml", "<"+kind+"><apiVersion>"+row[0]+"</apiVersion><status>Active</status></"+kind+">")
 				}
-				for _, name := range []string{"Holder.cls", "ReceiverValues.cls"} {
-					data, err := os.ReadFile(filepath.Join(fixture, name))
-					if err != nil {
-						t.Fatal(err)
-					}
-					write(name, string(data))
+				for name, source := range companions {
+					write(name, source)
 				}
 				statement, message := statements[row[2]], row[5]
 				if namespace != "" && row[2] != "missing_namespace" {

@@ -181,7 +181,15 @@ func TestTriggersOrgConformance(t *testing.T) {
 			if analysis := sema.Analyze(index); analysis.HasErrors() {
 				t.Fatalf("helper semantics: %v", analysis.Diagnostics)
 			}
-			org := capturedFixtureOrg(t, index, api)
+			// Let the runtime prepare standard objects as each row uses them.
+			org, err := orgFromIndexWithError(index)
+			if err != nil {
+				t.Fatal(err)
+			}
+			org.APIVersion = api
+			if err := applyConfiguredTestPermissions(&org, fixtureProject); err != nil {
+				t.Fatal(err)
+			}
 			anonymousRuntime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
 			if err != nil {
 				t.Fatal(err)

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
@@ -229,19 +230,15 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 			if analysis.HasErrors() {
 				t.Fatalf("semantics: %v", analysis.Diagnostics)
 			}
-			org := orgFromIndex(index)
+			org, err := orgFromIndexWithError(index)
+			if err != nil {
+				t.Fatal(err)
+			}
 			org.APIVersion = api
 			anonymousRunner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
-			observe := func(t *testing.T, tc familyCase, mode vm.LimitMode) string {
+			observe := func(tc familyCase, mode vm.LimitMode, program ir.Program) string {
 				if tc.Anonymous != "" {
-					if analysis := sema.AnalyzeAnonymous(index, tc.Anonymous, api); analysis.HasErrors() {
-						t.Fatalf("anonymous semantics: %v", analysis.Diagnostics)
-					}
-					program, err := vm.CompileAnonymousWithOptions(tc.Anonymous, vm.CompileOptions{APIVersion: api})
-					if err != nil {
-						t.Fatal(err)
-					}
-					_, err = anonymousRunner.execute(program, func(machine *vm.VM) { machine.SetLimitMode(mode) })
+					_, err := anonymousRunner.execute(program, func(machine *vm.VM) { machine.SetLimitMode(mode) })
 					if err == nil {
 						return "SUCCESS"
 					}
@@ -281,10 +278,23 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 					route = "anonymous"
 				}
 				t.Run(tc.ID, func(t *testing.T) {
+					var program ir.Program
+					if tc.Anonymous != "" {
+						// Parsing and semantics depend on the API and source, not the
+						// execution limit mode. Each execution still starts in a fresh VM.
+						if analysis := sema.AnalyzeAnonymous(index, tc.Anonymous, api); analysis.HasErrors() {
+							t.Fatalf("anonymous semantics: %v", analysis.Diagnostics)
+						}
+						var err error
+						program, err = vm.CompileAnonymousWithOptions(tc.Anonymous, vm.CompileOptions{APIVersion: api})
+						if err != nil {
+							t.Fatal(err)
+						}
+					}
 					expected := expectedText(tc, native)
 					if tc.Carried != nil {
 						// Carried differences are logged, never asserted to persist (doc-1).
-						if actual := observe(t, tc, vm.LimitModePermissive); actual == expected {
+						if actual := observe(tc, vm.LimitModePermissive, program); actual == expected {
 							t.Logf("carry now matches: %s@%s (%s)", tc.ID, api, tc.Carried.Owner)
 						}
 						t.Logf("carried %s@%s owner=%s: %s", tc.ID, api, tc.Carried.Owner, tc.Carried.Reason)
@@ -296,7 +306,7 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 					}
 					for _, mode := range modes {
 						counts.Run(t, route, tc.ID, route+"-"+string(mode), func(t *testing.T) {
-							if actual := observe(t, tc, mode); actual != expected {
+							if actual := observe(tc, mode, program); actual != expected {
 								t.Fatalf("native <%s>\nactual <%s>", expected, actual)
 							}
 						})

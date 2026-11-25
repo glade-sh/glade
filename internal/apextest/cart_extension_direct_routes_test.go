@@ -47,6 +47,7 @@ func TestCartExtensionDirectProjectNamedIsTestTriggerNativeRoutes(t *testing.T) 
 			continue
 		}
 		t.Run(key, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+row[0]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 			write := func(name, source string) {

@@ -193,11 +193,11 @@
   "concurrentTestCounts": {
     "./internal/apexast": 2,
     "./internal/lsp": 22,
-    "./internal/apextest": 553,
+    "./internal/apextest": 556,
     "./internal/dap": 13,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
-    "./internal/gladecli": 108,
+    "./internal/gladecli": 109,
     "./internal/gladehome": 8,
     "./internal/inputview": 2,
     "./internal/lwcbrowser": 2,
