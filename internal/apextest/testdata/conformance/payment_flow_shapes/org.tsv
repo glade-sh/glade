@@ -57,3 +57,27 @@ sale	67.0	anonymous	local-response	true	Pass		sale-local-response-67.apex
 saleResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls
 void	67.0	anonymous	local-response	true	Pass		void-local-response-67.apex
 reversalResponse	67.0	istest	response-identity	true	Pass		Road544Response67.cls
+sale	62.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	sale-context-literal-decimal-62.apex
+probe	62.0	istest	sale-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	Road544SaleDecimal62.cls
+sale	62.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-integer-62.apex
+saleInteger	62.0	istest	context-literal-integer	true	Pass		Road544Literal62.cls
+sale	62.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-double-62.apex
+saleDouble	62.0	istest	context-literal-double	true	Pass		Road544Literal62.cls
+void	62.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	void-context-literal-decimal-62.apex
+probe	62.0	istest	void-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	Road544ReversalDecimal62.cls
+void	62.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-integer-62.apex
+reversalInteger	62.0	istest	context-literal-integer	true	Pass		Road544Literal62.cls
+void	62.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-double-62.apex
+reversalDouble	62.0	istest	context-literal-double	true	Pass		Road544Literal62.cls
+sale	67.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	sale-context-literal-decimal-67.apex
+probe	67.0	istest	sale-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.SaleRequest].<Constructor>(Decimal)	Road544SaleDecimal67.cls
+sale	67.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-integer-67.apex
+saleInteger	67.0	istest	context-literal-integer	true	Pass		Road544Literal67.cls
+sale	67.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.SaleRequest cannot be constructed directly outside of a test	sale-context-literal-double-67.apex
+saleDouble	67.0	istest	context-literal-double	true	Pass		Road544Literal67.cls
+void	67.0	anonymous	context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	void-context-literal-decimal-67.apex
+probe	67.0	istest	void-context-literal-decimal	false	CompileError	Constructor not defined: [commercepayments.AuthorizationReversalRequest].<Constructor>(Decimal, String)	Road544ReversalDecimal67.cls
+void	67.0	anonymous	context-literal-integer	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-integer-67.apex
+reversalInteger	67.0	istest	context-literal-integer	true	Pass		Road544Literal67.cls
+void	67.0	anonymous	context-literal-double	true	Exception	System.UnsupportedOperationException: commercepayments.AuthorizationReversalRequest cannot be constructed directly outside of a test	void-context-literal-double-67.apex
+reversalDouble	67.0	istest	context-literal-double	true	Pass		Road544Literal67.cls

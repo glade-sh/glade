@@ -13,7 +13,7 @@ import (
 
 func TestPaymentFlowScopedMixedVersionsAndRoutes(t *testing.T) {
 	root := t.TempDir()
-	body := `commercepayments.SaleRequest req = new commercepayments.SaleRequest(7.25);
+	body := `commercepayments.SaleRequest req = new commercepayments.SaleRequest((Double)7.25);
  commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.Sale);
  commercepayments.SaleResponse res = new commercepayments.SaleResponse();
  commercepayments.GatewayResponse gateway = res;`
@@ -71,8 +71,8 @@ func TestPaymentFlowUncapturedUseShapes(t *testing.T) {
 func TestPaymentFlowUncapturedInitializerAndContextShapes(t *testing.T) {
 	cases := map[string]string{
 		"direct response": `commercepayments.GatewayResponse response = new commercepayments.SaleResponse();`,
-		"wrong enum":      `commercepayments.SaleRequest req = new commercepayments.SaleRequest(1.0); commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.AuthorizationReversal);`,
-		"nested context":  `commercepayments.SaleRequest req = new commercepayments.SaleRequest(1.0); Object ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.Sale);`,
+		"wrong enum":      `commercepayments.SaleRequest req = new commercepayments.SaleRequest(1); commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.AuthorizationReversal);`,
+		"nested context":  `commercepayments.SaleRequest req = new commercepayments.SaleRequest(1); Object ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.Sale);`,
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {

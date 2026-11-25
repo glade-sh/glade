@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // These same-type declarations are covered by payment_flow_shapes/org.tsv.
@@ -16,9 +17,24 @@ func (vm *VM) paymentRequestDeclarationError(inst ir.Instruction) error {
 	switch vm.paymentRequestAmountType(e) {
 	case "double", "integer":
 		return vm.paymentRequestOutsideTestError(name, len(e.Args))
-	default:
+	}
+	if typesys.PaymentFlowCapturedInterface(name, vm.currentMethod.APIVersion) != "commercepayments.PaymentGatewayRequest" ||
+		len(e.Args) == 0 || len(e.NamedArgs) != 0 {
 		return nil
 	}
+	if len(e.Args) == 2 && (e.Args[1].Kind != ir.ExprLiteral || vm.declaredExpressionType(e.Args[1]) != "String") {
+		return nil
+	}
+	amount := e.Args[0]
+	if amount.Kind != ir.ExprLiteral &&
+		!(amount.Kind == ir.ExprCall && strings.EqualFold(amount.Callee, "__cast:Double") && len(amount.Args) == 1 && amount.Args[0].Kind == ir.ExprLiteral) {
+		return nil
+	}
+	switch vm.declaredExpressionType(amount) {
+	case "Double", "Integer":
+		return vm.paymentRequestOutsideTestError(name, len(e.Args))
+	}
+	return nil
 }
 
 // The authorization context fixture passes a directly constructed request as

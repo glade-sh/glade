@@ -30,12 +30,12 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 59 {
-		t.Fatalf("expected 58 observations, got %d", len(rows)-1)
+	if len(rows) != 83 {
+		t.Fatalf("expected 82 observations, got %d", len(rows)-1)
 	}
 	seen := map[string]bool{}
 	for _, row := range rows[1:] {
-		if len(row) != 8 || (row[1] != "62.0" && row[1] != "67.0") || row[4] != "true" {
+		if len(row) != 8 || (row[1] != "62.0" && row[1] != "67.0") || (row[4] != "true" && row[4] != "false") {
 			t.Fatalf("invalid row: %v", row)
 		}
 		key := strings.Join(row[:4], "/")
@@ -48,8 +48,11 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 				class := strings.TrimSuffix(row[7], ".cls")
 				index := nativeBoundaryIndex(t, row[1], map[string]string{class: read(row[7])}, nil)
 				analysis := sema.Analyze(index)
-				if index.HasErrors() || analysis.HasErrors() {
-					t.Fatalf("native compiled; Glade diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
+				if index.HasErrors() {
+					t.Fatalf("invalid class source: %v", index.Diagnostics)
+				}
+				if !checkPaymentFlowCompilation(t, row[4] == "true", row[6], analysis.Diagnostics) {
+					return
 				}
 				run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: row[0], NoDiskCache: true, Parallelism: 1})
 				if summary := run.Summary(); row[5] != "Pass" || summary.Total != 1 || summary.Passed != 1 {
@@ -62,10 +65,8 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 			}
 			index := nativeBoundaryIndex(t, row[1], nil, nil)
 			prepared := innerShapePrepareAnonymous(t, row[1], index, read(row[7]))
-			for _, d := range prepared.diagnostics {
-				if d.Severity == diagnostic.Error {
-					t.Fatalf("native compiled; Glade diagnostic: %v", d)
-				}
+			if !checkPaymentFlowCompilation(t, row[4] == "true", row[6], prepared.diagnostics) {
+				return
 			}
 			program, err := vm.CompileAnonymousWithOptions(prepared.body, vm.CompileOptions{APIVersion: row[1], ApprovedPrefixStatements: sema.ApprovedAnonymousPrefixStatements(prepared.merged, prepared.body, row[1])})
 			if err != nil {
@@ -83,6 +84,25 @@ func TestPaymentFlowShapesNativeConformance(t *testing.T) {
 			}
 		})
 	}
+}
+
+func checkPaymentFlowCompilation(t *testing.T, compiled bool, want string, diagnostics []diagnostic.Diagnostic) bool {
+	t.Helper()
+	for _, d := range diagnostics {
+		if d.Severity != diagnostic.Error {
+			continue
+		}
+		if compiled {
+			t.Fatalf("native compiled; Glade diagnostic: %v", d)
+		}
+		if d.NativeMessage == want {
+			return false
+		}
+	}
+	if !compiled {
+		t.Fatalf("native rejected with %q; Glade diagnostics: %v", want, diagnostics)
+	}
+	return true
 }
 
 // RUN-FACTS.txt records rejected Decimal constructors on both routes and APIs.

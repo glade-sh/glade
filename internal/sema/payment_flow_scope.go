@@ -85,7 +85,29 @@ func (a *Analyzer) semaPaymentFlowContextInitializer(typ typesys.TypeSymbol, mem
 	return ok && requestType.platform
 }
 
-// Native rejects Decimal amount variables for these request signatures.
+// The literal context probes declare the concrete request before passing it
+// to the context. A Decimal literal fails at that first declaration.
+func (a *Analyzer) semaPaymentFlowDecimalLiteralInitializer(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope irSemaScope, model *semaTypeMemberView) string {
+	expr := inst.Expr
+	name, constructor := strings.CutPrefix(expr.Callee, "new:")
+	if !constructor || !strings.EqualFold(name, inst.Type) || len(expr.Args) == 0 ||
+		expr.Args[0].Kind != ir.ExprLiteral ||
+		model.anonymousLocalMethod || (!model.anonymous && !hasModifier(member.Modifiers, "istest")) {
+		return ""
+	}
+	resolved := resolveNestedTypeReference(model, typ.Name, name)
+	if typesys.PaymentFlowCapturedInterface(resolved, typ.EffectiveAPIVersion) != "commercepayments.PaymentGatewayRequest" {
+		return ""
+	}
+	for _, arg := range expr.Args[1:] {
+		if arg.Kind != ir.ExprLiteral {
+			return ""
+		}
+	}
+	return semaPaymentDecimalConstructorMessage(typ, member, model, resolved, irCallArgTypes(a, expr.Args, scope, model, typ.Name), len(expr.NamedArgs))
+}
+
+// Native rejects Decimal amounts for these request signatures.
 func semaPaymentDecimalConstructorMessage(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView, name string, args []string, named int) string {
 	if !semaPaymentFlowRoute(typ, member, model) || named != 0 || len(args) == 0 || !strings.EqualFold(args[0], "Decimal") {
 		return ""

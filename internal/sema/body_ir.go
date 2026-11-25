@@ -1601,11 +1601,18 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
 			}
 			if !rejectedCollection {
-				initializerModel := model
-				if a.semaPaymentFlowContextInitializer(typ, member, inst, *scope, model) {
-					initializerModel = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
+				if message := a.semaPaymentFlowDecimalLiteralInitializer(typ, member, inst, *scope, model); message != "" {
+					pos := bodyOffset + inst.Expr.Pos
+					d := typeContractNativeDiagnostic(typ, message, pos, pos+len(inst.Type), source)
+					d.NativeMessage = message
+					diagnostics = append(diagnostics, d)
+				} else {
+					initializerModel := model
+					if a.semaPaymentFlowContextInitializer(typ, member, inst, *scope, model) {
+						initializerModel = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
+					}
+					diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, initializerModel, constructability)...)
 				}
-				diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, initializerModel, constructability)...)
 				diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, inst.Type, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "initializes")...)
 			}
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
