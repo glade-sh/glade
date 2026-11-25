@@ -51,9 +51,14 @@ func TestMissingCustomObjectTypeNativeConformance(t *testing.T) {
 					t.Fatalf("named row is not a compile rejection: %v", row)
 				}
 				index := namespaceFamilyProject(t, "", api, map[string]string{"AbsentObjectTypeTest": string(source)})
-				got := namespaceFamilyFileErrors(sema.Analyze(index).Diagnostics, "AbsentObjectTypeTest")
+				analysis := sema.Analyze(index)
+				got := namespaceFamilyFileErrors(analysis.Diagnostics, "AbsentObjectTypeTest")
 				if !slices.Contains(got, outcome) {
-					t.Fatalf("named diagnostic=%q, native=%q", got, outcome)
+					t.Errorf("named diagnostic=%q, native=%q, all diagnostics=%+v", got, outcome, analysis.Diagnostics)
+				}
+				run := Run(index, Options{SelectedClasses: []string{"AbsentObjectTypeTest"}, SelectedMethod: "typeIsMissing", NoDiskCache: true, Parallelism: 1})
+				if run.Summary().CompileErrors != 1 {
+					t.Errorf("native rejected the named class; runner summary=%+v, problem=%s", run.Summary(), firstRunProblem(run))
 				}
 				return
 			}
