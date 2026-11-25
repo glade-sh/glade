@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed a false `Date.getTime()` diagnostic when a `Datetime` method chain is the first argument to a dotted Apex call.
+- Fixed false Apex overload errors when an enhanced-for iterable uses a field token from an SObject that shares the loop variable's name.
 
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
