@@ -10,7 +10,7 @@
 - Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test.
 - Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
 - Preserve dependency and shim source views when reloading the frontend cache or rebuilding it after a source edit.
-
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
 ## v0.3.15
 
