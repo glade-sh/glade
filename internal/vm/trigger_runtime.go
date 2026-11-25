@@ -808,8 +808,21 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 	if len(records) == 0 {
 		return nil, records, nil
 	}
+	runGroup := func(records, oldRecords []storage.Record) ([]dml.Result, error) {
+		if timing == triggerTimingBefore && op == "insert" && len(vm.triggersForOperation(records[0].Object, timing, op)) > 0 {
+			if objectName, ok := vm.resolveObjectName(records[0].Object); ok {
+				// Prepare Trigger.new. The insert engine normalizes text again
+				// after any assignments made by the before trigger.
+				definition := vm.Org.Objects[objectName].Definition
+				for i := range records {
+					dml.NormalizeTextWrites(definition, vm.Org.Namespace, &records[i])
+				}
+			}
+		}
+		return vm.runTriggers(timing, op, records, oldRecords, result)
+	}
 	if recordsShareSingleObject(records) {
-		groupFailures, err := vm.runTriggers(timing, op, records, oldRecords, result)
+		groupFailures, err := runGroup(records, oldRecords)
 		if err != nil {
 			return nil, records, err
 		}
@@ -826,7 +839,7 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 				groupOldRecords = append(groupOldRecords, oldRecords[index])
 			}
 		}
-		groupFailures, err := vm.runTriggers(timing, op, groupRecords, groupOldRecords, result)
+		groupFailures, err := runGroup(groupRecords, groupOldRecords)
 		if err != nil {
 			return nil, records, err
 		}

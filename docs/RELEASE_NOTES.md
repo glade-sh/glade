@@ -4,6 +4,8 @@
 
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 
+- Custom-object inserts reject missing parents for optional lookups that clear on delete, oversized external ID upsert keys report `isCreated() == false`, and before-insert triggers see trimmed Text.
+
 ## v0.3.15
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.

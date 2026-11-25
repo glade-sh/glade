@@ -1054,7 +1054,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 	if err := e.validateManagedShareInsert(record); err != nil {
 		return "", err
 	}
-	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
+	NormalizeTextWrites(object.Definition, e.Org.Namespace, &record)
 	normalizeNameFields(objectName, object.Definition, &record)
 	if err := validateBusinessAccountContacts(objectName, object.Definition, record); err != nil {
 		return "", err

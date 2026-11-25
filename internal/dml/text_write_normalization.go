@@ -11,12 +11,12 @@ import (
 // the rest of C0) were not captured and keep base behavior.
 const textWriteTrimSet = " \t"
 
-// normalizeTextWrites applies the collation capture (re_collation, API 62.0 and
+// NormalizeTextWrites applies the collation capture (re_collation, API 62.0 and
 // 67.0): a Text field write is trimmed of leading and trailing space and tab,
 // and a value that is empty afterwards is stored as null. Only plain Text fields
 // were captured (Account Name and Site, custom object Name); text areas,
 // picklists, email, phone and URL fields keep their existing behavior.
-func normalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
+func NormalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
 	if record == nil {
 		return
 	}
