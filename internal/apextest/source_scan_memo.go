@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"crypto/sha256"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -171,23 +172,42 @@ var (
 
 func standardFieldMatchesFromSource(source string) *standardFieldSourceMatches {
 	scanSource := apexReferenceScanSource(source)
-	return &standardFieldSourceMatches{
-		childRefs:     projectChildRelationshipSourceReferences(source),
-		scanSource:    scanSource,
-		typed:         apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1),
-		booleanRight:  apexVariableFieldBooleanRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		booleanLeft:   apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		booleanNot:    apexVariableFieldBooleanNegationPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		numericRight:  apexVariableFieldNumericRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		numericLeft:   apexVariableFieldNumericLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		getAll:        apexCustomSettingGetAllPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		schemaFields:  apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
-		sobjectFields: apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
-		newLiterals:   apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		literals:      apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1),
-		staticFields:  apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
-		variableField: apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1),
+	matches := &standardFieldSourceMatches{
+		childRefs:  projectChildRelationshipSourceReferences(source),
+		scanSource: scanSource,
+		typed:      apexTypedVariablePattern.FindAllStringSubmatch(scanSource, -1),
 	}
+	hasCall := strings.Contains(scanSource, "(")
+	if hasCall && strings.Contains(scanSource, ")") {
+		matches.literals = apexSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+		if strings.Contains(scanSource, "new") {
+			matches.newLiterals = apexNewSObjectLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+		}
+	}
+	if !strings.Contains(scanSource, ".") {
+		return matches
+	}
+	if hasCall {
+		matches.getAll = apexCustomSettingGetAllPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	}
+	if strings.Contains(scanSource, "=") {
+		matches.booleanRight = apexVariableFieldBooleanRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+		matches.booleanLeft = apexVariableFieldBooleanLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	}
+	if strings.Contains(scanSource, "!") {
+		matches.booleanNot = apexVariableFieldBooleanNegationPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	}
+	if strings.ContainsAny(scanSource, "=<>") {
+		matches.numericRight = apexVariableFieldNumericRightLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+		matches.numericLeft = apexVariableFieldNumericLeftLiteralPattern.FindAllStringSubmatchIndex(scanSource, -1)
+	}
+	matches.schemaFields = apexSchemaSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1)
+	matches.sobjectFields = apexSObjectTypeFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1)
+	// These patterns have identical captures. Replay them separately against the
+	// org and local variables to retain their original precedence.
+	matches.staticFields = apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(scanSource, -1)
+	matches.variableField = matches.staticFields
+	return matches
 }
 
 // fieldSetConstantMemo holds the field set constant matches of one source;

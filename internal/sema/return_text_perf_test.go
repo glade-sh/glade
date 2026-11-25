@@ -146,3 +146,25 @@ func TestReturnTextMemoSeparatesAPIGenerations(t *testing.T) {
 		}
 	}
 }
+
+func TestReturnTextUnqualifiedBodyAllocationBudget(t *testing.T) {
+	index, original := returnTextFixture(t, "assertEquals(1, 1);")
+	allocs := testing.AllocsPerRun(10, func() {
+		out := capturedReturnDependencyNativeText(index, append([]diagnostic.Diagnostic(nil), original...))
+		if !reflect.DeepEqual(out, original) {
+			t.Fatal("unqualified body changed a diagnostic")
+		}
+	})
+	if allocs > 24 {
+		t.Fatalf("unqualified body allocated %.0f times, want at most 24", allocs)
+	}
+}
+
+func BenchmarkReturnTextUnqualifiedBody(b *testing.B) {
+	index, original := returnTextFixture(b, "assertEquals(1, 1);")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		capturedReturnDependencyNativeText(index, append([]diagnostic.Diagnostic(nil), original...))
+	}
+}
