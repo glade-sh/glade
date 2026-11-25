@@ -1,0 +1,77 @@
+case	api	route	observation
+lookup_empty	62.0	anonymous	ok
+lookup_empty	62.0	isTest	ok
+lookup_empty	67.0	anonymous	ok
+lookup_empty	67.0	isTest	ok
+lookup_live	62.0	anonymous	ok
+lookup_live	62.0	isTest	ok
+lookup_live	67.0	anonymous	ok
+lookup_live	67.0	isTest	ok
+lookup_missing	62.0	anonymous	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_missing	62.0	isTest	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_missing	67.0	anonymous	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_missing	67.0	isTest	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_missing_detail	62.0	anonymous	|insufficient access rights on cross-reference id: <reference>
+lookup_missing_detail	62.0	isTest	|insufficient access rights on cross-reference id: <reference>
+lookup_missing_detail	67.0	anonymous	|insufficient access rights on cross-reference id: <reference>
+lookup_missing_detail	67.0	isTest	|insufficient access rights on cross-reference id: <reference>
+lookup_persisted	62.0	anonymous	0
+lookup_persisted	62.0	isTest	0
+lookup_persisted	67.0	anonymous	0
+lookup_persisted	67.0	isTest	0
+lookup_removed	62.0	anonymous	ENTITY_IS_DELETED
+lookup_removed	62.0	isTest	ENTITY_IS_DELETED
+lookup_removed	67.0	anonymous	ENTITY_IS_DELETED
+lookup_removed	67.0	isTest	ENTITY_IS_DELETED
+lookup_statement	62.0	anonymous	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_statement	62.0	isTest	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_statement	67.0	anonymous	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_statement	67.0	isTest	INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+lookup_wrong	62.0	anonymous	FIELD_INTEGRITY_EXCEPTION
+lookup_wrong	62.0	isTest	FIELD_INTEGRITY_EXCEPTION
+lookup_wrong	67.0	anonymous	FIELD_INTEGRITY_EXCEPTION
+lookup_wrong	67.0	isTest	FIELD_INTEGRITY_EXCEPTION
+text_blank	62.0	anonymous	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
+text_blank	62.0	isTest	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
+text_blank	67.0	anonymous	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
+text_blank	67.0	isTest	[blank]|[   ]|null|[blank]|null|null|null|[blank]|null|null|null
+text_spaced	62.0	anonymous	[  spaced  ]|[  glow  ]|null|[spaced]|[glow]|[glow]|[glow]|[spaced]|[glow]|[glow]|[glow]
+text_spaced	62.0	isTest	[  spaced  ]|[  glow  ]|null|[spaced]|[glow]|[glow]|[glow]|[spaced]|[glow]|[glow]|[glow]
+text_spaced	67.0	anonymous	[  spaced  ]|[  glow  ]|null|[spaced]|[glow]|[glow]|[glow]|[spaced]|[glow]|[glow]|[glow]
+text_spaced	67.0	isTest	[  spaced  ]|[  glow  ]|null|[spaced]|[glow]|[glow]|[glow]|[spaced]|[glow]|[glow]|[glow]
+text_tabbed	62.0	anonymous	[tabbed]|[#tab#glow#tab#]|null|[tabbed]|[glow]|[glow]|[glow]|[tabbed]|[glow]|[glow]|[glow]
+text_tabbed	62.0	isTest	[tabbed]|[#tab#glow#tab#]|null|[tabbed]|[glow]|[glow]|[glow]|[tabbed]|[glow]|[glow]|[glow]
+text_tabbed	67.0	anonymous	[tabbed]|[#tab#glow#tab#]|null|[tabbed]|[glow]|[glow]|[glow]|[tabbed]|[glow]|[glow]|[glow]
+text_tabbed	67.0	isTest	[tabbed]|[#tab#glow#tab#]|null|[tabbed]|[glow]|[glow]|[glow]|[tabbed]|[glow]|[glow]|[glow]
+text_update	62.0	anonymous	[  updated  ]|[  dim  ]|null|[updated]|[dim]|[dim]|[dim]|[updated]|[dim]|[dim]|[dim]
+text_update	62.0	isTest	[  updated  ]|[  dim  ]|null|[updated]|[dim]|[dim]|[dim]|[updated]|[dim]|[dim]|[dim]
+text_update	67.0	anonymous	[  updated  ]|[  dim  ]|null|[updated]|[dim]|[dim]|[dim]|[updated]|[dim]|[dim]|[dim]
+text_update	67.0	isTest	[  updated  ]|[  dim  ]|null|[updated]|[dim]|[dim]|[dim]|[updated]|[dim]|[dim]|[dim]
+text_upsert	62.0	anonymous	[  upsert  ]|[  dusk  ]|null|[upsert]|[dusk]|[dusk]|[dusk]|[upsert]|[dusk]|[dusk]|[dusk]
+text_upsert	62.0	isTest	[  upsert  ]|[  dusk  ]|null|[upsert]|[dusk]|[dusk]|[dusk]|[upsert]|[dusk]|[dusk]|[dusk]
+text_upsert	67.0	anonymous	[  upsert  ]|[  dusk  ]|null|[upsert]|[dusk]|[dusk]|[dusk]|[upsert]|[dusk]|[dusk]|[dusk]
+text_upsert	67.0	isTest	[  upsert  ]|[  dusk  ]|null|[upsert]|[dusk]|[dusk]|[dusk]|[upsert]|[dusk]|[dusk]|[dusk]
+upsert_long_key	62.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key	62.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key	67.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key	67.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_mixed	62.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_mixed	62.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_mixed	67.0	anonymous	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_key_mixed	67.0	isTest	not-created|no-id|FIELD_INTEGRITY_EXCEPTION|
+upsert_long_value	62.0	anonymous	created|no-id|STRING_TOO_LONG|Short__c
+upsert_long_value	62.0	isTest	created|no-id|STRING_TOO_LONG|Short__c
+upsert_long_value	67.0	anonymous	created|no-id|STRING_TOO_LONG|Short__c
+upsert_long_value	67.0	isTest	created|no-id|STRING_TOO_LONG|Short__c
+upsert_new_key_mixed	62.0	anonymous	created|id|ok
+upsert_new_key_mixed	62.0	isTest	created|id|ok
+upsert_new_key_mixed	67.0	anonymous	created|id|ok
+upsert_new_key_mixed	67.0	isTest	created|id|ok
+upsert_persisted	62.0	anonymous	0
+upsert_persisted	62.0	isTest	0
+upsert_persisted	67.0	anonymous	0
+upsert_persisted	67.0	isTest	0
+upsert_removed_parent	62.0	anonymous	created|no-id|ENTITY_IS_DELETED|
+upsert_removed_parent	62.0	isTest	created|no-id|ENTITY_IS_DELETED|
+upsert_removed_parent	67.0	anonymous	created|no-id|ENTITY_IS_DELETED|
+upsert_removed_parent	67.0	isTest	created|no-id|ENTITY_IS_DELETED|
