@@ -1601,7 +1601,11 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
 			}
 			if !rejectedCollection {
-				diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, model, constructability)...)
+				initializerModel := model
+				if a.semaPaymentFlowContextInitializer(typ, member, inst, *scope, model) {
+					initializerModel = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
+				}
+				diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, initializerModel, constructability)...)
 				diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, inst.Type, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "initializes")...)
 			}
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
@@ -4051,9 +4055,6 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	}
 	if strings.EqualFold(resolvedTypeName, "AggregateResult") && !semaProjectTypeShadowsPlatform(model, typeName) {
 		return []diagnostic.Diagnostic{{Severity: diagnostic.Error, Code: "GLADESEMA015", Message: "SObject is not constructable: AggregateResult", File: typ.File, Range: semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)))}}
-	}
-	if strings.EqualFold(resolvedTypeName, "commercepayments.PaymentGatewayContext") && semaPaymentFlowContextShape(typ, member, model, resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), expr, source, bodyOffset+pos, bodyOffset+expr.Pos) {
-		model = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
 	}
 	if !semaProjectTypeShadowsPlatform(model, typeName) {
 		if hidden := semaHTTPInvisibleType(typeName); hidden != "" {

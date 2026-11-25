@@ -84,3 +84,21 @@ func TestPaymentFlowUncapturedInitializerAndContextShapes(t *testing.T) {
 		})
 	}
 }
+
+func TestPaymentFlowContextInitializerAllowsComments(t *testing.T) {
+	const source = `@IsTest private class Probe {
+    @IsTest static void run() {
+        Double amount = 7.25;
+        commercepayments.SaleRequest req = new commercepayments.SaleRequest(amount);
+        commercepayments.PaymentGatewayContext ctx = /* comment */ new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.Sale);
+    }
+}`
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, api)
+			if result.HasErrors() {
+				t.Fatalf("context initializer with a comment rejected: %v", result.Diagnostics)
+			}
+		})
+	}
+}

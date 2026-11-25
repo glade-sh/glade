@@ -1,7 +1,6 @@
 package sema
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/ir"
@@ -54,15 +53,17 @@ func semaPaymentFlowResponseAssignment(typ typesys.TypeSymbol, member typesys.Me
 	return ok && valueMembers.platform
 }
 
-var paymentFlowContextDeclaration = regexp.MustCompile(`(?i)^\s*commercepayments\.PaymentGatewayContext\s+[a-z_$][a-z0-9_$]*\s*=\s*$`)
-
-func semaPaymentFlowContextShape(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView, name string, args []string, expr ir.Expr, source string, statementStart, constructorStart int) bool {
-	if !semaPaymentFlowRoute(typ, member, model) || !strings.EqualFold(name, "commercepayments.PaymentGatewayContext") || len(args) != 2 || len(expr.Args) != 2 || len(expr.NamedArgs) != 0 || expr.Args[0].Kind != ir.ExprVariable || expr.Args[1].Kind != ir.ExprVariable {
+func (a *Analyzer) semaPaymentFlowContextInitializer(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope irSemaScope, model *semaTypeMemberView) bool {
+	const context = "commercepayments.PaymentGatewayContext"
+	expr := inst.Expr
+	if inst.Op != ir.OpDeclare || !strings.EqualFold(inst.Type, context) ||
+		expr.Kind != ir.ExprCall || !strings.EqualFold(expr.Callee, "new:"+context) ||
+		len(expr.Args) != 2 || len(expr.NamedArgs) != 0 || expr.Args[0].Kind != ir.ExprVariable ||
+		!simpleIdentifierPattern.MatchString(expr.Args[0].Name) || expr.Args[1].Kind != ir.ExprVariable ||
+		!semaPaymentFlowRoute(typ, member, model) {
 		return false
 	}
-	if statementStart < 0 || constructorStart < statementStart || constructorStart > len(source) || !paymentFlowContextDeclaration.MatchString(source[statementStart:constructorStart]) || !simpleIdentifierPattern.MatchString(expr.Args[0].Name) {
-		return false
-	}
+	args := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 	request := strings.ToLower(args[0])
 	expected := ""
 	switch request {
@@ -76,7 +77,7 @@ func semaPaymentFlowContextShape(typ typesys.TypeSymbol, member typesys.MemberSy
 	if !strings.EqualFold(expr.Args[1].Name, expected) {
 		return false
 	}
-	target, ok := model.lookup(normalizeName(name))
+	target, ok := model.lookup(normalizeName(context))
 	if !ok || !target.platform {
 		return false
 	}
