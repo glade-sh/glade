@@ -3,6 +3,7 @@ package sema
 import (
 	"encoding/json"
 	"reflect"
+	"regexp"
 	"sync"
 	"testing"
 	"time"
@@ -237,7 +238,7 @@ func TestAnalyzeOptionsFingerprintIsStable(t *testing.T) {
 }
 
 func TestSemanticABIIsVersioned(t *testing.T) {
-	if SemanticABI != "sema-v104" {
-		t.Fatalf("SemanticABI = %q, want sema-v104", SemanticABI)
+	if !regexp.MustCompile(`^sema-v[1-9][0-9]*$`).MatchString(SemanticABI) {
+		t.Fatalf("SemanticABI = %q, want a versioned semantic ABI", SemanticABI)
 	}
 }

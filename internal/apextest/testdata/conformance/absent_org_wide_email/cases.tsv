@@ -1,0 +1,10 @@
+id	route	file	description
+direct	anonymous,istest	missing.apex,Road548Probe	Nonexistent well-formed org-wide sender ID
+lookup	anonymous,istest	missing.apex,Road548Probe	Missing address lookup supplies null ID
+direct	trigger_anonymous,trigger_istest	trigger.apex,Road548Trigger,Road548TriggerTest	Nonexistent well-formed sender ID in an Account trigger
+shape0	anonymous,istest	shapes.apex,Road548Shapes	18-character missing sender ID
+shape1	anonymous,istest	shapes.apex,Road548Shapes	Two-message send
+shape2	anonymous,istest	shapes.apex,Road548Shapes	Current user target with saveAsActivity enabled
+shape3	anonymous,istest	shapes.apex,Road548Shapes	Missing template and sender IDs
+template	anonymous,istest	template.apex,Road548Template	Existing template and user target
+queue	queue_anonymous,queue_istest	queue.apex,Road548Queue,Road548QueueTest	Queueable missing sender

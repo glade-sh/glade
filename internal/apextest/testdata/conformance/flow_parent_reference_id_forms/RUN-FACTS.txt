@@ -1,0 +1,11 @@
+capture: parent lookup reference ID spellings
+observation window: 2026-11-24T16:06:00.513034+00:00 to 2026-11-24T16:12:25.949507+00:00
+apis: 62.0 67.0 (Flow metadata, Apex test classes, anonymous execution API)
+routes: anonymous Apex and synchronous @IsTest
+sf: @salesforce/cli/2.159.7
+mode: live Salesforce Developer scratch org; 30-day duration; deleted after capture
+metadata: sibling flow_record_lookup_parent_ref/project/force-app, with __API__ replaced by each version; permission set R5L assigned
+inputs: Id.valueOf called with 15- or 18-character spelling of the same parent Id
+transaction: each probe intentionally raises an assertion, rolling back its DML
+additional capture: API 64.0, 15- and 18-character inputs, anonymous and synchronous @IsTest; version-matched metadata; Developer scratch org; deleted after capture
+additional capture: APIs 63.0, 65.0 and 66.0, 15- and 18-character inputs, anonymous and synchronous @IsTest; version-matched metadata; Developer scratch org; deleted after capture

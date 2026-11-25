@@ -1,0 +1,5 @@
+capture: before-save parent lookup with 15- and 18-character inputs and a deleted parent
+apis: 62.0 63.0 67.0; Flow, Apex class, and anonymous API versions matched
+routes: anonymous Apex and synchronous @IsTest
+mode: live Salesforce Developer scratch org; deleted after capture
+observations: 15-character parent ID, 18-character parent ID, then the 18-character ID after the parent was deleted; each row carries all three results in that order

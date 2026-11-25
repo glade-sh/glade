@@ -1,0 +1,9 @@
+capture: synthetic Flow lookup matrix
+observation window: 2026-11-24T15:17:57.652193+00:00 to 2026-11-24T15:18:31.891215+00:00
+apis: 62.0 67.0 (Flow metadata, Apex class metadata, anonymous execution API)
+routes: anonymous Apex and synchronous @IsTest
+sf: @salesforce/cli/2.159.7
+mode: live Salesforce Developer scratch org; 30-day duration; deleted after capture
+metadata: owned synthetic flows, version-matched metadata deployed before each observation
+normalization: Salesforce error identifiers and endpoint URLs removed
+transaction: anonymous assertions and named tests roll back their DML

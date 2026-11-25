@@ -193,7 +193,7 @@ jobs:
 	}
 }
 
-func TestCheckWorkflowAcceptsBenchmarkIsolatedCacheAndUpload(t *testing.T) {
+func TestCheckWorkflowAcceptsExpressionPrefixedCacheAndUpload(t *testing.T) {
 	errs := checkWorkflow("fixture.yml", []byte(`
 jobs:
   test:
@@ -206,7 +206,7 @@ jobs:
       - uses: actions/cache/restore@cccccccccccccccccccccccccccccccccccccccc # v1.0.0
         with:
           path: ~/.cache/go-build
-          key: ${{ inputs.benchmark_cache_pair > 0 && format('bench-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}
+          key: ${{ github.event_name == 'schedule' && 'scheduled-' || '' }}go-build-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}
       - run: go test ./...
       - uses: actions/upload-artifact@dddddddddddddddddddddddddddddddddddddddd # v1.0.0
         with:

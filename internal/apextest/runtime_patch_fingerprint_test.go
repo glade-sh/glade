@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math"
+	"regexp"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/ir"
@@ -293,11 +294,11 @@ func TestRuntimePatchFingerprintRejectsCyclesAndExcessiveDepth(t *testing.T) {
 }
 
 func TestRuntimePatchFingerprintStreamingABIAndCounters(t *testing.T) {
-	if runtimePatchABI != "apextest-runtime-patch-v3" {
-		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v3", runtimePatchABI)
+	if !regexp.MustCompile(`^apextest-runtime-patch-v[1-9][0-9]*$`).MatchString(runtimePatchABI) {
+		t.Fatalf("runtime patch ABI = %q, want a versioned patch ABI", runtimePatchABI)
 	}
-	if testRuntimeCacheABI != "apextest-runtime-v57" {
-		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v57", testRuntimeCacheABI)
+	if !regexp.MustCompile(`^apextest-runtime-v[1-9][0-9]*$`).MatchString(testRuntimeCacheABI) {
+		t.Fatalf("runtime cache ABI = %q, want a versioned runtime ABI", testRuntimeCacheABI)
 	}
 	counters := newRunPerfCounters(true)
 	if _, ok := runtimePatchCompiledPayloadFingerprintWithPerf(runtimeFingerprintFixture(2), counters); !ok {

@@ -1,0 +1,10 @@
+Salesforce scratch-org capture: 2026-11-24 UTC.
+Source versions: 62.0 and 67.0. Anonymous execution used sf apex run with --api-version; each test class was deployed with the matching apiVersion metadata and executed using sf apex run test --synchronous.
+The custom object and custom metadata type and record are included in this directory. cases.json supplies each anonymous body; the test route wraps the same body in an @IsTest static method. Anonymous debug output is captured in the observation column. Test-route passes establish successful execution only; debug values were not retrieved for those rows.
+The object metadata deployed at API 67.0. Each case class deployment succeeded. The scratch org was deleted successfully after the run. The first Dev Hub attempted reported LIMIT_EXCEEDED before an org was created; a second hub supplied this disposable org.
+
+Nested if, try, and for insert probes were captured separately at both source versions on 2026-11-24. Anonymous execution rejected all six at compile time. All six matching @IsTest classes deployed; the try cases passed after catching the DML exception, and the if and loop cases failed with the DML exception recorded in org.tsv.
+
+The while (false) insert was captured at API 62.0 and 67.0 on 2026-11-24. Anonymous compilation rejected both; the matching @IsTest class deployed and its test passed at both versions. The disposable scratch org was deleted after capture.
+
+The do, else, catch, finally, and switch bodies were captured at API 62.0 and 67.0 on 2026-11-24. Anonymous compilation rejected all ten. The matching @IsTest classes deployed; the do and finally methods failed with the DML exception and the other methods passed. The disposable scratch org was deleted after capture.

@@ -251,9 +251,10 @@ func (vm *VM) sendEmailWithRecipientValidation(args []Value, result *Result, req
 			return Null, fmt.Errorf("Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items")
 		}
 	}
+	validateOrgWideSender := len(args) == 2 && args[1].Kind == ValueBool && !args[1].Bool
 	validationErrors := make([][]Value, len(args[0].List))
 	for i, message := range args[0].List {
-		validationErrors[i] = vm.localSendEmailValidationErrors(message, requireRecipient)
+		validationErrors[i] = vm.localSendEmailValidationErrors(message, requireRecipient, validateOrgWideSender)
 		if len(validationErrors[i]) > 0 && allOrNothing {
 			validation := validationErrors[i][0]
 			return Null, newExceptionError("EmailException", fmt.Sprintf("SendEmail failed. First exception on row %d; first error: %s, %s: []", i, validation.Fields["statusCode"].Text, validation.Fields["message"].Text))
@@ -654,7 +655,7 @@ func parseInboundEmailAddressList(raw string) Value {
 	return List(values...)
 }
 
-func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient bool) []Value {
+func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient, validateOrgWideSender bool) []Value {
 	if reason := localEmailValidationError(message, requireRecipient); reason != "" {
 		return []Value{newSendEmailValidationError(reason, "REQUIRED_FIELD_MISSING", emailFieldString(message, "targetObjectId"))}
 	}
@@ -672,7 +673,7 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 	var errors []Value
 	if message.Type == "Messaging.SingleEmailMessage" {
 		targetID := emailFieldString(message, "targetObjectId")
-		if validation := vm.currentUserTargetActivityValidation(message); validation.Kind != ValueNull {
+		if validation := vm.currentUserTargetActivityValidation(message, validateOrgWideSender); validation.Kind != ValueNull {
 			errors = append(errors, validation)
 		}
 		if object, known := vm.sObjectNameForID(targetID); known && object != "User" && object != "Contact" && object != "Lead" && object != "Person" {
@@ -715,15 +716,34 @@ func (vm *VM) localSendEmailValidationErrors(message Value, requireRecipient boo
 	if len(errors) > 0 {
 		return errors
 	}
-	if validation := vm.localSendEmailRecipientValidationError(message); validation.Kind != ValueNull {
+	if validation := vm.localSendEmailRecipientValidationError(message, validateOrgWideSender); validation.Kind != ValueNull {
 		return []Value{validation}
 	}
 	return nil
 }
 
 // Validate against the stored recipient, not a possibly stale caller record.
-func (vm *VM) localSendEmailRecipientValidationError(message Value) Value {
+func (vm *VM) localSendEmailRecipientValidationError(message Value, validateOrgWideSender bool) Value {
 	if message.Type == "Messaging.SingleEmailMessage" && vm.Org != nil {
+		// Native: absent_org_wide_email/org.tsv. Only validate the captured
+		// sender ID shape for the explicit false overload when the local catalog
+		// has a live record to compare against.
+		senderID := emailFieldString(message, "orgWideEmailAddressId")
+		if validateOrgWideSender && strings.HasPrefix(senderID, "0D2") && vm.capturedOrgWideEmailContext() &&
+			validateApexID(senderID) == nil && vm.capturedOrgWideEmailShape(message) {
+			objectName, ok := vm.resolveObjectName("OrgWideEmailAddress")
+			if !ok {
+				objectName = "OrgWideEmailAddress"
+			}
+			records := vm.Org.Objects[objectName].Records
+			if _, _, found := storage.LookupRecordByID(records, storage.ID(senderID)); !found {
+				for _, record := range records {
+					if !record.System.IsDeleted {
+						return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+					}
+				}
+			}
+		}
 		templateID := emailFieldString(message, "templateId")
 		// The default local test org has the EmailTemplate schema but no
 		// template records. An empty local catalog is not evidence that a
