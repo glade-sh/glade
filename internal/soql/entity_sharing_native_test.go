@@ -96,3 +96,31 @@ func TestEntitySharingProjectionPreservesExplicitRecords(t *testing.T) {
 		t.Fatalf("explicit field changed to %q", got)
 	}
 }
+
+func TestEntityExternalSharingDefaultRefreshesWarmView(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Case")
+	caseState := org.Objects["Case"]
+	caseState.Definition.SharingModel = "ReadWriteTransfer"
+	org.Objects["Case"] = caseState
+
+	view := VirtualSchemaView(org)
+	fields := view.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields
+	if got := fields["ExternalSharingModel"].String; got != "Private" {
+		t.Fatalf("external sharing model = %q, want Private", got)
+	}
+
+	caseState.Definition.ExternalSharingModel = "Read"
+	view.Objects["Case"] = caseState
+	refreshed := VirtualSchemaView(view)
+	fields = refreshed.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields
+	if _, exists := fields["ExternalSharingModel"]; exists {
+		t.Fatal("generated external sharing default survived explicit external metadata")
+	}
+	if got := fields["InternalSharingModel"].String; got != "ReadWriteTransfer" {
+		t.Fatalf("internal sharing model = %q, want ReadWriteTransfer", got)
+	}
+	if got := view.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields["ExternalSharingModel"].String; got != "Private" {
+		t.Fatalf("refresh mutated the prior view to %q", got)
+	}
+}
