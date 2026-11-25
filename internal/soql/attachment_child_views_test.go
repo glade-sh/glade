@@ -118,6 +118,162 @@ func TestAttachmentChildViewsReadCurrentRelationshipsWithWarmCache(t *testing.T)
 	}
 }
 
+func TestAttachmentChildViewsReadCurrentPluralLabelsWithWarmCache(t *testing.T) {
+	const parentID = "a01000000000001"
+	const childID = "a02000000000001"
+	const noteID = "002000000000001"
+	for _, view := range []struct{ relationship, object string }{
+		{"CombinedAttachments", "CombinedAttachment"},
+		{"NotesAndAttachments", "NoteAndAttachment"},
+	} {
+		t.Run(view.relationship, func(t *testing.T) {
+			org := attachmentChildViewFixture(t,
+				storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: parentID}}},
+				storage.FixtureObject{Name: "ViewChild__c", Records: []storage.FixtureRecord{
+					{ID: childID, Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parentID)}},
+				}},
+				storage.FixtureObject{Name: "Note", Records: []storage.FixtureRecord{
+					{ID: noteID, Fields: map[string]storage.Value{"ParentId": storage.IDValue(parentID)}},
+				}},
+			)
+			child := org.Objects["ViewChild__c"]
+			child.Definition.Relations = []storage.Relationship{
+				{Field: "Parent__c", ParentObjects: []string{"ViewParent__c"}},
+			}
+			child.Definition.PluralLabel = view.relationship
+			org.Objects["ViewChild__c"] = child
+			query, err := Parse("SELECT Id, (SELECT Id FROM " + view.relationship + ") FROM ViewParent__c")
+			if err != nil {
+				t.Fatal(err)
+			}
+			check := func(cache *ExecutionCache, object string, id storage.ID) {
+				t.Helper()
+				result, err := ExecuteWithCache(org, query, cache)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(result.Records) != 1 || result.Records[0].ID != parentID {
+					t.Fatalf("parent rows = %+v, want %s", result.Records, parentID)
+				}
+				assertAttachmentChildView(t, result.Records[0], view.relationship, object, id)
+			}
+			cache := NewExecutionCache()
+			check(cache, "ViewChild__c", childID)
+			child.Definition.PluralLabel = "Unrelated Children"
+			org.Objects["ViewChild__c"] = child
+			check(NewExecutionCache(), view.object, noteID)
+			check(cache, view.object, noteID)
+		})
+	}
+}
+
+func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
+	const parentName = "ViewParent__c"
+	const childName = "ViewChild__c"
+	const view = "CombinedAttachments"
+	for _, test := range []struct {
+		name        string
+		prepare     func(*storage.OrgState, *storage.ObjectDefinition)
+		change      func(*storage.OrgState, *storage.ObjectDefinition)
+		queryParent string
+		queryEdge   string
+		wantBefore  string
+		wantAfter   string
+	}{
+		{
+			name: "loaded inventory at the same count", wantBefore: childName, wantAfter: "OtherChild__c",
+			change: func(org *storage.OrgState, _ *storage.ObjectDefinition) {
+				org.Objects["OtherChild__c"] = org.Objects[childName]
+				delete(org.Objects, childName)
+			},
+		},
+		{
+			name: "definition API name", wantBefore: childName, wantAfter: "CombinedAttachment",
+			prepare: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.APIName, def.Relations[0].ChildRelationship = view, ""
+			},
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { def.APIName = childName },
+		},
+		{
+			name: "label", wantBefore: childName, wantAfter: "CombinedAttachment",
+			prepare: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.Label, def.Relations[0].ChildRelationship = view, ""
+			},
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { def.Label = "Other Children" },
+		},
+		{
+			name: "plural label", wantBefore: childName, wantAfter: "CombinedAttachment",
+			prepare: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.PluralLabel, def.Relations[0].ChildRelationship = view, ""
+			},
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { def.PluralLabel = "Other Children" },
+		},
+		{
+			name: "declared relationship target", wantBefore: childName, wantAfter: "CombinedAttachment",
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.Relations[0].ParentObjects[0] = "OtherParent__c"
+			},
+		},
+		{
+			name: "reference field target at the same count", wantBefore: childName, wantAfter: "CombinedAttachment",
+			prepare: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.PluralLabel, def.Relations = view, nil
+				def.Fields["OwnerId"] = storage.Field{APIName: "OwnerId", Type: storage.FieldReference, ReferenceTo: []string{parentName}}
+			},
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
+				def.Fields["OwnerId"].ReferenceTo[0] = "OtherParent__c"
+			},
+		},
+		{
+			name: "namespace priority", wantBefore: "alpha__ViewChild__c", wantAfter: "beta__ViewChild__c",
+			prepare: func(org *storage.OrgState, def *storage.ObjectDefinition) {
+				org.Namespace = "alpha"
+				org.Objects["alpha__ViewChild__c"] = storage.ObjectState{Definition: *def}
+				org.Objects["beta__ViewChild__c"] = storage.ObjectState{Definition: *def}
+			},
+			change: func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.Namespace = "beta" },
+		},
+		{
+			name: "API version", queryParent: "Account", queryEdge: "ContactPointOttSvcs",
+			wantBefore: "ContactPointOttSvc", wantAfter: "",
+			prepare: func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.APIVersion = "68.0" },
+			change:  func(org *storage.OrgState, _ *storage.ObjectDefinition) { org.APIVersion = "67.0" },
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			definition := storage.ObjectDefinition{
+				APIName: childName, Fields: map[string]storage.Field{},
+				Relations: []storage.Relationship{{Field: "Parent__c", ChildRelationship: view, ParentObjects: []string{parentName}}},
+			}
+			if test.prepare != nil {
+				test.prepare(&org, &definition)
+			}
+			org.Objects[childName] = storage.ObjectState{Definition: definition}
+			parent, edge := storage.ObjectDefinition{APIName: parentName}, view
+			if test.queryParent != "" {
+				parent.APIName, edge = test.queryParent, test.queryEdge
+			}
+			check := func(cache *ExecutionCache, want string) {
+				t.Helper()
+				got := childRelationshipResolutionCached(org, parent, edge, newChildRelationshipQueryCache(cache), true)
+				if got.childObjectName != want || got.ok != (want != "") {
+					t.Errorf("resolved (%q, %t), want (%q, %t)", got.childObjectName, got.ok, want, want != "")
+				}
+			}
+			cache := NewExecutionCache()
+			check(cache, test.wantBefore)
+			test.change(&org, &definition)
+			if current, exists := org.Objects[childName]; exists {
+				current.Definition = definition
+				org.Objects[childName] = current
+			}
+			check(NewExecutionCache(), test.wantAfter)
+			check(cache, test.wantAfter)
+		})
+	}
+}
+
 func TestAttachmentChildViewsCheckReturnedTypeVisibility(t *testing.T) {
 	const parentID = "a01000000000001"
 	const noteID = "002000000000001"
