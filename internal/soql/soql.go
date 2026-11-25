@@ -3031,11 +3031,7 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 			consider(relation)
 		}
 		storage.VisitStandardObjectRelationships(childDefinition.APIName, nil, consider)
-		for _, relation := range syntheticContentDocumentLinkRelationship(childDefinition) {
-			consider(relation)
-		}
-		visitSyntheticStandardSystemChildRelationships(childDefinition, consider)
-		visitSyntheticSystemChildRelationships(childDefinition, consider)
+		visitSyntheticFieldChildRelationships(childDefinition, consider)
 		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
 			consider(relation)
 		}
@@ -3044,6 +3040,14 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 		return bestObject, bestRelation, true
 	}
 	return "", storage.Relationship{}, false
+}
+
+func visitSyntheticFieldChildRelationships(definition storage.ObjectDefinition, visit func(storage.Relationship)) {
+	for _, relation := range syntheticContentDocumentLinkRelationship(definition) {
+		visit(relation)
+	}
+	visitSyntheticStandardSystemChildRelationships(definition, visit)
+	visitSyntheticSystemChildRelationships(definition, visit)
 }
 
 func syntheticPrefixedCustomChildRelationship(org storage.OrgState, parentDefinition, childDefinition storage.ObjectDefinition, queryName string) (storage.Relationship, bool) {

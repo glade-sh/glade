@@ -110,12 +110,7 @@ func attachmentRelationshipDefinitions(org storage.OrgState) uint64 {
 		matches := childRelationshipNameMatches(org.Namespace, derived, combinedAttachmentsRelationship) ||
 			childRelationshipNameMatches(org.Namespace, derived, notesAndAttachmentsRelationship)
 		if matches {
-			digest.WriteByte(1)
-			for _, relation := range syntheticContentDocumentLinkRelationship(definition) {
-				digest.relationship(relation)
-			}
-			visitSyntheticStandardSystemChildRelationships(definition, digest.relationship)
-			visitSyntheticSystemChildRelationships(definition, digest.relationship)
+			visitSyntheticFieldChildRelationships(definition, digest.relationship)
 		}
 		digest.WriteByte(0)
 	}
@@ -136,6 +131,7 @@ func (h *attachmentRelationshipHash) text(value string) {
 }
 
 func (h *attachmentRelationshipHash) relationship(relation storage.Relationship) {
+	h.WriteByte(1)
 	h.text(relation.Field)
 	h.text(relation.ChildRelationship)
 	h.size(len(relation.ParentObjects))

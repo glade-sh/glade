@@ -179,6 +179,7 @@ func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
 		queryEdge   string
 		wantBefore  string
 		wantAfter   string
+		wantField   string
 	}{
 		{
 			name: "loaded inventory at the same count", wantBefore: childName, wantAfter: "OtherChild__c",
@@ -213,6 +214,18 @@ func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
 			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) {
 				def.Relations[0].ParentObjects[0] = "OtherParent__c"
 			},
+		},
+		{
+			name: "declared lookup field", wantBefore: childName, wantAfter: childName, wantField: "OtherParent__c",
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { def.Relations[0].Field = "OtherParent__c" },
+		},
+		{
+			name: "definition richness", wantBefore: childName, wantAfter: "AChild__c",
+			prepare: func(org *storage.OrgState, def *storage.ObjectDefinition) {
+				org.Objects["AChild__c"] = storage.ObjectState{Definition: *def}
+				def.Fields = map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}
+			},
+			change: func(_ *storage.OrgState, def *storage.ObjectDefinition) { delete(def.Fields, "Name") },
 		},
 		{
 			name: "reference field target at the same count", wantBefore: childName, wantAfter: "CombinedAttachment",
@@ -254,22 +267,25 @@ func TestAttachmentChildRelationshipCacheTracksResolverInputs(t *testing.T) {
 			if test.queryParent != "" {
 				parent.APIName, edge = test.queryParent, test.queryEdge
 			}
-			check := func(cache *ExecutionCache, want string) {
+			check := func(cache *ExecutionCache, want, field string) {
 				t.Helper()
 				got := childRelationshipResolutionCached(org, parent, edge, newChildRelationshipQueryCache(cache), true)
 				if got.childObjectName != want || got.ok != (want != "") {
 					t.Errorf("resolved (%q, %t), want (%q, %t)", got.childObjectName, got.ok, want, want != "")
 				}
+				if field != "" && got.relation.Field != field {
+					t.Errorf("lookup field = %q, want %q", got.relation.Field, field)
+				}
 			}
 			cache := NewExecutionCache()
-			check(cache, test.wantBefore)
+			check(cache, test.wantBefore, "")
 			test.change(&org, &definition)
 			if current, exists := org.Objects[childName]; exists {
 				current.Definition = definition
 				org.Objects[childName] = current
 			}
-			check(NewExecutionCache(), test.wantAfter)
-			check(cache, test.wantAfter)
+			check(NewExecutionCache(), test.wantAfter, test.wantField)
+			check(cache, test.wantAfter, test.wantField)
 		})
 	}
 }
