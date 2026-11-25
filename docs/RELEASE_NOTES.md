@@ -489,7 +489,7 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 
 <a name="v039"></a>
 
-## v0.3.9 - 2026-11-13
+## v0.3.9 - 2026-11-14
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
 
@@ -536,7 +536,7 @@ v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteri
 
 <a name="v038"></a>
 
-## v0.3.8 - 2026-11-12
+## v0.3.8 - 2026-11-13
 
 v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
 
@@ -605,7 +605,7 @@ Results are unchanged by every item in this section.
 
 <a name="v037"></a>
 
-## v0.3.7 - 2026-11-11
+## v0.3.7 - 2026-11-12
 
 v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
 
@@ -658,7 +658,7 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 
 <a name="v036"></a>
 
-## v0.3.6 - 2026-11-10
+## v0.3.6 - 2026-11-11
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
 
@@ -812,7 +812,7 @@ v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Wint
 
 <a name="v034"></a>
 
-## v0.3.4 - 2026-11-04
+## v0.3.4 - 2026-11-05
 
 v0.3.4 hardens the local server, the installer and the managed toolchain. It tightens several Apex, Flow and Visualforce results to captured Salesforce rows, speeds up common runtime paths, and makes the repository's own test and CI runs faster. API labels list the source versions checked against captured results; where a label names two versions, no other was captured. The supported windows and hosted boundaries remain in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
 
@@ -1148,7 +1148,7 @@ project tests. Publication and artifact verification remain subject to the
 
 <a name="v032"></a>
 
-## v0.3.2 - 2026-10-29
+## v0.3.2 - 2026-10-30
 
 v0.3.2 makes offline test runs use less CPU and memory. It also closes more
 gaps against captured Salesforce results in Apex, Flow, SOQL, standard objects,
