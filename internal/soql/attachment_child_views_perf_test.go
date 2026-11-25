@@ -110,6 +110,38 @@ func TestAttachmentChildViewPlanRechecksLoadedRelationshipsAfterLazyInstall(t *t
 	}
 }
 
+func TestAttachmentChildViewsFindCandidatesWithAndWithoutStorageIndex(t *testing.T) {
+	const emptyParent = "a01000000000001"
+	const noteParent = "a01000000000002"
+	const noteID = "002000000000001"
+	org := attachmentChildViewFixture(t,
+		storage.FixtureObject{Name: "ViewParent__c", Records: []storage.FixtureRecord{{ID: emptyParent}, {ID: noteParent}}},
+		storage.FixtureObject{Name: "Note", Records: []storage.FixtureRecord{
+			{ID: noteID, Fields: map[string]storage.Value{"ParentId": storage.IDValue(noteParent + "AAA")}},
+		}},
+	)
+	check := func(t *testing.T) {
+		result := queryAttachmentChildViews(t, org, ExecutionContext{})
+		if len(result.Records) != 2 {
+			t.Fatalf("parent rows = %d, want 2", len(result.Records))
+		}
+		for _, parent := range result.Records {
+			if parent.ID == noteParent {
+				assertAttachmentChildView(t, parent, "CombinedAttachments", "CombinedAttachment", noteID)
+				assertAttachmentChildView(t, parent, "NotesAndAttachments", "NoteAndAttachment", noteID)
+			} else if len(parent.Children["CombinedAttachments"]) != 0 || len(parent.Children["NotesAndAttachments"]) != 0 {
+				t.Errorf("unexpected attachment views for %s", parent.ID)
+			}
+		}
+	}
+	t.Run("parent index", check)
+	note := org.Objects["Note"]
+	note.Definition.Indexes = []storage.IndexDefinition{{Name: "Note.Parent", Object: "Note", Fields: []string{"ParentId"}}}
+	org.Objects["Note"] = note
+	storage.RebuildObjectIndexes(&org, "Note")
+	t.Run("storage index", check)
+}
+
 func BenchmarkAttachmentChildViewWorkloads(b *testing.B) {
 	for _, workload := range []struct {
 		name        string

@@ -13,8 +13,14 @@ type attachmentViewPlanKey struct {
 type attachmentViewPlan struct {
 	loaded          bool
 	importedObject  string
+	importedIndex   map[storage.ID][]string
 	sourcesPrepared bool
-	sources         []ChildQuery
+	sources         []attachmentViewSource
+}
+
+type attachmentViewSource struct {
+	child ChildQuery
+	index map[storage.ID][]string
 }
 
 // The Id-only attachment views on ordinary custom records read from their
@@ -43,10 +49,10 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 	// Fixture imports can populate the view table while its relationship is
 	// still resolved by the platform catalog. Use the stored rows for that
 	// parent, with ordinary child visibility and projection.
-	if plan.importedObject != "" {
+	parentKey := storage.IDIndexKey(parent.ID)
+	if imported := plan.importedIndex[parentKey]; len(imported) > 0 {
 		viewObject := org.Objects[plan.importedObject]
-		index := childRelationshipIndex(org, plan.importedObject, viewObject, "ParentId", cache)
-		for _, id := range index[storage.IDIndexKey(parent.ID)] {
+		for _, id := range imported {
 			row := viewObject.Records[storage.ID(id)]
 			if parentID, ok := recordValue(org, viewObject.Definition, row, "ParentId"); ok && equalValues(parentID, storage.IDValue(parent.ID)) {
 				return nil, false, nil
@@ -74,29 +80,40 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		note, attachment, link := child, child, child
 		note.Relationship = "Notes"
 		attachment.Relationship = "Attachments"
-		sources = []ChildQuery{note, attachment}
+		sources = []attachmentViewSource{{child: note}, {child: attachment}}
 		if viewName == "CombinedAttachment" {
 			link.Relationship = "ContentDocumentLinks"
 			link.Query.Fields = []string{"Id", "ContentDocumentId"}
-			sources = append(sources, link)
+			sources = append(sources, attachmentViewSource{child: link})
 		}
 	}
 	for _, source := range sources {
-		prepared, err := prepareChildRelationshipQuery(org, definition, source, cache, context, true)
-		if err != nil {
-			return nil, true, err
-		}
-		if prepared.emptyAttachmentSource {
-			continue
-		}
 		if !plan.sourcesPrepared {
+			prepared, err := prepareChildRelationshipQuery(org, definition, source.child, cache, context, true)
+			if err != nil {
+				return nil, true, err
+			}
+			if prepared.emptyAttachmentSource {
+				continue
+			}
+			field := prepared.relation.Field
+			// The ordinary row executor uses its parent index when there is
+			// no matching storage index. Reuse that index to skip misses.
+			if object, loaded := org.Objects[prepared.childObjectName]; loaded && !isSystemRelationshipField(field) {
+				if _, indexed := storage.LookupIndex(object, field, storage.IDValue(parent.ID)); !indexed {
+					source.index = childRelationshipIndex(org, prepared.childObjectName, object, field, cache)
+				}
+			}
 			plan.sources = append(plan.sources, source)
 		}
-		rows, err := executePreparedChildRelationshipRows(org, definition, parent, source, cache, context, prepared)
+		if source.index != nil && len(source.index[parentKey]) == 0 {
+			continue
+		}
+		rows, err := executeChildRelationshipRows(org, definition, parent, source.child, cache, context, true)
 		if err != nil {
 			return nil, true, err
 		}
-		file := source.Relationship == "ContentDocumentLinks"
+		file := source.child.Relationship == "ContentDocumentLinks"
 		for _, row := range rows {
 			id := row.ID
 			if file {
@@ -143,6 +160,7 @@ func planAttachmentView(org storage.OrgState, definition storage.ObjectDefinitio
 	if !plan.loaded {
 		if name, ok := storage.ResolveObjectName(org, view); ok && len(org.Objects[name].Records) > 0 {
 			plan.importedObject = name
+			plan.importedIndex = childRelationshipIndex(org, name, org.Objects[name], "ParentId", cache)
 		}
 	}
 	if cache != nil {

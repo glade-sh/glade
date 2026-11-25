@@ -2581,14 +2581,14 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if records, handled, err := executeAttachmentViewQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
 		return records, err
 	}
-	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context, false)
+	return executeChildRelationshipRows(org, parentDefinition, parent, childQuery, childCache, context, false)
+}
+
+func executeChildRelationshipRows(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, platformOnly bool) ([]storage.Record, error) {
+	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context, platformOnly)
 	if err != nil {
 		return nil, err
 	}
-	return executePreparedChildRelationshipRows(org, parentDefinition, parent, childQuery, childCache, context, prepared)
-}
-
-func executePreparedChildRelationshipRows(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, prepared preparedChildRelationshipQuery) ([]storage.Record, error) {
 	childObjectName := prepared.childObjectName
 	org, childObjectName, _ = orgWithLazyChildObject(org, childObjectName)
 	relation := prepared.relation
