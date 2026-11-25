@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed a false `Date.getTime()` diagnostic when a `Datetime` method chain is the first argument to a dotted Apex call.
+
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
 - Remove obsolete benchmark cache references from CI policy tests.
