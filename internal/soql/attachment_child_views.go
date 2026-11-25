@@ -22,16 +22,15 @@ type attachmentViewPlan struct {
 // path so they share its parent matching and visibility rules.
 func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectDefinition, parent storage.Record, child ChildQuery, cache *childRelationshipQueryCache, context ExecutionContext) ([]storage.Record, bool, error) {
 	var viewName string
-	switch {
-	case strings.EqualFold(child.Relationship, "NotesAndAttachments"):
+	switch strings.ToLower(child.Relationship) {
+	case "notesandattachments":
 		viewName = "NoteAndAttachment"
-	case strings.EqualFold(child.Relationship, "CombinedAttachments"):
+	case "combinedattachments":
 		viewName = "CombinedAttachment"
 	default:
 		return nil, false, nil
 	}
-	name := definition.APIName
-	if len(name) < 3 || !strings.EqualFold(name[len(name)-3:], "__c") ||
+	if !strings.HasSuffix(strings.ToLower(definition.APIName), "__c") ||
 		storage.StripAnyNamespaceToken(definition.APIName) != definition.APIName ||
 		storage.IsCustomSettingDefinition(definition) || !IsContentChildAttachedIDQuery(child.Query) {
 		return nil, false, nil

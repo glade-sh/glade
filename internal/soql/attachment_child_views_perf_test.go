@@ -86,6 +86,30 @@ func TestAttachmentChildViewsReadCurrentRowsWithWarmSchema(t *testing.T) {
 	check(importedID, ExecutionContext{})
 }
 
+func TestAttachmentChildViewPlanRechecksLoadedRelationshipsAfterLazyInstall(t *testing.T) {
+	org := attachmentChildViewFixture(t, storage.FixtureObject{Name: "ViewParent__c"})
+	org.EnableStandardSpreadSource()
+	parent := org.Objects["ViewParent__c"].Definition
+	cache := NewExecutionCache()
+	const relationship = "CombinedAttachments"
+	const view = "CombinedAttachment"
+	if got := planAttachmentView(org, parent, relationship, view, newChildRelationshipQueryCache(cache)); got.loaded {
+		t.Fatal("expected the platform fallback before the loaded edge")
+	}
+
+	// Simulate a loaded schema edge becoming visible between validation and
+	// projection while the execution cache still holds the earlier result.
+	org.Objects["ViewChild__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "ViewChild__c",
+		Relations: []storage.Relationship{
+			{Field: "Parent__c", ParentObjects: []string{parent.APIName}, ChildRelationship: relationship},
+		},
+	}}
+	if got := planAttachmentView(org, parent, relationship, view, newChildRelationshipQueryCache(cache)); !got.loaded {
+		t.Fatal("expected to use the newly visible loaded edge")
+	}
+}
+
 func BenchmarkAttachmentChildViewWorkloads(b *testing.B) {
 	for _, workload := range []struct {
 		name        string
@@ -104,6 +128,23 @@ func BenchmarkAttachmentChildViewWorkloads(b *testing.B) {
 			}
 			if len(result.Records) != workload.parentCount {
 				b.Fatalf("parent rows = %d, want %d", len(result.Records), workload.parentCount)
+			}
+			for _, child := range query.ChildQueries {
+				rows := 0
+				for _, parent := range result.Records {
+					children, ok := parent.Children[child.Relationship]
+					if !ok || children == nil || len(children) > 1 {
+						b.Fatalf("unexpected %s rows for %s: %#v", child.Relationship, parent.ID, children)
+					}
+					rows += len(children)
+				}
+				want := 0
+				if workload.populated {
+					want = workload.parentCount / 10
+				}
+				if rows != want {
+					b.Fatalf("%s rows = %d, want %d", child.Relationship, rows, want)
+				}
 			}
 			b.ReportAllocs()
 			for b.Loop() {
