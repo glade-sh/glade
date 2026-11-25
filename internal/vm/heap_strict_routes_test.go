@@ -14,6 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -42,7 +43,7 @@ func strictHeapRouteBodies() map[string]string {
 	return bodies
 }
 
-func strictHeapRouteProject(t *testing.T, body string) (*vm.VM, typesys.Index, vm.CompileOptions) {
+func prepareStrictHeapRoute(t *testing.T, route, body string) func(vm.LimitCaps, bool) (strictShapeOutcome, int) {
 	t.Helper()
 	root := t.TempDir()
 	write := func(name, text string) {
@@ -81,29 +82,20 @@ func strictHeapRouteProject(t *testing.T, body string) (*vm.VM, typesys.Index, v
 	}
 	org := apextest.OrgFromIndex(index)
 	org.APIVersion = "67.0"
-	machine := vm.New(nil)
-	machine.SetOrg(&org)
-	if err := apextest.RegisterProjectRuntime(machine, index); err != nil {
+	base := vm.New(nil)
+	if err := apextest.RegisterProjectRuntime(base, index); err != nil {
 		t.Fatal(err)
 	}
-	return machine, index, vm.CompileOptions{APIVersion: "67.0"}
-}
-
-func runStrictHeapRoute(t *testing.T, route, body string, caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int) {
-	t.Helper()
-	defer vm.SetHeapStatementPlansOffForTest(plansOff)()
-	machine, index, opts := strictHeapRouteProject(t, body)
+	opts := vm.CompileOptions{APIVersion: "67.0"}
 	source := "HeapRouteBody.run();"
 	switch route {
 	case "method":
-		machine.EnableTestContext()
-		if err := apextest.RegisterTestMethodForRequest(machine, index, "HeapRouteTest", "direct"); err != nil {
+		if err := apextest.RegisterTestMethodForRequest(base, index, "HeapRouteTest", "direct"); err != nil {
 			t.Fatal(err)
 		}
 		source = "HeapRouteTest.direct();"
 	case "queueable":
-		machine.EnableTestContext()
-		if err := apextest.RegisterTestMethodForRequest(machine, index, "HeapRouteTest", "queued"); err != nil {
+		if err := apextest.RegisterTestMethodForRequest(base, index, "HeapRouteTest", "queued"); err != nil {
 			t.Fatal(err)
 		}
 		source = "HeapRouteTest.queued();"
@@ -113,7 +105,7 @@ func runStrictHeapRoute(t *testing.T, route, body string, caps vm.LimitCaps, pla
 			t.Fatalf("trigger body: %v\n%s", err, body)
 		}
 		for _, timing := range []string{"before", "after"} {
-			if err := machine.RegisterTrigger(vm.Trigger{Name: "HeapRouteTrigger", Object: "Account", Timing: timing, Operation: "insert", APIVersion: "67.0", Program: program}); err != nil {
+			if err := base.RegisterTrigger(vm.Trigger{Name: "HeapRouteTrigger", Object: "Account", Timing: timing, Operation: "insert", APIVersion: "67.0", Program: program}); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -123,23 +115,36 @@ func runStrictHeapRoute(t *testing.T, route, body string, caps vm.LimitCaps, pla
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine.SetLimitMode(vm.LimitModeStrict)
-	machine.SetLimitCaps(caps)
-	result, runErr := machine.Execute(program)
-	out := strictShapeOutcome{debug: result.Debug, limits: result.Limits, violations: result.LimitViolations}
-	if runErr != nil {
-		out.err = runErr.Error()
-		var rt *vm.RuntimeError
-		if errors.As(runErr, &rt) {
-			out.errType = rt.Type
-			// Each run has its own project directory.
-			for _, frame := range rt.Stack {
-				frame.File = filepath.Base(frame.File)
-				out.stack = append(out.stack, frame)
+	base.FreezeClassLookup()
+	template := storage.NewRuntimeTemplate(org)
+	vm.PrimeRuntimeTemplateSchema(&template)
+	base.PrimeMetadataSchema(&template.Org)
+	return func(caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int) {
+		defer vm.SetHeapStatementPlansOffForTest(plansOff)()
+		machine := base.CloneRuntimeFrozenShared(nil)
+		state := template.CloneRuntimeOrg()
+		machine.SetRuntimeTemplateOrg(&state)
+		if route == "method" || route == "queueable" {
+			machine.EnableTestContext()
+		}
+		machine.SetLimitMode(vm.LimitModeStrict)
+		machine.SetLimitCaps(caps)
+		result, runErr := machine.Execute(program)
+		out := strictShapeOutcome{debug: result.Debug, limits: result.Limits, violations: result.LimitViolations}
+		if runErr != nil {
+			out.err = runErr.Error()
+			var rt *vm.RuntimeError
+			if errors.As(runErr, &rt) {
+				out.errType = rt.Type
+				// Compare stack locations independent of the fixture path.
+				for _, frame := range rt.Stack {
+					frame.File = filepath.Base(frame.File)
+					out.stack = append(out.stack, frame)
+				}
 			}
 		}
+		return out, machine.HeapChecksPricedForTest()
 	}
-	return out, machine.HeapChecksPricedForTest()
 }
 
 // The priced outcome in a class method frame called from a test method, in a
@@ -152,11 +157,12 @@ func TestStrictHeapRoutesMatchFullWalk(t *testing.T) {
 	for name, body := range strictHeapRouteBodies() {
 		for _, route := range []string{"method", "trigger", "queueable"} {
 			t.Run(route+"/"+name, func(t *testing.T) {
-				base, _ := runStrictHeapRoute(t, route, body, sync, true)
+				run := prepareStrictHeapRoute(t, route, body)
+				base, _ := run(sync, true)
 				if base.err != "" && !strings.Contains(base.err, "Too many heapSize") {
 					t.Logf("uncapped err = %q", base.err)
 				}
-				ran, priced := runStrictHeapRoute(t, route, body, sync, false)
+				ran, priced := run(sync, false)
 				if !strings.Contains(strings.Join(ran.debug, "\n"), "end ") || ran.err != "" {
 					t.Fatalf("body did not run to its end: err=%q debug=%v", ran.err, ran.debug)
 				}
@@ -181,8 +187,11 @@ func TestStrictHeapRoutesMatchFullWalk(t *testing.T) {
 					if cap != 0 {
 						c.HeapSize = cap
 					}
-					want, _ := runStrictHeapRoute(t, route, body, c, true)
-					got, _ := runStrictHeapRoute(t, route, body, c, false)
+					want, got := base, ran
+					if cap != 0 {
+						want, _ = run(c, true)
+						got, _ = run(c, false)
+					}
 					if !reflect.DeepEqual(got, want) {
 						t.Fatalf("cap %d: priced outcome differs from full walk:\n got  %+v\n want %+v", cap, got, want)
 					}
