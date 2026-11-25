@@ -2,13 +2,14 @@
 
 ## Unreleased
 
-- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery, and a class that failed only through such a test.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
-- Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
-- Match Salesforce compilation for direct anonymous BatchApexErrorEvent inserts at API 62.0 and 67.0.
-
-- After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0. A before-save Flow that follows an 18-character reference to a deleted parent no longer stops the save with a runtime error; the save fails with `ENTITY_IS_DELETED`, as captured at API 62.0, 63.0 and 67.0.
+- Remove obsolete benchmark cache references from CI policy tests.
+- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears a class when its only failing methods disappear from discovery, including during a run.
+- Add Salesforce conformance coverage for inactive Visualforce Site methods with and without a Site record in anonymous Apex and tests.
+- Match captured org-wide sender errors and current-user activity validation when sending email with partial success enabled.
+- Match Salesforce compilation for direct anonymous `BatchApexErrorEvent` inserts at API 62.0 and 67.0 and cover share-object and custom-metadata queries.
+- Match captured Flow profile comparisons and parent lookup filters at API 62.0 through 67.0. A before-save lookup of an 18-character reference to a deleted parent reaches the `ENTITY_IS_DELETED` save error at API 62.0, 63.0, and 67.0.
 
 ## v0.3.15
 
