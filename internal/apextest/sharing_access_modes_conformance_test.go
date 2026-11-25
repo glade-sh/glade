@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -92,6 +94,10 @@ func runSharingAccessFamily(t *testing.T, name, prefix string, count int) {
 		t.Fatal(err)
 	}
 	index := loadTestIndex(t, root)
+	resultsForAPI := sharingAccessResultsByAPI(index, rows[1:], prefix, vm.LimitModeStrict, func(api, method string) bool {
+		_, carried := sharingAccessCarry(name, api, method)
+		return carried
+	})
 	for i, row := range rows[1:] {
 		api, method, want := row[0], row[1], row[2]
 		line := i + 2
@@ -123,12 +129,11 @@ func runSharingAccessFamily(t *testing.T, name, prefix string, count int) {
 					break
 				}
 			} else {
-				class := prefix + strings.TrimSuffix(api, ".0")
-				run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1, LimitMode: vm.LimitModeStrict})
-				if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
-					t.Fatalf("missing runner observation %+v", run.Summary())
+				result, ok := resultsForAPI(t, api)[strings.ToLower(method)]
+				if !ok || result.Problem == nil {
+					t.Fatalf("missing runner observation for %s at API %s", method, api)
 				}
-				problem := run.Suites[0].Cases[0].Problem
+				problem := result.Problem
 				if _, after, ok := strings.Cut(problem.Message, " => "); ok {
 					got = strings.TrimSpace(after)
 				} else {
@@ -143,6 +148,51 @@ func runSharingAccessFamily(t *testing.T, name, prefix string, count int) {
 				t.Fatalf("NATIVE %s %s/org.tsv:%d istest %s\nnative=%q\nglade =%q", method, name, line, api, want, got)
 			}
 		})
+	}
+}
+
+func sharingAccessResultsByAPI(index typesys.Index, rows [][]string, prefix string, mode vm.LimitMode, skip func(string, string) bool) func(*testing.T, string) map[string]testreport.Case {
+	// Run each API's captured methods together. The runner still gives every
+	// method a private VM and test org, while sharing one project startup.
+	methodsByAPI := make(map[string]map[string]bool)
+	for _, row := range rows {
+		api, method := row[0], row[1]
+		if strings.HasPrefix(method, "anonymous:") || (skip != nil && skip(api, method)) {
+			continue
+		}
+		if methodsByAPI[api] == nil {
+			methodsByAPI[api] = make(map[string]bool)
+		}
+		methodsByAPI[api][strings.ToLower(method)] = true
+	}
+	resultsByAPI := make(map[string]map[string]testreport.Case)
+	return func(t *testing.T, api string) map[string]testreport.Case {
+		t.Helper()
+		if results, ok := resultsByAPI[api]; ok {
+			return results
+		}
+		class := prefix + strings.TrimSuffix(api, ".0")
+		opts := Options{SelectedClasses: []string{class}, NoDiskCache: true, Parallelism: 1, LimitMode: mode}
+		wanted := methodsByAPI[api]
+		var cases []TestCase
+		for _, c := range Discover(index, opts) {
+			if wanted[strings.ToLower(c.MethodName)] {
+				cases = append(cases, c)
+			}
+		}
+		if len(cases) != len(wanted) {
+			t.Fatalf("discovered %d methods for API %s, want %d", len(cases), api, len(wanted))
+		}
+		run := RunCasesContext(t.Context(), index, opts, cases)
+		if len(run.Suites) != 1 || len(run.Suites[0].Cases) != len(cases) {
+			t.Fatalf("missing runner observations for API %s: %+v", api, run.Summary())
+		}
+		results := make(map[string]testreport.Case, len(cases))
+		for _, result := range run.Suites[0].Cases {
+			results[strings.ToLower(result.MethodName)] = result
+		}
+		resultsByAPI[api] = results
+		return results
 	}
 }
 
@@ -199,17 +249,17 @@ func TestSharingAccessUncapturedNeighborsKeepBase(t *testing.T) {
 		}
 	}
 	index := loadTestIndex(t, root)
+	resultsForAPI := sharingAccessResultsByAPI(index, rows[1:], "SamNeighbor", "", nil)
 	for _, row := range rows[1:] {
 		api, method, want := row[0], row[1], row[2]
 		t.Run(api+"/"+method, func(t *testing.T) {
-			class := "SamNeighbor" + strings.TrimSuffix(api, ".0")
-			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
-			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
-				t.Fatalf("missing runner observation %+v", run.Summary())
+			result, exists := resultsForAPI(t, api)[strings.ToLower(method)]
+			if !exists || result.Problem == nil {
+				t.Fatalf("missing runner observation for %s at API %s", method, api)
 			}
-			_, got, ok := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
+			_, got, ok := strings.Cut(result.Problem.Message, " => ")
 			if !ok || strings.TrimSpace(got) != want {
-				t.Fatalf("base=%q\nglade=%q", want, run.Suites[0].Cases[0].Problem.Message)
+				t.Fatalf("base=%q\nglade=%q", want, result.Problem.Message)
 			}
 		})
 	}
