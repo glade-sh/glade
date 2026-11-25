@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -84,13 +85,25 @@ func TestDateGetTimeAnonymousNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	table, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	seen := make(map[string]bool)
-	for _, row := range readQualifiedReceiverTSV(t, filepath.Join(dir, "org.tsv"), 4) {
-		if row[0] != caseID || row[2] != "anonymous" {
+	for line := range strings.SplitSeq(string(table), "\n") {
+		if !strings.HasPrefix(line, caseID+"\t") {
 			continue
 		}
+		row := strings.SplitN(line, "\t", 4)
+		if len(row) != 4 || row[2] != "anonymous" {
+			t.Fatalf("invalid Date.getTime capture row: %v", row)
+		}
+		var outcome string
+		if err := json.Unmarshal([]byte(row[3]), &outcome); err != nil {
+			t.Fatalf("decode Date.getTime capture outcome: %v", err)
+		}
 		api := row[1]
-		want, ok := strings.CutPrefix(row[3], "COMPILE|")
+		want, ok := strings.CutPrefix(outcome, "COMPILE|")
 		if !ok || seen[api] {
 			t.Fatalf("invalid Date.getTime capture row: %v", row)
 		}
