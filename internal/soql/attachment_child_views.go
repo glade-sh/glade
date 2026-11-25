@@ -28,6 +28,22 @@ func executeAttachmentViewQuery(org storage.OrgState, definition storage.ObjectD
 		return nil, false, nil
 	}
 
+	// Fixture imports can populate the view table while its relationship is
+	// still resolved by the platform catalog. Use the stored rows for that
+	// parent, with ordinary child visibility and projection.
+	if viewObjectName, loaded := storage.ResolveObjectName(org, viewName); loaded {
+		viewObject := org.Objects[viewObjectName]
+		if len(viewObject.Records) > 0 {
+			index := childRelationshipIndex(org, viewObjectName, viewObject, "ParentId", cache)
+			for _, id := range index[storage.IDIndexKey(parent.ID)] {
+				row := viewObject.Records[storage.ID(id)]
+				if parentID, ok := recordValue(org, viewObject.Definition, row, "ParentId"); ok && equalValues(parentID, storage.IDValue(parent.ID)) {
+					return nil, false, nil
+				}
+			}
+		}
+	}
+
 	sources := []string{"Notes", "Attachments"}
 	if viewName == "CombinedAttachment" {
 		sources = append(sources, "ContentDocumentLinks")
