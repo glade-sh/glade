@@ -3042,47 +3042,47 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 	return err
 }
 
-// splitClassGroupsBySourceUnit gives each source unit of a class name its own
-// run group. Same-named test classes from two package directories each read
-// their own unit's custom metadata, so they cannot share one class org. A
-// class name with one source unit keeps its name as the group key, so other
-// runs are unchanged.
-func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string) {
+// splitClassGroupsBySourceFile gives each declaration its own setup and org.
+// Keep the class name as the first group's scheduling key.
+func splitClassGroupsBySourceFile(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string) {
 	groupClass := make(map[string]string, len(classOrder))
-	splitClasses := map[string]bool{}
+	needsSplit := false
 	for _, className := range classOrder {
 		groupClass[className] = className
-		units := map[string]bool{}
-		for _, i := range classIndexes[className] {
-			units[planned[i].TestMethod.SourceUnit] = true
+		indexes := classIndexes[className]
+		if len(indexes) < 2 {
+			continue
 		}
-		if len(units) > 1 {
-			splitClasses[className] = true
+		firstFile := filepath.Clean(planned[indexes[0]].TestCase.File)
+		for _, i := range indexes[1:] {
+			if filepath.Clean(planned[i].TestCase.File) != firstFile {
+				needsSplit = true
+				break
+			}
 		}
 	}
-	if len(splitClasses) == 0 {
+	if !needsSplit {
 		return classOrder, classIndexes, groupClass
 	}
 	order := make([]string, 0, len(classOrder))
 	indexes := make(map[string][]int, len(classIndexes))
-	groupClass = make(map[string]string, len(classOrder))
 	for _, className := range classOrder {
-		var units []string
-		byUnit := map[string][]int{}
+		var files []string
+		byFile := map[string][]int{}
 		for _, i := range classIndexes[className] {
-			unit := planned[i].TestMethod.SourceUnit
-			if _, seen := byUnit[unit]; !seen {
-				units = append(units, unit)
+			file := filepath.Clean(planned[i].TestCase.File)
+			if _, seen := byFile[file]; !seen {
+				files = append(files, file)
 			}
-			byUnit[unit] = append(byUnit[unit], i)
+			byFile[file] = append(byFile[file], i)
 		}
-		for n, unit := range units {
+		for n, file := range files {
 			key := className
 			if n > 0 {
-				key = className + "\x00" + unit
+				key = setupSourceKey(className, file)
 			}
 			order = append(order, key)
-			indexes[key] = byUnit[unit]
+			indexes[key] = byFile[file]
 			groupClass[key] = className
 		}
 	}
@@ -3112,7 +3112,7 @@ func groupSetups(className, file string, setups map[string][]vm.Method, setupErr
 }
 
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
-	classOrder, classIndexes, groupClass := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
+	classOrder, classIndexes, groupClass := splitClassGroupsBySourceFile(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
