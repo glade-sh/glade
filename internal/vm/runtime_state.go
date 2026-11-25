@@ -52,11 +52,7 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
-	// paymentFlowConstructorType is scoped to a captured context constructor.
-	paymentFlowConstructorType string
-	// paymentFlowContextDeclaration marks the captured direct local initializer.
-	paymentFlowContextDeclaration bool
-	matcherInputCache             preparedMatcherCache
+	matcherInputCache preparedMatcherCache
 	// adminStandardFLSRoute marks the routes where the default administrator's
 	// standard-field grant rule applies (anonymous_field_policy.go).
 	adminStandardFLSRoute bool

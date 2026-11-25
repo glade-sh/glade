@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -76,15 +77,16 @@ func registerPaymentFlowPlatformClass(t *testing.T, machine *VM, name string) {
 	t.Fatalf("missing platform symbol %s", name)
 }
 
-func runPaymentFlowNamed(t *testing.T, testClass bool, source string) error {
+func runPaymentFlowNamed(t *testing.T, api string, testClass bool, source string) error {
 	t.Helper()
 	machine := New(nil)
 	registerPaymentFlowPlatformClass(t, machine, "commercepayments.SaleResponse")
 	registerPaymentFlowPlatformClass(t, machine, "commercepayments.SaleRequest")
-	if err := machine.RegisterClass(Class{Name: "FlowProbe", APIVersion: "62.0", IsTest: testClass}); err != nil {
+	registerPaymentFlowPlatformClass(t, machine, "commercepayments.AuthorizationReversalRequest")
+	if err := machine.RegisterClass(Class{Name: "FlowProbe", APIVersion: api, IsTest: testClass}); err != nil {
 		t.Fatal(err)
 	}
-	method, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "62.0"})
+	method, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,10 +95,10 @@ func runPaymentFlowNamed(t *testing.T, testClass bool, source string) error {
 		machine.EnableTestContext()
 		modifiers = append(modifiers, "isTest")
 	}
-	if err = machine.RegisterMethod(Method{Name: "FlowProbe.run", ClassName: "FlowProbe", APIVersion: "62.0", IsStatic: true, Access: "public", Modifiers: modifiers, Program: method}); err != nil {
+	if err = machine.RegisterMethod(Method{Name: "FlowProbe.run", ClassName: "FlowProbe", APIVersion: api, IsStatic: true, Access: "public", Modifiers: modifiers, Program: method}); err != nil {
 		t.Fatal(err)
 	}
-	entry, err := CompileAnonymousWithOptions("FlowProbe.run();", CompileOptions{APIVersion: "62.0"})
+	entry, err := CompileAnonymousWithOptions("FlowProbe.run();", CompileOptions{APIVersion: api})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +107,7 @@ func runPaymentFlowNamed(t *testing.T, testClass bool, source string) error {
 }
 
 func TestPaymentFlowUncapturedNamedRouteKeepsBase(t *testing.T) {
-	err := runPaymentFlowNamed(t, false, `commercepayments.SaleResponse response = new commercepayments.SaleResponse(); commercepayments.GatewayResponse gateway = response;`)
+	err := runPaymentFlowNamed(t, "62.0", false, `commercepayments.SaleResponse response = new commercepayments.SaleResponse(); commercepayments.GatewayResponse gateway = response;`)
 	if err == nil {
 		t.Fatal("uncaptured named class assignment unexpectedly succeeded")
 	}
@@ -126,7 +128,7 @@ func TestPaymentFlowContextDeclarationShapes(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := runPaymentFlowNamed(t, true, `commercepayments.SaleRequest req = new commercepayments.SaleRequest(7.25); `+tc.source)
+			err := runPaymentFlowNamed(t, "62.0", true, `commercepayments.SaleRequest req = new commercepayments.SaleRequest(7.25); `+tc.source)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error = %v, want error %v", err, tc.wantErr)
 			}
@@ -134,5 +136,31 @@ func TestPaymentFlowContextDeclarationShapes(t *testing.T) {
 				t.Fatalf("expected context constructor mismatch, got %v", err)
 			}
 		})
+	}
+}
+
+func TestPaymentFlowContextTypedRequestGetter(t *testing.T) {
+	cases := []struct {
+		request, args, kind string
+	}{
+		{"SaleRequest", "amount", "Sale"},
+		{"AuthorizationReversalRequest", "amount, ref", "AuthorizationReversal"},
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, tc := range cases {
+			t.Run(api+"/"+tc.kind, func(t *testing.T) {
+				source := fmt.Sprintf(`
+Double amount = 7.25;
+String ref = 'synthetic-ref';
+commercepayments.%[1]s req = new commercepayments.%[1]s(%[2]s);
+commercepayments.PaymentGatewayContext ctx = new commercepayments.PaymentGatewayContext(req, commercepayments.RequestType.%[3]s);
+commercepayments.PaymentGatewayRequest returned = ctx.getPaymentRequest();
+System.assert(returned == req);
+`, tc.request, tc.args, tc.kind)
+				if err := runPaymentFlowNamed(t, api, true, source); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
 	}
 }

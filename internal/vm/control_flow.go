@@ -106,10 +106,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			}
 			value := Null
 			if inst.Expr.Kind != "" {
-				previous := vm.paymentFlowContextDeclaration
-				vm.paymentFlowContextDeclaration = paymentFlowContextDeclaration(inst)
-				evaluated, err := vm.evalForType(inst.Expr, inst.Type, result)
-				vm.paymentFlowContextDeclaration = previous
+				evaluated, err := vm.evalForType(inst.Expr, inst.Type, paymentFlowContextDeclaration(inst), result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -159,7 +156,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				if vm.currentMethod.ReturnType != "" && !strings.EqualFold(vm.currentMethod.ReturnType, "void") {
 					returnType = vm.currentMethod.ReturnType
 				}
-				evaluated, err := vm.evalForType(inst.Expr, returnType, result)
+				evaluated, err := vm.evalForType(inst.Expr, returnType, false, result)
 				if err != nil {
 					return execOutcome{}, err
 				}

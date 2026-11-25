@@ -15,20 +15,24 @@ import (
 )
 
 func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
+	return vm.evalWithPaymentRequestConversion(expr, false, result)
+}
+
+func (vm *VM) evalWithPaymentRequestConversion(expr ir.Expr, convertPaymentRequest bool, result *Result) (Value, error) {
 	vm.heapEvalSeq++
 	if expr.Pos > 0 {
 		// Name the call token for the frame the callee pushes. Arguments and
 		// receivers evaluate first and restore this value as they return.
 		previous := vm.callPos
 		vm.callPos = expr.Pos
-		value, err := vm.evalExpr(expr, result)
+		value, err := vm.evalExpr(expr, convertPaymentRequest, result)
 		vm.callPos = previous
 		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
 			value = vm.stampDatetimeWeekTerm(value)
 		}
 		return value, err
 	}
-	value, err := vm.evalExpr(expr, result)
+	value, err := vm.evalExpr(expr, convertPaymentRequest, result)
 	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
 		value = vm.stampDatetimeWeekTerm(value)
 	}
@@ -45,7 +49,7 @@ func (vm *VM) stampDatetimeWeekTerm(value Value) Value {
 	return value
 }
 
-func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
+func (vm *VM) evalExpr(expr ir.Expr, convertPaymentRequest bool, result *Result) (Value, error) {
 	switch expr.Kind {
 	case ir.ExprLiteral:
 		return parseLiteral(expr.Value)
@@ -426,6 +430,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			if err := vm.paymentAuthorizationContextError(expr); err != nil {
 				return Null, err
 			}
+			if convertPaymentRequest {
+				vm.convertPaymentFlowContextRequest(args)
+			}
 			return vm.callConstructorWithNamedArgOrder(callee, args, namedArgs, namedArgOrder, result)
 		}
 		if err := vm.validateSOQLCallAccess(callee, args); err != nil {
@@ -604,11 +611,11 @@ func (vm *VM) hasRuntimeReceiver(name string) bool {
 	return false
 }
 
-func (vm *VM) evalForType(expr ir.Expr, typeName string, result *Result) (Value, error) {
+func (vm *VM) evalForType(expr ir.Expr, typeName string, convertPaymentRequest bool, result *Result) (Value, error) {
 	if expr.Kind == ir.ExprSOQL && typeName != "" {
 		return vm.executeSOQLForType(expr.Value, typeName, result)
 	}
-	return vm.eval(expr, result)
+	return vm.evalWithPaymentRequestConversion(expr, convertPaymentRequest, result)
 }
 
 func (vm *VM) evalForAssignment(name string, expr ir.Expr, result *Result) (Value, error) {

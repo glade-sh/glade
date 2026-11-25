@@ -1,9 +1,10 @@
 package vm
 
 import (
+	"strings"
+
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
-	"strings"
 )
 
 // These interface edges were captured in anonymous Apex and direct test
@@ -34,30 +35,37 @@ func (vm *VM) paymentFlowCapturedInterface(name string) string {
 	return ""
 }
 
-func (vm *VM) paymentFlowContextRequest(typeName string, args []Value, namedArgs map[string]Value) string {
-	if vm.testContext == nil || !vm.paymentFlowContextDeclaration || !strings.EqualFold(typeName, "commercepayments.PaymentGatewayContext") || len(args) != 2 || len(namedArgs) != 0 {
-		return ""
+// Convert just the constructor argument. The passive context stores the
+// interface view so getPaymentRequest can return it with its concrete identity.
+func (vm *VM) convertPaymentFlowContextRequest(args []Value) {
+	const context = "commercepayments.PaymentGatewayContext"
+	const requestInterface = "commercepayments.PaymentGatewayRequest"
+	if vm.testContext == nil {
+		return
 	}
-	if class, ok := vm.lookupClass(typeName); ok && !class.PlatformType {
-		return ""
+	if class, ok := vm.lookupClassRaw(context); ok && !class.PlatformType {
+		return
 	}
 	request := args[0].Type
-	if !strings.EqualFold(vm.paymentFlowCapturedInterface(request), "commercepayments.PaymentGatewayRequest") {
-		return ""
+	if !strings.EqualFold(vm.paymentFlowCapturedInterface(request), requestInterface) {
+		return
 	}
-	want := ""
+	var want string
 	switch strings.ToLower(request) {
 	case "commercepayments.salerequest":
 		want = "Sale"
 	case "commercepayments.authorizationreversalrequest":
 		want = "AuthorizationReversal"
 	default:
-		return ""
+		return
 	}
 	if !strings.EqualFold(args[1].Type, "commercepayments.RequestType") || !strings.EqualFold(args[1].Text, want) {
-		return ""
+		return
 	}
-	return request
+	if class, ok := vm.lookupClassRaw(requestInterface); ok && !class.PlatformType {
+		return
+	}
+	args[0].Static = requestInterface
 }
 
 // Only a direct local declaration with the recorded variable and enum shapes

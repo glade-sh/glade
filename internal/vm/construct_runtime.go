@@ -310,11 +310,6 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		strings.EqualFold(typeName[:len("System.")], "System.") &&
 		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
-	if request := vm.paymentFlowContextRequest(typeName, args, namedArgs); request != "" {
-		previous := vm.paymentFlowConstructorType
-		vm.paymentFlowConstructorType = request
-		defer func() { vm.paymentFlowConstructorType = previous }()
-	}
 	if hasTypePrefixFold(typeName, "ConnectApi") {
 		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 			if class, registered := vm.classEntry(generated.Name); !registered || class.PlatformType {
