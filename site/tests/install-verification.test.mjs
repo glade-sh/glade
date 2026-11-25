@@ -22,7 +22,8 @@ async function fixture(t) {
   const payload = join(root, "payload");
   await Promise.all([commands, release, payload].map(dir => mkdir(dir)));
   const tools = new Map();
-  for (const tool of ["awk", "cp", "grep", "install", "mkdir", "mkfifo", "mktemp", "mv", "python3", "rm", "sh", "sleep", "tar", "uname"]) {
+  // GNU tar runs gzip from PATH when it extracts the release archive.
+  for (const tool of ["awk", "cp", "grep", "gzip", "install", "mkdir", "mkfifo", "mktemp", "mv", "python3", "rm", "sh", "sleep", "tar", "uname"]) {
     const path = tool === "python3"
       ? spawnSync(tool, ["-c", "import sys; print(sys.executable)"], { encoding: "utf8" })
       : spawnSync("which", [tool], { encoding: "utf8" });
