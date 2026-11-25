@@ -40,13 +40,17 @@ export class GladeTestController {
   }
 
   async discover(): Promise<void> {
-    if (!this.project) {
+    const project = this.project;
+    if (!project) {
       this.controller.items.replace([]);
       this.clearFailedItems();
       return;
     }
-    const pattern = new vscode.RelativePattern(this.project.projectRoot, "**/*.cls");
+    const pattern = new vscode.RelativePattern(project.projectRoot, "**/*.cls");
     const files = await vscode.workspace.findFiles(pattern, "**/{node_modules,.sfdx,.sf,.glade}/**");
+    if (this.project !== project) {
+      return;
+    }
     const items: vscode.TestItem[] = [];
     for (const file of files) {
       const source = fs.readFileSync(file.fsPath, "utf8");
@@ -65,6 +69,18 @@ export class GladeTestController {
       items.push(classItem);
     }
     this.controller.items.replace(items);
+    const previousFailedCount = this.failedItems.size;
+    for (const [id, item] of this.failedItems) {
+      const current = this.currentItem(item);
+      if (current) {
+        this.failedItems.set(id, current);
+      } else {
+        this.failedItems.delete(id);
+      }
+    }
+    if (this.failedItems.size !== previousFailedCount) {
+      this.onFailedCountChange?.(this.failedItems.size);
+    }
   }
 
   async run(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
@@ -204,11 +220,24 @@ export class GladeTestController {
   }
 
   private setFailedItem(item: vscode.TestItem): void {
+    const current = this.currentItem(item);
+    if (!current) {
+      return;
+    }
     const before = this.failedItems.size;
-    this.failedItems.set(item.id, item);
+    this.failedItems.set(current.id, current);
     if (this.failedItems.size !== before) {
       this.onFailedCountChange?.(this.failedItems.size);
     }
+  }
+
+  private currentItem(item: vscode.TestItem): vscode.TestItem | undefined {
+    const data = this.itemData.get(item);
+    if (!data) {
+      return undefined;
+    }
+    const classItem = this.controller.items.get(data.className);
+    return data.methodName ? classItem?.children.get(item.id) : classItem;
   }
 
   private deleteFailedItem(item: vscode.TestItem): void {
