@@ -78,9 +78,11 @@ func TestL12ObserverSchedulesAndReportsFaults(t *testing.T) {
 	if err := os.WriteFile(mock, []byte(source), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	// With five rows and four parallel pages, at least one page must drain another row.
+	ids := []string{"a", "b", "c", "d", "e"}
 	run := func(parallel bool, fault string) ([]byte, string) {
 		t.Helper()
-		config, err := json.Marshal(map[string]any{"url": "http://localhost/", "ids": []string{"a", "b", "c", "d"}, "playwrightModule": mock, "parallel": parallel})
+		config, err := json.Marshal(map[string]any{"url": "http://localhost/", "ids": ids, "playwrightModule": mock, "parallel": parallel})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,6 +101,21 @@ func TestL12ObserverSchedulesAndReportsFaults(t *testing.T) {
 	parallel, parallelPages := run(true, "")
 	if !bytes.Equal(serial, parallel) || strings.Count(serialPages, "page\n") != 1 || strings.Count(parallelPages, "page\n") != 4 {
 		t.Fatalf("success output or page count differs: serial=%s parallel=%s pages=%q/%q", serial, parallel, serialPages, parallelPages)
+	}
+	var success struct {
+		Values map[string]json.RawMessage `json:"values"`
+		Errors map[string]string          `json:"errors"`
+	}
+	if err := json.Unmarshal(parallel, &success); err != nil {
+		t.Fatalf("decode successful observations: %v", err)
+	}
+	if len(success.Values) != len(ids) || len(success.Errors) != 0 {
+		t.Fatalf("expected observations for %v: %s", ids, parallel)
+	}
+	for _, id := range ids {
+		if _, ok := success.Values[id]; !ok {
+			t.Fatalf("missing observation for %s: %s", id, parallel)
+		}
 	}
 	for _, fault := range []string{"startup", "row"} {
 		for _, parallel := range []bool{false, true} {
