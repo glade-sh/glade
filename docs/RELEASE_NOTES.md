@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Fix VS Code Test Explorer discovery, selector failures, and excluded tests.
+- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery, and a class that failed only through such a test.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
 - Added Salesforce conformance coverage for Site methods with and without a Site record in anonymous Apex and tests.
