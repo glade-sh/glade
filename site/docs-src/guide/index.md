@@ -13,7 +13,7 @@ Choose the shortest path for the job in front of you.
 
 Install Glade, create local project configuration, and run the first check and test.
 
-[Start the first local check](/guide/quickstart)
+[Quickstart](/guide/quickstart)
 
 ## Choose your interface
 

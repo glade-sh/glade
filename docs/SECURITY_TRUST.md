@@ -42,56 +42,33 @@ not public issues. If GitHub reporting is unavailable, use
 
 ## Release proof
 
-For later releases, read archive inventories and embedded revisions from their
-binaries, SBOMs, and attestations. The measurements below are
-historical v0.2.15 evidence and do not describe later release artifacts.
-For the current release and every release after v0.2.15, use that release's
-own evidence: its [GitHub Release](https://github.com/glade-sh/glade/releases)
-assets (`SHA256SUMS.txt`, per-archive SBOMs, `required-ci-attestation.json`
-and `salesforce-release-authority.json`), the same files under
-`https://downloads.glade.sh/vX.Y.Z/`, and its archive attestations, checked
-with `scripts/verify-release-download.sh` or `gh attestation verify`.
+Use the [Security & trust guide](https://glade.sh/guide/security-trust#release-proof)
+to choose a platform archive, read its SBOM, and find its CI and Salesforce
+receipts. The guide lists the assets and explains what each check verifies.
 
-The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
-with `vcs.modified=false`.
-
-The v0.2.15 per-archive SBOMs inventory 128–129 packaged components: 32–33 Go
-modules and 96 LWC/Babel or VSIX npm dependencies. The macOS archives contain
-33 Go modules; the Linux archives contain 32. The VSIX carries dependency
-notices and an inventory bound to its extension bundle hash. An attestation
-authenticates the inventory but does not establish completeness. A green gosec
-upload likewise does not establish zero findings: the scanner uses `-no-fail`
-during triage.
-
-The archive also packages notice evidence for the Go distribution, the linked
-Go modules named by the exact binary, and the vendored Apex parser. Those files
-support review; they are not a legal-sufficiency opinion about system or CGO
-libraries. The earlier v0.2.13 inventory remains Go-only.
-
-Each release archive is built from tagged source by GitHub Actions. The release
-workflow publishes:
-
-- Platform archives for macOS and Linux.
-- `SHA256SUMS.txt`.
-- `release-manifest.json`.
-- A CycloneDX SBOM for each platform archive.
-- GitHub artifact attestations for the archive and its CycloneDX SBOM.
-
-Tag publication is fail-closed. The tagged commit must already have an exact-SHA
-successful `Required CI` authority. Each platform archive's provenance and
-CycloneDX attestation must then verify before any platform asset is uploaded.
-
-Use the copyable, verification-only block in the [public Security & trust
-guide](https://glade.sh/guide/security-trust#release-proof). From a reviewed
-repository checkout, run the same fail-closed helper with:
+From a reviewed checkout, verify the current stable download with:
 
 ```bash
 sh scripts/verify-release-download.sh
 ```
 
-It requires `curl`, `jq`, `gh`, `awk`, `mktemp`, `uname`, and either `shasum`
-or `sha256sum`. Every failed gate stops the script. It retains the downloaded
-files for inspection and does not extract, install, or execute Glade.
+The helper requires `curl`, `jq`, `gh`, `awk`, `mktemp`, `uname`, and either
+`shasum` or `sha256sum`. If GitHub CLI asks for authentication to fetch an
+attestation, run `gh auth login`. The helper stops at the first failed check and
+keeps the downloaded files for inspection.
+
+### Historical example
+
+The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
+with `vcs.modified=false`.
+
+**Inventory scope:** the published v0.2.15 per-archive SBOMs inventory 128–129
+packaged components: 32–33 Go modules and 96 LWC/Babel or VSIX npm
+dependencies. The macOS archives contain 33 Go modules; the Linux archives
+contain 32. The extension includes dependency notices and an inventory bound
+to its bundle hash.
+The archive also includes notices for the Go distribution, linked Go modules,
+and the vendored Apex parser.
 
 ## Laptop behavior
 

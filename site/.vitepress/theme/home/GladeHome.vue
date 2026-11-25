@@ -155,15 +155,15 @@ onUnmounted(() => {
   <div class="hero-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
   <div class="container hero-grid">
    <div class="hero-copy">
-    <p class="eyebrow"><span class="eyebrow-dot"></span>A little more local. A lot less waiting.</p>
-    <h1 id="hero-title"><span class="headline-first" style="color:var(--gh-text)">Run Apex locally.</span> <span>Keep your</span> <span>momentum.</span></h1>
-    <p class="hero-description">Check source, run supported Apex tests, and debug in your Salesforce DX project—on your own machine, before a deploy.</p>
+    <p class="eyebrow"><span class="eyebrow-dot"></span>Local Apex runtime</p>
+    <h1 id="hero-title"><span class="headline-first" style="color:var(--gh-text)">Test your Apex</span> <span>before you deploy it.</span></h1>
+    <p class="hero-description">Run supported Apex tests and preview LWC and Visualforce locally. No org login needed.</p>
     <div class="hero-cta">
-     <a class="button button-primary" :href="withBase('/guide/quickstart')">Run your first local test <svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a>
+     <a class="button button-primary" :href="withBase('/guide/quickstart')">Quickstart <svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a>
      <a class="button button-secondary" href="https://github.com/glade-sh/glade"><svg class="icon " aria-hidden="true"><use href="#i-github"/></svg> View on GitHub</a>
     </div>
-    <div class="hero-meta"><span><svg class="icon " aria-hidden="true"><use href="#i-monitor"/></svg> macOS &amp; Linux</span><a href="https://github.com/glade-sh/glade/blob/main/LICENSE"><svg class="icon " aria-hidden="true"><use href="#i-code"/></svg> Open source · Apache-2.0</a></div>
-    <p class="hero-boundary">Supported local workflows, not a replacement for Salesforce. <a :href="withBase('/guide/support-map')">Check the boundaries.</a></p>
+    <div class="hero-meta"><span><svg class="icon " aria-hidden="true"><use href="#i-monitor"/></svg> macOS &amp; Linux</span><a href="https://github.com/glade-sh/glade/blob/main/LICENSE"><svg class="icon " aria-hidden="true"><use href="#i-code"/></svg> Open source · Apache-2.0</a><a :href="withBase('/guide/support-map#release-evidence-and-scope')"><svg class="icon " aria-hidden="true"><use href="#i-check-circle"/></svg> Checked against real orgs</a></div>
+    <p class="hero-boundary">Use Salesforce for final validation. <a :href="withBase('/guide/support-map')">Check the boundaries.</a></p>
    </div>
    <div class="demo-wrap">
     <div class="demo-prelabel"><span>Explore an illustrated workflow</span><span class="interactive-tag"><svg class="icon " aria-hidden="true"><use href="#i-cursor"/></svg> Try the workflow</span></div>
@@ -190,8 +190,8 @@ onUnmounted(() => {
   </div>
  </section>
  <section class="container capabilities" id="features" tabindex="-1" aria-label="What you can do with Glade">
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-bolt"/></svg><h2>Test one change</h2><p>Run a focused, supported Apex test before deploying your project.</p></div>
-  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-breakpoint"/></svg><h2>Inspect the result</h2><p>Debug supported Apex locally and inspect the variables that explain a failure.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-bolt"/></svg><h2>Test one change</h2><p>Run a focused Apex test before deploying your project.</p></div>
+  <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-breakpoint"/></svg><h2>Inspect the result</h2><p>Debug Apex locally and inspect the variables that explain a failure.</p></div>
   <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-editor"/></svg><h2>Keep your workspace</h2><p>Work from your Salesforce DX project in your editor or terminal.</p></div>
   <div class="capability"><svg class="icon " aria-hidden="true"><use href="#i-git-pull"/></svg><h2>Use the same local loop in automation</h2><p>Add scoped local checks to your workflow. Keep Salesforce validation as a separate gate.</p></div>
  </section>
@@ -199,11 +199,11 @@ onUnmounted(() => {
   <div class="workflow-layout">
    <div class="workflow-copy">
     <p class="eyebrow">Less context switching</p>
-    <h2 class="section-title" id="workflow-title">Stay in the code.<br>Not the deploy queue.</h2>
-    <p class="section-description">A local feedback loop that fits the way you already work. No new project format. No org login for supported local checks.</p>
+    <h2 class="section-title" id="workflow-title">Check a change locally.</h2>
+    <p class="section-description">Keep your Salesforce DX project format. Run Glade from your editor or terminal.</p>
     <div class="workflow-list">
      <div class="workflow-item"><span class="workflow-number">01</span><div><strong>Start with your project.</strong><p>Open your Salesforce DX workspace.</p></div></div>
-     <div class="workflow-item"><span class="workflow-number">02</span><div><strong>Make a change. See the result.</strong><p>Check, test, and debug supported Apex locally.</p></div></div>
+     <div class="workflow-item"><span class="workflow-number">02</span><div><strong>Make a change. See the result.</strong><p>Check, test, and debug Apex locally.</p></div></div>
      <div class="workflow-item"><span class="workflow-number">03</span><div><strong>Validate when you’re ready.</strong><p>Keep Salesforce as your final validation gate.</p></div></div>
     </div>
     <a class="text-link" :href="withBase('/guide/editor')">Explore the editor workflow<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a>
@@ -282,14 +282,14 @@ onUnmounted(() => {
     </article>
     <article class="extension-card">
      <div class="extension-art" aria-hidden="true"><div class="plugin-mini"><div class="plugin-item"><svg class="icon " aria-hidden="true"><use href="#i-performance"/></svg>@glade/performance<span class="plus">+</span></div><div class="plugin-item"><svg class="icon " aria-hidden="true"><use href="#i-box"/></svg>@glade/orgpackage<span class="plus">+</span></div></div></div>
-     <div class="extension-text"><h3>Add only what you need.</h3><p>Extend Glade with optional first-party plugins for advisory project scans and org-backed package artifact capture.</p><a class="text-link" :href="withBase('/guide/plugins')">Explore plugins<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+     <div class="extension-text"><h3>Add only what you need.</h3><p>Optional plugins from Glade scan projects and capture packages from a Salesforce org.</p><a class="text-link" :href="withBase('/guide/plugins')">Explore plugins<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
     </article>
    </div>
   </div>
  </section>
  <section class="compatibility container" aria-labelledby="compat-title">
   <div class="compatibility-grid">
-   <div><p class="eyebrow">Built on clear boundaries</p><h2 class="section-title" id="compat-title">Local first.<br>Not a Salesforce replacement.</h2><p class="section-description">Glade gives you earlier feedback on supported paths. Some APIs use limited or deterministic local models. Validate hosted services and production behavior in Salesforce.</p><a class="text-link" :href="withBase('/guide/support-map')">See what runs locally<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+   <div><p class="eyebrow">Built on clear boundaries</p><h2 class="section-title" id="compat-title">Where Glade runs</h2><p class="section-description">Glade supports Apex API 62.0–68.0 and previews LWC and Visualforce at API 59.0–67.0. The local <code>Answers.findSimilar</code> model returns an empty list. Unsupported platform services fail with stable diagnostics instead of pretending to work.</p><a class="text-link" :href="withBase('/guide/support-map')">See what runs locally<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
    <div class="compatibility-table" role="table" aria-label="Local workflow boundaries">
     <div class="compatibility-table-head" role="row"><span role="columnheader">Workflow</span><span role="columnheader">Where it runs</span></div>
     <div class="compat-row" role="row"><div role="cell"><strong>Apex checks &amp; supported tests</strong><small>Inside your Salesforce DX project</small></div><span class="status" role="cell"><svg class="icon " aria-hidden="true"><use href="#i-check-circle"/></svg>Local</span></div>
@@ -301,18 +301,18 @@ onUnmounted(() => {
  <section class="get-started" id="get-started" tabindex="-1" aria-labelledby="start-title">
   <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
   <div class="container">
-   <p class="eyebrow">Go from waiting to making.</p>
+   <p class="eyebrow">Install Glade</p>
    <h2 id="start-title">Start with one local test.</h2>
-   <p>Install Glade on macOS or Linux, then choose the small sample or your own Salesforce DX project.</p>
+   <p>Install Glade on macOS or Linux with <code>curl</code> and Python 3. Use the GitHub CLI (<code>gh</code>) to verify release attestations.</p>
    <div class="install-box" id="install-cmd"><code><span class="install-prompt" aria-hidden="true">$</span><span id="install-command" ref="installCommand">{{ INSTALL_COMMAND }}</span></code><button class="copy-button" id="copy-install" :disabled="!hydrated" :aria-label="copied ? 'Install command copied' : 'Copy Glade install command'" @click="copyInstall"><svg class="icon " aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-label">{{ copied ? 'Copied' : 'Copy' }}</span></button></div>
-   <div class="install-links"><a class="text-link" href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Read the installer<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/security-trust#release-proof')">Verify a download<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/installation')">Installation options<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/quickstart')">Follow the quickstart<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+   <div class="install-links"><a class="text-link" href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Read the installer<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/security-trust#release-proof')">Verify a download<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/installation')">Installation options<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="text-link" :href="withBase('/guide/quickstart')">Quickstart<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
   </div>
  </section>
 </main>
 <footer class="site-footer">
  <div class="container">
-  <div class="footer-main"><div><a class="brand" href="#top" aria-label="Glade home"><img class="brand-mark" :src="withBase('/logo-mark-topo.svg')" alt=""><span>glade<span class="brand-domain">.sh</span></span></a><p class="footer-tagline">Local Apex. More momentum.</p></div><nav class="footer-links" aria-label="Footer navigation"><a :href="withBase('/guide/')">Docs</a><a :href="withBase('/guide/support-map')">Compatibility</a><a href="https://github.com/glade-sh/glade/releases">Releases</a><a :href="withBase('/guide/security-trust')">Security</a><a href="https://github.com/glade-sh/glade" aria-label="Glade on GitHub"><svg class="icon " aria-hidden="true"><use href="#i-github"/></svg></a><a :href="withBase('/help/')">Help</a><a :href="withBase('/maintainer/')">Contributors</a></nav></div>
-  <div class="home-trust-links"><a class="home-release-version" :href="`https://github.com/glade-sh/glade/releases/tag/${releaseManifest.version}`">{{ releaseManifest.version }}</a><a href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Installer source</a><a :href="withBase('/guide/security-trust#release-proof')">Checksums, SBOM, and attestations</a><a href="https://github.com/glade-sh/glade/issues">Issue feedback</a></div>
+  <div class="footer-main"><div><a class="brand" href="#top" aria-label="Glade home"><img class="brand-mark" :src="withBase('/logo-mark-topo.svg')" alt=""><span>glade<span class="brand-domain">.sh</span></span></a><p class="footer-tagline">Test your Apex before you deploy it.</p></div><nav class="footer-links" aria-label="Footer navigation"><a :href="withBase('/guide/')">Docs</a><a :href="withBase('/guide/support-map')">Compatibility</a><a href="https://github.com/glade-sh/glade/releases">Releases</a><a :href="withBase('/guide/security-trust')">Security</a><a href="https://github.com/glade-sh/glade" aria-label="Glade on GitHub"><svg class="icon " aria-hidden="true"><use href="#i-github"/></svg></a><a :href="withBase('/help/')">Help</a><a :href="withBase('/maintainer/')">Contributors</a></nav></div>
+  <div class="home-trust-links"><a class="home-release-version" :href="`https://github.com/glade-sh/glade/releases/tag/${releaseManifest.version}`">{{ releaseManifest.version }}</a><a href="https://github.com/glade-sh/glade/blob/main/site/install.sh">Installer source</a><a :href="withBase('/guide/security-trust#release-proof')">Checksums, SBOM, and attestations</a><a href="https://github.com/glade-sh/glade/issues/new/choose">Report an issue</a></div>
   <div class="footer-bottom"><p>Glade is an independent project, not affiliated with, sponsored by, or endorsed by Salesforce. Salesforce and Apex are trademarks of Salesforce, Inc. Copyright 2026 Matt Simonis.</p><a href="https://github.com/glade-sh/glade/blob/main/LICENSE">Open source · Apache-2.0</a></div>
  </div>
 </footer>

@@ -64,15 +64,49 @@ reachability, and the exact candidate before accepting or dismissing a finding.
 
 ## Release proof
 
-For later releases, read archive inventories and embedded revisions from their
-binaries, SBOMs, and attestations. The measurements below are
-historical v0.2.15 evidence and do not describe later release artifacts.
-For the current release and every release after v0.2.15, use that release's
-own evidence: its [GitHub Release](https://github.com/glade-sh/glade/releases)
-assets (`SHA256SUMS.txt`, per-archive SBOMs, `required-ci-attestation.json`
-and `salesforce-release-authority.json`), the same files under
-`https://downloads.glade.sh/vX.Y.Z/`, and its archive attestations, checked
-with `scripts/verify-release-download.sh` or `gh attestation verify`.
+Open the [GitHub Release](https://github.com/glade-sh/glade/releases) for the
+version you plan to use. Pick the platform archive that matches your OS and
+CPU. For example, `darwin_arm64` is for Apple silicon and `linux_amd64` is for
+64-bit x86 Linux. The audit archive contains release records. Install Glade
+from the platform archive.
+
+1. Match the platform archive's SHA-256 to its entry in `SHA256SUMS.txt`.
+2. Open that archive's `.sbom.json` file to see the packaged components and
+   their versions. Check the binary's `go version -m` output for its embedded
+   source revision when reviewing an already trusted binary.
+3. Verify the archive's build provenance and CycloneDX attestation against the
+   release tag and Glade's release workflow. The build provenance identifies
+   the source and workflow. The CycloneDX attestation verifies the origin of
+   the inventory. Review the inventory itself for dependency questions.
+4. Read `required-ci-attestation.json` and `salesforce-release-authority.json` to
+   find the CI and Salesforce checks for that tagged commit.
+
+### Release assets
+
+- Platform archives for macOS and Linux, with per-archive `.sha256` files and
+  `SHA256SUMS.txt`.
+- `release-manifest.json`, platform manifests, and `index.json`.
+- A CycloneDX software bill of materials (SBOM) for each platform archive.
+- Build provenance and CycloneDX attestations in GitHub.
+- `required-ci-attestation.json` and `salesforce-release-authority.json`.
+- The release audit archive, `glade-release-artifacts-vX.Y.Z.tar.gz`.
+- A per-archive `.sigstore.json` build provenance bundle where listed under
+  Assets. v0.3.15 predates these bundles. The CycloneDX attestation can still be
+  checked through GitHub.
+
+The release workflow checks CI for the exact tagged commit and verifies each
+platform archive's attestations before publishing it.
+
+### Verify a download
+
+The helper below checks the current stable download. Install the tools listed
+above. If GitHub CLI needs to fetch attestations and asks you to sign in, run
+`gh auth login` first. The script keeps the downloaded files for inspection and
+stops at the first failed check. It leaves the archive untouched.
+
+<<< ../../../scripts/verify-release-download.sh{sh}
+
+### Historical example
 
 The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
 with `vcs.modified=false`.
@@ -81,123 +115,9 @@ with `vcs.modified=false`.
 packaged components: 32–33 Go modules and 96 LWC/Babel or VSIX npm
 dependencies. The macOS archives contain 33 Go modules; the Linux archives
 contain 32. The extension includes dependency notices and an inventory bound
-to its bundle hash. Attestation proves the inventory's origin, not its
-completeness.
-
-The archive also packages notice evidence for the Go distribution, linked Go
-modules named by the exact binary, and the vendored Apex parser. This supports
-review but does not decide the sufficiency of notices for system or CGO
-libraries. The earlier v0.2.13 inventory remains Go-only.
-
-Tagged releases publish:
-
-- Platform archives for macOS and Linux.
-- `SHA256SUMS.txt`.
-- `release-manifest.json`.
-- A CycloneDX SBOM for each archive.
-- Artifact attestations for the archive and its CycloneDX SBOM.
-
-Tag publication is fail-closed. The tagged commit must already have an exact-SHA
-successful `Required CI` push run. Each platform archive's provenance and
-CycloneDX attestation must verify before any platform asset is uploaded.
-
-Save this verification-only block as `verify-release-download.sh`, review it,
-and run `sh verify-release-download.sh`. It stops at every failed gate, keeps
-the downloaded files in a new temporary directory for inspection, and does not
-extract, install, or execute Glade.
-
-<!-- release-verifier:start -->
-```sh
-#!/bin/sh
-# Verify one stable macOS/Linux release archive without extracting or running it.
-# Dependencies: curl, jq, gh (authenticated when required), awk, mktemp,
-# uname, and either shasum or sha256sum. Leaves downloads for inspection.
-set -eu
-
-fail() {
-	printf 'Glade verification stopped: %s\n' "$*" >&2
-	exit 1
-}
-
-for tool in curl jq gh awk mktemp uname; do
-	command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
-done
-
-if command -v shasum >/dev/null 2>&1; then
-	checksum_tool=shasum
-elif command -v sha256sum >/dev/null 2>&1; then
-	checksum_tool=sha256sum
-else
-	fail 'install shasum or sha256sum before continuing'
-fi
-
-case "$(uname -s)" in
-	Darwin) os=darwin ;;
-	Linux) os=linux ;;
-	*) fail 'this helper supports the published macOS and Linux archives only' ;;
-esac
-
-case "$(uname -m)" in
-	arm64 | aarch64) arch=arm64 ;;
-	x86_64 | amd64) arch=amd64 ;;
-	*) fail 'unsupported architecture' ;;
-esac
-
-workdir="$(mktemp -d "${TMPDIR:-/tmp}/glade-verify.XXXXXXXX")" || fail 'cannot create an isolated download directory'
-printf 'Downloads retained in: %s\n' "$workdir"
-cd "$workdir" || fail 'cannot enter download directory'
-
-fetch() {
-	curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
-		--fail --show-error --silent --location --max-time 60 \
-		--output "$2" "$1" || fail "download failed: $1"
-}
-
-fetch 'https://downloads.glade.sh/latest/release-manifest.json' manifest.json
-version="$(jq -er '.version | select(type == "string") | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' manifest.json)" \
-	|| fail 'manifest must contain a stable vMAJOR.MINOR.PATCH version'
-archive="glade_${version}_${os}_${arch}.tar.gz"
-base="https://downloads.glade.sh/${version}"
-
-fetch "${base}/${archive}" "$archive"
-fetch "${base}/SHA256SUMS.txt" SHA256SUMS.txt
-awk -v wanted="./$archive" '
-	$2 == wanted {
-		n++
-		if (NF != 2 || length($1) != 64 || $1 ~ /[^0-9a-fA-F]/) bad=1
-		selected=$0
-	}
-	END { if (n != 1 || bad) exit 1; print selected }
-' SHA256SUMS.txt >selected-checksum.txt \
-	|| fail 'expected exactly one valid checksum entry for this archive'
-
-if [ "$checksum_tool" = shasum ]; then
-	shasum -a 256 -c selected-checksum.txt \
-		|| fail 'checksum mismatch; do not extract or run the archive'
-else
-	sha256sum -c selected-checksum.txt \
-		|| fail 'checksum mismatch; do not extract or run the archive'
-fi
-
-gh attestation verify "$archive" -R glade-sh/glade \
-	--signer-workflow glade-sh/glade/.github/workflows/release.yml \
-	--source-ref "refs/tags/${version}" \
-	|| fail 'provenance verification failed; do not extract or run the archive'
-gh attestation verify "$archive" -R glade-sh/glade \
-	--signer-workflow glade-sh/glade/.github/workflows/release.yml \
-	--source-ref "refs/tags/${version}" \
-	--predicate-type https://cyclonedx.org/bom \
-	|| fail 'CycloneDX attestation verification failed; do not extract or run the archive'
-
-printf '\nDownload verification completed for %s.\nArchive: %s/%s\nNot extracted, installed, or executed.\n' \
-	"$version" "$workdir" "$archive"
-```
-<!-- release-verifier:end -->
-
-If verification stops, do not bypass the failed gate. Keep the exact command
-and sanitized diagnostic. Verification alone does not approve an archive for
-your organization's use; review its inventory and provenance under your own
-policy.
+to its bundle hash.
+The archive also includes notices for the Go distribution, linked Go modules,
+and the vendored Apex parser.
 
 ## Laptop behavior
 

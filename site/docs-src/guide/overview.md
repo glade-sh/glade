@@ -7,29 +7,15 @@ canonicalTask: /guide/overview
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Start</p>
-  <p>Glade is a local Apex runtime and developer workbench for supported checks, tests, snippets, reports, and local Salesforce API routes.</p>
-  <ul>
-    <li>See what runs on your machine.</li>
-    <li>Know when to keep Salesforce in the loop.</li>
-    <li>Start the first local check and test path.</li>
-  </ul>
+  <p>Glade checks your Salesforce DX project on your machine. It runs Apex tests and anonymous Apex, previews LWC and Visualforce, and provides local Salesforce API routes.</p>
 </div>
-
-Glade is a local Apex runtime and developer workbench. It loads Salesforce DX
-projects, parses and checks supported Apex, runs local Apex tests, executes
-anonymous Apex, serves local Visualforce pages and local Salesforce API routes,
-and exposes support gaps instead of hiding them.
-
-The git examples assume `origin/main` is your intended base ref and is available
-locally. Substitute the correct existing ref for your repository before running
-changed-test or refactor commands.
 
 ## Start with
 
 <div class="docs-route-grid">
   <a class="docs-route-card" href="/guide/quickstart">
-    <strong>First local check</strong>
-    <span>Install, establish project context, and return one useful local result.</span>
+    <strong>Quickstart</strong>
+    <span>Install Glade and run your first local Apex test.</span>
   </a>
   <a class="docs-route-card" href="/guide/workflows">
     <strong>Choose a workflow</strong>
@@ -51,6 +37,9 @@ glade test --project . --class <YourTestClass>
 glade test changed --project . --since origin/main
 ```
 
+Use your repository’s base ref in place of `origin/main` if it differs.
+Git must have that ref locally.
+
 ## Use Glade when
 
 - You want Apex diagnostics before a deploy.
@@ -59,8 +48,8 @@ glade test changed --project . --since origin/main
 - You want a Visualforce preview feature for local `/apex/<PageName>` rendering.
 - You want an LWC preview feature through `/lwc/preview/*` routes or Visualforce Lightning Out.
 - You want local Salesforce API routes for development loops.
-- You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
-- You want deterministic local harnesses for supported platform helper rows instead of live hosted service calls.
+- You want to review a large Apex project, find cleanup work, or compare it before and after a refactor.
+- You want to test against predictable local models of selected platform services.
 
 ## Use Salesforce when
 
@@ -75,4 +64,4 @@ glade test changed --project . --since origin/main
 Glade models the local paths it can prove. Unsupported platform services fail
 with stable diagnostics instead of pretending to work.
 
-Next: [Pilot Glade on a real project](/guide/tester-field-guide), [First local check](/guide/quickstart), or [What Glade runs locally](/guide/support-map).
+Next: [Pilot Glade on a real project](/guide/tester-field-guide), [Quickstart](/guide/quickstart), or [What Glade runs locally](/guide/support-map).

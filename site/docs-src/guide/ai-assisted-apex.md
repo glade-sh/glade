@@ -11,9 +11,9 @@ evidence, make the smallest source change, and rerun the same command.
 
 ## Before you start
 
-Use an initialized Salesforce DX project and confirm the
-[first local check](/guide/quickstart). Review your assistant provider's source
-sharing and execution settings separately; using Glade does not change them.
+Use an initialized Salesforce DX project. Follow the
+[Quickstart](/guide/quickstart) if you still need to check the setup.
+Review your assistant provider's source sharing and execution settings.
 The prompt keeps org-backed validation explicit and preserves existing changes.
 
 ## Where to put it

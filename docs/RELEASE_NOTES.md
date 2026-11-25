@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Updated the Quickstart, CI examples, and release evidence on the site. Added a guide to known limitations.
 - GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
 - Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
 - Remove obsolete benchmark cache references from CI policy tests.
@@ -11,7 +12,9 @@
 - Match Salesforce compilation for direct anonymous `BatchApexErrorEvent` inserts at API 62.0 and 67.0 and cover share-object and custom-metadata queries.
 - Match captured Flow profile comparisons and parent lookup filters at API 62.0 through 67.0. A before-save lookup of an 18-character reference to a deleted parent reaches the `ENTITY_IS_DELETED` save error at API 62.0, 63.0, and 67.0.
 
-## v0.3.15
+<a name="v0315"></a>
+
+## v0.3.15 - 2026-11-24
 
 v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recovery, debugger cache validation, and Visualforce cache guidance.
 
@@ -35,7 +38,9 @@ v0.3.15 adds SOQL ordering conformance coverage and improves runtime build recov
 
 - **No measurable change.** On an 8 GiB Apple-silicon Mac, a cold full `glade test` run of a 4,565-test application took 435.1 s in v0.3.15 and 432.7 s in v0.3.14 (median of three interleaved runs each, within run-to-run variation), with the same peak memory (about 4.0 GiB) and identical test outcomes.
 
-## v0.3.14
+<a name="v0314"></a>
+
+## v0.3.14 - 2026-11-24
 
 v0.3.14 adds captured Salesforce behavior for Site methods, share rows, custom metadata access, record type defaults, Flow and commerce cart shapes, and `Comparable` sorting, and makes the test daemon, the local LWC shell and several runtime paths faster.
 
@@ -103,7 +108,9 @@ On a Linux host, a method-body edit through the test daemon took 23.3 s in v0.3.
 
 - **Faster bulk inserts under Exact duplicate rules.** A custom duplicate rule whose items are all Exact now checks whether a stored record was inserted by the same statement only when that record matches, instead of for every stored record, and no longer builds a candidate index over highly distinct values only to switch it off. Bulk inserts under such rules are up to about 12% faster than v0.3.12 and use v0.3.12's memory; fuzzy and standard rules are unchanged. Duplicate outcomes are unchanged. The 2-5% slower plain text-equality `WHERE` scan reported for v0.3.13 does not appear in a benchmark binary built from product code only, where the hot functions are the same machine code as v0.3.12; it is attributed to test-binary layout, and its exact cause is not identified. (local contract, benchstat against v0.3.12)
 
-## v0.3.13
+<a name="v0313"></a>
+
+## v0.3.13 - 2026-11-23
 
 v0.3.13 adds captured Salesforce behavior for sharing, permission set groups, lookup ordering, namespaced field maps, imported record identity and Apex text handling, extends the local LWC shell, and makes `glade test`, the test daemon and the language server faster.
 
@@ -287,7 +294,9 @@ On a large private application's full test suite, v0.3.13 finished 14.6% faster 
 
 - **Batched Apex action faults and refires.** Record-triggered Flows that call an Apex action over a batch report the captured fault row indices, formula precedence and update-trigger refire behavior.
 
-## v0.3.12
+<a name="v0312"></a>
+
+## v0.3.12 - 2026-11-18
 
 v0.3.12 adds captured behavior for feature-enabled scratch orgs, API 68.0 (Winter '27) Apex and the local LWC shell, test-runner surfaces, code coverage, `hashCode`, dates before 1583, typed flow merges, default query order, regular expressions, and standard and custom duplicate matching. Permission sets assigned to the running user inside a test now behave as in Salesforce, `@TestSetup` runs the async work it enqueues, and numeric results match on macOS arm64 and Linux amd64.
 
@@ -362,7 +371,9 @@ v0.3.12 adds captured behavior for feature-enabled scratch orgs, API 68.0 (Winte
 
 - **Set equality and `retainAll`/`removeAll`.** Set equality, `retainAll` and `removeAll` bucket scalar, Double and SObject elements by key instead of comparing every pair, and the Set Decimal scale check runs in linear time. Results are unchanged.
 
-## v0.3.11
+<a name="v0311"></a>
+
+## v0.3.11 - 2026-11-16
 
 v0.3.11 brings user-mode DML and field access under `System.runAs` closer to Salesforce, extends custom duplicate matching for street, title, company and name rules, and matches more captured governor-limit, SOSL and Apex release-note behavior. The debugger starts from a consistent set of project files, and test runs reuse unchanged Visualforce input digests.
 
@@ -417,7 +428,9 @@ v0.3.11 brings user-mode DML and field access under `System.runAs` closer to Sal
 - Captured behavior is covered by the access-mode, duplicate matching, governor-limit, SOSL and Apex release-gate conformance tests in `internal/apextest`, `internal/dml`, `internal/sema` and `internal/vm`.
 - Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
-## v0.3.10
+<a name="v0310"></a>
+
+## v0.3.10 - 2026-11-15
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
 
@@ -473,7 +486,9 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 - Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
 - Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
-## v0.3.9
+<a name="v039"></a>
+
+## v0.3.9 - 2026-11-13
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
 
@@ -518,7 +533,9 @@ v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteri
 
 - A busy toolchain installation no longer blocks `glade doctor` indefinitely. The toolchain check reports that it was skipped and advises retrying. Discovered toolchains are checked under their own install lock.
 
-## v0.3.8
+<a name="v038"></a>
+
+## v0.3.8 - 2026-11-12
 
 v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
 
@@ -585,7 +602,9 @@ Results are unchanged by every item in this section.
 
 - Build with Go 1.26.11 (net/http fix GO-2026-6859).
 
-## v0.3.7
+<a name="v037"></a>
+
+## v0.3.7 - 2026-11-11
 
 v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
 
@@ -636,7 +655,9 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
 
-## v0.3.6
+<a name="v036"></a>
+
+## v0.3.6 - 2026-11-10
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
 
@@ -669,7 +690,9 @@ v0.3.6 fixes more differences from Salesforce found with captured org behavior, 
 - **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML, `Database.executeBatch` and `System.schedule` in an action are still rejected. Captured at 62.0 and 67.0.
 - **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
 
-## v0.3.5
+<a name="v035"></a>
+
+## v0.3.5 - 2026-11-09
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
 
@@ -786,7 +809,9 @@ v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Wint
 - The Visualforce browser conformance tests need Node, Playwright and Chromium.
 - The known-failure ledger shrank in this release; the remaining carried security, locale and crypto differences still apply.
 
-## v0.3.4
+<a name="v034"></a>
+
+## v0.3.4 - 2026-11-04
 
 v0.3.4 hardens the local server, the installer and the managed toolchain. It tightens several Apex, Flow and Visualforce results to captured Salesforce rows, speeds up common runtime paths, and makes the repository's own test and CI runs faster. API labels list the source versions checked against captured results; where a label names two versions, no other was captured. The supported windows and hosted boundaries remain in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
 
@@ -841,7 +866,9 @@ v0.3.4 hardens the local server, the installer and the managed toolchain. It tig
 - The Visualforce browser conformance tests need Node, Playwright and Chromium; on a runner without them they cannot pass. That is an environment limit.
 - The known-failure ledger is unchanged from v0.3.3; the carried security, locale and crypto differences recorded there still apply.
 
-## v0.3.3
+<a name="v033"></a>
+
+## v0.3.3 - 2026-10-31
 
 v0.3.3 adds asynchronous SOAP callouts and the captured CPU-limit message. It
 tightens upsert, Person Account, locale, and record-access behavior to captured
@@ -1118,7 +1145,9 @@ Upgrade with `glade update`, then run `glade version` and
 project tests. Publication and artifact verification remain subject to the
 [release gate](RELEASE_POLICY.md#release-gate).
 
-## v0.3.2
+<a name="v032"></a>
+
+## v0.3.2 - 2026-10-29
 
 v0.3.2 makes offline test runs use less CPU and memory. It also closes more
 gaps against captured Salesforce results in Apex, Flow, SOQL, standard objects,
@@ -1387,7 +1416,9 @@ Upgrade with `glade update`, then run `glade version` and
 project tests. Publication and artifact verification remain subject to the
 [release gate](RELEASE_POLICY.md#release-gate).
 
-## v0.3.1
+<a name="v031"></a>
+
+## v0.3.1 - 2026-10-26
 
 v0.3.1 refines offline Apex, Flow, Visualforce, and LWC behavior against
 captured Salesforce results. It adds change data capture delivery, assignment
@@ -1859,7 +1890,9 @@ Upgrade with `glade update`, then run `glade version` and
 rerunning project tests. Publication and artifact verification remain subject
 to the [release gate](RELEASE_POLICY.md#release-gate).
 
-## v0.3.0
+<a name="v030"></a>
+
+## v0.3.0 - 2026-10-22
 
 v0.3.0 expands offline Salesforce development support: Apex 62.0-68.0, LWC and
 Visualforce 59.0-68.0. Supported local behavior remains bounded by the

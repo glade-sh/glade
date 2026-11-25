@@ -43,7 +43,8 @@ for (const entry of routes.filter((route) => route.classification === 'redirect'
 assert.equal(redirectRules.size, routes.filter((route) => route.classification === 'redirect').length)
 
 const home = await get('/')
-assert.match(home.body, /Run Apex locally\./)
+const headline = home.body.match(/<h1\b[^>]*>(.*?)<\/h1>/s)?.[1]
+assert.equal(headline?.replace(/<[^>]+>/g, '').trim(), 'Test your Apex before you deploy it.')
 assert.match(home.body, new RegExp(`https://github\\.com/glade-sh/glade/releases/tag/${releaseManifest.version}`))
 
 const install = await get('/install.sh')

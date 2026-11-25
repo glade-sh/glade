@@ -18,10 +18,12 @@ function embeddedVerifier(source) {
   return match[1].trim()
 }
 
-test('published release-verification blocks stay synchronized with the checked helper', () => {
-  for (const source of [securityPolicy, securityGuide]) {
-    assert.equal(embeddedVerifier(source), helper.trim())
-  }
+test('published release-verification instructions use the checked helper', async () => {
+  assert.equal(embeddedVerifier(securityPolicy), helper.trim())
+  const snippet = securityGuide.match(/^<<< (.+)\{sh\}$/m)
+  assert.ok(snippet, 'the site should render the checked verifier as a code snippet')
+  const guideURL = new URL('../docs-src/guide/security-trust.md', import.meta.url)
+  assert.equal(await readFile(new URL(snippet[1], guideURL), 'utf8'), helper)
 })
 
 test('manual verification fails closed and never extracts or executes the archive', () => {

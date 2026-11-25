@@ -62,6 +62,7 @@ async function sourceDigest(siteRoot) {
   const repoRoot = resolve(siteRoot, "..");
   await hashTree(hash, siteRoot, siteRoot);
   await hashFile(hash, join(repoRoot, "docs", "STDLIB_COVERAGE.md"), repoRoot);
+  await hashFile(hash, join(repoRoot, "scripts", "verify-release-download.sh"), repoRoot);
   return hash.digest("hex");
 }
 
