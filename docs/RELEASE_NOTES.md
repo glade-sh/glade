@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
 
 ## v0.3.15
 
