@@ -259,6 +259,68 @@ func TestWarmRequestStillDetectsEditBetweenValidations(t *testing.T) {
 	}
 }
 
+func TestWarmRequestRejectsSameStampEditBetweenValidations(t *testing.T) {
+	skipWithoutStamps(t)
+	t.Cleanup(InvalidateRuntimeCaches)
+	t.Cleanup(resetFileDigestTrust)
+	resetFileDigestTrust()
+	f := writeRequestReadFixture(t, 4)
+	target := f.sources[0]
+	stamp, ok := filestamp.Stat(target)
+	if !ok {
+		t.Fatal("missing source stamp")
+	}
+	t.Cleanup(setFileDigestClockForTesting(func() time.Time {
+		return time.Unix(0, max(stamp.Mtime, stamp.Ctime))
+	}))
+	stat := func(path string) (filestamp.Stamp, bool) {
+		if path == target {
+			return stamp, true
+		}
+		return filestamp.Stat(path)
+	}
+	previous := requestDigestStatHook.Swap(&stat)
+	t.Cleanup(func() { requestDigestStatHook.Store(previous) })
+	if prime := RunCasesContext(context.Background(), f.index, f.options, f.cases); prime.Summary().Passed != 1 {
+		t.Fatalf("prime run: %s", testreportRunDetails(prime))
+	}
+
+	mutated := false
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		if stage == "runtime_after_initial_validation" && !mutated {
+			mutated = true
+			edited := strings.Replace(f.contents[target], "return 0;", "return 7;", 1)
+			if err := os.WriteFile(target, []byte(edited), 0o644); err != nil {
+				t.Error(err)
+			}
+		}
+	}))
+	run := RunCasesContext(context.Background(), f.index, f.options, f.cases)
+	if !mutated {
+		t.Fatal("request never reached runtime_after_initial_validation")
+	}
+	if run.Summary().CompileErrors == 0 ||
+		!strings.Contains(testreportRunDetails(run), "source snapshot mismatch for "+filepath.ToSlash(target)) {
+		t.Fatalf("request accepted a same-stamp edit: %s", testreportRunDetails(run))
+	}
+}
+
+func TestWarmRuntimeWithBuildArtifactsHashesEachRecentInputOnce(t *testing.T) {
+	t.Cleanup(EnableDiskCacheForTesting())
+	t.Cleanup(InvalidateRuntimeCaches)
+	t.Cleanup(resetFileDigestTrust)
+	resetFileDigestTrust()
+	f := writeRequestReadFixture(t, 4)
+	f.rewriteIdentical(t)
+	reads, stop := f.countReads(t)
+	err := WarmRuntimeWithBuildArtifacts(context.Background(), f.index, f.options.BuildArtifacts)
+	stop()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.assertReadOnce(t, reads)
+}
+
 func testreportRunDetails(run testreport.Run) string {
 	var out strings.Builder
 	for _, suite := range run.Suites {

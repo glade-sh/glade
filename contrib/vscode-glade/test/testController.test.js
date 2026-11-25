@@ -1,5 +1,8 @@
 const assert = require('assert');
+const fs = require('fs');
 const Module = require('module');
+const os = require('os');
+const path = require('path');
 const originalLoad = Module._load;
 class Collection {
   constructor() { this.items = new Map(); }
@@ -17,7 +20,8 @@ const vscode = { CancellationTokenSource: class { constructor() { this.token = {
 Module._load = function(request, parent, isMain) { return request === 'vscode' ? vscode : originalLoad.call(this, request, parent, isMain); };
 const runner = require('../out/tests/runner');
 const { GladeTestController } = require('../out/tests/controller');
-const instance = new GladeTestController({ subscriptions: [] });
+const failedCounts = [];
+const instance = new GladeTestController({ subscriptions: [] }, undefined, undefined, count => failedCounts.push(count));
 instance.project = { projectRoot: '/repo' };
 instance.logCommand = () => {};
 const cls = new Item('Example');
@@ -67,4 +71,25 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
   await instance.runFailed();
   assert.deepStrictEqual(calls, [['Example', 'a']]);
   assert(events.some(e => e[0] === 'failed' && e[1] === refreshedA.id));
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'glade-discovery-'));
+  try {
+    const source = path.join(root, 'Example.cls');
+    fs.writeFileSync(source, '@IsTest class Example { @IsTest static void b() {} }');
+    vscode.RelativePattern = class {};
+    vscode.workspace.findFiles = async () => [{ fsPath: source }];
+    controller.createTestItem = id => new Item(id);
+    const messages = [];
+    vscode.window.showInformationMessage = message => messages.push(message);
+    instance.project = { projectRoot: root };
+    await instance.discover();
+    assert.strictEqual(controller.items.get('Example').children.get('Example.a'), undefined);
+    assert.strictEqual(failedCounts.at(-1), 0);
+    calls.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, []);
+    assert.deepStrictEqual(messages, ['Glade has no failed local Apex tests to rerun.']);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 })().catch(error => { console.error(error); process.exitCode = 1; });
