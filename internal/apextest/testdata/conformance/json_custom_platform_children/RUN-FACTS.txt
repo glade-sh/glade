@@ -1,0 +1,24 @@
+Native JSON runtime observations
+
+RUN-FACTS
+
+Synthetic unnamed Developer scratch orgs. Both orgs were deleted after the run.
+Execute Anonymous used the API in the table. The named Apex test class and any
+companion class used the same API. Named tests exposed row data through intentional
+assertion messages. Anonymous Apex emitted one debug message for each case.
+
+| API | Start UTC | End UTC | Routes |
+| --- | --- | --- | --- |
+| 62.0 | 2026-11-25T06:07:00Z | 2026-11-25T06:07:13Z | anonymous, isTest |
+| 67.0 | 2026-11-25T06:07:13Z | 2026-11-25T06:07:29Z | anonymous, isTest |
+| 68.0 | 2026-11-25T06:07:29Z | 2026-11-25T06:07:43Z | anonymous, isTest |
+
+The complete observations are in org.tsv. The replay reads the cases selected
+in cases.tsv. Each selected case has a row at all three APIs in both routes.
+
+NEIGHBOR PROBES
+
+The seeded attachment view rows use Id-only subqueries and assert child counts,
+child types, and serialized keys. Child identities and ordering, other mismatched
+child payloads, other standard edges, and namespaced parents remain outside the
+assertions.

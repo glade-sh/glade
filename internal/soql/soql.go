@@ -2618,7 +2618,14 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if records, handled, err := executeContentChildAttachedQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
 		return records, err
 	}
-	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context)
+	if records, handled, err := executeAttachmentViewQuery(org, parentDefinition, parent, childQuery, childCache, context); handled {
+		return records, err
+	}
+	return executeChildRelationshipRows(org, parentDefinition, parent, childQuery, childCache, context, false)
+}
+
+func executeChildRelationshipRows(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, platformOnly bool) ([]storage.Record, error) {
+	prepared, err := prepareChildRelationshipQuery(org, parentDefinition, childQuery, childCache, context, platformOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -2692,14 +2699,21 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	return out, nil
 }
 
-func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext) (preparedChildRelationshipQuery, error) {
+func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, childQuery ChildQuery, childCache *childRelationshipQueryCache, context ExecutionContext, platformOnly bool) (preparedChildRelationshipQuery, error) {
 	key := strings.ToLower(parentDefinition.APIName + "." + childQuery.Relationship)
 	if childCache != nil {
 		if prepared, ok := childCache.prepared[key]; ok {
 			return prepared, nil
 		}
 	}
-	childObjectName, relation, ok := contentChildRelationshipForQuery(org, parentDefinition, childQuery, childCache)
+	var childObjectName string
+	var relation storage.Relationship
+	var ok bool
+	if platformOnly {
+		childObjectName, relation, ok = storage.LookupPlatformChildRelationshipAtVersion(parentDefinition, childQuery.Relationship, org.APIVersion)
+	} else {
+		childObjectName, relation, ok = contentChildRelationshipForQuery(org, parentDefinition, childQuery, childCache)
+	}
 	if !ok {
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: unknown child relationship %s on %s", childQuery.Relationship, parentDefinition.APIName)
 	}

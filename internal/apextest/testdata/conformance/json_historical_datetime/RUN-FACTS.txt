@@ -1,0 +1,21 @@
+Native JSON runtime observations
+
+RUN-FACTS
+
+Synthetic unnamed Developer scratch orgs. The capture orgs were deleted after the run.
+Execute Anonymous used the API in the table. The named Apex test class and any
+companion class used the same API. Named tests exposed row data through intentional
+assertion messages. Anonymous Apex emitted one debug message for each case.
+
+| API | Start UTC | End UTC | Routes |
+| --- | --- | --- | --- |
+| 62.0 | 2026-11-25T06:13:59Z | 2026-11-25T06:14:14Z | anonymous, isTest |
+| 67.0 | 2026-11-25T06:14:14Z | 2026-11-25T06:14:26Z | anonymous, isTest |
+| 68.0 | 2026-11-25T06:14:26Z | 2026-11-25T06:14:37Z | anonymous, isTest |
+
+The complete observations are in org.tsv. The replay reads the cases selected
+in cases.tsv. Each selected case has a row at all three APIs in both routes.
+
+NEIGHBOR PROBES
+
+The precise invalid-day error text, early-calendar display for year-zero instants before hybrid year 1, date-only input, negative years, offsets crossing into negative years, and JSONParser.getDatetimeValue are outside the fix.

@@ -32,6 +32,9 @@ type Value struct {
 	// Resolved class-instance provenance includes dependency classes and stays
 	// separate from project-only display ownership. Schema records leave it false.
 	classInstance bool
+	// Reads of a computed property run its getter even when JSON populated
+	// the backing value. The getter itself can still read that backing value.
+	jsonDecodedPropertyBacking bool
 	// Only source literals that establish lexical class identity authorize JSON
 	// to use it. Keep this provenance outside serializable token fields.
 	lexicalClassLiteral bool

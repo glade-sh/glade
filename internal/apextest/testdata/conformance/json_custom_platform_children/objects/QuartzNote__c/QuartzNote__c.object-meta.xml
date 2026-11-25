@@ -1,0 +1,7 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <label>Quartz Note</label>
+    <nameField><label>Quartz Note Name</label><type>Text</type></nameField>
+    <pluralLabel>Quartz Notes</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

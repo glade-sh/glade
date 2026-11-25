@@ -2383,7 +2383,7 @@ func (vm *VM) lookupPathFromHop(root Value, parts []string, hops int) (Value, er
 				current = Null
 				continue
 			}
-			if field.Getter != nil && !field.HasSetter {
+			if field.Getter != nil && !field.HasSetter && !current.jsonDecodedPropertyBacking {
 				if _, value, ok := objectFieldValue(current, sourcePropertyStorageName(field, field.Name)); ok && value.Kind != ValueNull {
 					current = value
 					continue

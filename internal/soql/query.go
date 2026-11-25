@@ -144,9 +144,11 @@ type UnsupportedFeatureError struct {
 	Message string
 }
 type childRelationshipQueryCache struct {
-	indexes   map[string]map[storage.ID][]string
-	prepared  map[string]preparedChildRelationshipQuery
-	execution *ExecutionCache
+	indexes               map[string]map[storage.ID][]string
+	prepared              map[string]preparedChildRelationshipQuery
+	execution             *ExecutionCache
+	attachmentSources     *childRelationshipQueryCache
+	loadedAttachmentViews map[string]bool
 }
 type preparedChildRelationshipQuery struct {
 	childObjectName string

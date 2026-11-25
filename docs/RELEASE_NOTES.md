@@ -25,6 +25,8 @@
 - When Glade selects one source file for a duplicate Apex test class within a project, it runs that file’s test methods and setup.
 - Payment adapters can use the captured sale and authorization reversal request and response shapes, and the captured authorize, capture, sale, refund and reversal request constructors match Salesforce in tests and anonymous Apex.
 - At Apex APIs 62.0 through 68.0, a named test that declares an uninitialized local of an absent custom object type now reports the Salesforce compile error.
+- Id-only attachment subqueries on custom records preserve imported view rows and apply child record visibility to synthesized view rows.
+- JSON-deserialized Apex objects evaluate computed get-only properties when read. JSON decoding accepts captured standard child relationship envelopes on unnamespaced custom objects and reads back year-1 Datetime values serialized with Gregorian year zero.
 
 ## v0.3.15
 
