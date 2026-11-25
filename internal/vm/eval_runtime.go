@@ -423,6 +423,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			callee = queryLocatorCallee
 		}
 		if strings.HasPrefix(callee, "new:") || strings.HasPrefix(callee, "newlit:") {
+			if err := vm.paymentAuthorizationContextError(expr); err != nil {
+				return Null, err
+			}
 			return vm.callConstructorWithNamedArgOrder(callee, args, namedArgs, namedArgOrder, result)
 		}
 		if err := vm.validateSOQLCallAccess(callee, args); err != nil {

@@ -6,38 +6,62 @@ import (
 	"github.com/glade-sh/glade/internal/ir"
 )
 
-// Restrict the fallback to the declaration and argument shapes in the native
-// observations until further scratch-org captures establish a broader rule.
+// These same-type declarations are covered by payment_flow_shapes/org.tsv.
 func (vm *VM) paymentRequestDeclarationError(inst ir.Instruction) error {
 	e := inst.Expr
-	if !hasTypePrefixFold(inst.Type, "commercepayments") || e.Kind != ir.ExprCall || !strings.HasPrefix(e.Callee, "new:") || e.Left != nil || len(e.NamedArgs) != 0 || !strings.EqualFold(inst.Type, strings.TrimPrefix(e.Callee, "new:")) {
+	name, constructor := strings.CutPrefix(e.Callee, "new:")
+	if !constructor || !hasTypePrefixFold(name, "commercepayments") || !strings.EqualFold(inst.Type, name) {
 		return nil
+	}
+	switch vm.paymentRequestAmountType(e) {
+	case "double", "integer":
+		return vm.paymentRequestOutsideTestError(name, len(e.Args))
+	default:
+		return nil
+	}
+}
+
+// The authorization context fixture passes a directly constructed request as
+// its first argument (payment_gateway_adapter/context/org.tsv).
+func (vm *VM) paymentAuthorizationContextError(e ir.Expr) error {
+	const context = "commercepayments.PaymentGatewayContext"
+	const request = "commercepayments.AuthorizationRequest"
+	if !strings.EqualFold(e.Callee, "new:"+context) || len(e.Args) != 2 || len(e.NamedArgs) != 0 {
+		return nil
+	}
+	child, kind := e.Args[0], e.Args[1]
+	if !strings.EqualFold(child.Callee, "new:"+request) || len(child.Args) != 1 ||
+		kind.Kind != ir.ExprVariable || !strings.EqualFold(kind.Name, "commercepayments.RequestType.Authorize") ||
+		vm.paymentRequestAmountType(child) != "double" {
+		return nil
+	}
+	if class, found := vm.lookupClassRaw(context); found && !class.PlatformType {
+		return nil
+	}
+	return vm.paymentRequestOutsideTestError(request, len(child.Args))
+}
+
+func (vm *VM) paymentRequestAmountType(e ir.Expr) string {
+	if e.Kind != ir.ExprCall || e.Left != nil || len(e.NamedArgs) != 0 || len(e.Args) == 0 {
+		return ""
 	}
 	for _, arg := range e.Args {
 		if arg.Kind != ir.ExprVariable || arg.Name == "" || strings.Contains(arg.Name, ".") {
-			return nil
+			return ""
 		}
 	}
-	if len(e.Args) == 0 {
-		return nil
-	}
-	amountName, found := vm.lookupGlobalName(e.Args[0].Name)
+	name, found := vm.lookupGlobalName(e.Args[0].Name)
 	if !found {
-		return nil
+		return ""
 	}
-	amountType := canonicalRuntimePlatformType(vm.VarTypes[amountName])
-	if !strings.EqualFold(amountType, "Double") && !strings.EqualFold(amountType, "Integer") {
-		return nil
-	}
-	return vm.paymentRequestOutsideTestError(inst.Type, make([]Value, len(e.Args)), nil)
+	return strings.ToLower(canonicalRuntimePlatformType(vm.VarTypes[name]))
 }
 
 // These constructor shapes were observed in anonymous Apex at APIs 62 and 67.
 // Linked user classes do not inherit this platform-only restriction.
-func (vm *VM) paymentRequestOutsideTestError(typeName string, args []Value, namedArgs map[string]Value) error {
+func (vm *VM) paymentRequestOutsideTestError(typeName string, arity int) error {
 	if vm.testContext != nil || vm.currentClass != "" || vm.currentMethod.ClassName != "" || vm.currentTrigger ||
-		(vm.currentMethod.APIVersion != "62.0" && vm.currentMethod.APIVersion != "67.0") ||
-		len(namedArgs) != 0 || !hasTypePrefixFold(typeName, "commercepayments") {
+		(vm.currentMethod.APIVersion != "62.0" && vm.currentMethod.APIVersion != "67.0") {
 		return nil
 	}
 	names := map[string]struct {
@@ -51,10 +75,10 @@ func (vm *VM) paymentRequestOutsideTestError(typeName string, args []Value, name
 		"commercepayments.authorizationreversalrequest": {"commercepayments.AuthorizationReversalRequest", 2},
 	}
 	shape, ok := names[strings.ToLower(typeName)]
-	if !ok || len(args) != shape.arity {
+	if !ok || arity != shape.arity {
 		return nil
 	}
-	if class, found := vm.lookupClass(typeName); found && !class.PlatformType {
+	if class, found := vm.lookupClassRaw(typeName); found && !class.PlatformType {
 		return nil
 	}
 	return newExceptionError("System.UnsupportedOperationException", shape.canonical+" cannot be constructed directly outside of a test")
