@@ -185,6 +185,12 @@ export class GladeTestController {
       let ownFailure = false;
       for (const testCase of childResults) {
         const child = this.findTestItem(testCase);
+        const startedMethod = testCase.methodName ? item.children.get(testCase.id) : undefined;
+        if (startedMethod && !this.currentItem(startedMethod)) {
+          // Finish the historical run without retaining a removed method for Run Failed.
+          this.recordResult(run, startedMethod, testCase);
+          continue;
+        }
         if (child && child !== item) {
           this.recordResult(run, child, testCase);
           if (testCase.status !== "pass") {
@@ -194,11 +200,17 @@ export class GladeTestController {
           ownFailure = true;
         }
       }
-      const failed = childResults.find((candidate) => candidate.status !== "pass") ||
-        (childResults.length === 0 ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass") : undefined);
+      const selectorFailure = childResults.length === 0
+        ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass")
+        : undefined;
+      const failed = childResults.find((candidate) => candidate.status !== "pass") || selectorFailure;
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
-        this.setFailedItem(item, ownFailure || failedMethods.size === 0 ? undefined : failedMethods);
+        if (ownFailure || selectorFailure) {
+          this.setFailedItem(item);
+        } else if (failedMethods.size > 0) {
+          this.setFailedItem(item, failedMethods);
+        }
       } else if (childResults.length === 0) {
         run.errored(item, new vscode.TestMessage("No matching test result was returned."));
         this.setFailedItem(item);
