@@ -89,6 +89,68 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
     await instance.runFailed();
     assert.deepStrictEqual(calls, []);
     assert.deepStrictEqual(messages, ['Glade has no failed local Apex tests to rerun.']);
+
+    // A class run with one failing and one passing method records the method
+    // and the class. Deleting the failing method must clear both.
+    const both = '@IsTest class Example { @IsTest static void a() {} @IsTest static void b() {} }';
+    const onlyB = '@IsTest class Example { @IsTest static void b() {} }';
+    const runClass = async () => { calls.length = 0; events.length = 0; await instance.run({ include: [controller.items.get('Example')] }, { isCancellationRequested: false }); };
+    fs.writeFileSync(source, both);
+    await instance.discover();
+    report = makeReport(suite([row('a', 'fail', 'assertion failed'), row('b', 'pass')]));
+    await runClass();
+    assert(events.some(e => e[0] === 'failed' && e[1] === 'Example') && events.some(e => e[0] === 'failed' && e[1] === 'Example.a'));
+    assert.strictEqual(failedCounts.at(-1), 2);
+    calls.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, [['Example', undefined]]);
+    assert.strictEqual(failedCounts.at(-1), 2);
+    fs.writeFileSync(source, onlyB);
+    await instance.discover();
+    assert.strictEqual(failedCounts.at(-1), 0);
+    calls.length = 0; messages.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, []);
+    assert.deepStrictEqual(messages, ['Glade has no failed local Apex tests to rerun.']);
+
+    // The class also stops being failed when its only failing method passes.
+    fs.writeFileSync(source, both);
+    await instance.discover();
+    report = makeReport(suite([row('a', 'fail', 'assertion failed'), row('b', 'pass')]));
+    await runClass();
+    assert.strictEqual(failedCounts.at(-1), 2);
+    report = makeReport(suite([row('a', 'pass')]));
+    calls.length = 0;
+    await instance.run({ include: [controller.items.get('Example').children.get('Example.a')] }, { isCancellationRequested: false });
+    assert.strictEqual(failedCounts.at(-1), 0);
+
+    // With two failing methods the class stays failed until both are gone.
+    report = makeReport(suite([row('a', 'fail', 'first'), row('b', 'fail', 'second')]));
+    await runClass();
+    assert.strictEqual(failedCounts.at(-1), 3);
+    fs.writeFileSync(source, onlyB);
+    await instance.discover();
+    assert.strictEqual(failedCounts.at(-1), 2);
+    calls.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, [['Example', undefined]]);
+
+    // A class that failed on its own, with no failed method behind it, is
+    // kept when discovery drops one of its methods.
+    fs.writeFileSync(source, both);
+    await instance.discover();
+    report = makeReport(suite([row('a', 'pass'), row('b', 'pass')]));
+    await runClass();
+    assert.strictEqual(failedCounts.at(-1), 0);
+    report = makeReport([{ name: 'test selector', cases: [{ name: 'selector', status: 'runtime_error', problem: { type: 'Selector', message: 'no test method matched' } }] }]);
+    await runClass();
+    assert.strictEqual(failedCounts.at(-1), 1);
+    fs.writeFileSync(source, onlyB);
+    await instance.discover();
+    assert.strictEqual(failedCounts.at(-1), 1);
+    calls.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, [['Example', undefined]]);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

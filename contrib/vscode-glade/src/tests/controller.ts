@@ -18,6 +18,9 @@ export class GladeTestController {
   private project?: GladeProjectContext;
   private readonly itemData = new WeakMap<vscode.TestItem, TestData>();
   private readonly failedItems = new Map<string, vscode.TestItem>();
+  // The failed methods behind a class that failed only because they did. A
+  // failed class with no entry here failed on its own.
+  private readonly failedMethods = new Map<string, Set<string>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -76,8 +79,10 @@ export class GladeTestController {
         this.failedItems.set(id, current);
       } else {
         this.failedItems.delete(id);
+        this.failedMethods.delete(id);
       }
     }
+    this.dropSettledClassFailures();
     if (this.failedItems.size !== previousFailedCount) {
       this.onFailedCountChange?.(this.failedItems.size);
     }
@@ -174,17 +179,26 @@ export class GladeTestController {
       this.onRunComplete?.(startHereSummary("Test Explorer", result));
       const flat = flattenTestCases(result);
       const childResults = flat.filter((testCase) => testCase.className === data.className && (!data.methodName || testCase.methodName === data.methodName));
+      // The item's failure is only its methods' when every failing result
+      // belongs to a method item recorded as failed.
+      const failedMethods = new Set<string>();
+      let ownFailure = false;
       for (const testCase of childResults) {
         const child = this.findTestItem(testCase);
         if (child && child !== item) {
           this.recordResult(run, child, testCase);
+          if (testCase.status !== "pass") {
+            failedMethods.add(child.id);
+          }
+        } else if (testCase.status !== "pass") {
+          ownFailure = true;
         }
       }
       const failed = childResults.find((candidate) => candidate.status !== "pass") ||
         (childResults.length === 0 ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass") : undefined);
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
-        this.setFailedItem(item);
+        this.setFailedItem(item, ownFailure || failedMethods.size === 0 ? undefined : failedMethods);
       } else if (childResults.length === 0) {
         run.errored(item, new vscode.TestMessage("No matching test result was returned."));
         this.setFailedItem(item);
@@ -216,18 +230,40 @@ export class GladeTestController {
       return;
     }
     this.failedItems.clear();
+    this.failedMethods.clear();
     this.onFailedCountChange?.(0);
   }
 
-  private setFailedItem(item: vscode.TestItem): void {
+  private setFailedItem(item: vscode.TestItem, failedMethods?: Set<string>): void {
     const current = this.currentItem(item);
     if (!current) {
       return;
     }
     const before = this.failedItems.size;
     this.failedItems.set(current.id, current);
+    if (failedMethods) {
+      this.failedMethods.set(current.id, failedMethods);
+    } else {
+      this.failedMethods.delete(current.id);
+    }
     if (this.failedItems.size !== before) {
       this.onFailedCountChange?.(this.failedItems.size);
+    }
+  }
+
+  // A class that failed only because of its methods stays failed while one
+  // of those methods is still recorded as failed.
+  private dropSettledClassFailures(): void {
+    for (const [classId, methods] of this.failedMethods) {
+      for (const methodId of methods) {
+        if (!this.failedItems.has(methodId)) {
+          methods.delete(methodId);
+        }
+      }
+      if (methods.size === 0) {
+        this.failedMethods.delete(classId);
+        this.failedItems.delete(classId);
+      }
     }
   }
 
@@ -244,6 +280,8 @@ export class GladeTestController {
     if (!this.failedItems.delete(item.id)) {
       return;
     }
+    this.failedMethods.delete(item.id);
+    this.dropSettledClassFailures();
     this.onFailedCountChange?.(this.failedItems.size);
   }
 

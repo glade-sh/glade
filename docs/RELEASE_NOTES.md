@@ -7,7 +7,7 @@
 - After-save Contact create Flow decisions can compare `$Profile.Name` with `$Record.Account.Name`, and Get Records can follow parent lookup references supplied with either 15- or 18-character IDs, matching captured Salesforce results at API 62.0 and 67.0.
 - Match Salesforce compilation for direct anonymous BatchApexErrorEvent inserts at API 62.0 and 67.0.
 - Add Salesforce conformance coverage for inactive Visualforce Sites in anonymous Apex and tests.
-- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery.
+- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears failures for tests removed from discovery, and a class that failed only through such a test.
 - Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
 - A test request or daemon warm-up reads each recently changed source once, after its last validation check. A same-size edit inside one timestamp tick during the request fails it with a source snapshot mismatch.
 - Preserve dependency and shim source views when reloading the frontend cache or rebuilding it after a source edit.
