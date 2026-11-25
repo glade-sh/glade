@@ -9,6 +9,7 @@
 - Add Salesforce conformance coverage for inactive Visualforce Sites in anonymous Apex and tests.
 - Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test.
 - Prevent stale startup-cache results after same-size source edits on coarse-timestamp filesystems.
+- Reuse source hashes during a warm test run and preserve source views when reloading the frontend cache.
 
 
 ## v0.3.15

@@ -606,7 +606,7 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		source := WorkspaceSource{raw: raw, digest: digest, metadata: metadata}
 		logical := sources.loadLogical(logicalSourceKey{physicalPath: metadata.PhysicalPath, namespace: metadata.Namespace, remapFingerprint: sourceRemapFingerprint(metadata.NamespaceRemaps)}, raw, metadata.Namespace, metadata.NamespaceRemaps)
 		source.normalized = logical.normalized
-		sources.adopt(source, occurrence.ApexMetadata)
+		sources.adopt(source, occurrence.ApexMetadata, nil)
 	}
 	artifacts := BuildArtifacts{Sources: sources, SourceDigests: sources.sourceDigestSet(), ApexMetadataInputs: capturedApexMetadataInputs(idx, sources)}
 	idx.sourceDigests = artifacts.SourceDigests.indexDigestSet()

@@ -899,7 +899,7 @@ func TestSourceDigestCaptureTimePreserved(t *testing.T) {
 		t.Fatalf("capture %v outside [%v, %v]", set.CapturedAt(), before, after)
 	}
 	adopted := NewWorkspaceSources()
-	adopted.adopt(source, ApexMetadataInput{})
+	adopted.adopt(source, ApexMetadataInput{}, sources)
 	if got := adopted.sourceDigestSet().CapturedAt(); !got.Equal(set.CapturedAt()) {
 		t.Fatalf("adopted capture = %v, want %v", got, set.CapturedAt())
 	}
@@ -909,9 +909,7 @@ func TestSourceDigestCaptureTimePreserved(t *testing.T) {
 	if got := set.withSourceDigest(path, []byte("overlay")).CapturedAt(); !got.IsZero() {
 		t.Fatalf("overlay capture = %v, want unknown", got)
 	}
-	unknown := source
-	unknown.capturedAt = time.Time{}
-	adopted.adopt(unknown, ApexMetadataInput{})
+	adopted.adopt(source, ApexMetadataInput{}, nil)
 	if got := adopted.sourceDigestSet().CapturedAt(); !got.IsZero() {
 		t.Fatalf("unknown adopted capture = %v, want unknown", got)
 	}

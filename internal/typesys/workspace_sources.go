@@ -32,7 +32,6 @@ type WorkspaceSource struct {
 	raw        string
 	normalized string
 	digest     [sha256.Size]byte
-	capturedAt time.Time
 	metadata   SourceMetadata
 }
 
@@ -232,7 +231,7 @@ func refreshBuildArtifacts(index Index, previous *BuildArtifacts, overlay *Sourc
 		currentPhysicalPath := artifacts.Sources.canonicalPhysicalPath(metadata.RequestedPath)
 		if previous != nil && previous.Sources != nil {
 			if source, ok := previous.Sources.sourceForMetadata(metadata); ok && source.Digest() == expected && source.metadata.PhysicalPath == index.sourceDigests.requested[metadata.RequestedPath] && source.metadata.PhysicalPath == currentPhysicalPath {
-				artifacts.Sources.adopt(source, input)
+				artifacts.Sources.adopt(source, input, previous.Sources)
 				return nil
 			}
 		}
@@ -734,7 +733,6 @@ func (s *WorkspaceSources) sourceDigestSet() *SourceDigestSet {
 	}
 	digests.requested = make(map[string]string, len(s.all))
 	for _, source := range s.all {
-		addCapture(source.capturedAt)
 		requestedPath := source.metadata.RequestedPath
 		physicalPath := source.metadata.PhysicalPath
 		digests.requested[requestedPath] = physicalPath
@@ -751,10 +749,23 @@ func (s *WorkspaceSources) record(source WorkspaceSource) {
 	s.mu.Unlock()
 }
 
+func (s *WorkspaceSources) physicalCaptureTime(path string) time.Time {
+	if s == nil {
+		return time.Time{}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if physical := s.physical[path]; physical != nil {
+		return physical.capturedAt
+	}
+	return time.Time{}
+}
+
 // adopt records a previously captured immutable logical source in this fresh
-// arena without reading the physical file again. Callers must have proved the
-// occurrence and digest match their target generation.
-func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput) {
+// arena without reading the physical file again. The caller must prove the
+// source matches the target generation. A previous arena supplies the physical
+// read time. Sources restored from disk have no trusted capture time.
+func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput, previous *WorkspaceSources) {
 	if s == nil {
 		return
 	}
@@ -762,6 +773,7 @@ func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput
 	if physicalPath == "" {
 		physicalPath = s.canonicalPhysicalPath(source.metadata.RequestedPath)
 	}
+	capturedAt := previous.physicalCaptureTime(physicalPath)
 	logicalKey := logicalSourceKey{
 		physicalPath:     physicalPath,
 		namespace:        source.metadata.Namespace,
@@ -769,10 +781,12 @@ func (s *WorkspaceSources) adopt(source WorkspaceSource, input ApexMetadataInput
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, ok := s.physical[physicalPath]; !ok {
+	if physical, ok := s.physical[physicalPath]; !ok {
 		ready := make(chan struct{})
 		close(ready)
-		s.physical[physicalPath] = &physicalSource{ready: ready, raw: source.raw, digest: source.digest, capturedAt: source.capturedAt}
+		s.physical[physicalPath] = &physicalSource{ready: ready, raw: source.raw, digest: source.digest, capturedAt: capturedAt}
+	} else if capturedAt.IsZero() || capturedAt.Before(physical.capturedAt) {
+		physical.capturedAt = capturedAt
 	}
 	if _, ok := s.logical[logicalKey]; !ok {
 		ready := make(chan struct{})
@@ -822,7 +836,6 @@ func (s *WorkspaceSources) load(metadata SourceMetadata) (WorkspaceSource, error
 		raw:        physical.raw,
 		normalized: logical.normalized,
 		digest:     physical.digest,
-		capturedAt: physical.capturedAt,
 		metadata:   metadata,
 	}, nil
 }
@@ -853,14 +866,11 @@ func (s *WorkspaceSources) loadPhysical(physicalPath, requestedPath string) (*ph
 	}
 	physical = &physicalSource{ready: make(chan struct{})}
 	s.physical[physicalPath] = physical
-	s.mu.Unlock()
-
-	s.mu.Lock()
 	s.physicalReadAttempts++
-	s.mu.Unlock()
 	if s.physicalReads {
 		physical.capturedAt = time.Now()
 	}
+	s.mu.Unlock()
 	data, err := s.readFile(physicalPath)
 	if err == nil {
 		physical.raw = string(data)

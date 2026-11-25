@@ -10,12 +10,11 @@ import (
 	"github.com/glade-sh/glade/internal/filestamp"
 )
 
-// fileDigestTrustAge is how long a file must have been unmodified, by both its
-// mtime and ctime, before a matching stat stamp stands in for re-hashing it.
-// Filesystem timestamps can be coarser than the gap between two writes, so a
-// file touched inside this window is always hashed again (the "racily clean"
-// rule). Older files are trusted only while dev, inode, size, mtime and ctime
-// all still match the stamp taken when their content was hashed.
+// fileDigestTrustAge is how long both mtime and ctime must be unchanged
+// before a matching stamp can stand in for a fresh hash across requests.
+// Filesystem timestamps can be coarser than the gap between two writes.
+// Older files are trusted only while dev, inode, size, mtime and ctime match
+// the stamp taken when their content was hashed.
 const fileDigestTrustAge = 2 * time.Second
 
 // fileDigestTrustMaxEntries bounds the process-wide stamp table.
@@ -183,14 +182,14 @@ func currentFileDigestStamped(path string) ([sha256.Size]byte, error, filestamp.
 }
 
 // requestFileDigests remembers, for one request, the stat stamp and digest of
-// every source file already validated. Repeated validation boundaries inside
-// one request reuse the recorded digest while the stamp still matches, so a
-// file safely older than its digest generation can be reused. Recent files
-// are rehashed at each boundary because a save can share the same timestamp
-// tick. Entries never outlive the request that recorded them.
+// every source file already validated. Test runs can reuse a recent digest
+// within their captured generation while the file reports the same stamp.
+// That evidence never leaves the request. A later request still goes through
+// the process-wide trust check, which admits only old stamps.
 type requestFileDigests struct {
-	mu      sync.Mutex
-	entries map[string]requestFileDigestEntry
+	mu          sync.Mutex
+	entries     map[string]requestFileDigestEntry
+	reuseRecent bool
 }
 
 type requestFileDigestEntry struct {
@@ -205,22 +204,23 @@ func (r *requestFileDigests) digest(path string) ([sha256.Size]byte, error) {
 		return currentFileDigest(path)
 	}
 	r.mu.Lock()
+	defer r.mu.Unlock()
 	entry, hit := r.entries[path]
-	r.mu.Unlock()
 	if hit {
 		if stamp, ok := requestDigestStat(path); ok && entry.stamp == stamp {
 			return entry.digest, nil
 		}
 	}
-	generation := fileDigestNow()
+	var generation time.Time
+	if !r.reuseRecent {
+		generation = fileDigestNow()
+	}
 	digest, err, stamp, stamped := currentFileDigestStamped(path)
-	if stamped && err == nil && stamp.OlderThan(generation, fileDigestTrustAge) {
-		r.mu.Lock()
+	if stamped && err == nil && (r.reuseRecent || stamp.OlderThan(generation, fileDigestTrustAge)) {
 		if r.entries == nil {
 			r.entries = make(map[string]requestFileDigestEntry)
 		}
 		r.entries[path] = requestFileDigestEntry{stamp: stamp, digest: digest}
-		r.mu.Unlock()
 	}
 	return digest, err
 }

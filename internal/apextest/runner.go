@@ -409,6 +409,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // beside the semantic gate panicked.
 func prepareRunSources(index typesys.Index, opts Options, runState *runExecution) (*sourceCache, runtimeGeneration, *typesys.SourceDigestSet, error) {
 	sources := newSourceCache()
+	sources.requestDigests.reuseRecent = true
 	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	sources.backgroundDiskPublication = opts.BackgroundDiskPublication
 	// A matching snapshot selects the already-loaded project graph for runtime
