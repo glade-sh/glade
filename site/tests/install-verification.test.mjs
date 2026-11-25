@@ -45,12 +45,18 @@ async function fixture(t) {
   const ghLog = join(root, "gh.log");
   await writeFile(join(commands, "curl"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$CURL_LOG"
+case "\${FAIL_DOWNLOAD:-}:$*" in
+  mirror-archive:*file://*/*.tar.gz*|mirror-checksum:*file://*/SHA256SUMS.txt*)
+    printf '%s\\n' 'curl: (28) mirror asset timed out' 'additional mirror details' >&2
+    exit 28 ;;
+esac
 case "$*" in
   *release-manifest.json*)
-    if [ -n "\${FAIL_DOWNLOAD:-}" ]; then
-      printf '%s\\n' 'curl: (28) mirror timed out' 'additional mirror details' >&2
-      exit 28
-    fi ;;
+    case "\${FAIL_DOWNLOAD:-}" in
+      metadata|archive|checksum)
+        printf '%s\\n' 'curl: (28) mirror timed out' 'additional mirror details' >&2
+        exit 28 ;;
+    esac ;;
   *api.github.com/repos/glade-sh/glade/releases/tags/*)
     case "\${FAIL_DOWNLOAD:-}" in
       archive|checksum)
@@ -174,6 +180,17 @@ test("installer reports one line of curl diagnostics for failed GitHub assets", 
     assert.match(result.stderr, new RegExp(`curl: \\(56\\) ${asset} connection reset`));
     assert.doesNotMatch(result.stderr, /additional \w+ details/);
     assert.match(result.stderr, /check your network or proxy/i);
+    assert.equal(existsSync(f.binary), false);
+  }
+});
+
+test("installer reports curl diagnostics when both mirror asset paths fail", async t => {
+  const f = await fixture(t);
+  for (const asset of ["mirror-archive", "mirror-checksum"]) {
+    const result = f.run({ FAIL_DOWNLOAD: asset });
+    assert.notEqual(result.status, 0);
+    assert.equal(result.stderr.match(/curl: \(28\) mirror asset timed out/g)?.length, 1, result.stderr);
+    assert.doesNotMatch(result.stderr, /additional mirror details/);
     assert.equal(existsSync(f.binary), false);
   }
 });
