@@ -102,6 +102,38 @@ func TestFieldScanPreservesLookupSpellingAndPrecedence(t *testing.T) {
 	}
 }
 
+func TestFieldScanWarmReplayAllocationBudget(t *testing.T) {
+	withSourceScanMemo(t, func() {
+		org, _ := fieldScanFixture()
+		lookup := projectReferencedChildRelationshipLookup(*org)
+		for _, objectName := range []string{"Contact", "widget__c"} {
+			t.Run(objectName, func(t *testing.T) {
+				const first = "Other__c"
+				const variant = "otHER__C"
+				prefix := objectName + "." + first + ";\n"
+				exact := prefix + strings.Repeat(objectName+"."+first+";\n", 300)
+				mixed := prefix + strings.Repeat(objectName+"."+variant+";\n", 300)
+
+				// AllocsPerRun warms each source's pattern memo before measuring replay.
+				exactAllocs := testing.AllocsPerRun(10, func() {
+					scanProjectReferencedStandardFieldsFromSource(org, exact, lookup)
+				})
+				mixedAllocs := testing.AllocsPerRun(10, func() {
+					scanProjectReferencedStandardFieldsFromSource(org, mixed, lookup)
+				})
+				if mixedAllocs > exactAllocs+5 {
+					t.Errorf("warm mixed-case replay allocated %.0f times, exact-case replay allocated %.0f times", mixedAllocs, exactAllocs)
+				}
+
+				fields := scanProjectReferencedStandardFieldsFromSource(org, mixed, lookup).Inferred[objectName]
+				if len(fields) != 1 || fields[first].APIName != first {
+					t.Fatalf("inferred fields = %#v, want only %s", fields, first)
+				}
+			})
+		}
+	})
+}
+
 func BenchmarkFieldScanNoReferences(b *testing.B) {
 	org, _ := fieldScanFixture()
 	lookup := projectReferencedChildRelationshipLookup(*org)
