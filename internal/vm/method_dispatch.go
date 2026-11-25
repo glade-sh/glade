@@ -3832,6 +3832,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			vm.propagateCollectionMutationFromSnapshot(previousReceiver, receiver)
 			return Null, true, err
 		}
+		if stored := vm.enumMapMutationKey(receiver, key, encodedKey); stored != encodedKey {
+			encodedKey, key = stored, receiver.MapKeys[stored]
+		}
 		if existing, ok := receiver.Map[encodedKey]; ok {
 			previous = existing
 		} else {
@@ -4028,6 +4031,7 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if err != nil {
 			return Null, true, err
 		}
+		key = vm.enumMapMutationKey(receiver, args[0], key)
 		removed := Null
 		if value, ok := receiver.Map[key]; ok {
 			removed = value

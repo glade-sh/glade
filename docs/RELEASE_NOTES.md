@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Apex `Map.put` and `Map.remove` now match existing project enum keys passed as method parameters or obtained from `Enum.values()`.
 
 ## v0.3.15
 
