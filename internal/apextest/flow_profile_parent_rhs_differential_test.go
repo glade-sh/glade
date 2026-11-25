@@ -18,10 +18,12 @@ import (
 func TestFlowProfileParentRHSDifferential(t *testing.T) {
 	for _, tc := range []struct{ name, old, replacement, apexOld, apexNew string }{
 		{name: "captured"},
+		{name: "api_68"},
 		{name: "update", old: "<recordTriggerType>Create</recordTriggerType>", replacement: "<recordTriggerType>Update</recordTriggerType>", apexOld: "insert cs;", apexNew: "insert cs; update cs;"},
 		{name: "inequality", old: "<operator>EqualTo</operator><rightValue>", replacement: "<operator>NotEqualTo</operator><rightValue>"},
 		{name: "two_parents", old: "$Record.Account.Name", replacement: "$Record.Account.Parent.Name"},
 		{name: "setup_parent", old: "$Record.Account.Name", replacement: "$Record.Owner.Name"},
+		{name: "other_parent_field", old: "$Record.Account.Name", replacement: "$Record.Account.AccountNumber", apexOld: "new Account(Name=p)", apexNew: "new Account(Name=p, AccountNumber=p)"},
 		{name: "case_difference", apexOld: "new Account(Name=p)", apexNew: "new Account(Name=p.toLowerCase())"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -44,6 +46,9 @@ func TestFlowProfileParentRHSDifferential(t *testing.T) {
 					return err
 				}
 				text := string(data)
+				if tc.name == "api_68" {
+					text = strings.ReplaceAll(text, "62.0", "68.0")
+				}
 				if strings.HasSuffix(path, ".flow-meta.xml") && tc.old != "" {
 					if !strings.Contains(text, tc.old) {
 						t.Fatalf("missing Flow mutation %q", tc.old)
@@ -64,9 +69,13 @@ func TestFlowProfileParentRHSDifferential(t *testing.T) {
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("fixture diagnostics: %v %v", index.Diagnostics, analysis.Diagnostics)
 			}
-			org := capturedFixtureOrg(t, index, "62.0")
+			api := "62.0"
+			if tc.name == "api_68" {
+				api = "68.0"
+			}
+			org := capturedFixtureOrg(t, index, api)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
-			program, err := vm.CompileAnonymousWithOptions("System.assert(false, 'OBS=' + ProfileProbeCase.run());", vm.CompileOptions{APIVersion: "62.0"})
+			program, err := vm.CompileAnonymousWithOptions("System.assert(false, 'OBS=' + ProfileProbeCase.run());", vm.CompileOptions{APIVersion: api})
 			if err != nil {
 				t.Fatal(err)
 			}

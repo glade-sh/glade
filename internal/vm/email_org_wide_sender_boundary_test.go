@@ -29,6 +29,7 @@ func TestSendEmailOrgWideSenderCatalogBoundary(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			org := storage.NewOrgState()
+			org.APIVersion = "67.0"
 			storage.EnsureStandardObject(&org, "OrgWideEmailAddress")
 			object := org.Objects["OrgWideEmailAddress"]
 			object.Records = tc.records
@@ -102,6 +103,101 @@ func TestSendEmailOrgWideSenderUncapturedOverloadsMatchMain(t *testing.T) {
 			}
 			if len(got.List) != 1 || !got.List[0].Fields["success"].Bool || len(got.List[0].Fields["errors"].List) != 0 {
 				t.Fatal("missing sender differs from main control")
+			}
+		})
+	}
+}
+
+// These neighbors had no current-user activity error on the base tree.
+func TestCurrentUserActivityUncapturedNeighborsMatchMain(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		api       string
+		namespace string
+		cc        bool
+		sender    string
+	}{
+		{name: "anonymous API 68", api: "68.0", sender: "0D2000000000001"},
+		{name: "namespaced", api: "67.0", namespace: "example", sender: "0D2000000000001"},
+		{name: "copied recipient", api: "67.0", cc: true, sender: "0D2000000000001"},
+		{name: "no sender", api: "67.0"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.Namespace = tc.namespace
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.currentMethod = Method{APIVersion: tc.api}
+			message := newSingleEmailMessage()
+			message.Fields["targetObjectId"] = String(string(storage.DefaultUserID))
+			message.Fields["orgWideEmailAddressId"] = String(tc.sender)
+			message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+			if tc.cc {
+				message.Fields["ccAddresses"] = List(String("copy@example.invalid"))
+			}
+			if got := machine.currentUserTargetActivityValidation(message, true); got.Kind != ValueNull {
+				t.Fatalf("uncaptured neighbor differs from main: %v", got)
+			}
+		})
+	}
+}
+
+// These missing-sender shapes were not in the capture and match the base.
+func TestSendEmailSenderUncapturedNeighborsMatchMain(t *testing.T) {
+	for _, tc := range []struct {
+		name, api, namespace                     string
+		cc, twoTo, html, reply, existingTemplate bool
+	}{
+		{name: "API 68", api: "68.0"},
+		{name: "namespace", api: "67.0", namespace: "example"},
+		{name: "copied recipient", api: "67.0", cc: true},
+		{name: "two recipients", api: "67.0", twoTo: true},
+		{name: "HTML body", api: "67.0", html: true},
+		{name: "reply-to address", api: "67.0", reply: true},
+		{name: "existing template and address", api: "67.0", existingTemplate: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.Namespace = tc.namespace
+			storage.EnsureStandardObject(&org, "OrgWideEmailAddress")
+			object := org.Objects["OrgWideEmailAddress"]
+			const other = storage.ID("0D2000000000002")
+			object.Records = map[storage.ID]storage.Record{other: {ID: other}}
+			org.Objects["OrgWideEmailAddress"] = object
+			if tc.existingTemplate {
+				storage.EnsureStandardObject(&org, "EmailTemplate")
+				templates := org.Objects["EmailTemplate"]
+				const templateID = storage.ID("00X000000000010AAA")
+				templates.Records = map[storage.ID]storage.Record{templateID: {ID: templateID, Object: "EmailTemplate"}}
+				org.Objects["EmailTemplate"] = templates
+			}
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.currentMethod = Method{APIVersion: tc.api}
+			message := newSingleEmailMessage()
+			message.Fields["toAddresses"] = List(String("recipient@example.invalid"))
+			if tc.cc {
+				message.Fields["ccAddresses"] = List(String("copy@example.invalid"))
+			}
+			if tc.twoTo {
+				message.Fields["toAddresses"] = List(String("recipient@example.invalid"), String("other@example.invalid"))
+			}
+			message.Fields["subject"] = String("probe")
+			message.Fields["plainTextBody"] = String("probe")
+			if tc.html {
+				message.Fields["plainTextBody"] = Null
+				message.Fields["htmlBody"] = String("<p>probe</p>")
+			}
+			if tc.reply {
+				message.Fields["replyTo"] = String("reply@example.invalid")
+			}
+			if tc.existingTemplate {
+				message.Fields["templateId"] = String("00X000000000010AAA")
+			}
+			message.Fields["orgWideEmailAddressId"] = String("0D2000000000001")
+			got, err := machine.sendEmail([]Value{List(message), Bool(false)}, &Result{})
+			if err != nil || len(got.List) != 1 || !got.List[0].Fields["success"].Bool {
+				t.Fatalf("uncaptured neighbor differs from main: result=%v err=%v", got, err)
 			}
 		})
 	}
