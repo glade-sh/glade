@@ -74,6 +74,15 @@ func TestFieldScanPreservesLookupSpellingAndPrecedence(t *testing.T) {
 		Setting__c . GeTaLl ();
 		// FROM Account.Children__r
 		String ignored = 'Contact.Hidden__c';`
+	// Repeated case variants exercise both dotted-reference paths without
+	// adding fields or changing the first spelling.
+	source += strings.Repeat("\nContact.Link__C; c.other__C;", 150)
+	allocs := testing.AllocsPerRun(10, func() {
+		standardFieldMatchesFromSource(source)
+	})
+	if allocs > 500 {
+		t.Errorf("matching field references allocated %.0f times, want at most 500", allocs)
+	}
 	result := scanProjectReferencedStandardFieldsFromSource(org, source, projectReferencedChildRelationshipLookup(*org))
 	fields := result.Inferred["Contact"]
 	link, ok := fields["Link__c"]
