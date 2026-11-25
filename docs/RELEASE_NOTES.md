@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
+
 - Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
 
 ## v0.3.15
