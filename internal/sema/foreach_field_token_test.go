@@ -19,6 +19,7 @@ public class GaugePlan {
 }
 `
 	const helpers = `
+  private static GaugePlan reading = new GaugePlan();
   private static GaugePlan openPlan(Boolean ready) { return new GaugePlan(); }
   public static List<Lead> readings(GaugePlan plan) {
     return new List<Lead>{ new Lead(LastName = 'Morrow', Company = 'Gauge Works', AnnualRevenue = 3) };
@@ -33,13 +34,33 @@ public class GaugePlan {
       System.assertEquals(3, observed);
     }
 `
+	const shadowingLoop = `
+    for (Lead reading : GaugeRun.readings(reading.mark(Lead.AnnualRevenue))) {
+      Decimal observed = reading.AnnualRevenue;
+      System.assertEquals(3, observed);
+    }
+    GaugeRun.readings(reading.mark('after loop'));
+`
 	for _, tc := range []struct {
 		name string
 		body string
 		want string
 	}{
 		{name: "same-name", body: loop},
-		{name: "different-name", body: strings.ReplaceAll(loop, "lead", "reading")},
+		{name: "schema-qualified", body: strings.Replace(loop, "Lead lead", "Schema.Lead lead", 1)},
+		{name: "different-name", body: strings.ReplaceAll(loop, "lead", "entry")},
+		{name: "shadows-field", body: shadowingLoop},
+		{
+			name: "nested-loops",
+			body: `
+    for (Lead outer : new List<Lead>()) {
+      for (Lead reading : GaugeRun.readings(reading.mark(outer.LastName))) {
+        Decimal observed = reading.AnnualRevenue + outer.AnnualRevenue;
+        System.assertEquals(6, observed);
+      }
+      GaugeRun.readings(reading.mark(outer.LastName));
+    }`,
+		},
 		{
 			name: "loop-body-value",
 			body: `for (Lead lead : new List<Lead>()) {
