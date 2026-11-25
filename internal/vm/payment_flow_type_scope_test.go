@@ -43,8 +43,11 @@ func TestPaymentFlowUncapturedTypeQueriesKeepBase(t *testing.T) {
 				{"commercepayments.SaleRequest", "commercepayments.PaymentGatewayRequest"},
 				{"commercepayments.AuthorizationReversalRequest", "commercepayments.PaymentGatewayRequest"},
 			} {
-				if machine.typeAssignableTo(pair[0], pair[1]) || machine.typeMatches(pair[0], pair[1], map[string]bool{}) {
-					t.Errorf("uncaptured type query %s -> %s changed", pair[0], pair[1])
+				registerPaymentFlowPlatformClass(t, machine, pair[0])
+				assignable := machine.typeAssignableTo(pair[0], pair[1])
+				matches := machine.typeMatches(pair[0], pair[1], map[string]bool{})
+				if assignable || matches {
+					t.Errorf("%s -> %s: assignable = %t, matches = %t, want both false", pair[0], pair[1], assignable, matches)
 				}
 			}
 		})
