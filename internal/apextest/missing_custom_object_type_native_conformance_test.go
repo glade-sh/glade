@@ -79,7 +79,7 @@ func TestMissingCustomObjectTypeNativeConformance(t *testing.T) {
 			org := orgFromIndex(index)
 			org.APIVersion = api
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
-			if _, err := runner.execute(program, nil); err != nil {
+			if _, err := runner.execute(program); err != nil {
 				t.Fatal(err)
 			}
 		})
