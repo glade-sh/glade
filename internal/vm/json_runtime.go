@@ -2275,6 +2275,12 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if field, owner, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
 			fieldType := vm.resolveTypeNameInClass(owner, field.Type)
+			getterOnly := obj.classInstance && field.Property && field.Getter != nil && !field.HasSetter
+			if getterOnly && canonicalJSONScalarType(fieldType) == "Integer" {
+				if _, object := jsonObjectMap(item); object {
+					return Null, jsonDeserializeException("Illegal value for primitive")
+				}
+			}
 			var value Value
 			var err error
 			if typedObjectIsSObject {
@@ -2310,7 +2316,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				continue
 			}
 			obj.Fields[fieldName] = value
-			if obj.classInstance && field.Property && field.Getter != nil && !field.HasSetter {
+			if getterOnly {
 				obj.jsonDecodedPropertyBacking = true
 			}
 			vm.fillDuplicateFieldSlots(obj, owner, field, fieldName, value)

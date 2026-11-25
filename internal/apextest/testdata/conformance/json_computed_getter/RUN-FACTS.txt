@@ -18,4 +18,5 @@ in cases.tsv. Each selected case has a row at all three APIs in both routes.
 
 NEIGHBOR PROBES
 
-Malformed input for the computed Integer property and unknown fields keep their existing decoding and diagnostics. Non-JSON reads and dotted implicit receiver reads are outside this capture.
+Unknown-field rows are outside the replay. Non-JSON reads and dotted implicit
+receiver reads are outside this capture.

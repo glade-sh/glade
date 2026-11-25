@@ -7,6 +7,8 @@ fallback_lax	probe.apex
 fallback_strict	probe.apex
 folded_computed_lax	probe.apex
 folded_computed_strict	probe.apex
+invalid_computed_lax	probe.apex
+invalid_computed_strict	probe.apex
 null_computed_lax	probe.apex
 null_computed_strict	probe.apex
 private_write_lax	probe.apex
