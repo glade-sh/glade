@@ -27,6 +27,7 @@
 - At Apex APIs 62.0 through 68.0, a named test that declares an uninitialized local of an absent custom object type now reports the Salesforce compile error.
 - Id-only attachment subqueries on custom records preserve imported view rows and apply child record visibility to synthesized view rows.
 - JSON-deserialized Apex objects evaluate computed get-only properties when read. JSON decoding accepts captured standard child relationship envelopes on unnamespaced custom objects and reads back year-1 Datetime values serialized with Gregorian year zero.
+- **Event subscriber parent visibility (Apex API 62.0, 67.0).** In the captured one-record/two-share and two-record/four-share shapes, a platform-event trigger can count the private custom record referenced by its event in user mode, and the second publisher-owned record in the two-record shape. The test class and trigger have matching API versions, and an administrator publishes and delivers the event inside the same `System.runAs` block.
 
 ## v0.3.15
 

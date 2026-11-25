@@ -34,6 +34,10 @@ func (vm *VM) namedStandardPublishShape(arg Value) bool {
 }
 
 func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource, defaultAccessCheck bool) (Value, error) {
+	return vm.eventBusPublishRoute(args, result, namedSource, defaultAccessCheck, false)
+}
+
+func (vm *VM) eventBusPublishRoute(args []Value, result *Result, namedSource, defaultAccessCheck, accessLevelRoute bool) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
 	}
@@ -238,6 +242,9 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 		}
 		stored.Fields["ReplayId"] = storage.StringValue(vm.nextEventBusReplayID())
 		stored.Fields["EventUuid"] = storage.StringValue(eventUUID)
+		if vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && namedSource && len(args) == 1 && args[0].Kind == ValueObject && stored.ID != "" {
+			vm.testContext.eventParentPublishedIDs = append(vm.testContext.eventParentPublishedIDs, eventParentPublication{ID: stored.ID, AccessLevelRoute: accessLevelRoute})
+		}
 		triggerRecords = append(triggerRecords, stored)
 		resultID := stored.ID
 		if legacyStandardPublish {
@@ -432,15 +439,18 @@ func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Valu
 		if !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}
-		return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
+		return vm.eventBusPublishRoute([]Value{args[0]}, result, true, false, true)
 	case 3:
 		if !isDatabaseAccessLevelValue(args[2]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}
-		if args[1].Kind == ValueNull {
-			return vm.eventBusPublishWithNamedSource([]Value{args[0]}, result, true, false)
+		version := vm.currentSourceExecutionPolicy().APIVersion
+		if args[1].Kind == ValueNull && args[0].Kind == ValueObject && vm.testContext != nil &&
+			vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && (version == "62.0" || version == "67.0") {
+			// Native scalar publication from runAs fails before enqueueing.
+			return Null, newExceptionError("System.UnexpectedException", "Something went wrong while attempting to publish events with a callback. Try again later.")
 		}
-		return vm.eventBusPublishWithNamedSource([]Value{args[0], args[1]}, result, true, false)
+		return vm.eventBusPublishRoute([]Value{args[0], args[1]}, result, true, false, true)
 	default:
 		return Null, fmt.Errorf("EventBus.publishWithAccessLevel expects event record or list, optional callback, and AccessLevel")
 	}

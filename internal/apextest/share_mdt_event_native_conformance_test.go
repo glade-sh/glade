@@ -40,6 +40,8 @@ var shareMdtFixtures = []shareMdtFixture{
 	{dir: "share_mdt_profile_grant", classes: map[string]string{"t_prof": "ProfProbeTest"}},
 	{dir: "share_mdt_event_runas", classes: map[string]string{"t_evt": "EvtProbeTest"}},
 	{dir: "share_event_trigger_visibility", classes: map[string]string{"t_evt": "ShareEventProbeTest"}},
+	{dir: "event_trigger_parent_visibility", classes: map[string]string{"t_parent": "ShareEventProbeTest"}},
+	{dir: "event_subscriber_unrelated_visibility", classes: map[string]string{"t_neighbor": "ShareEventProbeTest"}},
 }
 
 var (
@@ -183,7 +185,14 @@ func loadShareMdtProject(t *testing.T, dir, api string) *shareMdtProject {
 		if err != nil {
 			return err
 		}
-		writeFile(t, filepath.Join(root, name), strings.ReplaceAll(string(raw), "62.0", api))
+		text := string(raw)
+		if (filepath.Base(dir) == "event_trigger_parent_visibility" || filepath.Base(dir) == "event_subscriber_unrelated_visibility") &&
+			(name == "sfdx-project.json" || strings.HasSuffix(name, ".cls-meta.xml") || strings.HasSuffix(name, ".trigger-meta.xml")) {
+			text = strings.ReplaceAll(text, "67.0", api)
+		} else {
+			text = strings.ReplaceAll(text, "62.0", api)
+		}
+		writeFile(t, filepath.Join(root, name), text)
 		return nil
 	})
 	if err != nil {
