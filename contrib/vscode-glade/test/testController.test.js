@@ -142,6 +142,41 @@ async function run(include, exclude) { calls.length = 0; events.length = 0; awai
     report = makeReport(suite([row('a', 'pass'), row('b', 'pass')]));
     await runClass();
     assert.strictEqual(failedCounts.at(-1), 0);
+    // Refresh discovery after the class run starts and before its report arrives.
+    const runAcrossRefresh = async results => {
+      fs.writeFileSync(source, both);
+      await instance.discover();
+      const normalRunner = runner.runApexTest;
+      let finish;
+      runner.runApexTest = () => new Promise(resolve => { finish = resolve; });
+      try {
+        const pending = runClass();
+        assert.strictEqual(typeof finish, 'function');
+        fs.writeFileSync(source, onlyB);
+        await instance.discover();
+        finish(makeReport(suite(results)));
+        await pending;
+      } finally {
+        runner.runApexTest = normalRunner;
+      }
+    };
+    await runAcrossRefresh([row('a', 'fail', 'removed during run'), row('b', 'pass')]);
+    calls.length = 0; messages.length = 0;
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, []);
+    assert.deepStrictEqual(messages, ['Glade has no failed local Apex tests to rerun.']);
+    assert.strictEqual(failedCounts.at(-1), 0);
+    assert(events.some(e => e[0] === 'failed' && e[1] === 'Example.a'));
+
+    // A failure from a method still in discovery keeps the class eligible.
+    await runAcrossRefresh([row('a', 'fail', 'removed during run'), row('b', 'fail', 'still present')]);
+    assert.strictEqual(failedCounts.at(-1), 2);
+    calls.length = 0;
+    report = makeReport(suite([row('b', 'pass')]));
+    await instance.runFailed();
+    assert.deepStrictEqual(calls, [['Example', undefined]]);
+    assert.strictEqual(failedCounts.at(-1), 0);
+
     report = makeReport([{ name: 'test selector', cases: [{ name: 'selector', status: 'runtime_error', problem: { type: 'Selector', message: 'no test method matched' } }] }]);
     await runClass();
     assert.strictEqual(failedCounts.at(-1), 1);
