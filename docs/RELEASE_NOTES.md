@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Customer Community users respect the private external default for Case when a project declares only its internal public sharing model.
 
 ## v0.3.15
 

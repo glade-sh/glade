@@ -5230,16 +5230,23 @@ func capturedStandardNamedObject(objectName string) bool {
 // was Private in the scratch default, with Public Read/Write and with Public
 // Read internal models, and the community users read neither Case. Lead is
 // not covered: the Community licenses refuse Lead read natively
-// (lead_grant rows), so no row isolates its sharing default. Other objects
-// keep the internal model for external users until a row covers them.
+// (lead_grant rows), so no row isolates its sharing default. A declared
+// internal public-edit Case model also establishes the captured model when
+// scratch metadata is absent.
 func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject string) bool {
 	if vm == nil || vm.Org == nil || !strings.EqualFold(canonicalObject, "Case") {
 		return false
 	}
-	if !vm.currentUserIsCapturedPortalUser() || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
+	definition := vm.Org.Objects[canonicalObject].Definition
+	if !vm.currentUserIsCapturedPortalUser() || strings.TrimSpace(definition.ExternalSharingModel) != "" {
 		return false
 	}
-	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
+	if storage.StandardObjectShapeDeclared(definition) {
+		return true
+	}
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	model := strings.TrimSpace(definition.SharingModel)
+	return (api == "62.0" || api == "67.0") && (strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "ReadWriteTransfer"))
 }
 
 // partnerLeadPrivateExternalDefault is the named and with-sharing test shape

@@ -1,0 +1,9 @@
+api	route	id	outcome
+62.0	istest	PclCcTest	System.AssertException: Assertion Failed: cc|r=000|e=000|q=0,0,0|a=10
+62.0	istest	PclCclTest	System.AssertException: Assertion Failed: ccl|r=000|e=000|q=0,0,0|a=10
+62.0	istest	PclModelsTest	System.AssertException: Assertion Failed: Case:ReadWriteTransfer/Private;Lead:ReadWriteTransfer/Private;
+62.0	istest	PclStdTest	System.AssertException: Assertion Failed: std|r=111|e=111|q=1,1,1|a=11
+67.0	istest	PclCcTest	System.AssertException: Assertion Failed: cc|r=000|e=000|q=0,0,E|a=10
+67.0	istest	PclCclTest	System.AssertException: Assertion Failed: ccl|r=000|e=000|q=0,0,E|a=10
+67.0	istest	PclModelsTest	System.AssertException: Assertion Failed: Case:ReadWriteTransfer/Private;Lead:ReadWriteTransfer/Private;
+67.0	istest	PclStdTest	System.AssertException: Assertion Failed: std|r=111|e=111|q=1,1,1|a=11
