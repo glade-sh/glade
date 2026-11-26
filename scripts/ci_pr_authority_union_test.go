@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestCIPRAuthorityUnion(t *testing.T) {
@@ -94,6 +96,92 @@ func TestCIPRAuthorityWorkflow(t *testing.T) {
 	}
 	if !strings.Contains(jobs["pr-authority-union"], "ci-pr-authority-union.py") || !strings.Contains(jobs["required-ci"], "      - pr-authority-union\n") {
 		t.Fatal("PR authority union must gate Required CI")
+	}
+}
+
+func TestCIPRAuthoritySingleWorker(t *testing.T) {
+	var workflow struct {
+		Jobs map[string]struct {
+			Permissions map[string]string
+			Steps       []struct {
+				Name, If, Uses, Run string
+				Env, With           map[string]string
+			}
+		}
+	}
+	if err := yaml.Unmarshal([]byte(readWorkflowFile(t, "ci.yml")), &workflow); err != nil {
+		t.Fatal(err)
+	}
+	job := workflow.Jobs["pr-authority-union"]
+	const secondWorker = "fromJSON(needs.pr-select.outputs.validated).include[1]"
+	var download, validate string
+	var multiWorkerDownload bool
+	for _, step := range job.Steps {
+		switch {
+		case strings.HasPrefix(step.Uses, "actions/download-artifact@"):
+			multiWorkerDownload = true
+			if step.If != "${{ "+secondWorker+" != null }}" || step.With["pattern"] != "pr-authority-${{ github.run_id }}-*" || step.With["path"] != "${{ runner.temp }}/pr-authority-input" {
+				t.Errorf("expected existing artifact download for multi-worker plans, got %+v", step)
+			}
+		case step.Name == "Download single-worker PR authority evidence":
+			if step.If != "${{ "+secondWorker+" == null }}" || step.Env["GH_TOKEN"] != "${{ github.token }}" || job.Permissions["actions"] != "read" {
+				t.Errorf("expected run-scoped single-worker download with actions read permission, got %+v", step)
+			}
+			download = step.Run
+		case step.Name == "Validate worker evidence union":
+			validate = step.Run
+		}
+	}
+	if download == "" || validate == "" || !multiWorkerDownload {
+		t.Fatal("expected both worker download routes and the union validator")
+	}
+
+	for _, tc := range []struct {
+		name, artifact, identity, wantError string
+	}{
+		{"docs only", "pr-authority-123-1--1", `{"shard":-1}`, ""},
+		{"wrong identity", "pr-authority-123-1--1", `{"shard":0}`, "worker -1 identity mismatch"},
+		{"unplanned worker", "pr-authority-123-1-0", `{"shard":-1}`, "unplanned worker 0"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tmp := t.TempDir()
+			// gh --pattern extracts each match into its own named directory.
+			fakeGH := `#!/bin/bash
+set -eu
+[[ "$*" == "run download 123 --repo example/project --pattern pr-authority-123-* --dir $RUNNER_TEMP/pr-authority-input" ]]
+mkdir -p "$8/$FIXTURE_ARTIFACT"
+printf '%s\n' "$FIXTURE_IDENTITY" > "$8/$FIXTURE_ARTIFACT/identity.json"
+`
+			if err := os.WriteFile(filepath.Join(tmp, "gh"), []byte(fakeGH), 0700); err != nil {
+				t.Fatal(err)
+			}
+			env := append(os.Environ(), "PATH="+tmp+":"+os.Getenv("PATH"), "RUNNER_TEMP="+tmp,
+				"GITHUB_RUN_ID=123", "GITHUB_REPOSITORY=example/project",
+				"FIXTURE_ARTIFACT="+tc.artifact, "FIXTURE_IDENTITY="+tc.identity,
+				`PR_PLAN={"include":[{"shard":-1,"packages":[],"pool":[],"browser":false}]}`)
+			cmd := exec.Command("bash", "-e", "-c", download)
+			cmd.Env = env
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("download error=%v output=%s", err, out)
+			}
+			cmd = exec.Command("bash", "-e", "-c", validate)
+			cmd.Dir = ".."
+			cmd.Env = env
+			out, err := cmd.CombinedOutput()
+			if tc.wantError != "" {
+				if err == nil || !strings.Contains(string(out), tc.wantError) {
+					t.Fatalf("wanted %q, got error=%v output=%s", tc.wantError, err, out)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("union error=%v output=%s", err, out)
+			}
+			summary, err := os.ReadFile(filepath.Join(tmp, "pr-authority-output", "summary.json"))
+			if err != nil || strings.TrimSpace(string(summary)) != `{"deferred": [], "noTests": [], "valid": true, "workers": [-1]}` {
+				t.Fatalf("summary=%s error=%v", summary, err)
+			}
+		})
 	}
 }
 
