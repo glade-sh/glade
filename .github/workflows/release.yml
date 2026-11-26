@@ -126,6 +126,14 @@ jobs:
             printf '%s\n\n' "$warning"
             cat "$1"
           }
+          edit_draft_notes() {
+            local draft
+            # GitHub's release API has no atomic draft-only notes update. A
+            # maintainer can still publish between this check and the edit.
+            if draft="$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" && [[ "$draft" == true ]]; then
+              gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+            fi
+          }
 
           expected_target="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
           if release="$(gh release view "$GITHUB_REF_NAME" --json isDraft,body 2>/dev/null)"; then
@@ -134,14 +142,14 @@ jobs:
               jq -j '.body // ""' <<< "$release" > existing-release-notes.md
               if [[ "$CODEQL_COMPLETED" == false ]] && ! grep -Fxq -- "$warning" existing-release-notes.md; then
                 notes_with_warning existing-release-notes.md > release-notes.md
-                gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+                edit_draft_notes
               elif [[ "$CODEQL_COMPLETED" == true && "$(head -n 2 existing-release-notes.md)" == "$warning" ]]; then
                 tail -n +3 existing-release-notes.md > release-notes.md
-                gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+                edit_draft_notes
               fi
             fi
           else
-            if [[ "$CODEQL_COMPLETED" == false ]]; then
+            if [[ "$CODEQL_COMPLETED" == false ]] && ! grep -Fxq -- "$warning" release-notes.md; then
               notes_with_warning release-notes.md > release-notes-with-codeql-warning.md
               mv release-notes-with-codeql-warning.md release-notes.md
             fi
