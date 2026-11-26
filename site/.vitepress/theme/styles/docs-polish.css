@@ -1,0 +1,151 @@
+/* Docs finish, carried over from the home page: a faint top atmosphere, contour lines in the margin,
+   hairline frames and quiet hover states. The body stays flat and every decoration is a pseudo-element,
+   so no text sits on a background image. */
+.glade-docs {
+  --gd-tint: color-mix(in srgb, var(--glade-action) 16%, transparent);
+  --gd-tint-cool: color-mix(in srgb, var(--glade-accent) 8%, transparent);
+  --gd-hairline: linear-gradient(90deg, transparent, color-mix(in srgb, var(--glade-action) 60%, transparent) 30%, color-mix(in srgb, var(--glade-accent) 60%, transparent) 70%, transparent);
+  --gd-lift: 0 14px 30px -24px color-mix(in srgb, var(--glade-action) 42%, transparent);
+  --gd-edge: inset 0 1px 0 color-mix(in srgb, #fff 5%, transparent);
+  --gd-contour: .42;
+}
+html.dark .glade-docs { --gd-contour: .26; }
+.glade-docs ::selection { background: color-mix(in srgb, var(--glade-action) 34%, transparent); }
+
+/* Atmosphere: a soft glow behind the top of the article and terrain in the right margin. */
+.glade-docs .VPContent { position: relative; isolation: isolate; overflow-x: clip; }
+.glade-docs .VPContent::before { content: ''; position: absolute; z-index: -1; inset: 0 0 auto; height: 620px; pointer-events: none; background: radial-gradient(52% 100% at 82% 0%, var(--gd-tint), transparent 72%), radial-gradient(44% 80% at 38% 0%, var(--gd-tint-cool), transparent 72%); }
+.glade-docs .VPContent::after { content: ''; position: absolute; z-index: -1; width: 980px; height: 850px; right: -470px; top: -360px; pointer-events: none; opacity: var(--gd-contour); background: url('/home/contours.svg') center / contain no-repeat; transform: rotate(24deg); -webkit-mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); }
+html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness(.62); }
+@media (max-width: 959px) { .glade-docs .VPContent::after { width: 620px; height: 540px; right: -330px; top: -230px; } }
+
+/* Header: translucent over the page, with the home page's gradient hairline. */
+.glade-docs .VPNavBar .divider-line { background: var(--gd-hairline); }
+@media (min-width: 960px) {
+  .glade-docs .VPNavBar.has-sidebar { background: transparent; }
+  .glade-docs .VPNavBar.has-sidebar .content-body { background: color-mix(in srgb, var(--glade-canvas) 78%, transparent); -webkit-backdrop-filter: saturate(150%) blur(14px); backdrop-filter: saturate(150%) blur(14px); }
+}
+.glade-docs .VPNavBarMenuLink { border-radius: 8px; transition: color .18s, background-color .18s; }
+.glade-docs .VPNavBarMenuLink[href='/guide/installation'] { border-radius: 9px; box-shadow: inset 0 1px 0 rgba(255,255,255,.16); transition: background-color .18s, box-shadow .25s; }
+.glade-docs .VPNavBarSearchButton { border-radius: 9px; transition: border-color .18s, background-color .18s; }
+
+/* Sidebar and outline. Every row shares one padded box, so hover and active states line up and never touch. */
+.glade-docs .VPSidebarItem :is(.link, .item) { transition: background-color .18s, color .18s; }
+.glade-docs .VPSidebarItem:is(.level-1, .level-2) > .item > .link { margin-inline: -10px; padding-inline: 10px; border-radius: 8px; }
+.glade-docs .VPSidebarItem .items > .VPSidebarItem + .VPSidebarItem { margin-top: 2px; }
+.glade-docs .VPSidebarItem:is(.level-1, .level-2):not(.is-active) > .item > .link:hover { background: color-mix(in srgb, var(--glade-active) 55%, transparent); }
+.glade-docs .VPSidebarItem:is(.level-1, .level-2):not(.is-active) > .item > .link:hover .text { color: var(--glade-text); }
+.glade-docs .VPSidebarItem.level-0.collapsible > .item { margin-inline: -10px; padding-inline: 10px; border-radius: 8px; }
+.glade-docs .VPSidebarItem.level-0.collapsible > .item:hover { background: color-mix(in srgb, var(--glade-active) 55%, transparent); }
+.glade-docs .VPSidebarItem.level-0.collapsible > .item .caret-icon { transition: color .18s, transform .2s; }
+.glade-docs .VPSidebarItem.level-0.collapsible > .item:hover .caret-icon { color: var(--glade-link); }
+.glade-docs .VPSidebarItem.level-0.collapsible.collapsed > .item:hover .caret-icon { transform: translateX(2px); }
+.glade-docs .VPDocAsideOutline .outline-marker { width: 2px; border-radius: 2px; background: linear-gradient(180deg, var(--glade-accent), var(--glade-action)); }
+.glade-docs .VPDocAsideOutline .outline-link { transition: color .18s; }
+
+/* Reading surface: code, tables and callouts share one frame. */
+.glade-docs .vp-doc a { text-underline-offset: 3px; text-decoration-thickness: 1px; transition: color .18s, text-decoration-color .18s; }
+/* Inline code: a quiet neutral chip, so a paragraph full of them still reads as prose. */
+.glade-docs .vp-doc :not(pre) > code { padding: 1px 5px; border-radius: 5px; background-color: color-mix(in srgb, var(--glade-text) 7%, transparent); color: var(--glade-text); font-size: .875em; }
+.glade-docs .vp-doc a > code { color: inherit; }
+.glade-docs .vp-doc div[class*='language-'] { border: 1px solid var(--glade-border); border-radius: 12px; box-shadow: var(--gd-edge); }
+/* A real 40px header for the language label and copy control, split from the source by a hairline. */
+.glade-docs .vp-doc div[class*='language-']::before { content: ''; position: absolute; z-index: 2; inset: 0 0 auto; height: 40px; border-bottom: 1px solid var(--glade-border); background: color-mix(in srgb, var(--glade-text) 3%, transparent); pointer-events: none; }
+.glade-docs .vp-doc div[class*='language-'] pre { padding-top: 56px; }
+.glade-docs .vp-doc div[class*='language-'] > span.lang { top: -2px; font-weight: 500; letter-spacing: .04em; }
+/* The copy control keeps a 44px target; only the inner 28px is drawn, and only on hover or focus. */
+.glade-docs .vp-doc div[class*='language-'] > button.copy { top: -2px; right: 4px; border: 8px solid transparent; border-radius: 15px; background-color: transparent; background-clip: padding-box; background-size: 16px; box-shadow: inset 0 0 0 1px transparent; transition: background-color .18s, box-shadow .18s; }
+.glade-docs .vp-doc div[class*='language-'] > button.copy:is(:hover, :focus-visible, .copied) { background-color: var(--glade-elevated); box-shadow: inset 0 0 0 1px var(--glade-border); }
+.glade-docs .vp-doc div[class*='language-'] > button.copy.copied { border-radius: 15px; }
+.glade-docs .vp-doc div[class*='language-'] > button.copy.copied::before { top: 0; height: 28px; padding: 0 8px; border: 0; background: transparent; color: var(--glade-muted); font-size: 12px; transform: translateX(-100%); }
+.glade-docs .vp-doc table { border: 1px solid var(--glade-border); border-radius: 12px; border-collapse: separate; border-spacing: 0; }
+.glade-docs .vp-doc :is(th, td) { border: 0; border-bottom: 1px solid var(--glade-border); }
+.glade-docs .vp-doc tr:last-child td { border-bottom: 0; }
+.glade-docs .vp-doc tr { border: 0; transition: background-color .18s; }
+.glade-docs .vp-doc .custom-block { border-radius: 12px; box-shadow: var(--gd-edge); }
+.glade-docs .vp-doc hr { height: 1px; border: 0; background: var(--gd-hairline); }
+.glade-docs .vp-doc h2 { position: relative; }
+.glade-docs .vp-doc .header-anchor { transition: opacity .18s; }
+
+/* Cards and pager lift a little toward the pointer, as on the home page. */
+.glade-docs :is(.docs-card, .docs-command-card, .docs-proof-card, .docs-workflow-card) { border-radius: 12px; transition: border-color .2s, box-shadow .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
+.glade-docs :is(a.docs-card, a.docs-command-card, a.docs-workflow-card, .docs-card:has(a)):hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }
+.glade-docs .VPDocFooter .pager-link { border-radius: 12px; transition: border-color .2s, box-shadow .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
+.glade-docs .VPDocFooter .pager-link:hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }
+.glade-docs .VPButton { border-radius: 9px; transition: background-color .18s, border-color .18s, box-shadow .25s; }
+.glade-docs .VPButton.brand { box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+
+/* Small labels share one voice: the page-type line above each title. */
+.glade-docs .vp-doc .docs-card-kicker { margin: 0 0 8px; color: var(--glade-accent); font-size: 11px; font-weight: 500; letter-spacing: 1.4px; line-height: 1.6; }
+.glade-docs .docs-status-chip { min-height: 24px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+
+/* Footer: the same hairline that closes each home section. Above 1440px the sidebar grows, so the footer follows it. */
+@media (min-width: 1440px) { .glade-docs .VPFooter.has-sidebar { padding-left: calc((100% - (var(--vp-layout-max-width) - 64px)) / 2 + var(--vp-sidebar-width)); } }
+.glade-docs .VPFooter .message { max-width: 78ch; margin-inline: auto; text-wrap: balance; }
+.glade-docs .VPFooter { position: relative; border-top: 0; }
+.glade-docs .VPFooter::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: var(--gd-hairline); }
+
+@media (prefers-reduced-motion: reduce) { .glade-docs :is(a.docs-card, a.docs-command-card, a.docs-workflow-card, .docs-card:has(a), .pager-link):hover { transform: none; } }
+@media (forced-colors: active) { .glade-docs .VPContent::before, .glade-docs .VPContent::after { display: none; } }
+
+/* Header search: a field-shaped button. The 44px target stays; the drawn field is 36px. */
+@media (min-width: 768px) {
+  .VPNavBarSearch .VPNavBarSearchButton { width: 100%; min-width: 208px; max-width: 288px; gap: 9px; padding: 0 6px 0 11px; border: 4px solid transparent; border-radius: 13px; background-color: color-mix(in srgb, var(--glade-surface) 72%, transparent); background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--glade-border); color: var(--glade-muted); cursor: text; transition: box-shadow .18s, background-color .18s, color .18s; }
+  .VPNavBarSearch .VPNavBarSearchButton:hover { background-color: var(--glade-surface); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--glade-action) 55%, var(--glade-border)); color: var(--glade-text); }
+  .VPNavBarSearch .VPNavBarSearchButton .vpi-search { font-size: 15px; opacity: .8; }
+  .VPNavBarSearch .VPNavBarSearchButton .text { flex: 1; text-align: left; font-size: 13.5px; font-weight: 450; }
+  .VPNavBarSearch .VPNavBarSearchButton .keys { gap: 3px; padding: 0 6px; height: 22px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--glade-text) 8%, transparent); color: var(--glade-muted); font-family: var(--vp-font-family-mono); font-size: 11px; letter-spacing: .02em; }
+}
+
+/* Search dialog: one framed palette instead of a stack of outlined boxes. */
+body .VPLocalSearchBox .backdrop { background: color-mix(in srgb, var(--glade-canvas) 68%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body .VPLocalSearchBox .shell { gap: 0; padding: 0; background: var(--glade-surface); overflow: hidden; }
+body .VPLocalSearchBox .search-bar { flex: none; min-height: 54px; padding: 0 10px 0 16px; border: 0; border-bottom: 1px solid var(--glade-border); border-radius: 0; transition: border-color .18s; }
+body .VPLocalSearchBox .search-bar:focus-within { border-bottom-color: color-mix(in srgb, var(--glade-action) 70%, var(--glade-border)); }
+body .VPLocalSearchBox .search-icon { margin: 0 4px 0 0; color: var(--glade-muted); }
+body .VPLocalSearchBox .search-input { padding: 8px; outline: none; font-size: 16px; }
+body .VPLocalSearchBox .search-input::placeholder { color: var(--glade-muted); }
+body .VPLocalSearchBox .search-actions button { border-radius: 8px; color: var(--glade-muted); transition: color .18s, background-color .18s; }
+body .VPLocalSearchBox .search-actions button:not([disabled]):hover { background: var(--glade-active); color: var(--glade-text); }
+body .VPLocalSearchBox .results { gap: 2px; padding: 8px; scrollbar-width: thin; }
+body .VPLocalSearchBox .results:empty { display: none; }
+body .VPLocalSearchBox .result { border: 0; border-radius: 9px; font-size: 14px; line-height: 1.4; }
+body .VPLocalSearchBox .result > div { margin: 9px 12px; }
+body .VPLocalSearchBox .result.selected { background: var(--glade-active); }
+body .VPLocalSearchBox .result.selected .titles, body .VPLocalSearchBox .result.selected .title-icon { color: var(--glade-text) !important; }
+body .VPLocalSearchBox .title-icon { color: var(--glade-muted); }
+body .VPLocalSearchBox :is(.titles, .excerpt) mark { padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--glade-action) 30%, transparent); color: inherit; }
+body .VPLocalSearchBox .no-results { padding: 28px 16px; color: var(--glade-muted); font-size: 14px; }
+body .VPLocalSearchBox .search-keyboard-shortcuts { flex: none; padding: 10px 16px; border-top: 1px solid var(--glade-border); background: var(--glade-rail); color: var(--glade-muted); font-size: 12px; opacity: 1; }
+body .VPLocalSearchBox .search-keyboard-shortcuts kbd { box-shadow: none; border-color: var(--glade-border); border-radius: 5px; }
+@media (min-width: 768px) {
+  body .VPLocalSearchBox .shell { width: min(100vw - 48px, 680px); margin: 11vh auto auto; max-height: min(78vh, 620px); border: 1px solid var(--glade-border); border-radius: 14px; box-shadow: 0 32px 80px -24px rgba(0,0,0,.55), var(--gd-edge, 0 0 #0000); }
+}
+body .VPLocalSearchBox .result.selected { box-shadow: inset 2px 0 0 var(--glade-action); }
+
+/* Every docs text field shares the capability explorer's field: 40px, hairline border, 44px on touch. */
+.glade-docs :is(.docs-command-lookup, .docs-command-filter) label { color: var(--glade-muted); font-size: 13px; font-weight: 550; line-height: 1.3; }
+.glade-docs :is(.docs-command-lookup, .docs-command-filter) input { height: 40px; min-height: 0; padding: 0 12px; border: 1px solid var(--glade-border); border-radius: 9px; background: var(--glade-code); color: var(--glade-text); font-size: 16px; font-weight: 400; transition: border-color .18s, background-color .18s; }
+.glade-docs :is(.docs-command-lookup, .docs-command-filter) input:hover { border-color: var(--glade-control); }
+.glade-docs :is(.docs-command-lookup, .docs-command-filter) input:focus-visible { border-color: var(--glade-link); }
+.glade-docs :is(.docs-command-lookup, .docs-command-filter) input::placeholder { color: var(--glade-muted); opacity: .85; }
+.glade-docs .docs-command-lookup-results { border-radius: 9px; scrollbar-width: thin; }
+@media (pointer: coarse), (max-width: 767px) { .glade-docs :is(.docs-command-lookup, .docs-command-filter) input { height: 44px; } }
+
+/* Small layout fixes: the lead needs air under the title, and the tablet menu button belongs at the right edge. */
+.glade-docs .vp-doc h1 + .docs-intro { margin-top: 12px; }
+@media (min-width: 768px) and (max-width: 1279px) { .glade-docs .VPNavBar .VPNavBarHamburger { margin-left: auto; } }
+
+/* Header links get the same quiet hover box as the sidebar; the open phone menu keeps the header hairline whole. */
+.glade-docs .VPNavBarMenuLink:not([href='/guide/installation']) span { margin: -7px -10px; padding: 7px 10px; border-radius: 8px; line-height: 18px; transition: background-color .18s; }
+.glade-docs .VPNavBarMenuLink:not([href='/guide/installation']):hover span { background: color-mix(in srgb, var(--glade-active) 70%, transparent); }
+.glade-docs .VPNavScreen::before { content: ''; position: absolute; z-index: 1; inset: 0 0 auto; height: 1px; background: var(--glade-canvas) var(--gd-hairline); pointer-events: none; }
+.glade-docs .VPNavBar.screen-open { border-bottom-color: transparent; }
+
+/* Theme toggle: an icon button that matches the GitHub link, not a stock switch. */
+html .glade-docs .VPSwitchAppearance { width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; transition: background-color .18s !important; }
+html .glade-docs .VPSwitchAppearance:hover { background: color-mix(in srgb, var(--glade-active) 70%, transparent); }
+html .glade-docs .VPSwitchAppearance .check { top: 9px; left: 9px; background: transparent; box-shadow: none; transform: none; }
+html .glade-docs .VPSwitchAppearance .icon { overflow: visible; }
+html .glade-docs .VPSwitchAppearance .icon [class^='vpi-'] { top: 0; left: 0; width: 18px; height: 18px; color: var(--glade-muted); transition: opacity .18s, color .18s !important; }
+html .glade-docs .VPSwitchAppearance:hover .icon [class^='vpi-'] { color: var(--glade-text); }

@@ -125,27 +125,24 @@ function statusClass(value: string) {
 </template>
 
 <style scoped>
-.support-explorer-heading h2 { margin: 0; padding: 0; border: 0; }
-.support-explorer-heading .docs-card-kicker { margin: 0 0 12px; }
-.support-explorer-heading, .support-explorer-controls { flex-wrap: wrap; }
-.support-explorer-controls label { min-width: 0; }
-.support-explorer-controls select, .support-explorer-controls input { width: 100%; min-width: 0; }
-.support-explorer-list li > div { flex-wrap: wrap; }
-.support-explorer-button { align-self: end; border: 1px solid var(--glade-control); border-radius: 8px; padding: 8px 12px; min-height: 44px; color: var(--glade-text); background: var(--glade-surface); font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; }
-.support-explorer-button:hover:not(:disabled) { border-color: var(--glade-link); background: var(--glade-active); }
-.support-explorer-button:disabled { opacity: .5; cursor: default; }
+.support-explorer-heading .docs-card-kicker { margin: 0 0 8px; }
+.support-explorer-button { height: 40px; min-height: 40px; padding: 0 14px; border: 1px solid var(--glade-border); border-radius: 9px; color: var(--glade-text); background: transparent; font: inherit; font-size: 14px; font-weight: 550; white-space: nowrap; cursor: pointer; transition: border-color .18s, background-color .18s; }
+.support-explorer-button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); background: var(--glade-active); }
+.support-explorer-button:disabled { opacity: .45; cursor: default; }
 .support-explorer-button:focus-visible, .support-explorer-result:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 3px; }
-.support-explorer-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
-.support-explorer-list { padding: 0; list-style: none; }
+.support-explorer-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 0 12px; }
+.support-explorer-pagination > .support-explorer-button { height: 44px; min-width: 64px; }
+.support-explorer-pagination > span { padding-inline: 8px; color: var(--glade-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .support-explorer-list code { overflow-wrap: anywhere; }
-.support-row-detail { margin: 12px 0 0; font-size: 13px; }
-.support-row-detail > div { display: block; margin-top: 8px; }
-.support-row-detail dt { font-weight: 600; color: var(--vp-c-text-2); }
-.support-row-detail dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.support-row-detail { display: grid; gap: 6px; margin: 12px 0 0; font-size: 13px; line-height: 1.6; }
+.support-row-detail > div { display: grid; grid-template-columns: 12.5rem minmax(0, 1fr); gap: 4px 16px; }
+.support-row-detail dt { color: var(--glade-muted); font-weight: 500; }
+.support-row-detail dd { margin: 0; overflow-wrap: anywhere; }
+@media (pointer: coarse), (max-width: 767px) { .support-explorer-button { height: 44px; min-height: 44px; } }
 @media (max-width: 640px) {
-  .support-explorer-controls > .support-explorer-button { align-self: stretch; }
+  .support-row-detail > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .support-explorer-pagination { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .support-explorer-pagination > span { grid-column: 1 / -1; grid-row: 1; text-align: center; color: var(--glade-muted); font-size: 13px; }
-  .support-explorer-pagination > button { padding-inline: 4px; font-size: 13px; }
+  .support-explorer-pagination > span { grid-column: 1 / -1; grid-row: 1; text-align: center; }
+  .support-explorer-pagination > button { min-width: 0; padding-inline: 4px; font-size: 13px; }
 }
 </style>
