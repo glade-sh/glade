@@ -18,6 +18,8 @@ v0.3.16 improves VS Code test workflows and release verification, expands captur
 
 ### Upgrade notes
 
+- **Upgrading from v0.3.15 without `gh`.** Run the official installer once (`curl -fsSL https://glade.sh/install.sh | sh`). The v0.3.15 updater requires `gh`; v0.3.16 and later can update without it.
+- **VS Code.** Run `glade editor install vscode --force`, then reload VS Code to get the Test Explorer fixes.
 - **Caches.** The first run after upgrading rebuilds the semantic and Apex test-runtime caches. The semantic cache uses `sema-v105` and `salesforce-platform-v82`, up from `sema-v104` and `salesforce-platform-v81` in v0.3.15. The test-runtime cache uses `apextest-runtime-v58`, up from `apextest-runtime-v57`.
 
 ### Apex and Salesforce compatibility fixes
