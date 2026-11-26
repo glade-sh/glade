@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -95,4 +96,57 @@ func TestEntitySharingProjectionPreservesExplicitRecords(t *testing.T) {
 	if got := view.Objects["EntityDefinition"].Records[storage.ID("Account")].Fields["InternalSharingModel"].String; got != "Private" {
 		t.Fatalf("explicit field changed to %q", got)
 	}
+}
+
+func TestEntityExternalSharingDefaultRefreshesWarmView(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Case")
+	caseState := org.Objects["Case"]
+	caseState.Definition.SharingModel = "ReadWriteTransfer"
+	org.Objects["Case"] = caseState
+
+	view := VirtualSchemaView(org)
+	fields := view.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields
+	if got := fields["ExternalSharingModel"].String; got != "Private" {
+		t.Fatalf("external sharing model = %q, want Private", got)
+	}
+
+	caseState.Definition.ExternalSharingModel = "Read"
+	view.Objects["Case"] = caseState
+	refreshed := VirtualSchemaView(view)
+	fields = refreshed.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields
+	if _, exists := fields["ExternalSharingModel"]; exists {
+		t.Fatal("generated external sharing default survived explicit external metadata")
+	}
+	if got := fields["InternalSharingModel"].String; got != "ReadWriteTransfer" {
+		t.Fatalf("internal sharing model = %q, want ReadWriteTransfer", got)
+	}
+	if got := view.Objects["EntityDefinition"].Records[storage.ID("Case")].Fields["ExternalSharingModel"].String; got != "Private" {
+		t.Fatalf("refresh mutated the prior view to %q", got)
+	}
+}
+
+func TestEntitySharingDefaultsRefreshWhenScratchShapeChanges(t *testing.T) {
+	org := storage.NewOrgState()
+	for _, name := range []string{"Case", "Lead"} {
+		storage.EnsureStandardObject(&org, name)
+	}
+	check := func(view storage.OrgState, wantInternal, wantExternal string) {
+		t.Helper()
+		for _, name := range []string{"Case", "Lead"} {
+			fields := view.Objects["EntityDefinition"].Records[storage.ID(name)].Fields
+			if gotInternal, gotExternal := fields["InternalSharingModel"].String, fields["ExternalSharingModel"].String; gotInternal != wantInternal || gotExternal != wantExternal {
+				t.Errorf("%s sharing models = %q/%q, want %q/%q", name, gotInternal, gotExternal, wantInternal, wantExternal)
+			}
+		}
+	}
+	view := VirtualSchemaView(org)
+	check(view, "", "")
+
+	view.Features = []string{project.StandardFieldEditionDeveloper, "Communities", "NetworksEnabled"}
+	view = VirtualSchemaView(view)
+	check(view, "ReadWriteTransfer", "Private")
+
+	view.Features = []string{project.StandardFieldEditionDeveloper}
+	check(VirtualSchemaView(view), "", "")
 }

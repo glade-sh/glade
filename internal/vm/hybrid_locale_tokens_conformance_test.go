@@ -76,12 +76,51 @@ func testHybridLocaleTokens(t *testing.T, locale string) {
 
 func TestHybridLocaleTokensUncapturedNeighbor(t *testing.T) {
 	days := hybridDays(1500, 2, 28)
-	for _, tc := range []struct{ pattern, locale string }{
-		{"E|EE|EEEEE|uu", "fr_FR"},
-		{"EEE|EEEE|u", "es_ES"},
+	for _, tc := range []struct{ pattern, locale, api string }{
+		{"EEEEEE|uu", "fr_FR", "67.0"},
+		{"EEE|EEEE|u", "es_MX", "67.0"},
+		{"EEE|EEEE|u", "fr_FR", "61.0"},
 	} {
-		if got := hybridPatternLiterals(tc.pattern, days, tc.locale, true); got != tc.pattern {
-			t.Errorf("locale %s: got %q, want unchanged %q", tc.locale, got, tc.pattern)
+		fields := newHybridDatetimeFields(days, tc.locale, tc.api)
+		for _, token := range strings.Split(tc.pattern, "|") {
+			if got := fields.formatToken(token); got != "" {
+				t.Errorf("locale %s, API %s: token %q unexpectedly rendered as %q", tc.locale, tc.api, token, got)
+			}
 		}
+	}
+}
+
+func TestHybridLocaleDatetimePatternRegression(t *testing.T) {
+	for _, tc := range []struct {
+		name, source, want string
+	}{
+		{"adjacent tokens", `String observation = d.format('Eu', 'GMT');`, "Fri5"},
+		{"adjacent quoted literal", `String observation = d.format('E\'X\'', 'GMT');`, "FriX"},
+		{"invalid token", `String observation;
+			try {
+				d.format('E|QQ', 'GMT');
+			} catch (System.StringException e) {
+				observation = e.getMessage();
+			}`, "Unrecognized format: E|QQ"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := `Datetime d = Datetime.newInstanceGmt(1582, 12, 31, 12, 0, 0);` + tc.source
+			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.SetCurrentUser(storage.Record{Object: "User", Fields: map[string]storage.Value{
+				"LocaleSidKey":      storage.StringValue("es_ES"),
+				"LanguageLocaleKey": storage.StringValue("es"),
+				"TimeZoneSidKey":    storage.StringValue("GMT"),
+			}})
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+			if got := machine.Globals["observation"].Text; got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

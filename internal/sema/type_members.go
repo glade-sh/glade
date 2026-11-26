@@ -154,6 +154,7 @@ type semaTypeMemberView struct {
 	canonical                 *semaCanonicalNames
 	sourceUnit                string
 	anonymous                 bool
+	anonymousLocalMethod      bool
 	namedApexReferenceObjects bool
 	namedApexReferenceMembers map[string]typeMembers
 	hydrationEpoch            *uint64

@@ -109,6 +109,8 @@ func analyzeAnonymous(index typesys.Index, source, apiVersion string, denied boo
 	bodyDiagnostics, compiled := analyzer.checkBodyIRWithScopeOptions(typ, member, source, 0, source, map[string]string{}, model, buildConstructability(index), true, nil)
 	if compiled && len(program.LocalMethods) > 0 {
 		outer := anonymousTopLevelScope(program)
+		localModel := *model
+		localModel.anonymousLocalMethod = true
 		for _, local := range program.LocalMethods {
 			scope := map[string]string{}
 			for name, typeName := range outer {
@@ -119,7 +121,7 @@ func analyzeAnonymous(index typesys.Index, source, apiVersion string, denied boo
 			}
 			symbol := anonymousLocalMemberSymbol(local, source)
 			body := source[local.BodyStart+1 : local.BodyEnd-1]
-			methodDiagnostics, _ := analyzer.checkBodyIRWithScopeOptions(typ, symbol, body, local.BodyStart+1, source, scope, model, buildConstructability(index), true, nil)
+			methodDiagnostics, _ := analyzer.checkBodyIRWithScopeOptions(typ, symbol, body, local.BodyStart+1, source, scope, &localModel, buildConstructability(index), true, nil)
 			bodyDiagnostics = append(bodyDiagnostics, anonymousLocalMethodNativeDiagnostics(methodDiagnostics, local, source)...)
 		}
 		bodyDiagnostics = anonymousVoidAssignmentNativeDiagnostics(bodyDiagnostics, outer, program, source)

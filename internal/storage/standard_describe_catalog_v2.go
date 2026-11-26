@@ -238,11 +238,10 @@ func (cache *standardDescribeCatalogV2RawCache) scalarForName(objectName string)
 	return cached.scalar, true, cached.scalarErr
 }
 
-// narrowForName answers the overlay check plan's question about an object. When
-// the member is already fully decoded the answer comes from that decode.
-// Otherwise the production cache scans the member once and keeps only the
-// narrow result, leaving the full decode to whoever needs it. The result is
-// memoized per object and is immutable.
+// narrowForName reads the catalog facets needed by stub overlays. It reuses
+// decoded fields when available. Otherwise the production cache scans the
+// member and keeps only the narrow result. The result is memoized per object
+// and is immutable.
 func (cache *standardDescribeCatalogV2RawCache) narrowForName(objectName string) (standardDescribeNarrow, bool, error) {
 	if cache.narrow == nil {
 		describe, found, err := cache.entryForName(objectName)
@@ -263,6 +262,8 @@ func (cache *standardDescribeCatalogV2RawCache) narrowForName(objectName string)
 				cached.narrowValue = standardDescribeNarrowFromDescribe(cached.value)
 			}
 			cached.narrowErr = cached.err
+		} else if cached.fieldsReady && cached.fieldsErr == nil {
+			cached.narrowValue = standardDescribeNarrowFromDescribe(cached.fieldsValue)
 		} else {
 			cached.narrowValue, cached.narrowErr = cache.narrow(cached.indexEntry)
 		}

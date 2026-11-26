@@ -1,0 +1,29 @@
+Salesforce capture on 2026-11-25 in a Developer Edition scratch org.
+Salesforce CLI 2.159.7. The scratch org was deleted after capture.
+Only synthetic metadata and records were used.
+
+At each API, set both Apex class and trigger metadata versions and the
+project source API version to the captured version. Deploy with
+sf project deploy start --api-version VERSION. Assign ZephyrTextAccess
+with sf org assign permset before running the probes.
+
+Anonymous: sf apex run --api-version VERSION --file ../anonymous.apex.
+The log transports one OBS| JSON object. The DML statement and Database
+method run in the deployed probe class at the captured version.
+
+@IsTest: sf apex run test --api-version VERSION --tests ZephyrTextProbeTest
+--synchronous --result-format json. The single intentional assertion
+failure transports the same OBS| JSON object.
+
+The 62.0 and 67.0 observations matched on both routes. Plain Text in
+Trigger.new has leading and trailing space and tab removed. A Text value
+containing only those characters reads null.
+The caller retains its assigned values. An assignment inside the before
+trigger remains padded in that trigger and is trimmed for after insert
+and SOQL.
+
+NEIGHBOR PROBES
+Account Name and Site exercise standard fields via Database.insert.
+Uncaptured neighbors retain main behavior: update and upsert, before-save
+Flow input, specialized text field types, non-space/tab trim characters,
+and trigger-only writes before a later before trigger runs.

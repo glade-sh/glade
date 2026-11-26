@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"sync"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/apexast"
 )
 
 func directoryDigest(dir *gatedPlatformStubDirectory) uint64 {
@@ -43,8 +45,36 @@ func TestGatedDirectoryConcurrentSymbol(t *testing.T) {
 			}
 		}
 	}
-	if _, ok := dir.byRuntime["system.string"]; ok {
+	if _, ok := dir.runtimeNameIndex()["system.string"]; ok {
 		t.Fatal("directory contains an ungated type")
+	}
+}
+
+func TestGatedDirectoryDefersQualifiedNameIndex(t *testing.T) {
+	dir := buildGatedPlatformStubDirectory(standardPlatformSymbolSpecList(false))
+	if len(dir.entries) == 0 {
+		t.Fatal("gated directory has no entries")
+	}
+	if dir.byRuntime != nil {
+		t.Fatal("gated directory built the qualified-name index before a qualified lookup")
+	}
+	// Name enumeration and symbol access by index do not need the map.
+	excluded := newExcludedPlatformTypes(dir, 0, nil)
+	first := -1
+	excluded.Each(func(index int, _, _ string, _ apexast.DeclarationKind) {
+		if first < 0 {
+			first = index
+		}
+	})
+	if first < 0 {
+		t.Fatal("gated directory has no excluded entries")
+	}
+	symbol := excluded.Symbol(first)
+	if len(excluded.WithName(symbol.Name)) == 0 {
+		t.Fatalf("simple-name lookup missed %s", symbol.Name)
+	}
+	if dir.byRuntime != nil {
+		t.Fatal("unqualified access initialized the qualified-name index")
 	}
 }
 

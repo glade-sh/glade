@@ -53,19 +53,31 @@ func TestReviewRegexDateUncaptured(t *testing.T) {
 	if err == nil || err.Error() != "string index splits a surrogate pair" {
 		t.Errorf("region error: %v", err)
 	}
-	for _, locale := range []string{"fr_FR", "de_DE"} {
-		t.Run(locale, func(t *testing.T) {
-			program, e := CompileAnonymousWithOptions("String observation = Datetime.newInstanceGmt(1500,2,28,12,0,0).format('EEEE|u','GMT');", CompileOptions{APIVersion: "66.0"})
+}
+
+// NATIVE testdata/conformance/hybrid_locale_tokens_extended/neighbors/org.tsv
+// The API 66.0 rows cover the date and patterns from the former neighbor test.
+func TestHybridLocaleLegacyNeighborNativeConformance(t *testing.T) {
+	for _, tc := range []struct{ locale, language, pattern, want string }{
+		{"fr_FR", "fr", "EEEE|u", "Friday|5"},
+		{"de_DE", "de", "EEEE|u", "Friday|5"},
+		{"es_ES", "es", "EEE|EEEE|u", "Fri|Friday|5"},
+	} {
+		t.Run(tc.locale, func(t *testing.T) {
+			program, e := CompileAnonymousWithOptions(fmt.Sprintf("String observation = Datetime.newInstanceGmt(1500,2,28,12,0,0).format('%s','GMT');", tc.pattern), CompileOptions{APIVersion: "66.0"})
 			if e != nil {
 				t.Fatal(e)
 			}
 			machine := New(nil)
-			machine.SetCurrentUser(storage.Record{Object: "User", Fields: map[string]storage.Value{"LocaleSidKey": storage.StringValue(locale), "TimeZoneSidKey": storage.StringValue("GMT")}})
+			machine.SetCurrentUser(storage.Record{Object: "User", Fields: map[string]storage.Value{
+				"LocaleSidKey":      storage.StringValue(tc.locale),
+				"LanguageLocaleKey": storage.StringValue(tc.language),
+				"TimeZoneSidKey":    storage.StringValue("GMT")}})
 			if _, e = machine.Execute(program); e != nil {
 				t.Fatal(e)
 			}
-			if got := machine.Globals["observation"].Text; got != "Wednesday|3" {
-				t.Errorf("got %q", got)
+			if got := machine.Globals["observation"].Text; got != tc.want {
+				t.Errorf("got %q, native %q", got, tc.want)
 			}
 		})
 	}

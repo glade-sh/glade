@@ -315,6 +315,12 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		CustomObjects:         make(map[string]struct{}),
 		ListCustomSettings:    make(map[string]struct{}),
 	}
+	scan := standardFieldScan{
+		org:           org,
+		relationships: childRelationshipLookup,
+		inferred:      result.Inferred,
+		customObjects: result.CustomObjects,
+	}
 	matches := standardFieldMatchMemo.get(source, standardFieldMatchesFromSource)
 	for _, ref := range matches.childRefs {
 		key := strings.ToLower(ref.ParentObject + "\x00" + ref.ChildObject + "\x00" + ref.ChildRelationship)
@@ -333,10 +339,6 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 			varTypes[match[2]] = match[1]
 		}
 	}
-	recordBoolean := func(objectName, fieldName string) {
-		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, objectName, fieldName)
-	}
-	recordNumeric := recordBoolean
 	for _, match := range matches.booleanRight {
 		if len(match) != 6 {
 			continue
@@ -345,7 +347,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordBoolean(objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.booleanLeft {
 		if len(match) != 6 {
@@ -355,7 +357,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordBoolean(objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.booleanNot {
 		if len(match) != 6 {
@@ -365,7 +367,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordBoolean(objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.numericRight {
 		if len(match) != 6 {
@@ -375,7 +377,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordNumeric(objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.numericLeft {
 		if len(match) != 6 {
@@ -385,7 +387,7 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordNumeric(objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.getAll {
 		if len(match) != 4 {
@@ -397,33 +399,33 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
-		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
+		scan.recordStandardField(scanSource[match[2]:match[3]], scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.sobjectFields {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
-		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
+		scan.recordStandardField(scanSource[match[2]:match[3]], scanSource[match[4]:match[5]], true)
 	}
 	newLiterals := matches.newLiterals
 	literals := matches.literals
 	for _, match := range newLiterals {
-		recordSObjectLiteralLookupFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match, varTypes)
+		scan.recordLiteralLookupFields(scanSource, match, varTypes)
 	}
 	for _, match := range literals {
-		recordSObjectLiteralLookupFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match, varTypes)
+		scan.recordLiteralLookupFields(scanSource, match, varTypes)
 	}
 	for _, match := range newLiterals {
-		recordSObjectLiteralFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match)
+		scan.recordLiteralFields(scanSource, match)
 	}
 	for _, match := range literals {
-		recordSObjectLiteralFieldsReadOnly(org, result.Inferred, childRelationshipLookup, scanSource, match)
+		scan.recordLiteralFields(scanSource, match)
 	}
 	for _, match := range matches.staticFields {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
 			continue
 		}
-		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, scanSource[match[2]:match[3]], scanSource[match[4]:match[5]])
+		scan.recordStandardField(scanSource[match[2]:match[3]], scanSource[match[4]:match[5]], true)
 	}
 	for _, match := range matches.variableField {
 		if len(match) != 6 || apexMemberReferenceIsCall(scanSource, match[1]) {
@@ -433,55 +435,96 @@ func scanProjectReferencedStandardFieldsFromSource(org *storage.OrgState, source
 		if !ok {
 			continue
 		}
-		recordProjectReferencedStandardFieldReadOnly(org, result.Inferred, result.CustomObjects, childRelationshipLookup, objectName, scanSource[match[4]:match[5]])
+		scan.recordStandardField(objectName, scanSource[match[4]:match[5]], true)
 	}
 	return result
 }
 
-func recordProjectReferencedStandardFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, customObjects map[string]struct{}, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
+type standardFieldScan struct {
+	org              *storage.OrgState
+	relationships    *childRelationshipLookup
+	inferred         map[string]map[string]storage.Field
+	customObjects    map[string]struct{}
+	seen             map[standardFieldName]struct{}
+	fieldNameScratch []byte
+}
+
+type standardFieldName struct{ object, field string }
+
+func (s *standardFieldScan) recordInferredField(objectName, fieldName string, field storage.Field) {
+	fields := s.inferred[objectName]
+	if _, exists := fields[fieldName]; exists {
+		return
+	}
+	// The scanner's field-name captures contain only ASCII characters. Keep
+	// the first spelling and shape in the result while deduplicating by case.
+	key := standardFieldName{object: objectName, field: fieldName}
+	var folded []byte
+	for i := 0; i < len(fieldName); i++ {
+		c := fieldName[i]
+		if c < 'A' || c > 'Z' {
+			continue
+		}
+		if folded == nil {
+			s.fieldNameScratch = append(s.fieldNameScratch[:0], fieldName...)
+			folded = s.fieldNameScratch
+		}
+		folded[i] = c + ('a' - 'A')
+	}
+	if folded != nil {
+		// The temporary string in the map lookup can use the scratch
+		// bytes directly. Copy them only when retaining a new key.
+		if _, exists := s.seen[standardFieldName{object: objectName, field: string(folded)}]; exists {
+			return
+		}
+		key.field = string(folded)
+	} else if _, exists := s.seen[key]; exists {
+		return
+	}
+	if s.seen == nil {
+		s.seen = make(map[standardFieldName]struct{})
+	}
+	s.seen[key] = struct{}{}
+	if fields == nil {
+		fields = make(map[string]storage.Field)
+		s.inferred[objectName] = fields
+	}
+	fields[fieldName] = field
+}
+
+func (s *standardFieldScan) recordStandardField(objectName, fieldName string, allowCustomObject bool) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
-	state, ok := org.Objects[objectName]
+	state, ok := s.org.Objects[objectName]
 	if !ok {
 		if !isCustomDataObjectKey(objectName) {
 			return
 		}
-		if customObjects != nil {
-			customObjects[objectName] = struct{}{}
+		if allowCustomObject {
+			s.customObjects[objectName] = struct{}{}
 		}
-		if inferred[objectName] == nil {
-			inferred[objectName] = make(map[string]storage.Field)
-		}
-		if _, _, ok := projectReferencedInferredField(inferred[objectName], fieldName); !ok {
-			inferred[objectName][fieldName] = inferredReferencedField(fieldName)
-		}
+		s.recordInferredField(objectName, fieldName, inferredReferencedField(fieldName))
 		return
 	}
-	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+	if _, ok := storage.ResolveFieldName(state.Definition, s.org.Namespace, fieldName); ok {
 		return
 	}
 	if parentRelationshipKnown(state.Definition, fieldName) {
 		return
 	}
-	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
+	if projectReferencedNameIsChildRelationship(*s.org, objectName, fieldName, s.relationships) {
 		return
 	}
-	if inferred[objectName] == nil {
-		inferred[objectName] = make(map[string]storage.Field)
-	}
-	if _, _, ok := projectReferencedInferredField(inferred[objectName], fieldName); ok {
-		return
-	}
-	inferred[objectName][fieldName] = inferredReferencedField(fieldName)
+	s.recordInferredField(objectName, fieldName, inferredReferencedField(fieldName))
 }
 
-func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, match []int) {
+func (s *standardFieldScan) recordLiteralFields(scanSource string, match []int) {
 	if len(match) != 6 {
 		return
 	}
 	objectName := scanSource[match[2]:match[3]]
-	if _, ok := org.Objects[objectName]; !ok {
+	if _, ok := s.org.Objects[objectName]; !ok {
 		return
 	}
 	body := scanSource[match[4]:match[5]]
@@ -489,16 +532,16 @@ func recordSObjectLiteralFieldsReadOnly(org *storage.OrgState, inferred map[stri
 		if len(argMatch) != 4 || !apexNamedArgumentStartsArgument(body, argMatch[0], argMatch[3]) {
 			continue
 		}
-		recordProjectReferencedStandardFieldReadOnly(org, inferred, nil, childRelationshipLookup, objectName, body[argMatch[2]:argMatch[3]])
+		s.recordStandardField(objectName, body[argMatch[2]:argMatch[3]], false)
 	}
 }
 
-func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, match []int, varTypes map[string]string) {
+func (s *standardFieldScan) recordLiteralLookupFields(scanSource string, match []int, varTypes map[string]string) {
 	if len(match) != 6 {
 		return
 	}
 	objectName := scanSource[match[2]:match[3]]
-	if _, ok := org.Objects[objectName]; !ok {
+	if _, ok := s.org.Objects[objectName]; !ok {
 		return
 	}
 	body := scanSource[match[4]:match[5]]
@@ -510,26 +553,26 @@ func recordSObjectLiteralLookupFieldsReadOnly(org *storage.OrgState, inferred ma
 		if !ok {
 			continue
 		}
-		recordProjectReferencedLookupFieldReadOnly(org, inferred, childRelationshipLookup, objectName, body[argMatch[2]:argMatch[3]], parentObjectName)
+		s.recordLookupField(objectName, body[argMatch[2]:argMatch[3]], parentObjectName)
 	}
 }
 
-func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName string) {
+func (s *standardFieldScan) recordLookupField(objectName, fieldName, parentObjectName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
-	canonicalParentObject, ok := storage.ResolveObjectName(*org, parentObjectName)
+	canonicalParentObject, ok := storage.ResolveObjectName(*s.org, parentObjectName)
 	if !ok {
 		return
 	}
-	state, ok := org.Objects[objectName]
+	state, ok := s.org.Objects[objectName]
 	if !ok {
 		return
 	}
-	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+	if _, ok := storage.ResolveFieldName(state.Definition, s.org.Namespace, fieldName); ok {
 		return
 	}
-	if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
+	if projectReferencedNameIsChildRelationship(*s.org, objectName, fieldName, s.relationships) {
 		return
 	}
 	field := storage.Field{
@@ -543,13 +586,7 @@ func recordProjectReferencedLookupFieldReadOnly(org *storage.OrgState, inferred 
 	if field.RelationshipName == "" || parentRelationshipKnown(state.Definition, field.RelationshipName) {
 		return
 	}
-	if inferred[objectName] == nil {
-		inferred[objectName] = make(map[string]storage.Field)
-	}
-	if _, _, ok := projectReferencedInferredField(inferred[objectName], fieldName); ok {
-		return
-	}
-	inferred[objectName][fieldName] = field
+	s.recordInferredField(objectName, fieldName, field)
 }
 
 func parallelScanProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, cache *sourceCache, childRelationshipLookup *childRelationshipLookup) standardFieldScanResult {

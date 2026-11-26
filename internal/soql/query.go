@@ -139,18 +139,24 @@ type childRelationshipResolution struct {
 	childObjectName string
 	relation        storage.Relationship
 	ok              bool
+	loaded          bool
+	attachmentToken attachmentRelationshipToken
 }
 type UnsupportedFeatureError struct {
 	Message string
 }
 type childRelationshipQueryCache struct {
-	indexes   map[string]map[storage.ID][]string
-	prepared  map[string]preparedChildRelationshipQuery
-	execution *ExecutionCache
+	indexes           map[string]map[storage.ID][]string
+	prepared          map[string]preparedChildRelationshipQuery
+	execution         *ExecutionCache
+	attachmentSources *childRelationshipQueryCache
+	attachmentViews   map[attachmentViewPlanKey]*attachmentViewPlan
+	attachmentSchema  *attachmentRelationshipSchemaSnapshot
 }
 type preparedChildRelationshipQuery struct {
-	childObjectName string
-	relation        storage.Relationship
-	query           Query
-	projection      []projectionField
+	childObjectName       string
+	relation              storage.Relationship
+	query                 Query
+	projection            []projectionField
+	emptyAttachmentSource bool
 }

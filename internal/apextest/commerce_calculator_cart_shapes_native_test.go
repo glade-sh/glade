@@ -20,6 +20,9 @@ import (
 // CartTestUtil.getCart (quantity scale, no selected delivery method), builds a
 // delivery group method without a product, and runs a calculator built without
 // an executor.
+// NATIVE commerce_tax_missing_prices/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
+// NATIVE commerce_tax_price_controls/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
+// NATIVE commerce_tax_calculator_missing_inputs/org.tsv:2-4, istest, API 62.0, 67.0 and 68.0.
 func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 	type fixture struct {
 		dir, class string
@@ -28,6 +31,9 @@ func TestCommerceCalculatorCartShapesNativeConformance(t *testing.T) {
 	fixtures := []fixture{
 		{dir: "commerce_calculator_executor_defaults", class: "R5ExecProbe", methods: []string{"viaDefault", "viaOverride"}},
 		{dir: "commerce_cart_loaded_shapes", class: "R5CartProbe3", methods: []string{"loaded", "groupAddress", "superCalc"}},
+		{dir: "commerce_tax_missing_prices", class: "SyntheticTaxProbe", methods: []string{"observe"}},
+		{dir: "commerce_tax_price_controls", class: "SyntheticTaxControls", methods: []string{"totalPrice", "netAndTotal", "absentAddress"}},
+		{dir: "commerce_tax_calculator_missing_inputs", class: "SyntheticTaxRoute", methods: []string{"unset", "totalOnly", "netAndTotal", "noAddress"}},
 		{dir: "commerce_cart_buyer_details_address", class: "R5CartProbe4", methods: []string{"details", "address"}},
 		{dir: "commerce_cart_validation_outputs", class: "R5CartProbe5", methods: []string{"loadedCvo", "newCvo", "change"}},
 		{dir: "commerce_cart_delivery_methods", class: "R5CartProbe6", methods: []string{"methods", "selectedAfterClear"}},

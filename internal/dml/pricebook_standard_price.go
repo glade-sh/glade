@@ -188,8 +188,12 @@ func (e *Engine) noteEntryInsert(objectName string, entries storage.ObjectState,
 // price entry check. It keeps the price work out of insertOne.
 //
 //go:noinline
-func (e *Engine) validateInsertReferences(definition storage.ObjectDefinition, record storage.Record) error {
-	if err := e.validateReferences(definition, record); err != nil {
+func (e *Engine) validateInsertReferences(definition storage.ObjectDefinition, record storage.Record, ordinaryInsert bool) error {
+	operation := referenceValidationInternal
+	if ordinaryInsert {
+		operation = referenceValidationInsert
+	}
+	if err := e.validateReferencesWithLoadedView(definition, record, operation); err != nil {
 		return err
 	}
 	if len(record.Object) == len("PricebookEntry") {

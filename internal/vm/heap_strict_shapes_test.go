@@ -10,7 +10,6 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -26,37 +25,47 @@ type strictShapeOutcome struct {
 func runStrictShape(t *testing.T, source string, caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int, int) {
 	t.Helper()
 	org, index := strictHeapShapesOrg(t)
-	return runStrictShapeOnOrg(t, source, caps, plansOff, org, index)
+	machine := vm.New(nil)
+	machine.SetOrg(org)
+	if err := apextest.RegisterProjectRuntime(machine, index); err != nil {
+		t.Fatal(err)
+	}
+	return runStrictShapeOnMachine(t, source, caps, plansOff, machine)
 }
 
 type strictShapeFixture struct {
-	org   *storage.OrgState
-	index typesys.Index
+	base *vm.VM
+	org  storage.RuntimeTemplate
 }
 
 func newStrictShapeFixture(t *testing.T) strictShapeFixture {
 	t.Helper()
 	org, index := strictHeapShapesOrg(t)
-	return strictShapeFixture{org: org, index: index}
+	base := vm.New(nil)
+	if err := apextest.RegisterProjectRuntime(base, index); err != nil {
+		t.Fatal(err)
+	}
+	base.FreezeClassLookup()
+	template := storage.NewRuntimeTemplate(*org)
+	vm.PrimeRuntimeTemplateSchema(&template)
+	base.PrimeMetadataSchema(&template.Org)
+	return strictShapeFixture{base: base, org: template}
 }
 
 func (fixture strictShapeFixture) run(t *testing.T, source string, caps vm.LimitCaps, plansOff bool) (strictShapeOutcome, int, int) {
 	t.Helper()
-	org := fixture.org.CloneRuntime()
-	return runStrictShapeOnOrg(t, source, caps, plansOff, &org, fixture.index)
+	org := fixture.org.CloneRuntimeOrg()
+	machine := fixture.base.CloneRuntimeFrozenShared(nil)
+	machine.SetRuntimeTemplateOrg(&org)
+	return runStrictShapeOnMachine(t, source, caps, plansOff, machine)
 }
 
-func runStrictShapeOnOrg(t *testing.T, source string, caps vm.LimitCaps, plansOff bool, org *storage.OrgState, index typesys.Index) (strictShapeOutcome, int, int) {
+func runStrictShapeOnMachine(t *testing.T, source string, caps vm.LimitCaps, plansOff bool, machine *vm.VM) (strictShapeOutcome, int, int) {
 	t.Helper()
 	defer vm.SetHeapStatementPlansOffForTest(plansOff)()
 	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: "67.0"})
 	if err != nil {
 		t.Fatalf("compile: %v\n%s", err, source)
-	}
-	machine := vm.New(nil)
-	machine.SetOrg(org)
-	if err := apextest.RegisterProjectRuntime(machine, index); err != nil {
-		t.Fatal(err)
 	}
 	machine.SetLimitMode(vm.LimitModeStrict)
 	machine.SetLimitCaps(caps)
@@ -189,7 +198,10 @@ func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
 			if cap != 0 {
 				c.HeapSize = cap
 			}
-			want, _, _ := fixture.run(t, source, c, true)
+			want := base
+			if cap != 0 {
+				want, _, _ = fixture.run(t, source, c, true)
+			}
 			got, priced, walked := fixture.run(t, source, c, false)
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("seed %d cap %d: priced outcome differs from full walk:\n got  %+v\n want %+v\n%s", seed, cap, got, want, source)

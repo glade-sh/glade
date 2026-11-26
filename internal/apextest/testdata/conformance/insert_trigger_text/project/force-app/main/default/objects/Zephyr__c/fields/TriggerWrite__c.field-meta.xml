@@ -1,0 +1,6 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TriggerWrite__c</fullName>
+    <label>TriggerWrite</label>
+    <length>80</length>
+    <type>Text</type>
+</CustomField>

@@ -1,0 +1,10 @@
+capture: unresolved receivers and dependent compile diagnostics
+started: 2026-11-25T06:21:59Z
+finished: 2026-11-25T06:24:02Z
+apis: 62.0 67.0 68.0
+sf: @salesforce/cli/2.159.7
+mode: live, Developer edition, 30-day scratch org
+cleanup: one org deleted and post-delete check succeeded
+anonymous: twelve observations, no created records
+istest: fifteen observations, deployed class versions confirmed
+deploy-checkonly: eighteen first component diagnostics from nine requests

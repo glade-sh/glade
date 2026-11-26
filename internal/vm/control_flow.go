@@ -106,13 +106,21 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			}
 			value := Null
 			if inst.Expr.Kind != "" {
-				evaluated, err := vm.evalForType(inst.Expr, inst.Type, result)
+				evaluated, err := vm.evalForType(inst.Expr, inst.Type, paymentFlowContextDeclaration(inst), result)
 				if err != nil {
 					return execOutcome{}, err
 				}
 				value = plainNull(evaluated)
+				if err := vm.paymentRequestDeclarationError(inst); err != nil {
+					return execOutcome{}, err
+				}
 			}
 			coerced, err := vm.coerceAssignable(inst.Type, value)
+			if err != nil && inst.Expr.Kind == ir.ExprVariable && !strings.Contains(inst.Expr.Name, ".") && strings.EqualFold(inst.Type, "commercepayments.GatewayResponse") && strings.EqualFold(vm.paymentFlowCapturedInterface(value.Type), inst.Type) {
+				if class, found := vm.lookupClassRaw(inst.Type); !found || class.PlatformType {
+					coerced, err = value, nil
+				}
+			}
 			if err != nil {
 				return execOutcome{}, fmt.Errorf("%s %s: %w", inst.Type, inst.Name, err)
 			}
@@ -150,7 +158,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				if vm.currentMethod.ReturnType != "" && !strings.EqualFold(vm.currentMethod.ReturnType, "void") {
 					returnType = vm.currentMethod.ReturnType
 				}
-				evaluated, err := vm.evalForType(inst.Expr, returnType, result)
+				evaluated, err := vm.evalForType(inst.Expr, returnType, false, result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -1837,6 +1845,8 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	if changesUser {
 		defer vm.beginRunAsPermissionFrame(runnerBefore)()
 	}
+	previousEventParentPublishes := vm.testContext.eventParentPublishedIDs
+	vm.testContext.eventParentPublishedIDs = nil
 	vm.testContext.RunAsDepth++
 	if changesUser {
 		vm.runAsFrameDepths = append(vm.runAsFrameDepths, len(vm.callStack))
@@ -1857,6 +1867,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			vm.testContext.CurrentPackageVersion = previousPackageVersion
 		}
 		vm.testContext.RunAsDepth--
+		vm.testContext.eventParentPublishedIDs = previousEventParentPublishes
 		if changesUser {
 			vm.runAsFrameDepths = vm.runAsFrameDepths[:len(vm.runAsFrameDepths)-1]
 			if isRunAsDescribe != nil {

@@ -1,0 +1,14 @@
+Captured 2026-11-25 in a 30-day Developer scratch org with Communities enabled.
+The scratch definition matches ../default/project-scratch-def.json.
+Both object overlays declare internal ReadWriteTransfer and omit the external model.
+PclModelsTest reads back ReadWriteTransfer/Private for both objects at each API.
+The four test classes and PclSupport were deployed at 62.0 and then at 67.0.
+The assertion messages carry the native observations. The scratch org was deleted.
+The native conformance replay applies both models with the matching scratch
+definition and checks all eight rows. A separate replay applies the Case model
+without a local scratch definition and checks Case visibility and edit bits.
+NEIGHBOR PROBES
+The explicit external model, omitted internal model without a scratch definition,
+and APIs outside 62.0 and 67.0 retain existing behavior.
+The dynamic Lead count differs across these two API captures (zero at 62.0,
+exception at 67.0 for the Community users).

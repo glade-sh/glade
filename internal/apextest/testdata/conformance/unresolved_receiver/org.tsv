@@ -1,0 +1,46 @@
+case	api	route	name	status	outcome
+known_static_receiver	62.0	anonymous		pass	ok
+missing_declared_type	62.0	anonymous		compile_error	Invalid type: HarborUnavailableDepot
+missing_qualified_receiver	62.0	anonymous		compile_error	Variable does not exist: HarborUninstalled.Depot
+missing_static_receiver	62.0	anonymous		compile_error	Variable does not exist: HarborUnavailableDepot
+call-root	62.0	deploy-checkonly	HarborInvalidCallDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidCallRoot : Variable does not exist: HarborUnavailableDepot
+call-root	62.0	deploy-checkonly	HarborInvalidCallRoot	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	62.0	deploy-checkonly	HarborMissingCallTest	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	62.0	deploy-checkonly	HarborMissingQualifiedCallTest	compile_error	Variable does not exist: HarborUninstalled.Depot
+type-root	62.0	deploy-checkonly	HarborInvalidTypeDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidTypeRoot : Invalid type: HarborUnavailableDepot
+type-root	62.0	deploy-checkonly	HarborInvalidTypeRoot	compile_error	Invalid type: HarborUnavailableDepot
+compile_control	62.0	istest	HarborCompileControlTest.callsAvailableReceiver	pass	ok
+null_routes	62.0	istest	HarborNullRoutesTest.missingFieldToken	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	62.0	istest	HarborNullRoutesTest.missingMapValue	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	62.0	istest	HarborNullRoutesTest.missingReflectiveType	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	62.0	istest	HarborNullRoutesTest.presentFieldAndType	pass	ok
+known_static_receiver	67.0	anonymous		pass	ok
+missing_declared_type	67.0	anonymous		compile_error	Invalid type: HarborUnavailableDepot
+missing_qualified_receiver	67.0	anonymous		compile_error	Variable does not exist: HarborUninstalled.Depot
+missing_static_receiver	67.0	anonymous		compile_error	Variable does not exist: HarborUnavailableDepot
+call-root	67.0	deploy-checkonly	HarborInvalidCallDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidCallRoot : Variable does not exist: HarborUnavailableDepot
+call-root	67.0	deploy-checkonly	HarborInvalidCallRoot	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	67.0	deploy-checkonly	HarborMissingCallTest	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	67.0	deploy-checkonly	HarborMissingQualifiedCallTest	compile_error	Variable does not exist: HarborUninstalled.Depot
+type-root	67.0	deploy-checkonly	HarborInvalidTypeDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidTypeRoot : Invalid type: HarborUnavailableDepot
+type-root	67.0	deploy-checkonly	HarborInvalidTypeRoot	compile_error	Invalid type: HarborUnavailableDepot
+compile_control	67.0	istest	HarborCompileControlTest.callsAvailableReceiver	pass	ok
+null_routes	67.0	istest	HarborNullRoutesTest.missingFieldToken	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	67.0	istest	HarborNullRoutesTest.missingMapValue	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	67.0	istest	HarborNullRoutesTest.missingReflectiveType	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	67.0	istest	HarborNullRoutesTest.presentFieldAndType	pass	ok
+known_static_receiver	68.0	anonymous		pass	ok
+missing_declared_type	68.0	anonymous		compile_error	Invalid type: HarborUnavailableDepot
+missing_qualified_receiver	68.0	anonymous		compile_error	Variable does not exist: HarborUninstalled.Depot
+missing_static_receiver	68.0	anonymous		compile_error	Variable does not exist: HarborUnavailableDepot
+call-root	68.0	deploy-checkonly	HarborInvalidCallDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidCallRoot : Variable does not exist: HarborUnavailableDepot
+call-root	68.0	deploy-checkonly	HarborInvalidCallRoot	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	68.0	deploy-checkonly	HarborMissingCallTest	compile_error	Variable does not exist: HarborUnavailableDepot
+direct	68.0	deploy-checkonly	HarborMissingQualifiedCallTest	compile_error	Variable does not exist: HarborUninstalled.Depot
+type-root	68.0	deploy-checkonly	HarborInvalidTypeDependentTest	compile_error	Dependent class is invalid and needs recompilation:\n Class HarborInvalidTypeRoot : Invalid type: HarborUnavailableDepot
+type-root	68.0	deploy-checkonly	HarborInvalidTypeRoot	compile_error	Invalid type: HarborUnavailableDepot
+compile_control	68.0	istest	HarborCompileControlTest.callsAvailableReceiver	pass	ok
+null_routes	68.0	istest	HarborNullRoutesTest.missingFieldToken	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	68.0	istest	HarborNullRoutesTest.missingMapValue	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	68.0	istest	HarborNullRoutesTest.missingReflectiveType	fail	NullPointerException: Attempt to de-reference a null object
+null_routes	68.0	istest	HarborNullRoutesTest.presentFieldAndType	pass	ok

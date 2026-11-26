@@ -1,6 +1,11 @@
 package typesys
 
-import "github.com/glade-sh/glade/internal/apexast"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
+)
 
 // Owned named Apex observations at APIs 61, 62 and 67 establish these payment
 // DTO inheritance and interface edges. The request interface's native delegate
@@ -21,4 +26,29 @@ var paymentPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "commercepayments.GatewayErrorResponse", Interfaces: []string{"commercepayments.GatewayResponse"}},
 	{Name: "commercepayments.ReferencedRefundNotification", SuperClass: "commercepayments.BaseNotification"},
 	{Name: "commercepayments.CaptureNotification", SuperClass: "commercepayments.BaseNotification"},
+}
+
+// PaymentFlowCapturedVersion reports whether the source API was captured for
+// the scoped payment request and response behavior.
+func PaymentFlowCapturedVersion(apiVersion string) bool {
+	if strings.TrimSpace(apiVersion) == "" {
+		return false
+	}
+	version, err := apexversion.PreserveSource(apiVersion)
+	return err == nil && (version == "62.0" || version == "67.0")
+}
+
+// PaymentFlowCapturedInterface is limited to the 62.0 and 67.0 source
+// versions observed in payment_flow_shapes. Callers must also gate the route.
+func PaymentFlowCapturedInterface(typeName, apiVersion string) string {
+	if !PaymentFlowCapturedVersion(apiVersion) {
+		return ""
+	}
+	switch strings.ToLower(strings.TrimSpace(typeName)) {
+	case "commercepayments.salerequest", "commercepayments.authorizationreversalrequest":
+		return "commercepayments.PaymentGatewayRequest"
+	case "commercepayments.saleresponse", "commercepayments.authorizationreversalresponse":
+		return "commercepayments.GatewayResponse"
+	}
+	return ""
 }

@@ -277,10 +277,12 @@ func forEachQualifiedTypeName(text string, visit func(string)) {
 // platform table, in view order, without building its symbol. Symbols are
 // built one at a time on first use and kept.
 type gatedPlatformStubDirectory struct {
-	entries   []gatedPlatformStubEntry
-	byRuntime map[string]int
-	byLocal   map[string][]int
-	specs     []StandardSymbolSpec
+	entries []gatedPlatformStubEntry
+	byLocal map[string][]int
+	specs   []StandardSymbolSpec
+
+	runtimeNamesOnce sync.Once
+	byRuntime        map[string]int
 
 	fieldNamesOnce sync.Once
 	fieldNames     map[string]uint8
@@ -310,7 +312,7 @@ func gatedPlatformStubs() *gatedPlatformStubDirectory {
 }
 
 func buildGatedPlatformStubDirectory(all []StandardSymbolSpec) *gatedPlatformStubDirectory {
-	dir := &gatedPlatformStubDirectory{byRuntime: make(map[string]int), byLocal: make(map[string][]int)}
+	dir := &gatedPlatformStubDirectory{byLocal: make(map[string][]int)}
 	byKey := make(map[string]int)
 	for i := range all {
 		spec := all[i]
@@ -346,11 +348,23 @@ func buildGatedPlatformStubDirectory(all []StandardSymbolSpec) *gatedPlatformStu
 		if entry.namespace != "" {
 			entry.runtime = entry.namespace + "." + entry.name
 		}
-		dir.byRuntime[strings.ToLower(entry.runtime)] = i
 		local := strings.ToLower(entry.name)
 		dir.byLocal[local] = append(dir.byLocal[local], i)
 	}
 	return dir
+}
+
+// runtimeNameIndex is needed for qualified late binding. Name enumeration and
+// simple-name lookups can use the directory before this index is built.
+func (dir *gatedPlatformStubDirectory) runtimeNameIndex() map[string]int {
+	dir.runtimeNamesOnce.Do(func() {
+		names := make(map[string]int, len(dir.entries))
+		for i := range dir.entries {
+			names[strings.ToLower(dir.entries[i].runtime)] = i
+		}
+		dir.byRuntime = names
+	})
+	return dir.byRuntime
 }
 
 // platformSymbolLess is the order standardSymbolsFromSpecs sorts the view in.
@@ -542,7 +556,7 @@ func GatedPlatformStubSymbol(runtimeName string) (*TypeSymbol, bool) {
 		return nil, false
 	}
 	dir := gatedPlatformStubs()
-	i, ok := dir.byRuntime[strings.ToLower(runtimeName)]
+	i, ok := dir.runtimeNameIndex()[strings.ToLower(runtimeName)]
 	if !ok {
 		return nil, false
 	}

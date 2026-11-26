@@ -164,6 +164,11 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 }
 
 func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
+	// A missing or different overlay already requires preparation. Build the
+	// catalog check plan only when an applied overlay might be reusable.
+	if !standardFieldsOverlayApplied(definition, featureSignature) {
+		return true
+	}
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
@@ -178,9 +183,6 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	}
 	plan := standardOverlayCheckPlanFor(definition.APIName)
 	if plan.catalogOK && !definition.EnableSearch {
-		return true
-	}
-	if !standardFieldsOverlayApplied(definition, featureSignature) {
 		return true
 	}
 	if plan.needsRefresh(definition, featureSignature) {

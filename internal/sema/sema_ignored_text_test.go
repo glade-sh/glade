@@ -169,20 +169,52 @@ func referenceSemaOffsetInSOQLLiteral(body string, pos int) bool {
 	return false
 }
 
-func assertSemaIgnoredTextMatchesReference(t testing.TB, body string) {
+func assertSemaIgnoredTextMatchesReference(t testing.TB, body string, scanEveryOffset bool) {
 	t.Helper()
 	ignored := newSemaIgnoredText(body)
+	var contains, inSOQL, inParen bool
 	for pos := -2; pos <= len(body)+2; pos++ {
-		inSOQL := referenceSemaOffsetInSOQLLiteral(body, pos)
-		if got, want := ignored.contains(pos), referenceSemaOffsetInIgnoredText(body, pos, inSOQL); got != want {
-			t.Fatalf("contains(%d) = %v, want %v for body %q", pos, got, want, body)
+		var left, right byte
+		if pos > 0 && pos <= len(body) {
+			left = body[pos-1]
 		}
-		if got, want := ignored.inSOQLLiteral(pos), inSOQL; got != want {
-			t.Fatalf("inSOQLLiteral(%d) = %v, want %v for body %q", pos, got, want, body)
+		if pos >= 0 && pos < len(body) {
+			right = body[pos]
 		}
-		if got, want := ignored.inParenGroup(pos), referenceSemaOffsetInParenGroup(body, pos); got != want {
-			t.Fatalf("inParenGroup(%d) = %v, want %v for body %q", pos, got, want, body)
+
+		// The reference queries only change after an opening bracket, at a
+		// closing bracket, after a parenthesis, or at a text boundary.
+		// Still compare all three indexed answers at every byte offset.
+		queryChanged := false
+		if scanEveryOffset || left == '[' || right == ']' {
+			query := referenceSemaOffsetInSOQLLiteral(body, pos)
+			queryChanged = query != inSOQL
+			inSOQL = query
 		}
+		if scanEveryOffset || left == '(' || left == ')' {
+			inParen = referenceSemaOffsetInParenGroup(body, pos)
+		}
+		if scanEveryOffset || queryChanged || pos == len(body) || ignoredTextMayChangeAfter(left) {
+			contains = referenceSemaOffsetInIgnoredText(body, pos, inSOQL)
+		}
+		if got := ignored.contains(pos); got != contains {
+			t.Fatalf("contains(%d) = %v, want %v for body %q", pos, got, contains, body)
+		}
+		if got := ignored.inSOQLLiteral(pos); got != inSOQL {
+			t.Fatalf("inSOQLLiteral(%d) = %v, want %v for body %q", pos, got, inSOQL, body)
+		}
+		if got := ignored.inParenGroup(pos); got != inParen {
+			t.Fatalf("inParenGroup(%d) = %v, want %v for body %q", pos, got, inParen, body)
+		}
+	}
+}
+
+func ignoredTextMayChangeAfter(ch byte) bool {
+	switch ch {
+	case '\'', '/', '*', '\r', '\n':
+		return true
+	default:
+		return false
 	}
 }
 
@@ -244,7 +276,8 @@ func TestReferenceQueryKeywordMatchesWholeBodyLowering(t *testing.T) {
 
 func TestSemaIgnoredTextMatchesReferenceOnEdgeCases(t *testing.T) {
 	for _, body := range semaIgnoredTextEdgeBodies {
-		assertSemaIgnoredTextMatchesReference(t, body)
+		assertSemaIgnoredTextMatchesReference(t, body, true)
+		assertSemaIgnoredTextMatchesReference(t, body, false)
 	}
 }
 
@@ -259,7 +292,8 @@ func TestSemaIgnoredTextMatchesReferenceOnRandomBodies(t *testing.T) {
 		for k := rng.Intn(40); k >= 0; k-- {
 			b.WriteString(pieces[rng.Intn(len(pieces))])
 		}
-		assertSemaIgnoredTextMatchesReference(t, b.String())
+		assertSemaIgnoredTextMatchesReference(t, b.String(), true)
+		assertSemaIgnoredTextMatchesReference(t, b.String(), false)
 	}
 }
 
@@ -330,7 +364,7 @@ func TestSemaIgnoredTextMatchesReferenceOnRepositoryApex(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				assertSemaIgnoredTextMatchesReference(t, string(source))
+				assertSemaIgnoredTextMatchesReference(t, string(source), false)
 			}
 		})
 	}
@@ -344,7 +378,8 @@ func FuzzSemaIgnoredTextMatchesReference(f *testing.F) {
 		if len(body) > 4<<10 {
 			return
 		}
-		assertSemaIgnoredTextMatchesReference(t, body)
+		assertSemaIgnoredTextMatchesReference(t, body, true)
+		assertSemaIgnoredTextMatchesReference(t, body, false)
 	})
 }
 

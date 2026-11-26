@@ -207,7 +207,7 @@ func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts Analy
 		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
 	}
 	if incr != nil {
-		incr.begin(index, opts)
+		incr.begin(index, a.queryDeclaredObjects)
 	}
 	result = Result{
 		Project: index.Project,
@@ -1371,7 +1371,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
 		bindings := scopes.flatAtCopy(value.start)
 		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, bindings)
-		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) && !semaChildRelationshipSingletonAssignable(resolvedTypeName, valueType, value.text, bindings, model) {
+		if valueType != "" && valueType != "null" && !(simpleIdentifierPattern.MatchString(strings.TrimSpace(value.text)) && semaPaymentFlowResponseAssignment(typ, member, model, resolvedTypeName, valueType)) && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) && !semaChildRelationshipSingletonAssignable(resolvedTypeName, valueType, value.text, bindings, model) {
 			message := fmt.Sprintf("%s %q initializes %s local %q with %s", member.Kind, member.Name, typeName, name, valueType)
 			code := "GLADESEMA018"
 			message = semaRelationshipAssignmentMessage(resolvedTypeName, valueType, value.text, bindings, model, message)
@@ -1891,8 +1891,6 @@ func semaFallbackFieldPathType(fieldName string) string {
 		return "Id"
 	case key == "name":
 		return "String"
-	case strings.HasSuffix(key, "date"):
-		return "Date"
 	case strings.HasSuffix(key, "infos"), strings.HasSuffix(key, "items"), strings.HasSuffix(key, "records"), strings.HasSuffix(key, "list"):
 		return "List<Object>"
 	default:
@@ -3208,22 +3206,6 @@ func semaChainedCallReceiverWithWork(body string, callStart int, scope map[strin
 	}
 	if work != nil {
 		panic(semaReceiverWorkFailure{"oversized receiver missed fallback"})
-	}
-	// A constructed receiver inside an argument belongs to that inner call,
-	// not to the fluent call surrounding the argument.
-	if exprStart > 0 && body[exprStart-1] == '(' && semaConstructorReceiverType(fullReceiverExpr) == "" {
-		methodEnd := exprStart - 1
-		methodStart := methodEnd
-		for methodStart > 0 && isIdentifierByte(body[methodStart-1]) {
-			methodStart--
-		}
-		dotBeforeMethod := methodStart - 1
-		for dotBeforeMethod >= 0 && isWhitespace(body[dotBeforeMethod]) {
-			dotBeforeMethod--
-		}
-		if dotBeforeMethod >= 0 && body[dotBeforeMethod] == '.' {
-			exprStart = semaExpressionStart(body[:methodStart])
-		}
 	}
 	if exprStart > open {
 		exprStart = semaExpressionStart(body[:open])

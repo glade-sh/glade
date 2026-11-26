@@ -242,6 +242,8 @@ type Options struct {
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
+	// Validate wrong-type references in the captured Apex cross-object lookup path.
+	ApexValidateCustomLookupInsert bool
 	// Resolved access mode of an Apex update; USER_MODE rejects a record type
 	// the running user's profile does not see (record_type_visibility rows).
 	ApexRecordTypeUpdateMode string
@@ -1054,7 +1056,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 	if err := e.validateManagedShareInsert(record); err != nil {
 		return "", err
 	}
-	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
+	NormalizeTextWrites(object.Definition, e.Org.Namespace, &record, "")
 	normalizeNameFields(objectName, object.Definition, &record)
 	if err := validateBusinessAccountContacts(objectName, object.Definition, record); err != nil {
 		return "", err
@@ -1113,7 +1115,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 		return "", err
 	}
 	var originalFields map[string]storage.Value
-	if len(capturedInsert) > 0 {
+	// Engine.Insert is the caller that supplies the fields before automation.
+	ordinaryInsert := len(capturedInsert) > 0
+	if ordinaryInsert {
 		originalFields = capturedInsert[0]
 	}
 	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
@@ -1164,7 +1168,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 			return "", dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "Parent ID is invalid: null")
 		}
 	}
-	if err := e.validateInsertReferences(object.Definition, record); err != nil {
+	if err := e.validateInsertReferences(object.Definition, record, ordinaryInsert); err != nil {
 		return "", err
 	}
 	if err := e.validateActiveOwner(object.Definition, record.System.OwnerID, ""); err != nil {

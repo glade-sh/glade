@@ -76,7 +76,9 @@ try {
     }
     await page.close();
   }
-  await Promise.all(Array.from({ length: config.parallel ? 2 : 1 }, () => observePage()));
+  // Each row owns a page navigation and its full observation window.
+  const pageCount = config.parallel ? Math.min(config.ids.length, 4) : 1;
+  await Promise.all(Array.from({ length: pageCount }, () => observePage()));
   await context.close();
   const orderedValues = {}, orderedErrors = {};
   for (const id of config.ids) {

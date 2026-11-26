@@ -833,9 +833,10 @@ const (
 )
 
 type irSemaBinding struct {
-	typ                string
-	origin             irSemaOrigin
-	rejectedCollection bool
+	typ                    string
+	origin                 irSemaOrigin
+	rejectedCollection     bool
+	paymentRequestRejected bool
 }
 
 type irSemaScope struct {
@@ -1562,6 +1563,21 @@ func semaNormalizeMemberTypes(model *semaTypeMemberView, owner string, member ty
 	return member
 }
 
+// A bare local declaration in a named test does not establish the identity
+// of a custom object. Open-schema inference may have added a placeholder
+// for that very declaration.
+func (a *Analyzer) rejectsUninitializedTestSObjectLocal(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, model *semaTypeMemberView) bool {
+	name := inst.Type
+	if inst.Expr.Kind != "" || !semaHasAPISuffixFold(name, "__c") || strings.Contains(name, ".") ||
+		!typ.IsTest || !member.IsTest || !semaNamedApexSourceType(typ) ||
+		semaIsExternalManagedPackageAPIName(a.namespace, name) ||
+		!(apexversion.Range{Since: 62, Until: 69}).Allows(typ.EffectiveAPIVersion) {
+		return false
+	}
+	members, ok := model.lookupName(resolveNestedTypeReference(model, typ.Name, name))
+	return ok && members.sobject && members.partialSObject && !semaSObjectIdentityEstablished(a, name, model)
+}
+
 func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope *irSemaScope, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for instructionIndex, inst := range instructions {
@@ -1582,6 +1598,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			if message, hidden := a.nestedTypeVisibilityMessage(model, typ, inst.Type); hidden {
 				diagnostics = append(diagnostics, nestedTypeVisibilityDiagnostic(typ, message, semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))))
 			}
+			rejectedSObject := a.rejectsUninitializedTestSObjectLocal(typ, member, inst, model)
 			references := extractTypeNames(inst.Type)
 			for _, ref := range references {
 				resolved := resolveNestedTypeReference(model, typ.Name, ref)
@@ -1591,7 +1608,7 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 				}
 				if message, code, rejected := a.dependencySourceTypeRejection(model, ref); rejected {
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: code, Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))})
-				} else if (!strings.Contains(ref, ".") && !a.hasKnown(resolved)) || !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) || a.qualifiedLifecycleLocalTypeRejected(typ.Name, ref, model) {
+				} else if rejectedSObject || (!strings.Contains(ref, ".") && !a.hasKnown(resolved)) || !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) || a.qualifiedLifecycleLocalTypeRejected(typ.Name, ref, model) {
 					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA006", Message: "Invalid type: " + ref, NativeMessage: "Invalid type: " + ref, File: typ.File, Range: semaRange(source, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)))})
 				}
 			}
@@ -1600,19 +1617,39 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			} else if (semaAPI67RejectedPlatformType(inst.Type) || semaPlatformTypeUnavailableInModel(typ.EffectiveAPIVersion, inst.Type, model)) && !semaProjectTypeShadowsPlatform(model, inst.Type) {
 				diagnostics = append(diagnostics, unsupportedLocalFeatureDiagnostic(typ, member, inst.Type, bodyOffset+inst.Pos, bodyOffset+inst.Pos+max(1, len(inst.Type)), source))
 			}
+			paymentRequestRejected := false
 			if !rejectedCollection {
-				diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, model, constructability)...)
+				message := a.semaPaymentFlowDecimalLiteralInitializer(typ, member, inst, *scope, model)
+				if model.anonymous && !model.anonymousLocalMethod {
+					paymentRequestRejected = message != "" || a.semaPaymentRequestDeclarationOutsideTest(typ, inst, *scope, model)
+				}
+				if message != "" {
+					pos := bodyOffset + inst.Expr.Pos
+					d := typeContractNativeDiagnostic(typ, message, pos, pos+len(inst.Type), source)
+					d.NativeMessage = message
+					diagnostics = append(diagnostics, d)
+				} else {
+					initializerModel := model
+					if a.semaPaymentFlowContextInitializer(typ, member, inst, *scope, model) {
+						initializerModel = semaPaymentFlowView(model, typ.EffectiveAPIVersion, true)
+					}
+					diagnostics = append(diagnostics, a.checkIRIncrementOrExprVariables(typ, member, inst, scope, bodyOffset, source, initializerModel, constructability)...)
+				}
 				diagnostics = append(diagnostics, a.checkIRAssignmentType(typ, member, inst.Type, inst.Name, inst.Expr, scope, inst.Pos, bodyOffset, source, model, "initializes")...)
 			}
 			if !scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type)) {
 				diagnostics = append(diagnostics, irRedeclareDiagnostic(typ, member, inst.Name, inst.Pos, bodyOffset, source))
-			} else if rejectedCollection {
-				frame := scope.frames[len(scope.frames)-1]
-				binding := frame[normalizeName(inst.Name)]
-				binding.rejectedCollection = true
-				frame[normalizeName(inst.Name)] = binding
-			} else if semaIRDeclaredFinal(source, bodyOffset+inst.Pos) {
-				scope.markFinalLocal(inst.Name)
+			} else {
+				if rejectedCollection || paymentRequestRejected {
+					frame := scope.frames[len(scope.frames)-1]
+					binding := frame[normalizeName(inst.Name)]
+					binding.rejectedCollection = rejectedCollection
+					binding.paymentRequestRejected = paymentRequestRejected
+					frame[normalizeName(inst.Name)] = binding
+				}
+				if !rejectedCollection && semaIRDeclaredFinal(source, bodyOffset+inst.Pos) {
+					scope.markFinalLocal(inst.Name)
+				}
 			}
 		case ir.OpBlock:
 			scope.push()
@@ -3913,6 +3950,11 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 		if d, ok := semaMatcherToMatchResultDiagnostic(typ, member, platformType, receiverMode, method, args, bodyOffset+pos, source); ok {
 			return []diagnostic.Diagnostic{d}, true
 		}
+		// A Date or Datetime initializer does not add addDays to Object's method set.
+		if receiverMode == "instance" && len(args) == 1 &&
+			strings.EqualFold(platformType, "Object") && strings.EqualFold(method, "addDays") {
+			return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
+		}
 		if strings.EqualFold(platformType, "String") ||
 			(receiverMode == "instance" && len(args) == 0 && strings.EqualFold(platformType, "Integer") && !increment) {
 			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source), receiverType, method, irCallArgTypes(a, args, scope, model, typ.Name), model)}, true
@@ -4010,6 +4052,11 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	}
 	if d, rejected := receiverDependencyConstructionDiagnostic(typ, typeName, resolvedTypeName, len(expr.Args)+len(expr.NamedArgs), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source, model); rejected {
 		return []diagnostic.Diagnostic{d}
+	}
+	if len(expr.Args) > 0 && expr.Args[0].Kind == ir.ExprVariable && simpleIdentifierPattern.MatchString(expr.Args[0].Name) {
+		if message := semaPaymentDecimalConstructorMessage(typ, member, model, resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), len(expr.NamedArgs)); message != "" {
+			return []diagnostic.Diagnostic{typeContractNativeDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+		}
 	}
 	if message := semaPlatformEventConstructorMessage(resolvedTypeName, irCallArgTypes(a, expr.Args, scope, model, typ.Name), len(expr.NamedArgs), model); message != "" {
 		return []diagnostic.Diagnostic{semaPlatformEventDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
@@ -4488,7 +4535,7 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 	if strings.EqualFold(valueType, "void") && semaIRExprLooksLikeIndexAssignmentValue(expr, source, bodyOffset+pos) {
 		valueType = resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr.Args[1], *scope, model, typ.Name))
 	}
-	if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) || semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) || semaIRSOQLNullCoalesceAssignable(targetType, valueType, expr, model) || a.semaIRSOQLConditionalAssignable(targetType, expr, *scope, model, typ.Name) {
+	if valueType == "" || valueType == "null" || (verb == "initializes" && member.Kind != apexast.DeclarationField && expr.Kind == ir.ExprVariable && simpleIdentifierPattern.MatchString(expr.Name) && semaPaymentFlowResponseAssignment(typ, member, model, targetType, valueType)) || semaAssignableToType(targetType, valueType, model) || semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) || semaIRSOQLNullCoalesceAssignable(targetType, valueType, expr, model) || a.semaIRSOQLConditionalAssignable(targetType, expr, *scope, model, typ.Name) {
 		return nil
 	}
 	if semaDMLStringLocaleProperty(targetType, target, valueType, *scope, model, typ.Name) {
@@ -6001,7 +6048,8 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		if isSemaKeyword(typeName) {
 			continue
 		}
-		scopeStart, scopeEnd := statementOrBlockBoundsAfter(body, semaEnhancedForBodySearchStart(body, match[0], match[1]))
+		bodyStart := semaEnhancedForBodySearchStart(body, match[0], match[1])
+		scopeStart, scopeEnd := statementOrBlockBoundsAfter(body, bodyStart)
 		if scopeStart < match[1] {
 			scopeStart = match[1]
 		}
@@ -6026,7 +6074,9 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 				})
 			}
 		}
-		diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), match[5], scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
+		// Like the IR, resolve the iterable before the loop local is visible.
+		resolvedType := resolveNestedTypeReference(model, typ.Name, typeName)
+		diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolvedType, scopeStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
 	}
 	// Declarations are processed in source order so that an initializer sees
 	// every local declared before it, whichever spelling declared it.

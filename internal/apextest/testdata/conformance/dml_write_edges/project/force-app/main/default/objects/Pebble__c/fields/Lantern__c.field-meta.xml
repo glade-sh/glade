@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Lantern__c</fullName><label>Lantern</label><type>Lookup</type><referenceTo>Lantern__c</referenceTo><relationshipLabel>Pebbles</relationshipLabel><relationshipName>Pebbles</relationshipName><deleteConstraint>SetNull</deleteConstraint></CustomField>

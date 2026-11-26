@@ -26,7 +26,7 @@ func cartRouteRows(t *testing.T, name string) [][]string {
 // This synthetic source project exercises compilation and test execution with
 // direct test/trigger bodies from cart_extension_routes/org.tsv:2-49.
 func TestCartExtensionDirectProjectNamedIsTestTriggerNativeRoutes(t *testing.T) {
-	t.Parallel()
+	// Keep the cold and warm runs isolated from other users of the shared runtime cache.
 	bodies := map[string]string{}
 	for _, row := range cartRouteRows(t, "cases.tsv")[1:] {
 		bodies[row[0]] = row[2]
@@ -79,12 +79,40 @@ func TestCartExtensionDirectProjectNamedIsTestTriggerNativeRoutes(t *testing.T) 
 			if index.HasErrors() {
 				t.Fatal(index.Diagnostics)
 			}
+			var memoryHits, publications int
+			restoreHook := setSnapshotValidationHookForTesting(func(stage string) {
+				switch stage {
+				case "runtime_before_memory_cache_return":
+					memoryHits++
+				case "runtime_before_memory_cache_publication":
+					publications++
+				}
+			})
+			defer restoreHook()
+			coldRan := false
 			for _, mode := range []struct {
 				name     string
 				parallel int
 			}{{"serial-cold", 1}, {"serial-warm", 1}, {"parallel", 2}} {
 				t.Run(mode.name, func(t *testing.T) {
-					run := Run(index, Options{NoDiskCache: true, Parallelism: mode.parallel})
+					opts := Options{NoDiskCache: true, Parallelism: mode.parallel}
+					if mode.name == "serial-warm" && !coldRan {
+						// A filtered run can select serial-warm alone.
+						Run(index, opts)
+					}
+					memoryHits, publications = 0, 0
+					run := Run(index, opts)
+					switch mode.name {
+					case "serial-cold":
+						coldRan = true
+						if publications != 1 || memoryHits != 0 {
+							t.Fatalf("cold runtime cache: got %d publications and %d hits, want one publication and no hits", publications, memoryHits)
+						}
+					case "serial-warm":
+						if memoryHits != 1 || publications != 0 {
+							t.Fatalf("warm runtime cache: got %d hits and %d publications, want one hit and no publications", memoryHits, publications)
+						}
+					}
 					summary := run.Summary()
 					if row[3] == "accepted" {
 						if summary.Total != 2 || summary.Passed != 2 || len(run.ExcludedClasses) != 0 {

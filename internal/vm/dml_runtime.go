@@ -2567,6 +2567,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if err := vm.generatedHistoryDMLBoundary(op, records); err != nil {
 		return nil, err
 	}
+	options.ApexValidateCustomLookupInsert = op == "insert" && checkApexIdentity
 	options.AllowTestHistoryInsert = options.AllowTestHistoryInsert && op == "insert" && vm.allowTestHistoryInsert()
 	// Identity errors precede writes,
 	// including partial Database DML. This is an Apex entry-point preflight;
@@ -3085,6 +3086,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	originalUpdateRecords := records
 	beforeTriggerRecords := records
 	if op == "update" {
+		vm.normalizeBeforeUpdateTriggerText(records)
 		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
 	}
 	if op == "insert" || op == "update" {
@@ -3861,7 +3863,8 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			}
 			object := vm.Org.Objects[objectName]
 			field, key, present := upsertMatchField(object.Definition, vm.Org.Namespace, record, externalIDField)
-			if strings.EqualFold(field, "Id") || !(object.Definition.Fields[field].ExternalID || object.Definition.Fields[field].IDLookup) {
+			metadata := object.Definition.Fields[field]
+			if strings.EqualFold(field, "Id") || !(metadata.ExternalID || metadata.IDLookup) {
 				continue
 			}
 			if record.ID != "" {
@@ -3876,17 +3879,21 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				failures[i] = fieldKeyMissingUpsertArgument(field)
 				continue
 			}
+			if failure, invalid := dml.UpsertTextExternalIDLengthFailure(objectName, field, metadata, key); invalid {
+				failures[i] = failure
+				continue
+			}
 			var matches []string
 			for id, stored := range object.Records {
 				if stored.System.IsDeleted {
 					continue
 				}
-				if candidate, ok := stored.GetField(field); ok && storageValuesEqualForVM(object.Definition.Fields[field], candidate, key) {
+				if candidate, ok := stored.GetField(field); ok && storageValuesEqualForVM(metadata, candidate, key) {
 					matches = append(matches, apexIDTo18(string(id)))
 				}
 			}
 			if len(matches) > 1 {
-				failures[i] = storedUpsertDuplicateResult(objectName, field, object.Definition.Fields[field], key, matches, len(records) == 1 && !allOrNone)
+				failures[i] = storedUpsertDuplicateResult(objectName, field, metadata, key, matches, len(records) == 1 && !allOrNone)
 			}
 		}
 		vm.fieldKeyRejectDuplicateInputs(records, externalIDField, allOrNone, failures)
@@ -3899,8 +3906,12 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				return failures, nil
 			}
 			defer func() {
-				if outErr == nil {
+				switch retry := outErr.(type) {
+				case nil:
 					out = mergeDMLResults(failures, out)
+				case *processUpsertRetry:
+					// The retry snapshot still includes the rows removed by preflight.
+					retry.results = mergeDMLResults(failures, retry.results)
 				}
 			}()
 		}
@@ -3977,6 +3988,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			return nil, err
 		}
 		vm.applyBeforeDMLDerivedFields(triggerRecords)
+		if kind == "insert" && !allOrNone && options.PreserveCustomKeyUpsertList && externalIDField != "" {
+			vm.normalizeBeforeInsertTriggerText(triggerRecords, externalIDField)
+		}
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
 			ensureRollback(false)

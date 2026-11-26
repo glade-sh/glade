@@ -174,7 +174,11 @@ func TestStandardObjectSharingOrgConformance(t *testing.T) {
 					if rejected {
 						t.Fatalf("native compile acceptance; Glade=%v %v", index.Diagnostics, analysis.Diagnostics)
 					}
-					org := orgFromIndex(index)
+					// Runtime queries materialize the standard objects they use.
+					org, err := orgFromIndexWithError(index)
+					if err != nil {
+						t.Fatal(err)
+					}
 					standardSharingSeed(t, &org, row, observed)
 					runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
 					cases := Discover(index, Options{SelectedClasses: []string{"StandardSharingTest"}, SelectedMethod: "observe"})
