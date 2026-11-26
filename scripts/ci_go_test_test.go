@@ -1296,7 +1296,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		}
 	}
 
-	const gosecPin = "securego/gosec@9e6a9843d7a4a6e3e9a8539b02612c8a4aa3f889 # v2.27.1"
+	const gosecPin = "securego/gosec@5eb1d104ef85ff2c905c877eb600e8c1dee33a22 # v2.30.0"
 	if count := strings.Count(workflowText, gosecPin); count != 1 {
 		t.Fatalf("security.yml exact gosec pin count = %d, want 1", count)
 	}
@@ -1304,7 +1304,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatal("security.yml must not use the moving securego/gosec@v2 tag")
 	}
 
-	const scorecardPin = "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3"
+	const scorecardPin = "ossf/scorecard-action@23f22cd43608bae7a1f1fa2603d7314dee9538a5 # v2.6.0"
 	if count := strings.Count(workflowText, scorecardPin); count != 1 {
 		t.Fatalf("security.yml exact Scorecard pin count = %d, want 1", count)
 	}
@@ -1322,8 +1322,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"- go/allocation-size-overflow",
 		"build-mode: manual",
 		`run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade`,
-		"github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
-		"github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
+		"github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4",
+		"github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4",
 	} {
 		if !strings.Contains(codeql, want) {
 			t.Errorf("codeql job missing %q", want)
@@ -1352,7 +1352,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"go/cookie-httponly-not-set",
 		"go/cookie-secure-not-set",
 	}
-	const initPin = "uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
+	const initPin = "uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4"
 	if count := strings.Count(codeql, initPin); count != 2 {
 		t.Fatalf("codeql init step count = %d, want 2", count)
 	}
@@ -1506,10 +1506,10 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	coverageMarkers := map[string][]string{
 		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0"},
 		"codeql":            {"uses: ./.github/workflows/codeql.yml", "profile: full", "actions: read", "contents: read", "security-events: write"},
-		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: gosec.sarif"},
+		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4", "sarif_file: gosec.sarif"},
 		"npm-audit":         {"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
-		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0", "fail-on-severity: high"},
-		"scorecard":         {"actions: read", "contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: scorecard.sarif"},
+		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1", "fail-on-severity: high"},
+		"scorecard":         {"actions: read", "contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4", "sarif_file: scorecard.sarif"},
 	}
 	for jobName, markers := range coverageMarkers {
 		for _, marker := range markers {
