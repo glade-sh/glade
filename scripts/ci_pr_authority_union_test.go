@@ -148,9 +148,10 @@ func TestCIPRAuthoritySingleWorker(t *testing.T) {
 			// gh --pattern extracts each match into its own named directory.
 			fakeGH := `#!/bin/bash
 set -eu
-[[ "$*" == "run download 123 --repo example/project --pattern pr-authority-123-* --dir $RUNNER_TEMP/pr-authority-input" ]]
-mkdir -p "$8/$FIXTURE_ARTIFACT"
-printf '%s\n' "$FIXTURE_IDENTITY" > "$8/$FIXTURE_ARTIFACT/identity.json"
+[[ $# == 9 && "$*" == "run download 123 --repo example/project --pattern pr-authority-123-* --dir $RUNNER_TEMP/pr-authority-input" ]]
+destination=$9
+mkdir -p "$destination/$FIXTURE_ARTIFACT"
+printf '%s\n' "$FIXTURE_IDENTITY" > "$destination/$FIXTURE_ARTIFACT/identity.json"
 `
 			if err := os.WriteFile(filepath.Join(tmp, "gh"), []byte(fakeGH), 0700); err != nil {
 				t.Fatal(err)
