@@ -69,24 +69,30 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 	create := prepare.Steps[releaseWorkflowStepIndex(t, prepare, "Create GitHub Release")]
 	const warning = "Note: the full CodeQL scan for this release did not complete within its time limit."
 	const generated = "Generated notes.\n"
+	const generatedWithWarning = generated + "\n" + warning + "\n"
+	const generatedWithSimilarLine = generated + "\n> " + warning + "\n"
 	const existing = "Existing notes with a manual edit.\n\n"
 	const warned = warning + "\n\n" + existing
 	for _, tc := range []struct {
-		name, status, completed, body, want, mutations string
+		name, status, completed, generated, body, want, mutations string
 	}{
-		{"timeout_new", "missing", "false", "", warning + "\n\n" + generated, "create\n"},
-		{"timeout_draft", "true", "false", existing, warned, "edit\n"},
-		{"completed_new", "missing", "true", "", generated, "create\n"},
-		{"completed_draft", "true", "true", existing, existing, ""},
-		{"completed_after_timeout", "true", "true", warned, existing, "edit\n"},
-		{"missing_output_draft", "true", "", existing, existing, ""},
-		{"published_timeout", "false", "false", existing, existing, ""},
-		{"published_completed", "false", "true", warned, warned, ""},
+		{"timeout_new", "missing", "false", generated, "", warning + "\n\n" + generated, "create\n"},
+		{"timeout_new_already_warned", "missing", "false", generatedWithWarning, "", generatedWithWarning, "create\n"},
+		{"timeout_new_similar_line", "missing", "false", generatedWithSimilarLine, "", warning + "\n\n" + generatedWithSimilarLine, "create\n"},
+		{"timeout_draft", "true", "false", generated, existing, warned, "edit\n"},
+		{"completed_new", "missing", "true", generated, "", generated, "create\n"},
+		{"completed_draft", "true", "true", generated, existing, existing, ""},
+		{"completed_after_timeout", "true", "true", generated, warned, existing, "edit\n"},
+		{"missing_output_draft", "true", "", generated, existing, existing, ""},
+		{"published_timeout", "false", "false", generated, existing, existing, ""},
+		{"published_completed", "false", "true", generated, warned, warned, ""},
+		{"publishes_before_warning_added", "publishing", "false", generated, existing, existing, ""},
+		{"publishes_before_warning_removed", "publishing", "true", generated, warned, warned, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			files := map[string]string{
-				"status": tc.status, "body": tc.body, "mutations": "", "release-notes.md": generated,
+				"status": tc.status, "body": tc.body, "mutations": "", "release-notes.md": tc.generated,
 				"git": "#!/usr/bin/env bash\ntest \"$*\" = 'rev-list -n 1 v1.2.3' && echo test-commit\n",
 				"gh":  releaseCodeQLMockGH,
 			}
@@ -102,6 +108,9 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 					"GITHUB_REF_NAME=v1.2.3", "CODEQL_COMPLETED="+tc.completed)
 				if out, err := cmd.CombinedOutput(); err != nil {
 					t.Fatalf("attempt %d: %v\n%s", attempt, err, out)
+				}
+				if tc.status == "publishing" && string(mustReadFile(t, filepath.Join(root, "status"))) != "false" {
+					t.Fatalf("attempt %d: mock did not publish the draft", attempt)
 				}
 				for file, want := range map[string]string{"body": tc.want, "mutations": tc.mutations} {
 					if got := string(mustReadFile(t, filepath.Join(root, file))); got != want {
@@ -124,7 +133,14 @@ case "$2" in
     case "${5:-}" in
       "") ;;
       tagName) test "$6" = --jq && test "$7" = .tagName && echo v1.2.3 ;;
-      isDraft,body) jq -n --argjson isDraft "$status" --rawfile body body '{isDraft:$isDraft, body:$body}' ;;
+      isDraft,body)
+        if [[ "$status" == publishing ]]; then
+          # Return the draft snapshot, then expose a published release to subsequent calls.
+          status=true
+          printf false > status
+        fi
+        jq -n --argjson isDraft "$status" --rawfile body body '{isDraft:$isDraft, body:$body}' ;;
+      isDraft) test "$6" = --jq && test "$7" = .isDraft && printf '%s\n' "$status" ;;
       *) exit 2 ;;
     esac ;;
   create|edit)
@@ -135,7 +151,7 @@ case "$2" in
         test "$4 $5 $6 $7 $8" = '--target test-commit --draft --title v1.2.3'
         shift 5
         printf true > status ;;
-      edit) test "$status" = true ;;
+      edit) [[ "$status" == true || "$status" == false ]] ;;
     esac
     test "$#" = 5
     test "$4" = --notes-file
