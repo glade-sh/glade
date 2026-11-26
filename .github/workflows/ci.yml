@@ -2350,11 +2350,21 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.pr-select.result == 'success' && needs.pr-tests.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      # download-artifact flattens a lone match. gh --pattern keeps its artifact name.
+      - name: Download single-worker PR authority evidence
+        if: ${{ fromJSON(needs.pr-select.outputs.validated).include[1] == null }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --pattern "pr-authority-$GITHUB_RUN_ID-*" --dir "$RUNNER_TEMP/pr-authority-input"
+      - if: ${{ fromJSON(needs.pr-select.outputs.validated).include[1] != null }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: pr-authority-${{ github.run_id }}-*
           path: ${{ runner.temp }}/pr-authority-input
