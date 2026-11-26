@@ -129,7 +129,8 @@ jobs:
 
           expected_target="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
           if release="$(gh release view "$GITHUB_REF_NAME" --json isDraft,body 2>/dev/null)"; then
-            if [[ "$(jq -r '.isDraft' <<< "$release")" == true ]]; then
+            release_draft="$(jq -r '.isDraft' <<< "$release")"
+            if [[ "$release_draft" == true ]]; then
               jq -j '.body // ""' <<< "$release" > existing-release-notes.md
               if [[ "$CODEQL_COMPLETED" == false ]] && ! grep -Fxq -- "$warning" existing-release-notes.md; then
                 notes_with_warning existing-release-notes.md > release-notes.md
@@ -140,16 +141,15 @@ jobs:
               fi
             fi
           else
-            notes_file=release-notes.md
             if [[ "$CODEQL_COMPLETED" == false ]]; then
-              notes_file=release-notes-with-codeql-warning.md
-              notes_with_warning release-notes.md > "$notes_file"
+              notes_with_warning release-notes.md > release-notes-with-codeql-warning.md
+              mv release-notes-with-codeql-warning.md release-notes.md
             fi
             gh release create "$GITHUB_REF_NAME" \
               --target "$expected_target" \
               --draft \
               --title "$GITHUB_REF_NAME" \
-              --notes-file "$notes_file"
+              --notes-file release-notes.md
           fi
           release_tag="$(gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName)"
           test "$release_tag" = "$GITHUB_REF_NAME"
