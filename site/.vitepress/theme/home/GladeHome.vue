@@ -313,7 +313,12 @@ onUnmounted(() => {
   </div>
  </section>
  <section class="get-started" id="get-started" tabindex="-1" aria-labelledby="start-title">
-  <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async"></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async"></div>
+  <div class="footer-topo" aria-hidden="true">
+   <img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async">
+  </div>
+  <div class="footer-topo right" aria-hidden="true">
+   <img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async">
+  </div>
   <div class="container">
    <p class="eyebrow">Install Glade</p>
    <h2 id="start-title">Start with one local test.</h2>

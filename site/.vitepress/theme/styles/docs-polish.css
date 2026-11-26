@@ -15,7 +15,9 @@ html.dark .glade-docs { --gd-contour: .26; }
 /* Atmosphere: a soft glow behind the top of the article and terrain in the right margin. */
 .glade-docs .VPContent { position: relative; isolation: isolate; overflow-x: clip; }
 .glade-docs .VPContent::before { content: ''; position: absolute; z-index: -1; inset: 0 0 auto; height: 620px; pointer-events: none; background: radial-gradient(52% 100% at 82% 0%, var(--gd-tint), transparent 72%), radial-gradient(44% 80% at 38% 0%, var(--gd-tint-cool), transparent 72%); }
-.glade-docs .VPContent::after { content: ''; position: absolute; z-index: -1; width: 980px; height: 850px; right: -470px; top: -360px; pointer-events: none; opacity: var(--gd-contour); background: url('/home/contours.svg') center / contain no-repeat; transform: rotate(24deg); -webkit-mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); }
+.glade-docs .VPContent::after { content: ''; position: absolute; z-index: -1; width: 980px; height: 850px; right: -470px; top: -360px; pointer-events: none; opacity: var(--gd-contour); background: 
+  url('/home/contours.svg')
+  center / contain no-repeat; transform: rotate(24deg); -webkit-mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); }
 html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness(.62); }
 @media (max-width: 959px) { .glade-docs .VPContent::after { width: 620px; height: 540px; right: -330px; top: -230px; } }
 

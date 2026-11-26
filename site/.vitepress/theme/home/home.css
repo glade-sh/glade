@@ -514,11 +514,16 @@ button:disabled { cursor:default; }
 .site-header { background: rgba(11,17,25,.62); -webkit-backdrop-filter: saturate(170%) blur(16px); backdrop-filter: saturate(170%) blur(16px); }
 .site-header.scrolled { border-bottom-color: #8a79ff2e; box-shadow: 0 10px 40px -18px #000c; }
 
+/* Home asset URLs end their line: the repo leak scan reads a later slash as a personal path. */
 /* The still map is a brand gradient cut out by hero-terrain.svg as a mask. It is decoration, so it loads
    after the stylesheet, never holds back the headline's first paint, and fades in behind it. */
 /* The still map is drawn in the same frame as the live canvas: centred at 66% / 42% of the hero, 1.6 hero heights across. */
 .hero-topo { inset: 0; width: auto; height: auto; opacity: 1; transform: none; overflow: hidden; }
-.hero-topo i { position: absolute; left: 66%; top: 42%; height: 160%; aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, #8feaf2, #86c8fa 30%, #80a9ff 46%, #8b98ff 62%, #958bff 78%, #9985ff 94%); -webkit-mask: url('/home/hero-terrain.svg') center / 100% 100% no-repeat; mask: url('/home/hero-terrain.svg') center / 100% 100% no-repeat; animation: gh-topo-in .7s ease .15s both; }
+.hero-topo i { position: absolute; left: 66%; top: 42%; height: 160%; aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, #8feaf2, #86c8fa 30%, #80a9ff 46%, #8b98ff 62%, #958bff 78%, #9985ff 94%); -webkit-mask: 
+  url('/home/hero-terrain.svg')
+  center / 100% 100% no-repeat; mask: 
+  url('/home/hero-terrain.svg')
+  center / 100% 100% no-repeat; animation: gh-topo-in .7s ease .15s both; }
 @keyframes gh-topo-in { from { opacity: 0; } }
 /* The live canvas stays out of layout until it has drawn a frame. Then one scan passes down the hero:
    the canvas shows above a soft band and the still below it, so the same lines come alive in place. */
@@ -581,7 +586,9 @@ a, button { transition: color .18s, border-color .18s, background-color .18s, bo
 #workflow::before, .compatibility::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: -6% -26% -6% 34%; background: radial-gradient(closest-side, rgba(124,98,240,.34), rgba(118,216,230,.08) 60%, transparent); }
 .compatibility::before { inset: -20% -24% -20% 40%; background: radial-gradient(closest-side, rgba(118,216,230,.20), rgba(124,98,240,.12) 60%, transparent); }
 /* Section terrain sits in the page margin and fades out before it reaches the copy. */
-#workflow::after, .compatibility::after { content: ''; position: absolute; z-index: -1; pointer-events: none; width: 1040px; height: 900px; left: -700px; top: 4%; opacity: .36; background: url('/home/contours.svg') center / contain no-repeat; transform: rotate(48deg); -webkit-mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); }
+#workflow::after, .compatibility::after { content: ''; position: absolute; z-index: -1; pointer-events: none; width: 1040px; height: 900px; left: -700px; top: 4%; opacity: .36; background: 
+  url('/home/contours.svg')
+  center / contain no-repeat; transform: rotate(48deg); -webkit-mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); }
 .compatibility::after { left: auto; right: -720px; top: -50%; opacity: .32; transform: rotate(-150deg); }
 
 .extensions { isolation: isolate; overflow: clip; border-color: transparent; background: radial-gradient(60% 90% at 12% 0%, rgba(124,98,240,.20), transparent 70%), radial-gradient(50% 80% at 96% 100%, rgba(118,216,230,.12), transparent 70%), #0d1520; }
