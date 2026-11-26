@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Draft GitHub release notes disclose when the full CodeQL scan reaches its time limit.
+
 <a name="v0316"></a>
 
 ## v0.3.16 - 2026-11-26

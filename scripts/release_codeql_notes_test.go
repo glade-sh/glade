@@ -45,7 +45,7 @@ func TestReleaseCodeQLCompletionOutput(t *testing.T) {
 		t.Errorf("CodeQL workflow completed output = %q, want completion from the codeql job", got)
 	}
 
-	workflow, _ := readReleaseWorkflowDocument(t)
+	workflow, source := readReleaseWorkflowDocument(t)
 	prepare := workflow.Jobs["prepare"]
 	if !reflect.DeepEqual(prepare.Needs, []any{"required-ci-attestation", "salesforce-authority", "codeql-release"}) ||
 		!strings.Contains(prepare.If, "needs.codeql-release.result == 'success'") {
@@ -54,6 +54,12 @@ func TestReleaseCodeQLCompletionOutput(t *testing.T) {
 	create := prepare.Steps[releaseWorkflowStepIndex(t, prepare, "Create GitHub Release")]
 	if got := create.Env["CODEQL_COMPLETED"]; got != "${{ needs.codeql-release.outputs.completed }}" {
 		t.Errorf("release draft step CODEQL_COMPLETED = %q, want completion from codeql-release", got)
+	}
+	jobs := workflowJobBlocksText(source)
+	for _, name := range []string{"prepare", "publish"} {
+		if !strings.Contains(jobs[name], "\n    concurrency: release-metadata-${{ github.ref }}\n") {
+			t.Errorf("%s must serialize release metadata changes for the tag", name)
+		}
 	}
 }
 

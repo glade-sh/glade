@@ -89,8 +89,9 @@ Before tagging, also read the operator checks for the same commit: the
 in [RELEASE_NOTES.md](RELEASE_NOTES.md). Review the CodeQL waivers in
 [CODEQL.md](CODEQL.md#waiver-review-2026-10-22) and record the
 date. Both CodeQL profiles succeed with a warning when their analysis budget
-expires. The release workflow runs the full scan on the tagged SHA and fails
-only on findings or errors, so state an incomplete scan in the release notes.
+expires. The release workflow runs the full scan on the tagged SHA. Findings
+and errors block release preparation. A timeout adds a warning to the draft
+release notes.
 
 ```bash
 VERSION=vX.Y.Z
@@ -113,10 +114,10 @@ archives on matching CGO-enabled runners. It checks `glade doctor --json` for
 is absent, the workflow creates it as a draft with the matching section from
 [RELEASE_NOTES.md](RELEASE_NOTES.md). It uploads
 and verifies the complete asset set, then publishes the draft as its last step.
-If it already exists, the workflow reuses its metadata, title, and body without
-editing them. An existing asset with identical bytes is skipped; differing bytes
-fail rather than replace published bytes. A published release is verified and
-left unchanged. Regenerated archives are not assumed byte-identical: a
+On a rerun, the workflow updates the CodeQL timeout warning on a draft if the
+scan status changes and preserves the rest of the notes. An existing asset with
+identical bytes is skipped. Differing bytes fail the check. The workflow
+verifies a published release and leaves it unchanged. A
 published rerun with differing bytes fails and leaves the release unchanged.
 For interrupted draft publication, rerun only failed jobs so successful platform
 artifacts are reused. The aggregate bundle is deterministic; if it was already
@@ -125,7 +126,7 @@ Do not select "Re-run all jobs" after partial uploads.
 The notes script fails if the section is missing, empty, or
 contains a literal `\n` sequence.
 
-GitHub product and plugin release assets and notes are immutable on rerun.
+Published GitHub product and plugin release assets and notes are immutable on rerun.
 Do not repair a published artifact in place. Cut a new version with corrected
 assets and notes instead.
 

@@ -7,6 +7,10 @@ on:
         description: "fast for Security PRs and main pushes; full for weekly and release scans"
         required: true
         type: string
+    outputs:
+      completed:
+        description: Whether CodeQL completed within its analysis budget.
+        value: ${{ jobs.codeql.outputs.completed }}
 
 permissions:
   contents: read
@@ -17,6 +21,8 @@ jobs:
     runs-on: ubuntu-24.04
     # Setup and upload are bounded separately from the analysis process.
     timeout-minutes: 15
+    outputs:
+      completed: ${{ steps.analyze.outputs.completed }}
     permissions:
       actions: read
       contents: read
