@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- New GitHub release drafts disclose CodeQL analysis timeouts in their notes. Retries surface timeouts in the workflow warning and job summary.
+
 <a name="v0316"></a>
 
 ## v0.3.16 - 2026-11-26
