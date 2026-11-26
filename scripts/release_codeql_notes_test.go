@@ -68,6 +68,8 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 	prepare := workflow.Jobs["prepare"]
 	create := prepare.Steps[releaseWorkflowStepIndex(t, prepare, "Create GitHub Release")]
 	const warning = "Note: the full CodeQL scan for this release did not complete within its time limit."
+	const retryWarning = "The full CodeQL scan for this release timed out. The existing release notes may lack the disclosure."
+	const summary = "Earlier step summary.\n"
 	const generated = "Generated notes.\n"
 	const generatedWithWarning = generated + "\n" + warning + "\n"
 	const generatedWithSimilarLine = generated + "\n> " + warning + "\n"
@@ -79,11 +81,14 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 		{"timeout_new", "missing", "false", generated, "", warning + "\n\n" + generated, "create\n"},
 		{"timeout_new_already_warned", "missing", "false", generatedWithWarning, "", generatedWithWarning, "create\n"},
 		{"timeout_new_similar_line", "missing", "false", generatedWithSimilarLine, "", warning + "\n\n" + generatedWithSimilarLine, "create\n"},
-		{"timeout_draft", "true", "false", generated, existing, warned, "edit\n"},
+		{"timeout_draft", "true", "false", generated, existing, existing, ""},
+		{"timeout_draft_already_warned", "true", "false", generated, warned, warned, ""},
 		{"completed_new", "missing", "true", generated, "", generated, "create\n"},
 		{"completed_draft", "true", "true", generated, existing, existing, ""},
-		{"completed_after_timeout", "true", "true", generated, warned, existing, "edit\n"},
+		{"completed_after_timeout", "true", "true", generated, warned, warned, ""},
+		{"missing_output_new", "missing", "", generated, "", generated, "create\n"},
 		{"missing_output_draft", "true", "", generated, existing, existing, ""},
+		{"missing_output_published", "false", "", generated, existing, existing, ""},
 		{"published_timeout", "false", "false", generated, existing, existing, ""},
 		{"published_completed", "false", "true", generated, warned, warned, ""},
 		{"publishes_before_warning_added", "publishing", "false", generated, existing, existing, ""},
@@ -91,10 +96,12 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
+			summaryPath := filepath.Join(root, "job summary.md")
 			files := map[string]string{
 				"status": tc.status, "body": tc.body, "mutations": "", "release-notes.md": tc.generated,
-				"git": "#!/usr/bin/env bash\ntest \"$*\" = 'rev-list -n 1 v1.2.3' && echo test-commit\n",
-				"gh":  releaseCodeQLMockGH,
+				"job summary.md": summary,
+				"git":            "#!/usr/bin/env bash\ntest \"$*\" = 'rev-list -n 1 v1.2.3' && echo test-commit\n",
+				"gh":             releaseCodeQLMockGH,
 			}
 			for name, content := range files {
 				if err := os.WriteFile(filepath.Join(root, name), []byte(content), 0o755); err != nil {
@@ -105,9 +112,32 @@ func TestReleaseCodeQLDraftNotes(t *testing.T) {
 				cmd := exec.Command("bash", "-e", "-c", create.Run)
 				cmd.Dir = root
 				cmd.Env = append(os.Environ(), "PATH="+root+string(os.PathListSeparator)+os.Getenv("PATH"),
-					"GITHUB_REF_NAME=v1.2.3", "CODEQL_COMPLETED="+tc.completed)
-				if out, err := cmd.CombinedOutput(); err != nil {
+					"GITHUB_REF_NAME=v1.2.3", "CODEQL_COMPLETED="+tc.completed, "GITHUB_STEP_SUMMARY="+summaryPath)
+				// GitHub Actions gives each step attempt its own summary file.
+				if err := os.WriteFile(summaryPath, []byte(summary), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				out, err := cmd.CombinedOutput()
+				if err != nil {
 					t.Fatalf("attempt %d: %v\n%s", attempt, err, out)
+				}
+				wantSummary := summary
+				wantAnnotations := ""
+				if tc.completed == "false" && (tc.status != "missing" || attempt > 1) {
+					wantSummary += "- " + retryWarning + "\n"
+					wantAnnotations = "::warning::" + retryWarning
+				}
+				var annotations []string
+				for _, line := range strings.Split(string(out), "\n") {
+					if strings.HasPrefix(line, "::warning") {
+						annotations = append(annotations, line)
+					}
+				}
+				if got := strings.Join(annotations, "\n"); got != wantAnnotations {
+					t.Errorf("attempt %d warning annotations = %q, want %q", attempt, got, wantAnnotations)
+				}
+				if got := string(mustReadFile(t, summaryPath)); got != wantSummary {
+					t.Errorf("attempt %d job summary = %q, want %q", attempt, got, wantSummary)
 				}
 				if tc.status == "publishing" && string(mustReadFile(t, filepath.Join(root, "status"))) != "false" {
 					t.Fatalf("attempt %d: mock did not publish the draft", attempt)
@@ -131,16 +161,24 @@ case "$2" in
   view)
     [[ "$status" != missing ]] || exit 1
     case "${5:-}" in
-      "") ;;
+      "")
+        if [[ "$status" == publishing ]]; then
+          printf false > status
+        fi ;;
       tagName) test "$6" = --jq && test "$7" = .tagName && echo v1.2.3 ;;
       isDraft,body)
         if [[ "$status" == publishing ]]; then
-          # Return the draft snapshot, then expose a published release to subsequent calls.
+          status=true
+        fi
+        jq -n --argjson isDraft "$status" --rawfile body body '{isDraft:$isDraft, body:$body}' ;;
+      isDraft)
+        test "$6" = --jq && test "$7" = .isDraft
+        if [[ "$status" == publishing ]]; then
+          # A maintainer publishes after the last draft check returns its snapshot.
           status=true
           printf false > status
         fi
-        jq -n --argjson isDraft "$status" --rawfile body body '{isDraft:$isDraft, body:$body}' ;;
-      isDraft) test "$6" = --jq && test "$7" = .isDraft && printf '%s\n' "$status" ;;
+        printf '%s\n' "$status" ;;
       *) exit 2 ;;
     esac ;;
   create|edit)

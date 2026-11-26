@@ -172,9 +172,9 @@ func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
 	}
 
 	prepare := releaseWorkflowJobBlock(t, text, "prepare", "shared-payload")
-	if !strings.Contains(prepare, `gh release view "$GITHUB_REF_NAME" --json isDraft,body`) ||
-		!strings.Contains(prepare, `if [[ "$release_draft" == true ]]; then`) {
-		t.Fatal("prepare job must check draft status before updating release notes")
+	if !strings.Contains(prepare, `if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then`) ||
+		strings.Contains(prepare, `gh release edit`) {
+		t.Fatal("prepare job must check for an existing release and reuse its notes without editing")
 	}
 	if got := strings.Count(prepare, "gh release create"); got != 1 {
 		t.Fatalf("prepare release create count = %d, want 1", got)
