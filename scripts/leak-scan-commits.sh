@@ -42,10 +42,6 @@ while read -r c; do
     commit_range="${empty_tree}..${c}"   # a root commit scans against the empty tree
   fi
   if out=$(bash "$script" --range "$commit_range" 2>&1); then
-    if printf '%s\n' "$out" | grep -q '^leak-scan: reviewed '; then
-      printf 'leak-scan-commits: commit %s\n' "$short"
-      printf '%s\n' "$out" | grep '^leak-scan: reviewed '
-    fi
     # The skip warning is identical for every commit; report it once.
     if [ -z "$warned" ] && printf '%s\n' "$out" | grep -q '^leak-scan: WARNING '; then
       printf '%s\n' "$out" | grep '^leak-scan: WARNING '

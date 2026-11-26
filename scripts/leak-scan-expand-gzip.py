@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""Expand scannable gzip blobs in a git diff.
+"""Expand scannable gzip blobs in a git diff, leaving all other binaries intact.
 
 Only regular-file blobs with simple Git paths and valid, bounded UTF-8 text are
 expanded. The complete new text is added to the scan, not only changed lines.
 An unsafe or unsupported blob retains its binary marker and therefore fails the
-caller's existing binary check, except for the reviewed historical images
-identified below. A supplied external diff is never expanded.
+caller's existing binary check. A supplied external diff is never expanded.
 """
 
 import gzip
-import hashlib
 import io
 import re
 import subprocess
@@ -21,19 +19,6 @@ MAX_COMPRESSED = 16 * 1024 * 1024
 MAX_EXPANDED = 64 * 1024 * 1024
 SIMPLE_PATH = re.compile(rb"[A-Za-z0-9_./-]+\Z")
 HEADER = re.compile(rb"diff --git a/([A-Za-z0-9_./-]+) b/\1\n\Z")
-
-# These three assets were inspected as images and checked for embedded
-# metadata and private strings. They are generated from SVGs in the final
-# tree. Accept only their original commit and exact reviewed bytes.
-REVIEWED_IMAGE_COMMIT = "7eefb38744ed019e87d1268b734b2e31aea14fd0"
-REVIEWED_IMAGES = {
-    b"site/docs-src/public/apple-touch-icon.png":
-        "b841b876f657c781ccf20397832d6899d5a85e2444981f77164273bfef7b3351",
-    b"site/docs-src/public/favicon.ico":
-        "8f918265ad10f5df21fa542f7beaed24ff39e7fadb2040fff32e921e9e0ffcae",
-    b"site/docs-src/public/social-card.png":
-        "0da1116e27d3361aec64336c20ed977a1bec11ccb2483fa379936ba2e4f3aa9f",
-}
 
 
 def git(root, *args):
@@ -99,8 +84,6 @@ def main():
         changed = candidates(root, revision)
         diff = Path(diff_path).read_bytes()
         sections = re.split(rb"(?m)(?=^diff --git )", diff)
-        reviewed_range = f"{REVIEWED_IMAGE_COMMIT}^..{REVIEWED_IMAGE_COMMIT}"
-        reviewed_count = 0
         for i, section in enumerate(sections):
             try:
                 section.decode("utf-8")
@@ -115,12 +98,6 @@ def main():
             if match:
                 path = match.group(1)
                 oid = changed.get(path)
-                if binary_marker and revision == reviewed_range and oid and path in REVIEWED_IMAGES:
-                    blob = git(root, "cat-file", "blob", oid)
-                    if hashlib.sha256(blob).hexdigest() == REVIEWED_IMAGES[path]:
-                        reviewed_count += 1
-                        sections[i] = header
-                        continue
                 data = expanded_text(root, oid) if oid is not None else None
                 if data is not None:
                     sections[i] = scan_section(header, path, data)
@@ -131,8 +108,6 @@ def main():
                 sections[i] = (b"diff --git a/unscannable b/unscannable\n"
                                b"Binary files a/unscannable and b/unscannable differ\n")
         Path(diff_path).write_bytes(b"".join(sections))
-        if reviewed_count:
-            print(f"leak-scan: reviewed {reviewed_count} historical binary image(s)")
     except (OSError, ValueError, subprocess.CalledProcessError):
         print("leak-scan: unable to inspect compressed changes", file=sys.stderr)
         return 2
