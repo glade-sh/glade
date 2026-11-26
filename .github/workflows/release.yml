@@ -102,7 +102,7 @@ jobs:
   prepare:
     needs: [required-ci-attestation, salesforce-authority, codeql-release]
     if: startsWith(github.ref, 'refs/tags/') && needs.required-ci-attestation.result == 'success' && needs.salesforce-authority.result == 'success' && needs.codeql-release.result == 'success'
-    # Serialize draft edits with publication for this tag.
+    # Serialize draft creation with publication for this tag.
     concurrency: release-metadata-${{ github.ref }}
     runs-on: ubuntu-24.04
     permissions:
@@ -121,36 +121,18 @@ jobs:
           GH_REPO: ${{ github.repository }}
           CODEQL_COMPLETED: ${{ needs.codeql-release.outputs.completed }}
         run: |
-          warning='Note: the full CodeQL scan for this release did not complete within its time limit.'
-          notes_with_warning() {
-            printf '%s\n\n' "$warning"
-            cat "$1"
-          }
-          edit_draft_notes() {
-            local draft
-            # GitHub's release API has no atomic draft-only notes update. A
-            # maintainer can still publish between this check and the edit.
-            if draft="$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" && [[ "$draft" == true ]]; then
-              gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
-            fi
-          }
-
           expected_target="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
-          if release="$(gh release view "$GITHUB_REF_NAME" --json isDraft,body 2>/dev/null)"; then
-            release_draft="$(jq -r '.isDraft' <<< "$release")"
-            if [[ "$release_draft" == true ]]; then
-              jq -j '.body // ""' <<< "$release" > existing-release-notes.md
-              if [[ "$CODEQL_COMPLETED" == false ]] && ! grep -Fxq -- "$warning" existing-release-notes.md; then
-                notes_with_warning existing-release-notes.md > release-notes.md
-                edit_draft_notes
-              elif [[ "$CODEQL_COMPLETED" == true && "$(head -n 2 existing-release-notes.md)" == "$warning" ]]; then
-                tail -n +3 existing-release-notes.md > release-notes.md
-                edit_draft_notes
-              fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists; reusing it without mutation"
+            if [[ "$CODEQL_COMPLETED" == false ]]; then
+              warning='The full CodeQL scan for this release timed out. The existing release notes may lack the disclosure.'
+              printf '::warning::%s\n' "$warning"
+              printf -- '- %s\n' "$warning" >> "$GITHUB_STEP_SUMMARY"
             fi
           else
+            warning='Note: the full CodeQL scan for this release did not complete within its time limit.'
             if [[ "$CODEQL_COMPLETED" == false ]] && ! grep -Fxq -- "$warning" release-notes.md; then
-              notes_with_warning release-notes.md > release-notes-with-codeql-warning.md
+              { printf '%s\n\n' "$warning"; cat release-notes.md; } > release-notes-with-codeql-warning.md
               mv release-notes-with-codeql-warning.md release-notes.md
             fi
             gh release create "$GITHUB_REF_NAME" \

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Draft GitHub release notes disclose when the full CodeQL scan reaches its time limit.
+- New GitHub release drafts disclose CodeQL analysis timeouts in their notes. Retries surface timeouts in the workflow warning and job summary.
 
 <a name="v0316"></a>
 
