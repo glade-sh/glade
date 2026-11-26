@@ -6048,7 +6048,8 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 		if isSemaKeyword(typeName) {
 			continue
 		}
-		scopeStart, scopeEnd := statementOrBlockBoundsAfter(body, semaEnhancedForBodySearchStart(body, match[0], match[1]))
+		bodyStart := semaEnhancedForBodySearchStart(body, match[0], match[1])
+		scopeStart, scopeEnd := statementOrBlockBoundsAfter(body, bodyStart)
 		if scopeStart < match[1] {
 			scopeStart = match[1]
 		}
@@ -6073,7 +6074,9 @@ func (a *Analyzer) collectBodyScopesWithLocalDeclMatches(typ typesys.TypeSymbol,
 				})
 			}
 		}
-		diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), match[5], scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
+		// Like the IR, resolve the iterable before the loop local is visible.
+		resolvedType := resolveNestedTypeReference(model, typ.Name, typeName)
+		diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolvedType, scopeStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
 	}
 	// Declarations are processed in source order so that an initializer sees
 	// every local declared before it, whichever spelling declared it.
