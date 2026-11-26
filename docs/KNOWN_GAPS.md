@@ -2,15 +2,8 @@
 
 Generated from the first-party compat plugin capability catalog.
 
-## Known limits of the local runtime
-
-This checklist does not establish complete Salesforce parity.
-
-- Required complete: 22/22
-- Required incomplete: 0
-
-All required local capability rows are currently `supported`.
-No required local support gaps are currently tracked.
+These areas are unsupported or partly supported in the local runtime.
+See the [known limitations](https://glade.sh/guide/known-limitations) for a guide to current limits.
 
 ## Automation
 
@@ -19,14 +12,10 @@ No required local support gaps are currently tracked.
 - Status: `unsupported`
 - Gap: The local assignment rule implementation is bounded to the supported Lead and Case metadata and checked selection paths; it does not establish full hosted assignment behavior.
 
-## Automation
-
 ### `automation.duplicate.matching`: Duplicate matching scope
 
 - Status: `unsupported`
 - Gap: Local duplicate matching enforces custom same-object rules with Exact items and the First Name, Last Name, Company Name, Phone, City, Street, ZIP and Title fuzzy methods, reproducing native verdicts and match confidences for the captured rows. It enforces a custom cross-object rule whose `objectMapping` maps fields of the rule's object onto the matching rule's object, for the captured one-field mapping (unmapped fields count as blank; mappings of several fields stay unenforced), and Allow+Report rules commit one record set for records that match each other. It does not enforce Person Account custom rules or other cross-object shapes, reports no `getFieldDiffs()` entries for custom rules with fuzzy items or for Person Account rules, models the update gate against insert-time values only for records inserted as an allowed duplicate in the same transaction (a record inserted without a match, moved away and back after another record took its original value, compares with its stored value and is blocked; no native row shows that case, nor do other repeat edits, standard-rule update reports or flow-triggered update reports), leaves `runAsCurrentUser` unmodeled, and leaves standard Account, Contact and Lead fuzzy equations, fuzzy items under OR and rules with three or more fuzzy items unenforced. Metaphone 3 and Syllable Alignment are approximated, so some native matches are missed. See [DUPLICATE_FUZZY_MATCHING.md](DUPLICATE_FUZZY_MATCHING.md).
-
-## Automation
 
 ### `automation.flow.hosted`: Hosted Flow and unsupported nodes
 

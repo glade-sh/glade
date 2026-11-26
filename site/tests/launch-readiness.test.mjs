@@ -47,7 +47,7 @@ test('pilot links to pinned advisory CI and preserves safe feedback boundaries',
   const pilot = await read('guide/tester-field-guide.md')
   const ci = await read('guide/ci-artifacts.md')
   assert.match(pilot, /\/guide\/ci-artifacts#advisory-pilot/)
-  assert.match(ci, /GLADE_VERSION=v\d+\.\d+\.\d+/)
+  assert.match(ci, /GLADE_VERSION=\{\{ releaseManifest\.version \}\} GLADE_REQUIRE_PROVENANCE=1 sh/)
   assert.match(ci, /continue-on-error: true/)
   assert.match(ci, /if: always\(\)/)
   assert.match(pilot, /private package names/i)

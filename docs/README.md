@@ -1,6 +1,7 @@
 # Docs Start Here
 
-This map keeps first-use docs in one place.
+Start with the [Quickstart](https://glade.sh/guide/quickstart) and check the
+[known limitations](https://glade.sh/guide/known-limitations) for your project.
 
 The supported window is Apex 62.0-68.0, LWC and Visualforce 59.0-67.0.
 Apex source API below 62.0 is unsupported. DataWeave and Slack are excluded and
@@ -51,8 +52,7 @@ Base `glade` consumes or publishes them; it does not regenerate them.
 - [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md) — method-level platform library
   coverage.
 - [LWC_SUPPORT.md](LWC_SUPPORT.md) — local LWC support boundary.
-- [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — published v0.2.11
-  surface snapshot and tagged v0.2.12 validation (historical; not v0.3.0 qualification).
+- [PRIVATE_CORPUS_ASSURANCE.md](PRIVATE_CORPUS_ASSURANCE.md) — historical release validation.
 - [RELEASE_NOTES.md](RELEASE_NOTES.md) — stable and unreleased product changes.
 
 Generated gap, standard-object, and method inventories are snapshots maintained

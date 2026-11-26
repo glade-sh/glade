@@ -28,7 +28,7 @@ test("shell installer waits for the shared toolchain lock", async () => {
   await mkdir(commands);
   await writeFile(join(commands, "gh"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   const realPython = spawnSync("which", ["python3"], { encoding: "utf8" }).stdout.trim();
-  await writeFile(join(commands, "python3"), `#!/bin/sh\ntouch "$LOCK_HELPER_STARTED"\nexec "${realPython}" "$@"\n`, { mode: 0o755 });
+  await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ] && [ "$#" -gt 3 ]; then touch "$LOCK_HELPER_STARTED"; fi\nexec "${realPython}" "$@"\n`, { mode: 0o755 });
   const env = { ...process.env, PATH: `${commands}:${process.env.PATH}`, LOCK_HELPER_STARTED: join(root, "lock-helper-started"), HOME: home, XDG_DATA_HOME: xdg, GLADE_VERSION: version, GLADE_DOWNLOAD_BASE: pathToFileURL(host).href, GLADE_INSTALL_DIR: join(root, "bin") };
   delete env.GLADE_HOME;
   const share = join(xdg, "glade");

@@ -32,7 +32,7 @@ test('mobile navigation, skip link, sidebar, and search remain reachable', async
   const localNav = page.getByRole('button', { name: /menu/i }).last()
   if (await localNav.isVisible()) {
     await localNav.click()
-    await expect(page.getByRole('link', { name: 'First local check' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Quickstart', exact: true })).toBeVisible()
   }
   const dimensions = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,

@@ -22,7 +22,7 @@ glade playground --data-root "$GLADE_EXAMPLE_DIR/playground" --db "$GLADE_EXAMPL
 ```
 
 Stop the workbench with Ctrl-C after its files load. From the same directory,
-initialize and run the named test against its managed workspace:
+initialize and run the bundled `RefinementServiceTest` against its managed workspace:
 
 ```bash
 GLADE_PROJECT="$GLADE_EXAMPLE_DIR/playground/workspaces/default"
@@ -47,10 +47,7 @@ Useful first examples:
 Salesforce DX project. The browser command writes the example to its managed
 scratch workspace and may create the configured SQLite org database beside it.
 `--reset-on-start` clears both managed workspace and org state. Use the
-[five-minute Quickstart](/guide/quickstart#sample-project) for a terminal-only
+[Quickstart](/guide/quickstart#sample-project) for a terminal-only
 first run and cleanup. The command above uses a fresh data root to keep the
-example separate from existing managed workspaces. v0.3.0 refuses to replace a
-non-empty managed workspace unless `--reset-on-start` is explicit.
-
-The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.3.0 release.
+example separate from existing managed workspaces. A non-empty workspace
+requires `--reset-on-start` before Glade will replace it.

@@ -42,7 +42,7 @@ canonicalTask: /guide/workflows
 ## Team automation
 
 <div class="docs-route-grid docs-workflow-grid">
-  <a class="docs-route-card" href="/guide/workflows/ci"><strong>Add Glade to CI</strong><span>Publish JSON, SARIF, JUnit, and stable exit-code evidence.<br>Start: <code>glade check --project . --json</code><br>Interface: CI · Requires: project and pinned binary</span></a>
+  <a class="docs-route-card" href="/guide/workflows/ci"><strong>CI quickstart</strong><span>Publish JSON, SARIF, JUnit, and stable exit-code evidence.<br>Start: <code>glade check --project . --json</code><br>Interface: CI · Requires: project and pinned binary</span></a>
 </div>
 
 Use [How Glade works](/guide/modules) for subsystem boundaries, the [CLI

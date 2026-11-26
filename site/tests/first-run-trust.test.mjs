@@ -67,13 +67,16 @@ test("installation choices link to canonical task guides", () => {
   }
 });
 
-test("installation docs disclose both destinations and the observed footprint", () => {
+test("installation docs disclose both destinations, shell setup, and strict verification", () => {
   for (const installationDoc of [siteInstallation, repoInstallation]) {
     assert.match(installationDoc, /GLADE_INSTALL_DIR/);
     assert.match(installationDoc, /GLADE_HOME/);
     assert.match(installationDoc, /binary, including parser support/);
     assert.match(installationDoc, /LWC runtime\/toolchain and bundled editor assets/);
-    assert.match(installationDoc, /about 229 MB on disk/i);
+    assert.doesNotMatch(installationDoc, /about 229 MB on disk/i);
+    assert.match(installationDoc, /\.zshrc/);
+    assert.match(installationDoc, /\.bashrc/);
+    assert.match(installationDoc, /GLADE_REQUIRE_PROVENANCE=1/);
   }
 });
 
@@ -101,14 +104,14 @@ test("local-api-routes keeps endpoint versions separate from source, bundles, an
 	assert.match(localAPIRoutes, /not evidence that Salesforce was contacted/);
 });
 
-test("cli, JSON schema, and release notes describe v0.3.0 first-run contracts", () => {
-	assert.match(cliReference, /v0\.3\.0[\s\S]{0,100}doctor `1\.1` schema/);
-	assert.match(cliReference, /`--once` example materializer[\s\S]{0,100}v0\.3\.0/);
+test("CLI, JSON schema, and release notes describe first-run contracts", () => {
+	assert.match(cliReference, /`schemaVersion`[\s\S]{0,125}`1\.1`/);
+	assert.match(cliReference, /`--once` to write a managed example project without starting a server/);
 	assert.match(jsonSchema, /v0\.3\.0[\s\S]{0,100}flattened `1\.1`/);
 	assert.match(jsonSchema, /62\.0 through 68\.0 checked window/);
 	assert.match(jsonSchema, /does not mean Salesforce was queried/);
 	assert.match(cliOutputContract, /currently `1\.1`/);
-	const v030Notes = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+	const v030Notes = releaseNotes.split(/^## v0\.3\.0 - \d{4}-\d{2}-\d{2}$/m)[1]?.split(/\n## /)[0];
 	assert.ok(v030Notes, "release notes must include v0.3.0");
 	assert.match(v030Notes, /--example refinement-service --once/);
 	assert.match(v030Notes, /schema advances to `1\.1`/);
@@ -124,11 +127,10 @@ test("cli, JSON schema, and release notes describe v0.3.0 first-run contracts", 
 });
 
 test("manual verification uses one fail-closed, verification-only helper", () => {
-  for (const verificationDoc of [siteSecurityTrust, securityPolicy]) {
-    assert.match(verificationDoc, /release-verifier:start/);
-    assert.match(verificationDoc, /manifest must contain a stable vMAJOR\.MINOR\.PATCH version/);
-    assert.match(verificationDoc, /Not extracted, installed, or executed/);
-  }
+  assert.match(siteSecurityTrust, /^<!-- release-verifier:start -->\n```sh\n#!\/bin\/sh$/m);
+  assert.match(securityPolicy, /release-verifier:start/);
+  assert.match(releaseVerifier, /manifest must contain a stable vMAJOR\.MINOR\.PATCH version/);
+  assert.match(releaseVerifier, /Not extracted, installed, or executed/);
   for (const pointerDoc of [repoInstallation, repoSecurityTrust]) {
     assert.match(pointerDoc, /sh scripts\/verify-release-download\.sh/);
   }
@@ -146,7 +148,7 @@ test("public trust documentation explains plugin execution boundaries", () => {
 
 test("v0.3.0 release notes retain daemon upgrade guidance", async () => {
   const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
-  const current = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+  const current = releaseNotes.split(/^## v0\.3\.0 - \d{4}-\d{2}-\d{2}$/m)[1]?.split(/\n## /)[0];
   assert.ok(current, "release notes must include v0.3.0");
   assert.match(current, /Stop old test servers with the original binary before upgrading/);
   assert.match(current, /glade test daemon stop/);

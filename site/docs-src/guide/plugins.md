@@ -14,10 +14,10 @@ Glade plugins are standalone executables installed and run through
 `glade plugins`.
 
 ::: info First-party licensing
-Glade Tools source and the published v0.2.13 plugin archives use the
-Apache License 2.0 and carry project and linked-component notices. Published
-plugin versions before v0.2.13 do not contain the new packaged notice set.
-Product and plugin versions remain independent; the core quickstart needs no plugin.
+Glade Tools source and current first-party plugin archives use the
+Apache License 2.0 and carry project and linked-component notices. Product and
+plugin versions are independent. The [Quickstart](/guide/quickstart) needs no
+plugin.
 :::
 
 ::: tip Default registry

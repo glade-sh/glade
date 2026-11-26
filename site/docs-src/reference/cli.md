@@ -98,9 +98,8 @@ GLADE_UPDATE_ALLOW_SHELL=1 glade update
 
 ## `glade doctor`
 
-The v0.3.0 release includes the doctor `1.1` schema and its scoped recovery
-and `apexReady` contract. Older v0.2.15 binaries emit doctor schema `1.0`;
-consumers must select fields according to the installed version.
+Doctor JSON consumers should check `schemaVersion` before reading fields
+such as `apexReady` and scoped recovery steps, which use schema `1.1`.
 
 Check Apex readiness for one project. Doctor reports the resolved project root,
 configuration, parser, project Apex API default, local-data state, runtime, and
@@ -277,7 +276,7 @@ glade check --project . --format github
 glade check --project . --no-cache
 ```
 
-For local telemetry, `--cpu-profile <path>` writes a CPU profile,
+For local profiling, `--cpu-profile <path>` writes a CPU profile,
 `--mem-profile <path>` writes a heap profile, and `--perf-json <path>` writes
 opt-in check performance counters:
 
@@ -459,7 +458,7 @@ mkdir -p reports
 glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.pprof --mem-profile reports/test.mem.pprof --perf-json reports/test.perf.json
 ```
 
-They are local telemetry artifacts and do not replace Salesforce validation.
+They are local profiling artifacts and do not replace Salesforce validation.
 The versioned JSON records effective execution and cache policy.
 `semanticCache.source` identifies memory, disk, or build provenance, alongside
 safe-miss reasons, waits, retained bytes, and evictions.
@@ -762,8 +761,7 @@ glade db export --db .glade/refinement-local.sqlite > refinement-export.json
 
 Start the local browser playground for editing classes, running anonymous Apex, and inspecting logs, limits, traces, and org diffs.
 
-The `--once` example materializer shown below is included in v0.3.0.
-It writes a managed project without starting a server. Use `--open` to start
+Use `--once` to write a managed example project without starting a server. Use `--open` to start
 the browser workbench.
 
 ```bash

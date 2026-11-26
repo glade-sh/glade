@@ -3,7 +3,11 @@ pageType: troubleshooting
 canonicalTask: /guide/workflows/ci
 ---
 
-# Troubleshoot Glade CI setup
+<script setup>
+import releaseManifest from '../../release-manifest.json'
+</script>
+
+# CI walkthrough
 
 <div class="docs-intro">
   <p>Find the failed step, check its inputs, and recover the reports you need to diagnose it.</p>
@@ -14,7 +18,7 @@ canonicalTask: /guide/workflows/ci
 | Symptom | Check next |
 | --- | --- |
 | `glade: command not found` | Confirm installation succeeded and `$HOME/.local/bin` was added to `$GITHUB_PATH` before the Glade steps. |
-| Project discovery fails | Run from the Salesforce DX project root. Use [the first local check](/guide/quickstart#_3-initialize-local-project-configuration) to create missing configuration safely, then rerun `glade doctor --project .`. |
+| Project discovery fails | Run from the Salesforce DX project root. Use [Quickstart](/guide/quickstart#_3-initialize-local-project-configuration) to create missing configuration safely, then rerun `glade doctor --project .`. |
 | Changed-test selection cannot find its base | Confirm `origin/main` exists locally with `git rev-parse --verify origin/main`. Fetch the intended base and enough history; substitute your repository's actual base ref. |
 | No tests are selected | Check the changed files and base ref. Follow [changed-test recovery](/help/changed-tests-before-pr); an empty selection does not prove the whole suite passes. |
 | Reports are missing after a failed gate | Create `reports` before writing files and upload with `if: always()`. A step that never ran cannot produce its report. |
@@ -29,7 +33,7 @@ changed-test or refactor commands.
 ## Before you start
 
 - The repository uses GitHub Actions.
-- The workflow can install Glade from `https://glade.sh/install.sh`.
+- Use the [recommended pinned installer or build from a pinned source checkout](/guide/ci-artifacts#advisory-pilot).
 - The project can run local checks and tests from a terminal.
 
 ## Steps
@@ -40,7 +44,7 @@ For an evaluation, start with the [advisory pilot](/guide/ci-artifacts#advisory-
 The example below is an enforcing gate: check/test failures fail the job.
 Create `.github/workflows/glade.yml`:
 
-```yaml
+```yaml-vue
 name: glade
 on: [pull_request]
 
@@ -51,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.3.0 sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION={{ releaseManifest.version }} GLADE_REQUIRE_PROVENANCE=1 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .
@@ -105,4 +109,4 @@ Changed-test selection needs the base ref on disk. Keep `fetch-depth: 0` when th
 ## Next
 
 - [Run changed tests before a PR](/help/changed-tests-before-pr)
-- [Add Glade to CI](/guide/ci-artifacts)
+- [CI reports and artifacts](/guide/ci-artifacts)

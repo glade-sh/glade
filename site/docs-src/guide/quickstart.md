@@ -4,7 +4,7 @@ canonicalTask: /guide/quickstart
 outline: [2, 3]
 ---
 
-# Five-minute Quickstart
+# Quickstart
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Tutorial</p>
@@ -17,7 +17,9 @@ outline: [2, 3]
 </div>
 
 Packaged releases support macOS and Linux on `amd64` and `arm64`. Use a
-terminal; neither route requires a Salesforce login.
+terminal with `curl` and a working Python 3. Install the GitHub CLI (`gh`) to
+verify release attestations. See the [installation guide](/guide/installation)
+for prerequisites. Both test routes run without a Salesforce login.
 
 ## 1. Install and verify
 
@@ -37,16 +39,6 @@ glade version
 Choose one route below.
 
 ## Route A: Try the sample {#sample-project}
-
-::: info Stable sample
-The corrected bundled test below first shipped in v0.2.14 and is included
-in the v0.3.0 release. Do not
-treat a playground Pass with source errors as successful validation.
-:::
-
-The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.3.0 release. You can open that larger browser example after the
-terminal-only first run below.
 
 ### 2A. Create the sample project
 
@@ -102,7 +94,8 @@ Expected: the check is clean. The test result names `SampleTest.adds`.
 `total` and `passed` are `1`, while `failed`, `errors`, and `unsupported` are
 `0`. Zero tests is not a successful first-run result.
 
-To explore the larger bundled example in the browser workbench later:
+After the terminal sample, you can open the bundled Refinement Service
+example in the browser workbench. It includes `RefinementServiceTest`.
 
 ```bash
 GLADE_EXAMPLE_DIR="$(mktemp -d)"
@@ -113,8 +106,8 @@ Select **Continue** on the **Open local preview** confirmation. HTTP clients
 without browser origin metadata need `X-Glade-Client: 1` when requesting the
 local playground.
 
-Stop the browser workbench with Ctrl-C. v0.3.0 also includes a no-server
-project materializer; see the [playground CLI reference](/reference/cli#glade-playground).
+Stop the browser workbench with Ctrl-C. The [playground CLI reference](/reference/cli#glade-playground)
+shows how to write a sample project to disk without starting a server.
 
 ## Route B: Use my Salesforce DX project
 

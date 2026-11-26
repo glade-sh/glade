@@ -33,7 +33,7 @@ for (const failure of ["stage", "asset swap", "binary swap", "binary validation"
   if (failure === "asset swap" || failure === "binary swap") await writeFile(join(commands, "mv"), '#!/bin/sh\nif [ "$2" = "$FAIL_DEST" ] && [ ! -e "$FAIL_MARK" ]; then touch "$FAIL_MARK"; exit 1; fi\nexec /bin/mv "$@"\n', { mode: 0o755 });
   if (failure === "helper failure") {
     const python = spawnSync("which", ["python3"], { encoding: "utf8" }).stdout.trim();
-    await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ]; then printf '%s' "$$" > "$HELPER_PID"; fi\nexec "${python}" "$@"\n`, { mode: 0o755 });
+    await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ] && [ "$#" -gt 3 ]; then printf '%s' "$$" > "$HELPER_PID"; fi\nexec "${python}" "$@"\n`, { mode: 0o755 });
     await writeFile(join(commands, "mv"), '#!/bin/sh\nif [ "$2" = "$FAIL_DEST" ]; then kill -KILL "$(cat "$HELPER_PID")"; fi\nexec /bin/mv "$@"\n', { mode: 0o755 });
   }
   if (failure === "interruption") await writeFile(join(commands, "mv"), '#!/bin/sh\n/bin/mv "$@" || exit $?\nif [ "$2" = "$FAIL_DEST" ]; then kill -KILL "$PPID"; fi\n', { mode: 0o755 });

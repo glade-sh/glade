@@ -14,7 +14,8 @@ changed-test or refactor commands.
 
 ## Before you start
 
-Choose the [pinned advisory pilot](/guide/ci-artifacts#advisory-pilot) while
+Use the [recommended pinned installer or build from a pinned source checkout](/guide/ci-artifacts#advisory-pilot).
+Choose the [advisory pilot](/guide/ci-artifacts#advisory-pilot) while
 evaluating Glade. Use the [enforcing gate](/guide/ci-artifacts#enforcing-gate)
 only for paths your team has validated. Neither replaces Salesforce validation.
 
@@ -56,7 +57,7 @@ gate, then upload artifacts with the CI system's always-run upload step.
 
 ## Deeper reference
 
-- [Add Glade to CI](/guide/ci-artifacts)
+- [CI reports and artifacts](/guide/ci-artifacts)
 - [Automation and JSON](/guide/automation)
 - [Exit codes](/guide/exit-codes)
-- [CI setup](/help/ci-setup)
+- [CI walkthrough](/help/ci-setup)
