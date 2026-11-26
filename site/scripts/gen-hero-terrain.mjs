@@ -1,4 +1,5 @@
 // Draws docs-src/public/home/hero-terrain.svg, the still first paint of the hero contour map.
+// home.css uses the file as a mask over a CSS gradient, so only the alpha of each stroke reaches the page.
 // The height field here must stay identical to the one in .vitepress/theme/home/hero-terrain.ts
 // at time zero, so the live canvas takes over from the image without the lines moving.
 // Run: node scripts/gen-hero-terrain.mjs

@@ -172,7 +172,7 @@ onUnmounted(() => {
 </header>
 <main id="main" tabindex="-1">
  <section ref="hero" class="hero" aria-labelledby="hero-title">
-  <div class="hero-topo" aria-hidden="true"><img :src="withBase('/home/hero-terrain.svg')" alt=""></div>
+  <div class="hero-topo" aria-hidden="true"><i></i></div>
   <canvas ref="terrain" class="hero-terrain" aria-hidden="true"></canvas>
   <div class="container hero-grid">
    <div class="hero-copy">
@@ -313,7 +313,7 @@ onUnmounted(() => {
   </div>
  </section>
  <section class="get-started" id="get-started" tabindex="-1" aria-labelledby="start-title">
-  <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
+  <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async"></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async"></div>
   <div class="container">
    <p class="eyebrow">Install Glade</p>
    <h2 id="start-title">Start with one local test.</h2>
