@@ -3,18 +3,27 @@ pageType: reference
 canonicalTask: /guide/workflows/ci
 ---
 
+<script setup>
+import releaseManifest from '../../release-manifest.json'
+
+const checkOutcome = '${{ steps.check.outcome }}'
+const testsOutcome = '${{ steps.tests.outcome }}'
+</script>
+
 # CI reports and artifacts
 
 Glade writes machine-readable check results and saved test reports for CI.
 
 ## Advisory pilot
 
-Use this workflow while evaluating supported local paths. The example pins the
-v0.3.0 release; change the pin deliberately after reviewing a newer
-release. The product does not install plugins here; pin a plugin lock file too
-if your workflow adds them.
+Use this workflow while evaluating supported local paths. The pinned installer
+is recommended for CI. Use the GitHub CLI (`gh`) and
+`GLADE_REQUIRE_PROVENANCE=1` to require the checksum and both attestations
+before extraction. You can also [build from a pinned source checkout](/guide/build-from-source).
+Review new releases before changing the pin. Add a plugin lock file if the
+workflow uses plugins.
 
-```yaml
+```yaml-vue
 name: glade-pilot
 on: [pull_request]
 permissions:
@@ -26,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=v0.3.0 sh
+      - run: curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION={{ releaseManifest.version }} GLADE_REQUIRE_PROVENANCE=1 sh
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade version
       - run: glade doctor --project .
@@ -42,8 +51,8 @@ jobs:
       - name: Record assessment outcomes
         if: always()
         run: |
-          echo "check=${{ steps.check.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "tests=${{ steps.tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "check={{ checkOutcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "tests={{ testsOutcome }}" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -9,6 +9,7 @@
     { "source": "guide/quickstart.md", "route": "/guide/quickstart", "classification": "nav" },
     { "source": "guide/workflows.md", "route": "/guide/workflows", "classification": "nav" },
     { "source": "guide/support-map.md", "route": "/guide/support-map", "classification": "nav" },
+    { "source": "guide/known-limitations.md", "route": "/guide/known-limitations", "classification": "nav" },
     { "source": "guide/security-trust.md", "route": "/guide/security-trust", "classification": "nav" },
     { "source": "guide/affected-tests.md", "route": "/guide/affected-tests", "classification": "deep-link" },
     { "source": "guide/ai-assisted-apex.md", "route": "/guide/ai-assisted-apex", "classification": "deep-link" },

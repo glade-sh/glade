@@ -30,7 +30,7 @@ test("shared executable remains fenced across different roots after helper death
   await writeFile(join(host, version, "release-manifest.json"), JSON.stringify({version}));
   await writeFile(join(commands, "gh"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   const python = spawnSync("which", ["python3"], { encoding: "utf8" }).stdout.trim();
-  await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ]; then printf '%s' "$$" > "$HELPER_PID"; fi\nexec "${python}" "$@"\n`, { mode: 0o755 });
+  await writeFile(join(commands, "python3"), `#!/bin/sh\nif [ "$1" = -c ] && [ "$#" -gt 3 ]; then printf '%s' "$$" > "$HELPER_PID"; fi\nexec "${python}" "$@"\n`, { mode: 0o755 });
   await writeFile(join(commands, "mv"), '#!/bin/sh\nif [ "$2" = "$FAIL_DEST" ] && [ ! -e "$TRIGGER" ]; then touch "$TRIGGER"; kill -KILL "$(cat "$HELPER_PID")"; touch "$PAUSED"; while [ ! -e "$RELEASE" ]; do sleep 0.1; done; fi\nexec /bin/mv "$@"\n', { mode: 0o755 });
   const paused = join(root, "paused"), release = join(root, "release");
   const env = { ...process.env, PATH: `${commands}:${process.env.PATH}`, HOME: root, XDG_DATA_HOME: xdg, GLADE_INSTALL_DIR: bin, GLADE_VERSION: version, GLADE_DOWNLOAD_BASE: pathToFileURL(host).href, HELPER_PID: join(root, "helper"), TRIGGER: join(root, "trigger"), PAUSED: paused, RELEASE: release, FAIL_DEST: join(await realpath(join(xdg, "glade")), "third_party") };

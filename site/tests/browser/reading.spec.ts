@@ -114,6 +114,6 @@ test('Help leads with recovery and CI symptoms before the illustrated setup', as
   await expect(links.nth(0)).toHaveText('Help home')
   await expect(links.nth(1)).toHaveText('Fix a problem')
   await expect(page.locator('.vp-doc h2').first()).toHaveText(/Diagnose a failed run/)
-  await page.getByRole('link', { name: 'the first local check', exact: true }).click()
+  await page.locator('.vp-doc').getByRole('link', { name: 'Quickstart', exact: true }).click()
   await expect(page.locator('#_3-initialize-local-project-configuration')).toBeInViewport()
 })

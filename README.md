@@ -7,7 +7,7 @@
 
 <h1 align="center">Glade</h1>
 
-<p align="center">Run supported Apex locally. Keep your momentum.</p>
+<p align="center">Test your Apex before you deploy it.</p>
 <p align="center">
   <a href="https://glade.sh">Site</a> ·
   <a href="https://glade.sh/guide/quickstart">Quickstart</a> ·
@@ -35,31 +35,35 @@ Salesforce, Inc.
 
 ## Start with one useful result
 
+Have `curl` and a working Python 3. Install the GitHub CLI (`gh`) to verify
+release attestations. See the [installation guide](https://glade.sh/guide/installation)
+for prerequisites and verification options.
+
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
 
-Continue with the [canonical quickstart](https://glade.sh/guide/quickstart) and
+Continue with the [Quickstart](https://glade.sh/guide/quickstart) and
 choose the path that matches your workspace:
 
 - **Small terminal sample:** create a temporary Salesforce DX project and run the documented test.
 - **Your own project:** initialize an existing Salesforce DX project and run one known test class before the full suite.
 - **Optional browser example:** load Refinement Service in a fresh managed workspace, then run its named test locally.
 
-The Quickstart uses commands available in the current stable CLI and also
-covers recovery, API-version rules, and the Salesforce boundary. The bundled
-`RefinementServiceTest` first shipped in **v0.2.14** and is included in the
-**v0.3.0 release**.
+The Quickstart covers recovery, API versions, and when to validate in
+Salesforce. The Refinement Service example includes `RefinementServiceTest`.
 
-For an existing Salesforce DX project, substitute a test class that it owns:
+For an existing Salesforce DX project, replace `<YourTestClass>` with the
+name of one of its test classes.
 
 ```bash
 test -f glade.yml || glade init --project . --yes
+glade config validate --project .
 glade doctor --project .
 glade check --project .
-glade test --project . --class RefinementServiceTest --json --no-progress
+glade test --project . --class <YourTestClass> --json --no-progress
 ```
 
 A first project test result must name at least one executed test. The
@@ -92,14 +96,15 @@ or [Choose a workflow](https://glade.sh/guide/workflows).
   HTTP Execute Anonymous admits 65.0, 66.0, 67.0, and 68.0. Checked HTTP endpoints
   are a separate axis: 60.0, 65.0, 66.0, 67.0, and 68.0; the default is 65.0.
   CLI `glade exec` preserves project source versions without the HTTP gate.
-- DataWeave, ConnectApi, and Slack are excluded and unsupported.
+- DataWeave and Slack are unsupported. ConnectApi provides types for local
+  code and tests. Its hosted services require Salesforce.
 - Local test isolation is not an OS sandbox. Plugins run as your user.
   Review network use by custom code and external AI providers.
 - Preview and deterministic harness behavior have named limits. A supported
   harness row does not implement the corresponding live hosted service.
 
 Use the [support map](https://glade.sh/guide/support-map),
-[known gaps](docs/KNOWN_GAPS.md), [stdlib ledger](docs/STDLIB_COVERAGE.md),
+[known limitations](https://glade.sh/guide/known-limitations), [stdlib ledger](docs/STDLIB_COVERAGE.md),
 [compatibility policy](docs/COMPATIBILITY.md), and
 [Apex language contract](docs/APEX_LANGUAGE_COMPATIBILITY.md) for detail.
 Counts apply to their named catalogs, not all Salesforce behavior.
@@ -128,8 +133,9 @@ for security issues. See [SECURITY.md](SECURITY.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md). The [pilot guide](https://glade.sh/guide/tester-field-guide)
 helps teams evaluate one representative path before making it a merge gate.
 
-Glade source, documentation, examples, site source, and the VS Code extension
+Glade-authored source, documentation, examples, site source, and the VS Code extension
 are licensed under the [Apache License 2.0](LICENSE). Copyright 2026 Matt Simonis.
+The [code of conduct](CODE_OF_CONDUCT.md) uses the Contributor Covenant 2.1.
 
 ## References
 

@@ -26,8 +26,8 @@ test('public IA has a guide landing, five-destination navigation, and scoped sid
 
 test('homepage preserves approved composition and honest release trust links', () => {
   for (const section of ['features', 'workflow', 'extend', 'get-started']) assert.ok(home.includes(`id="${section}"`));
-  assert.match(home, /Run Apex locally/);
-  assert.match(home, /Keep your[\s\S]*momentum/);
+  assert.match(home, /Test your Apex/);
+  assert.match(home, /before you deploy it\./);
   assert.match(home, /simulated output/);
   assert.match(home, /Checksums, SBOM, and attestations/);
 });

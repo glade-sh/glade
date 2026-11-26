@@ -3,7 +3,9 @@
 Glade can write machine-readable check results and saved test reports for CI.
 
 Use the canonical [advisory pilot and enforcing gate](https://glade.sh/guide/ci-artifacts)
-for complete pinned workflows. Start advisory: retain failed assessment/test
+for complete workflows. The pinned installer is recommended for CI. You can
+also [build from a pinned source checkout](https://glade.sh/guide/build-from-source).
+Start advisory: retain failed assessment/test
 outcomes and artifacts without making local compatibility an unexpected merge
 requirement. Install/doctor failures remain setup failures. Move to an enforcing
 gate only after the team validates its chosen scope.
