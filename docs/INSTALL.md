@@ -1,4 +1,4 @@
-# Install glade
+# Install Glade
 
 `glade` is distributed as a CLI binary with bundled runtime and editor assets.
 Release artifacts are parser-capable CGO builds for macOS and Linux on amd64
@@ -8,7 +8,11 @@ Project home: <https://glade.sh>
 
 ## One-Line Install
 
-For macOS and Linux:
+The installer supports macOS and Linux on arm64 and amd64. It needs `curl`, a
+working Python 3, `mkfifo`, and either `shasum` or `sha256sum`. Python 3
+coordinates the installation lock. On macOS, install the Xcode Command Line
+Tools with `xcode-select --install` or put another Python 3 on your `PATH`.
+The GitHub CLI (`gh`) enables attestation verification.
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
@@ -17,9 +21,8 @@ curl -fsSL https://glade.sh/install.sh | sh
 The script installs the `glade` binary, including parser support, to
 `~/.local/bin`. It installs the LWC runtime/toolchain and bundled editor assets
 under `~/.local/share/glade` by default. Set `GLADE_INSTALL_DIR` and
-`GLADE_HOME` to change those destinations. As a historical measurement, a clean v0.2.15 macOS arm64 install
-used about 229 MB on disk; size varies by release and platform. Override both
-destinations or pin a version when needed:
+`GLADE_HOME` to change those destinations. Override both destinations or pin a
+version when needed:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin GLADE_HOME="$HOME/.local/share/glade" sh
@@ -29,34 +32,48 @@ curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 Then check the binary:
 
 ```bash
+export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
+
+To keep this `PATH` in new terminals, use the line for your shell:
+
+```bash
+printf '%s\n' 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"  # zsh
+printf '%s\n' 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc" # bash
+```
+
+For a bash login shell, use `~/.bash_profile` if it does not already load
+`~/.bashrc`.
 
 `glade doctor` is project-aware. Run it after initializing Glade inside a
 Salesforce DX project, as shown in [First Project Run](#first-project-run).
 
 ## Security verification
 
-Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
-attestations. The installer requires the GitHub CLI (`gh`) and network access to
-verify the staged archive's release-workflow provenance and SBOM attestation
-before extraction. It also requires Python 3 to coordinate the installation
-lock. Verification failure stops installation.
+The installer checks the archive's SHA-256 checksum before extraction. With
+`gh` installed, it also checks release-workflow provenance and the CycloneDX
+attestation. A failed check stops installation. Without `gh`, the installer
+prints that provenance was not checked and continues after the checksum passes.
 
-Public release attestations can be verified without a GitHub login. For private
-releases, authenticate `gh` or set `GLADE_GITHUB_TOKEN` with access to release
-assets and attestations. The release workflow verifies both the archive
-provenance and its CycloneDX attestation
-before uploading the platform assets.
+To require both attestations, install `gh` and run:
+
+```bash
+curl -fsSL https://glade.sh/install.sh | env GLADE_REQUIRE_PROVENANCE=1 sh
+```
+
+The installer prefers the per-archive Sigstore provenance bundle. It can use
+GitHub's public attestation API for the separate CycloneDX attestation and for
+older releases without a bundle. If public lookup fails, sign in with
+`gh auth login` to let `gh` fetch the attestations.
 
 An installer fetched and run directly from `glade.sh` is itself trusted at
 download time; a substituted installer could bypass these checks.
 `glade update` runs the installer embedded in the installed binary, which
 checks the downloaded archive before replacing the installation.
 
-Use the copyable, verification-only block in the [Security & trust
-guide](https://glade.sh/guide/security-trust#release-proof). From a reviewed
-repository checkout, the same fail-closed helper is available as:
+Use the verification-only helper in the [Security Policy](../SECURITY.md#verify-a-release-archive).
+From a reviewed repository checkout, run:
 
 ```bash
 sh scripts/verify-release-download.sh
@@ -148,7 +165,7 @@ Prerequisites:
 
 - Go 1.27.4 or newer
 - Git
-- A C compiler with CGO enabled (CGO is on by default). glade's Apex parser is a
+- A C compiler with CGO enabled (CGO is on by default). Glade's Apex parser is a
   generated tree-sitter grammar that requires CGO; without it, `check`, `test`,
   and `parse` on project sources fail with an `APEXPARSECGO` error. Install
   Xcode Command Line Tools on macOS (`xcode-select --install`) or `build-essential`
@@ -157,17 +174,21 @@ Prerequisites:
 ```bash
 git clone https://github.com/glade-sh/glade.git
 cd glade
-CGO_ENABLED=1 go build -o glade ./cmd/glade
-./glade version
+CGO_ENABLED=1 go build -o bin/glade ./cmd/glade
+./bin/glade version
 ```
+
+The binary from a source build comes without the bundled LWC toolchain. For
+LWC previews, run `./bin/glade toolchain install --from .` from the checkout.
+See the [LWC local shell guide](LWC_LOCAL_SHELL.md) for its Node dependencies.
 
 Run the locally built binary against a Salesforce DX project. No Salesforce org login is
 required for these local commands:
 
 ```bash
-./glade check --project path/to/sfdx-project --json
-./glade test --project path/to/sfdx-project --json
-./glade exec "System.debug('hello from source build');"
+./bin/glade check --project path/to/sfdx-project --json
+./bin/glade test --project path/to/sfdx-project --json
+./bin/glade exec "System.debug('hello from source build');"
 ```
 
 During development, run commands directly from source without creating a binary:
@@ -181,7 +202,7 @@ If you want `glade` on your `PATH`:
 
 ```bash
 mkdir -p "$HOME/.local/bin"
-install -m 0755 glade ~/.local/bin/glade
+install -m 0755 bin/glade ~/.local/bin/glade
 export PATH="$HOME/.local/bin:$PATH"
 glade version
 ```
@@ -189,7 +210,7 @@ glade version
 ## First Project Run
 
 If you do not have a project ready, use the
-[five-minute Quickstart](https://glade.sh/guide/quickstart). Its disposable
+[Quickstart](https://glade.sh/guide/quickstart). Its disposable
 terminal sample uses commands available in the current stable release and
 executes one named test before treating the setup as successful.
 
@@ -207,9 +228,9 @@ glade test --project . --json
 ```
 
 The project source default, per-class metadata, LWC bundle version, and local
-HTTP route version are independent. Apex source `65.0`, `66.0`, and `67.0` is in
-the checked window; well-formed historical versions are preserved without an
-implied parity claim. Do not change Salesforce metadata only to make a local
+HTTP route version are independent. Glade supports Apex source API 62.0–68.0
+and LWC and Visualforce API 59.0–67.0. Glade preserves well-formed older source
+versions outside that support window. Do not change Salesforce metadata only to make a local
 result green. Glade does not log in, deploy, check hosted permissions or
 services, or replace final Salesforce validation.
 
@@ -261,40 +282,61 @@ see [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md).
 
 ## Manual Install
 
-Download the archive and `SHA256SUMS.txt` for your platform. For a fresh manual
-installation, verify the checksum and install both the binary and its bundled
-assets. Use the [security verification](#security-verification) steps when
-attestation verification is required. For an existing installation, use
-[Update](#update) so managed asset directories are replaced together.
+Download `SHA256SUMS.txt` and the platform archive
+`glade_vX.Y.Z_<os>_<cpu>.tar.gz` from the [GitHub Releases page](https://github.com/glade-sh/glade/releases)
+or the [downloads mirror](https://downloads.glade.sh/). On the mirror, use
+`https://downloads.glade.sh/vX.Y.Z/<filename>`. Replace `vX.Y.Z` with the
+published tag in both filenames and URLs. Use `darwin` for macOS or `linux`
+for Linux. Choose `arm64` for Apple silicon or other ARM64 systems and
+`amd64` for x86-64. The `glade-release-artifacts-*.tar.gz` file is a release
+audit bundle. The platform archive contains the CLI and its bundled assets.
+
+For a fresh install, run this after downloading both files to an empty
+directory. For attestation verification, follow [Security verification](#security-verification)
+before extracting. For an existing installation, use [Update](#update) so
+managed assets are replaced together.
 
 ```bash
-GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
-grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
-tar -xzf "$GLADE_ARCHIVE"
-mkdir -p "$HOME/.local/bin" "$HOME/.local/share/glade"
-cp -R share/glade/. "$HOME/.local/share/glade/"
-install -m 0755 glade ~/.local/bin/glade
-export PATH="$HOME/.local/bin:$PATH"
-glade version
+(
+  set -e
+  archive=glade_vX.Y.Z_linux_amd64.tar.gz
+  awk -v path="./$archive" '$2 == path { print; count++ } END { if (count != 1) exit 1 }' \
+    SHA256SUMS.txt > selected-checksum.txt
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 -c selected-checksum.txt
+  else
+    sha256sum -c selected-checksum.txt
+  fi
+  tar -xzf "$archive"
+  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/glade"
+  cp -R share/glade/. "$HOME/.local/share/glade/"
+  install -m 0755 glade "$HOME/.local/bin/glade"
+  "$HOME/.local/bin/glade" version
+)
 ```
 
-For macOS, use the `darwin` archive matching your CPU. Windows release archives
-are not published by the CGO-enabled release workflow.
+Windows has no native release archive. See the [release asset list](../SECURITY.md#release-assets)
+for the matching SBOM, Sigstore provenance bundle, and release approval files.
 
 ## CI Usage
 
-These Linux CI examples assume the Salesforce DX project is already checked
-out at the workspace root. Jobs can either build from source or download a
-release artifact.
+For hosted CI, use a pinned release with `gh` and
+`GLADE_REQUIRE_PROVENANCE=1`. Follow the [CI guide](https://glade.sh/guide/workflows/ci)
+for report and artifact steps. Replace `vX.Y.Z` with a release you reviewed:
 
-Build Glade in a separate checkout, using its own `go.mod` and bundled parser
-module. This recipe runs local Apex checks and tests; LWC previews require the
-additional toolchain described in [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md).
+```bash
+curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z GLADE_REQUIRE_PROVENANCE=1 sh
+```
+
+To build from source in Linux CI, use a separate checkout and pin its ref.
+This example assumes the Salesforce DX project is at the workspace root.
+For LWC previews, see [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md).
 
 ```yaml
 - uses: actions/checkout@v4
   with:
     repository: glade-sh/glade
+    ref: vX.Y.Z
     path: .glade-source
 - uses: actions/setup-go@v5
   with:
@@ -314,12 +356,6 @@ additional toolchain described in [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md).
 
 Build from the checkout rather than `go install ...@latest`: Glade's `go.mod`
 replaces the parser dependency with its checked-in local module.
-
-For hosted CI, prefer the pinned source checkout and build steps above. The
-release-verification helper is intentionally audit-only: it retains an archive
-for inspection but does not authorize or perform extraction, installation, or
-execution. Do not turn that block into an unattended install recipe without a
-separate policy review.
 
 ## Persistent Local Server
 

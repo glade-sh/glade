@@ -23,10 +23,9 @@ local Salesforce API flow. Checked Apex/runtime reports carry the method-level
 detail. The LWC summary below links to the local shell guide and support table
 when you need route and module detail.
 
-**Stable download: Glade {{ releaseManifest.version }}.** The searchable
-capability notes describe selected behaviors in the checked source ledger.
-The download version does not certify these notes or
-inherit the historical runtime/parity evidence below.
+**Stable download: Glade {{ releaseManifest.version }}.** The search results
+describe selected local behaviors. See the release evidence below for the
+checks that ran for a specific release.
 
 The generated capability catalog is incomplete: its Flow limits and Platform
 Cache entries summarize selected behavior. Check the [Apex support reference](/reference/apex-support)
@@ -51,7 +50,7 @@ DataWeave and Slack are excluded and unsupported. ConnectApi types are passive
 shapes; its hosted services are not implemented. Do not change
 project metadata merely to avoid a version error. See the
 [quickstart version box](/guide/quickstart#api-versions-are-separate-contracts)
-and [v0.3.0 known issues](https://github.com/glade-sh/glade/blob/main/docs/RELEASE_NOTES.md#v030).
+and [known limitations](/guide/known-limitations).
 
 ## Status key
 
@@ -86,73 +85,17 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 ## Release evidence and scope
 
-The rows below are historical evidence for the releases they name; the v0.2.15
-counts do not describe later releases. For the current release and every
-release after v0.2.15, use that release's own evidence: its
-[GitHub Release](https://github.com/glade-sh/glade/releases) assets
-(`SHA256SUMS.txt`, per-archive SBOMs, `required-ci-attestation.json` and
-`salesforce-release-authority.json`), the same files under
-`https://downloads.glade.sh/vX.Y.Z/`, and its archive attestations, checked
-with `scripts/verify-release-download.sh` or `gh attestation verify`.
+Each release's evidence applies to the checks listed in its report. Keep a
+Salesforce validation gate for your project.
 
-| Release / source | Evidence | Denominator and boundary | Receipt |
-| --- | --- | --- | --- |
-| v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Historical distribution evidence; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
-| v0.2.14 — `b974901a3e0ad48d6c517cff894601fa5e242000` | Historical distribution; exact Required CI and Salesforce correctness authority for the product/Tools pair | Per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity or a new corpus result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.14) |
-| v0.2.13 — `04c55539045d782ce56e2e5d92d4fb637ba03741` | Published distribution | Per-archive checksums and attestations; not a new corpus/parity result | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
-| v0.2.12 — `3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` | Tagged local/corpus and Salesforce checks | 12,315 and 782 private tests; 86 public projects; 475 Salesforce checks, with their distinct accounting | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |
-| v0.2.11 | Frozen surface snapshot | 184 required surfaces; overlapping compile/test/runtime/non-parity sets described below | [Bound source pair and receipts](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md) |
+| Release | Checks passed against Salesforce | Published evidence |
+| --- | --- | --- |
+| v0.3.15 | 477 of 477 required checks, including 412 compiler, 53 runtime, and 12 lifecycle checks | [Release authority](https://github.com/glade-sh/glade/releases/download/v0.3.15/salesforce-release-authority.json) and [Salesforce Correctness run](https://github.com/glade-sh/glade-tools/actions/runs/45454112936/attempts/1) |
 
-The v0.2.15 Salesforce gate covers 410 compiler checks, 53 runtime checks, and
-12 lifecycle checks. Its exact product/Tools pair is bound in the published
-[Salesforce authority](https://downloads.glade.sh/v0.2.15/salesforce-release-authority.json).
-
-No blanket runtime/parity certification is implied by this table. The linked
-receipts carry exact product/Tools inputs where applicable; never combine results
-from different candidates. For the v0.2.12 release-note link that omitted `docs/`,
-use the tagged-validation link above. Historical receipts remain unchanged.
-
-## Published v0.2.11 surface snapshot
-
-The following counts are the published v0.2.11 surface snapshot from a frozen
-two-repository private corpus. Public artifacts identify the repositories only as
-`private-corpus-001` and
-`private-corpus-002`.
-
-- 321 observed usage keys reconciled with zero unknown usage.
-- 184 required surfaces were derived from sealed authoritative inputs.
-- 178 compile-ready and test-ready surfaces have required local proof.
-- 54 runtime-parity-ready surfaces have fresh Salesforce proof.
-- 107 explicit zero-credit non-parity outcomes remain visible.
-- Six hosted-deferred surfaces remain outside compile, test, and runtime-parity
-  readiness in this snapshot.
-
-These outcomes overlap and are not a claim of blanket Salesforce parity. Open
-the [self-contained assurance explorer](/private-corpus-assurance.html) to
-filter by namespace, repository, disposition, evidence, exclusion, or text.
-The exact candidate, receipt hashes, replay result, and interpretation rules
-are recorded in the
-[release assurance note](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md).
-
-## Tagged v0.2.12 product validation
-
-The tagged v0.2.12 product commit
-`3a454dee3cb35c604cb1bf25e6a8972b63dd7c81` (binary SHA-256
-`9bd1d8efbeb53af707ec5df649103f3f462fc800410922ce54f3b89a67c5bf83`)
-was checked separately from the published v0.2.11 surface snapshot.
-
-- `private-corpus-001`: check exit 0/0 diagnostics; tests 12,315/12,315 with
-  0 failed/compile/runtime/unsupported.
-- `private-corpus-002`: check exit 0/0 diagnostics; tests 782/782 with
-  0 failed/compile/runtime/unsupported.
-- Public corpus: 86 projects, 40 expected/40 observed diagnostics, zero
-  missing/unexpected/unclassified, and an exact identity multiset match. Public
-  diagnostics are the known baseline, not passes.
-- Salesforce tagged-release validation: 475/475 pass, zero fail/inconclusive, and
-  cleanup PASS.
-
-This final tagged validation is bounded to its exact receipts and does not claim
-blanket Salesforce parity.
+The release authority file identifies the check and links it to the tagged
+commit. The linked run's `salesforce-correctness-evidence` artifact contains
+the check totals. For other releases, start with their
+[release assets](https://github.com/glade-sh/glade/releases).
 
 ## Runs locally
 
@@ -261,7 +204,7 @@ Use this page first, then open the method-level report when you need the checked
 
 - Method-level standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Compatibility dashboard: [`docs/COMPATIBILITY_DASHBOARD.md`](https://github.com/glade-sh/glade/blob/main/docs/COMPATIBILITY_DASHBOARD.md)
-- Known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
+- [Known limitations](/guide/known-limitations)
 - Standard-object coverage: [`docs/STANDARD_OBJECT_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STANDARD_OBJECT_COVERAGE.md)
 - Standard-object schema: [`docs/STANDARD_OBJECT_SCHEMA.md`](https://github.com/glade-sh/glade/blob/main/docs/STANDARD_OBJECT_SCHEMA.md)
 - Local LWC shell guide: [Local LWC Shell](/guide/lwc-local-shell)
@@ -269,3 +212,13 @@ Use this page first, then open the method-level report when you need the checked
 
 One rule keeps the marks honest. Do not call an API supported until the row has
 implementation and compatibility evidence.
+
+## Earlier releases
+
+| Release | What was checked | Published evidence |
+| --- | --- | --- |
+| v0.2.15 | 475 of 475 required Salesforce checks (410 compiler, 53 runtime, 12 lifecycle). The release also published checksums, SBOMs, and attestations. | [Salesforce authority](https://downloads.glade.sh/v0.2.15/salesforce-release-authority.json) and [release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |
+| v0.2.14 | Release checks for the tagged Glade and Glade Tools commits. | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.14) |
+| v0.2.13 | Checksums and attestations for the published archives. | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.13) |
+| v0.2.12 | 475 of 475 Salesforce checks passed for the tag. | [Tagged validation](https://github.com/glade-sh/glade/blob/v0.2.12/docs/PRIVATE_CORPUS_ASSURANCE.md#tagged-v0212-product-validation) |
+| v0.2.11 | Published support snapshot for 184 required surfaces. | [Historical report](https://github.com/glade-sh/glade/blob/v0.2.11/docs/PRIVATE_CORPUS_ASSURANCE.md) |

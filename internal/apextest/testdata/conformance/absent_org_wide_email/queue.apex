@@ -1,0 +1,1 @@
+Account a=new Account(Name='Road548Queue670'); insert a; System.enqueueJob(new Road548Queue(a.Id));

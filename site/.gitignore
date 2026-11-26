@@ -5,3 +5,7 @@ node_modules/
 docs-dist/
 # Generated from https://downloads.glade.sh/latest/release-manifest.json by build:site and dev.
 release-manifest.json
+# Rendered from the checked-in SVGs before dev and build.
+/docs-src/public/apple-touch-icon.png
+/docs-src/public/favicon.ico
+/docs-src/public/social-card.png

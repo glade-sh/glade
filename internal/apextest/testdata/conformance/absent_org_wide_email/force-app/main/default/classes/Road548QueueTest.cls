@@ -1,0 +1,1 @@
+@IsTest private class Road548QueueTest { @IsTest static void runQueue() { Account a=new Account(Name='Road548 queue test'); insert a; Test.startTest(); System.enqueueJob(new Road548Queue(a.Id)); Test.stopTest(); System.assert(false,'ROAD548='+[SELECT Description FROM Account WHERE Id=:a.Id].Description); } }

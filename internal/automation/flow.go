@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -2360,13 +2361,19 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 					}
 					right := strings.TrimSpace(condition.RightValue.ElementReference)
 					const recordPrefix = "$Record."
+					flowMajor, flowVersionKnown := apexversion.Major(raw.APIVersion)
 					profileRecordOperand := strings.EqualFold(field, "$Profile.Name") &&
 						strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") &&
 						(strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") || strings.EqualFold(strings.TrimSpace(condition.Operator), "NotEqualTo")) &&
 						strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "RecordAfterSave") &&
 						(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") || strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Update")) &&
 						len(right) > len(recordPrefix) && strings.EqualFold(right[:len(recordPrefix)], recordPrefix) &&
-						!strings.Contains(right[len(recordPrefix):], ".")
+						(!strings.Contains(right[len(recordPrefix):], ".") ||
+							(strings.EqualFold(strings.TrimSpace(raw.Start.RecordTriggerType), "Create") &&
+								flowVersionKnown && flowMajor >= 62 && flowMajor <= 67 &&
+								strings.EqualFold(strings.TrimSpace(condition.Operator), "EqualTo") &&
+								strings.EqualFold(strings.TrimSpace(raw.Start.Object), "Contact") &&
+								strings.EqualFold(right, "$Record.Account.Name")))
 					if strings.EqualFold(field, "$User.Id") || profileRecordOperand {
 						item.Value = flowDecisionRightValue(condition.RightValue)
 					}

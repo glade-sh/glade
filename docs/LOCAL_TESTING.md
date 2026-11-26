@@ -40,14 +40,10 @@ does not block Apex check or test; packaged releases include it for LWC
 compilation and Lightning runtime routes, including Visualforce Lightning Out.
 
 Doctor reports the project Apex API default. Individual class metadata can set
-a different effective source version. The checked Apex window is `65.0`,
-`66.0`, and `67.0`; historical whole versions are preserved without being
-silently promoted into that window. A local pass does not prove deployment,
-org permissions, hosted services, or production parity.
-
-Doctor checks the project Apex source version against the runtime checked window.
-The supported target is Apex 62.0–68.0; preserving a version or passing locally
-does not prove Salesforce parity.
+a different effective source version. Doctor checks the project default against
+the supported Apex source range of 62.0–68.0. Glade preserves older whole
+versions when loading a project. Use Salesforce to validate deployment, org
+permissions, and hosted services.
 
 ## Permission-Gated Tests
 
@@ -377,7 +373,7 @@ glade check --project . --cpu-profile reports/check.cpu.pprof --mem-profile repo
 glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.pprof --mem-profile reports/test.mem.pprof --perf-json reports/test.perf.json
 ```
 
-These files are local telemetry artifacts. They help investigate local runtime
+These files are local profiling artifacts. They help investigate local runtime
 costs; they do not replace Salesforce validation. CPU and heap profiles capture
 the lifetime of the local command and may also profile daemon or watch mode;
 they are written when that command exits and cannot be used with `--connect`.

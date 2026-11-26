@@ -3,7 +3,7 @@ pageType: guide
 canonicalTask: /guide/quickstart
 ---
 
-# Run the first local check
+# Illustrated first check
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Task guide</p>
@@ -15,7 +15,7 @@ canonicalTask: /guide/quickstart
   </ul>
 </div>
 
-For the main task path, use [the guide](/guide/quickstart). This walkthrough keeps the
+For the main task path, use [Quickstart](/guide/quickstart). This walkthrough keeps the
 illustrated steps and recovery details for this interface.
 
 ## Before you start
@@ -54,4 +54,4 @@ Expected: `glade check` exits `0` for clean source or exits `1` with file and li
 ## Next
 
 - [Run one Apex test locally](/help/run-one-apex-test)
-- [Quickstart reference](/guide/quickstart)
+- [Quickstart](/guide/quickstart)

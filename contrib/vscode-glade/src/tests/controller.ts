@@ -18,6 +18,9 @@ export class GladeTestController {
   private project?: GladeProjectContext;
   private readonly itemData = new WeakMap<vscode.TestItem, TestData>();
   private readonly failedItems = new Map<string, vscode.TestItem>();
+  // The failed methods behind a class that failed only because they did. A
+  // failed class with no entry here failed on its own.
+  private readonly failedMethods = new Map<string, Set<string>>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -40,13 +43,17 @@ export class GladeTestController {
   }
 
   async discover(): Promise<void> {
-    if (!this.project) {
+    const project = this.project;
+    if (!project) {
       this.controller.items.replace([]);
       this.clearFailedItems();
       return;
     }
-    const pattern = new vscode.RelativePattern(this.project.projectRoot, "**/*.cls");
+    const pattern = new vscode.RelativePattern(project.projectRoot, "**/*.cls");
     const files = await vscode.workspace.findFiles(pattern, "**/{node_modules,.sfdx,.sf,.glade}/**");
+    if (this.project !== project) {
+      return;
+    }
     const items: vscode.TestItem[] = [];
     for (const file of files) {
       const source = fs.readFileSync(file.fsPath, "utf8");
@@ -65,6 +72,20 @@ export class GladeTestController {
       items.push(classItem);
     }
     this.controller.items.replace(items);
+    const previousFailedCount = this.failedItems.size;
+    for (const [id, item] of this.failedItems) {
+      const current = this.currentItem(item);
+      if (current) {
+        this.failedItems.set(id, current);
+      } else {
+        this.failedItems.delete(id);
+        this.failedMethods.delete(id);
+      }
+    }
+    this.dropSettledClassFailures();
+    if (this.failedItems.size !== previousFailedCount) {
+      this.onFailedCountChange?.(this.failedItems.size);
+    }
   }
 
   async run(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
@@ -72,7 +93,7 @@ export class GladeTestController {
       return;
     }
     const run = this.controller.createTestRun(request);
-    const queue = request.include && request.include.length > 0 ? request.include : collectionItems(this.controller.items);
+    const queue = selectedItems(this.controller.items, request.include, request.exclude);
     for (const item of queue) {
       if (token.isCancellationRequested) {
         break;
@@ -103,12 +124,13 @@ export class GladeTestController {
     const since = vscode.workspace.getConfiguration("glade").get<string>("changedSince", "origin/main");
     const request = new vscode.TestRunRequest();
     const run = this.controller.createTestRun(request, `Glade changed tests since ${since}`);
+    const startedClasses = new Map(collectionItems(this.controller.items).map((item) => [item.id, item]));
     this.logCommand(changedTestArgs(this.project, since));
     try {
       const result = await runChangedTests(this.project, since);
       this.onRunComplete?.(startHereSummary("Changed tests", result));
       for (const testCase of flattenTestCases(result)) {
-        const item = this.findTestItem(testCase);
+        const item = this.findTestItem(testCase, startedClasses.get(testCase.className));
         if (!item) {
           continue;
         }
@@ -157,16 +179,41 @@ export class GladeTestController {
       const result = await runApexTest(this.project, data.className, data.methodName);
       this.onRunComplete?.(startHereSummary("Test Explorer", result));
       const flat = flattenTestCases(result);
-      const childResults = flat.filter((testCase) => testCase.className === data.className);
+      const childResults = flat.filter((testCase) => testCase.className === data.className && (!data.methodName || testCase.methodName === data.methodName));
+      // The item's failure is only its methods' when every failing result
+      // belongs to a method item recorded as failed.
+      const failedMethods = new Set<string>();
+      let ownFailure = false;
       for (const testCase of childResults) {
-        const child = this.findTestItem(testCase);
+        const child = data.methodName ? this.currentItem(item) : this.findTestItem(testCase);
+        const startedMethod = testCase.methodName ? item.children.get(testCase.id) : undefined;
+        if (startedMethod && !this.currentItem(startedMethod)) {
+          // Finish the historical run without retaining a removed method for Run Failed.
+          this.recordResult(run, startedMethod, testCase);
+          continue;
+        }
         if (child && child !== item) {
           this.recordResult(run, child, testCase);
+          if (testCase.status !== "pass") {
+            failedMethods.add(child.id);
+          }
+        } else if (testCase.status !== "pass") {
+          ownFailure = true;
         }
       }
-      const failed = childResults.find((candidate) => candidate.status !== "pass");
+      const selectorFailure = childResults.length === 0
+        ? flat.find((candidate) => candidate.className === "test selector" && candidate.problemType === "Selector" && candidate.status !== "pass")
+        : undefined;
+      const failed = childResults.find((candidate) => candidate.status !== "pass") || selectorFailure;
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
+        if (ownFailure || selectorFailure) {
+          this.setFailedItem(item);
+        } else if (failedMethods.size > 0) {
+          this.setFailedItem(item, failedMethods);
+        }
+      } else if (childResults.length === 0) {
+        run.errored(item, new vscode.TestMessage("No matching test result was returned."));
         this.setFailedItem(item);
       } else {
         run.passed(item, result.summary.durationMs);
@@ -196,30 +243,68 @@ export class GladeTestController {
       return;
     }
     this.failedItems.clear();
+    this.failedMethods.clear();
     this.onFailedCountChange?.(0);
   }
 
-  private setFailedItem(item: vscode.TestItem): void {
+  private setFailedItem(item: vscode.TestItem, failedMethods?: Set<string>): void {
+    const current = this.currentItem(item);
+    if (!current) {
+      return;
+    }
     const before = this.failedItems.size;
-    this.failedItems.set(item.id, item);
+    this.failedItems.set(current.id, current);
+    if (failedMethods) {
+      this.failedMethods.set(current.id, failedMethods);
+    } else {
+      this.failedMethods.delete(current.id);
+    }
     if (this.failedItems.size !== before) {
       this.onFailedCountChange?.(this.failedItems.size);
     }
+  }
+
+  // A class that failed only because of its methods stays failed while one
+  // of those methods is still recorded as failed.
+  private dropSettledClassFailures(): void {
+    for (const [classId, methods] of this.failedMethods) {
+      for (const methodId of methods) {
+        if (!this.failedItems.has(methodId)) {
+          methods.delete(methodId);
+        }
+      }
+      if (methods.size === 0) {
+        this.failedMethods.delete(classId);
+        this.failedItems.delete(classId);
+      }
+    }
+  }
+
+  private currentItem(item: vscode.TestItem): vscode.TestItem | undefined {
+    const data = this.itemData.get(item);
+    if (!data) {
+      return undefined;
+    }
+    const classItem = this.controller.items.get(data.className);
+    return data.methodName ? classItem?.children.get(item.id) : classItem;
   }
 
   private deleteFailedItem(item: vscode.TestItem): void {
     if (!this.failedItems.delete(item.id)) {
       return;
     }
+    this.failedMethods.delete(item.id);
+    this.dropSettledClassFailures();
     this.onFailedCountChange?.(this.failedItems.size);
   }
 
-  private findTestItem(result: FlatTestCaseResult): vscode.TestItem | undefined {
+  private findTestItem(result: FlatTestCaseResult, startedClass?: vscode.TestItem): vscode.TestItem | undefined {
     const classItem = this.controller.items.get(result.className);
     if (!classItem || !result.methodName) {
       return classItem;
     }
-    return classItem.children.get(result.id) || classItem;
+    // A method removed during the run can still receive its historical result.
+    return classItem.children.get(result.id) || startedClass?.children.get(result.id) || classItem;
   }
 
   private async debug(request: vscode.TestRunRequest): Promise<void> {
@@ -237,6 +322,27 @@ export class GladeTestController {
     }
     this.output?.appendLine(`$ glade ${args.join(" ")}`);
   }
+}
+
+function selectedItems(collection: vscode.TestItemCollection, include?: readonly vscode.TestItem[], exclude?: readonly vscode.TestItem[]): vscode.TestItem[] {
+  const excluded = new Set((exclude || []).map((item) => item.id));
+  const included = include === undefined ? undefined : new Set(include.map((item) => item.id));
+  const queue: vscode.TestItem[] = [];
+  const visit = (item: vscode.TestItem, selected: boolean, blocked: boolean): void => {
+    blocked = blocked || excluded.has(item.id);
+    selected = selected || included === undefined || included.has(item.id);
+    if (blocked) return;
+    const children = collectionItems(item.children);
+    const containsExclusion = (candidate: vscode.TestItem): boolean =>
+      excluded.has(candidate.id) || collectionItems(candidate.children).some(containsExclusion);
+    if (selected && !children.some(containsExclusion)) {
+      queue.push(item);
+    } else {
+      for (const child of children) visit(child, selected, blocked);
+    }
+  };
+  for (const item of collectionItems(collection)) visit(item, false, false);
+  return queue;
 }
 
 function collectionItems(collection: vscode.TestItemCollection): vscode.TestItem[] {

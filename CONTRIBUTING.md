@@ -4,8 +4,8 @@ Start with a [workflow question or bug report](https://github.com/glade-sh/glade
 For security reports use [private reporting](https://github.com/glade-sh/glade/security/advisories/new),
 not a public issue. If GitHub reporting is unavailable, use
 [security@glade.sh](mailto:security@glade.sh). Be specific and respectful;
-discuss behavior and evidence, not the person reporting it. Send private conduct
-concerns to [conduct@glade.sh](mailto:conduct@glade.sh).
+discuss behavior and evidence, not the person reporting it. Read the
+[code of conduct](CODE_OF_CONDUCT.md) and send private concerns to [conduct@glade.sh](mailto:conduct@glade.sh).
 
 ## Share a useful reproduction
 

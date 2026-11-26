@@ -19,7 +19,7 @@ before changing source or resetting data.
 | No test result or zero tests | Check the JSON total and actual class/method names | [Test discovery](/help/troubleshooting#a-test-is-not-discovered) |
 | A breakpoint never stops | Run the selected test without the debugger | [Breakpoint recovery](/help/troubleshooting#a-breakpoint-is-not-hit) |
 | A local target is missing | Check the same project, alias, and isolated sf configuration | [Local target setup](/help/glade-org-sf-data-import) |
-| CI loses results | Preserve nonzero exits and upload existing artifacts after failures | [CI setup](/help/ci-setup) |
+| CI loses results | Preserve nonzero exits and upload existing artifacts after failures | [CI walkthrough](/help/ci-setup) |
 | Local results differ from Salesforce | Name the capability, local result, and hosted boundary | [Compatibility](/guide/support-map) |
 
 [Open all troubleshooting paths](/help/troubleshooting)
@@ -30,14 +30,14 @@ Use [Guides](/guide/workflows) for the main task paths. These illustrated
 walkthroughs retain interface-specific steps and recovery details.
 
 <div class="docs-route-grid">
-  <a class="docs-route-card" href="/help/first-local-check"><strong>Run the first local check</strong><span>Outcome: a configured project and a checked source tree.<br>Interface: terminal.</span></a>
+  <a class="docs-route-card" href="/help/first-local-check"><strong>Illustrated first check</strong><span>Outcome: a configured project and a checked source tree.<br>Interface: terminal.</span></a>
   <a class="docs-route-card" href="/help/run-one-apex-test"><strong>Run one Apex test</strong><span>Outcome: focus a local test loop on one class or method.<br>Interface: terminal and VS Code.</span></a>
   <a class="docs-route-card" href="/help/debug-apex-vscode"><strong>Debug Apex with breakpoints</strong><span>Outcome: stop in a local Apex test and inspect state.<br>Interface: VS Code.</span></a>
   <a class="docs-route-card" href="/help/anonymous-apex-scratch"><strong>Use anonymous Apex scratch</strong><span>Outcome: execute a local snippet and inspect output.<br>Interface: VS Code.</span></a>
   <a class="docs-route-card" href="/help/local-data-environments"><strong>Work with local data</strong><span>Outcome: seed and query a local environment.<br>Interface: terminal.</span></a>
   <a class="docs-route-card" href="/help/changed-tests-before-pr"><strong>Run changed tests before a PR</strong><span>Outcome: select only tests affected by your changes.<br>Interface: terminal and CI.</span></a>
   <a class="docs-route-card" href="/help/profile-apex-debug-log"><strong>Profile an Apex debug log</strong><span>Outcome: analyze saved debug-log events locally.<br>Interface: terminal.</span></a>
-  <a class="docs-route-card" href="/help/ci-setup"><strong>Add Glade to CI</strong><span>Outcome: emit a reliable local check, test, and report gate.<br>Interface: CI.</span></a>
+  <a class="docs-route-card" href="/help/ci-setup"><strong>CI walkthrough</strong><span>Outcome: emit a reliable local check, test, and report gate.<br>Interface: CI.</span></a>
 </div>
 
 ## Check support and trust

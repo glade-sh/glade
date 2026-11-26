@@ -88,9 +88,16 @@ func (vm *VM) plainSingleEmailTestObservation(message Value) bool {
 
 // A current-User target with the default activity flag has a distinct native
 // error from the accepted current-User ID in toAddresses.
-func (vm *VM) currentUserTargetActivityValidation(message Value) Value {
-	if !vm.plainSingleEmailTestObservation(message) || len(message.Fields["toAddresses"].List) != 0 ||
-		!emailFieldBool(message, "saveAsActivity") || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
+func (vm *VM) currentUserTargetActivityValidation(message Value, partialSend bool) Value {
+	previouslyCovered := vm.plainSingleEmailTestObservation(message) && len(message.Fields["toAddresses"].List) == 0
+	sender := emailFieldString(message, "orgWideEmailAddressId")
+	capturedSenderTarget := partialSend && strings.HasPrefix(sender, "0D2") &&
+		len(message.Fields["toAddresses"].List) == 1 && emailFieldString(message, "templateId") == "" &&
+		vm.capturedOrgWideEmailContext() && validateApexID(sender) == nil && vm.capturedOrgWideEmailShape(message)
+	if !previouslyCovered && !capturedSenderTarget {
+		return Null
+	}
+	if !emailFieldBool(message, "saveAsActivity") || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
 		return Null
 	}
 	target := storage.ID(emailFieldString(message, "targetObjectId"))
@@ -101,6 +108,75 @@ func (vm *VM) currentUserTargetActivityValidation(message Value) Value {
 	validation := newSendEmailValidationError("saveAsActivity must be false when sending mail to users.", "INVALID_SAVE_AS_ACTIVITY_FLAG", string(target))
 	validation.Fields["fields"] = List(String("saveAsActivity"), String("true"))
 	return validation
+}
+
+func (vm *VM) capturedOrgWideEmailContext() bool {
+	if vm == nil || vm.Org == nil || vm.Org.Namespace != "" || vm.currentMethod.Namespace != "" {
+		return false
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" {
+		version = vm.Org.APIVersion
+	}
+	major, known := apexversion.Major(version)
+	return known && major >= 62 && major <= 67
+}
+
+// The sender rows cover a single explicit recipient, with an optional current
+// user target, and an active-template send to the current user. Other message
+// shapes keep their previous validation behavior.
+func (vm *VM) capturedOrgWideEmailShape(message Value) bool {
+	if message.Type != "Messaging.SingleEmailMessage" ||
+		len(message.Fields["ccAddresses"].List) != 0 || len(message.Fields["bccAddresses"].List) != 0 ||
+		emailFieldString(message, "whatId") != "" {
+		return false
+	}
+	for _, field := range []string{"replyTo", "senderDisplayName", "charset", "inReplyTo", "references", "templateName", "emailPriority", "unsubscribeComment"} {
+		if emailFieldString(message, field) != "" {
+			return false
+		}
+	}
+	for _, field := range []string{"fileAttachments", "entityAttachments", "documentAttachments", "targetObjectIds", "unsubscribeUrls"} {
+		if len(message.Fields[field].List) != 0 {
+			return false
+		}
+	}
+	for _, field := range []string{"treatBodiesAsTemplate", "bccSender", "oneClickPost", "userMail"} {
+		if emailFieldBool(message, field) {
+			return false
+		}
+	}
+	if message.Fields["customHeaders"].Kind != ValueNull || !emailFieldBool(message, "treatTargetObjectAsRecipient") ||
+		!emailFieldBool(message, "useSignature") || emailFieldString(message, "optOutPolicy") != "SEND" ||
+		emailFieldString(message, "htmlBody") != "" {
+		return false
+	}
+	target := storage.ID(emailFieldString(message, "targetObjectId"))
+	template := emailFieldString(message, "templateId")
+	toCount := len(message.Fields["toAddresses"].List)
+	if toCount == 1 {
+		if emailFieldString(message, "subject") == "" || emailFieldString(message, "plainTextBody") == "" || !emailFieldBool(message, "saveAsActivity") {
+			return false
+		}
+		if target == "" {
+			if template != "" {
+				if !strings.HasPrefix(template, "00X") || validateApexID(template) != nil {
+					return false
+				}
+				if _, found := vm.emailTemplateByID(template); found {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	current := storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID))
+	if target == "" || !storage.IDsEqual(target, current) {
+		return false
+	}
+	return (toCount == 1 && template == "") || (toCount == 0 && template != "" &&
+		emailFieldString(message, "subject") == "" && emailFieldString(message, "plainTextBody") == "" &&
+		!emailFieldBool(message, "saveAsActivity"))
 }
 
 func (vm *VM) singleNullEmailAddressObservation(message, address Value) bool {

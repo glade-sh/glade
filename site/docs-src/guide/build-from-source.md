@@ -33,6 +33,11 @@ Check `parserOK` in doctor’s JSON output. Doctor also checks project setup;
 other findings depend on the project selected. A successful build or version
 command alone does not verify parser availability.
 
+For CI, check out a specific release tag or commit before building.
+
+The source build leaves out the bundled LWC toolchain. To preview LWC, run
+`./bin/glade toolchain install --from .` from the checkout.
+
 An unreleased source build may report a development version. It is not the
 stable artifact described by the public release manifest.
 

@@ -151,9 +151,8 @@ a test at the real date, so `Date.today()` changes from run to run. Glade fixes
 the start instead, so a run, its cached results and CI repeat exactly. The
 default is a Wednesday in mid-month and mid-quarter (05:00 in the default
 `America/Los_Angeles` zone). In every time zone that day and the days just
-before and after it are weekdays, and a week on either side stays in May. Before v0.3.5
-the default was `2026-05-02T12:00:00Z`, a Saturday; set that value to keep the old
-clock. Set `start` explicitly when a test assumes a particular weekday, month
+before and after it are weekdays, and a week on either side stays in May.
+Set `start` explicitly when a test assumes a particular weekday, month
 end or year end. Choose `GMT` when a UTC timestamp's calendar date is the
 intended local date.
 
