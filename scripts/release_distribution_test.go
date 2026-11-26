@@ -95,7 +95,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 			t.Fatalf("tag-only attestation job missing %q", want)
 		}
 	}
-	if got := strings.Count(attestBlock, "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0"); got != 2 {
+	if got := strings.Count(attestBlock, "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2"); got != 2 {
 		t.Fatalf("tag-only attestation action count = %d, want 2", got)
 	}
 	checkoutIndex := strings.Index(attestBlock, "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3")
