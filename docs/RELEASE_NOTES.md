@@ -52,7 +52,7 @@ v0.3.16 improves VS Code test workflows and release verification, expands captur
 - Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
 - Reduced allocation overhead when Apex writes values back to object fields.
 
-Performance: <coordinator fills in the release perf result>
+Performance: a cold full test run of a 4,565-test private project took 434.8 s (median of three) against 432.3 s for v0.3.15, within measurement noise, with identical test outcomes.
 
 <a name="v0315"></a>
 
