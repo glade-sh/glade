@@ -2,34 +2,58 @@
 
 ## Unreleased
 
+<a name="v0316"></a>
+
+## v0.3.16 - 2026-11-26
+
+v0.3.16 improves VS Code test workflows and release verification, expands captured Salesforce behavior for Apex, Flow, and sharing, and reduces work during Apex test startup and execution.
+
+### Highlights
+
+- Fixed VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears a class when its only failing methods disappear from discovery, including during a run.
+- When Glade selects one source file for a duplicate Apex test class within a project, it runs that file’s test methods and setup.
+- The installer and `glade update` check for corrupted downloads with SHA-256 and verify release provenance and SBOM attestations when `gh` is available. Set `GLADE_REQUIRE_PROVENANCE` to `1`, `true`, or `yes` to require `gh` and provenance verification. Download failures include a short curl diagnostic.
+- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
+- Updated the Quickstart, CI examples, and release evidence on the site. Added a guide to known limitations.
+
+### Upgrade notes
+
+- **Caches.** The first run after upgrading rebuilds the semantic and Apex test-runtime caches. The semantic cache uses `sema-v105` and `salesforce-platform-v82`, up from `sema-v104` and `salesforce-platform-v81` in v0.3.15. The test-runtime cache uses `apextest-runtime-v58`, up from `apextest-runtime-v57`.
+
+### Apex and Salesforce compatibility fixes
+
 - Fixed a false `Date.getTime()` diagnostic when a `Datetime` method chain is the first argument to a dotted Apex call.
 - Fixed false Apex overload errors when an enhanced-for loop variable shadows a field or SObject type referenced in its iterable.
-- The installer and `glade update` check for corrupted downloads with SHA-256 and verify release provenance and SBOM attestations when `gh` is available. Set `GLADE_REQUIRE_PROVENANCE` to `1`, `true`, or `yes` to require `gh` and provenance verification. Download failures include a short curl diagnostic.
-- Updated the Quickstart, CI examples, and release evidence on the site. Added a guide to known limitations.
-- GitHub Releases include a verified `.sigstore.json` build provenance bundle for each platform archive.
-- Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
-- Remove obsolete benchmark cache references from CI policy tests.
-- Fix VS Code Test Explorer discovery, selector failures, excluded tests, and Debug Current Test. Run Failed clears a class when its only failing methods disappear from discovery, including during a run.
-- Add Salesforce conformance coverage for inactive Visualforce Site methods with and without a Site record in anonymous Apex and tests.
-- Match captured org-wide sender errors and current-user activity validation when sending email with partial success enabled.
-- Match Salesforce compilation for direct anonymous `BatchApexErrorEvent` inserts at API 62.0 and 67.0 and cover share-object and custom-metadata queries.
-- Match captured Flow profile comparisons and parent lookup filters at API 62.0 through 67.0. A before-save lookup of an 18-character reference to a deleted parent reaches the `ENTITY_IS_DELETED` save error at API 62.0, 63.0, and 67.0.
-- Cold Apex test runs reuse more of the standard object catalog during org setup.
-- Reduce repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
-- Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
+- At Apex APIs 62.0 through 68.0, a named test that declares an uninitialized local of an absent custom object type now reports the Salesforce compile error.
 - Apex `Map.put` and `Map.remove` now match existing project enum keys passed as method parameters or obtained from `Enum.values()`.
 - Apex `Datetime` patterns use hybrid-calendar weekdays before 1583 for the captured Chinese, French, German, Japanese, Norwegian, Spanish, and Swedish locale settings.
+- Added Salesforce conformance coverage for inactive Visualforce Site methods with and without a Site record in anonymous Apex and tests.
+- Matched captured org-wide sender errors and current-user activity validation when sending email with partial success enabled.
+- Matched Salesforce compilation for direct anonymous `BatchApexErrorEvent` inserts at API 62.0 and 67.0 and added coverage for share-object and custom-metadata queries.
+- Matched captured Flow profile comparisons and parent lookup filters at API 62.0 through 67.0. A before-save lookup of an 18-character reference to a deleted parent reaches the `ENTITY_IS_DELETED` save error at API 62.0, 63.0, and 67.0.
 - Custom-object inserts reject missing parents for optional lookups that clear on delete and wrong-type IDs in those lookups to custom objects in Apex, and oversized external ID upsert keys report `isCreated() == false`. Before triggers for Apex inserts and updates see trimmed Text, Text Area, and Long Text Area. This also applies to non-key fields on inserts from partial external-ID upsert lists.
 - Partial external-ID upserts keep results in input order and save surviving rows when an oversized key and an after-save automation failure occur in the same batch.
-- Reduce allocation overhead when Apex writes values back to object fields.
 - Customer Community users respect the private external default for Case when a project declares only its internal public sharing model. Anonymous Apex returns the captured named Standard and Community UserRecordAccess rows for Case and Lead records with public internal sharing.
 - EntityDefinition reports the captured internal and external sharing defaults for Case and Lead in Developer scratch orgs with Communities enabled.
-- When Glade selects one source file for a duplicate Apex test class within a project, it runs that file’s test methods and setup.
 - Payment adapters can use the captured sale and authorization reversal request and response shapes, and the captured authorize, capture, sale, refund and reversal request constructors match Salesforce in tests and anonymous Apex.
-- At Apex APIs 62.0 through 68.0, a named test that declares an uninitialized local of an absent custom object type now reports the Salesforce compile error.
 - Id-only attachment subqueries on custom records preserve imported view rows, apply child record visibility to synthesized view rows, and respect relationship schema edits between queries, including changes to object labels.
 - JSON-deserialized Apex objects evaluate computed get-only properties when read. JSON decoding accepts captured standard child relationship envelopes on unnamespaced custom objects and reads back year-1 Datetime values serialized with Gregorian year zero.
 - **Event subscriber parent visibility (Apex API 62.0, 67.0).** In the captured one-record/two-share and two-record/four-share shapes, a platform-event trigger can count the private custom record referenced by its event in user mode, and the second publisher-owned record in the two-record shape. The test class and trigger have matching API versions, and an administrator publishes and delivers the event inside the same `System.runAs` block.
+
+### Maintenance
+
+- Pinned the playground container’s Debian runtime image by digest and enabled weekly Dependabot version checks for Go modules, GitHub Actions, Docker, and shipped npm components.
+- Removed obsolete benchmark cache references from CI policy tests.
+
+### Performance
+
+- Cold Apex test runs reuse more of the standard object catalog during org setup.
+- Reduced repeated work when choosing native Apex return-error text and scanning test sources for runtime fields.
+- Glade builds the qualified-name index for gated Apex classes on first lookup, reducing startup heap for projects that never need it.
+- Reduced allocation overhead when Apex writes values back to object fields.
+
+Performance: a cold full test run of a 4,565-test private project took 434.8 s (median of three) against 432.3 s for v0.3.15, within measurement noise, with identical test outcomes.
+
 <a name="v0315"></a>
 
 ## v0.3.15 - 2026-11-24
