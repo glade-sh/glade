@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitepress'
 import routeManifest from '../routes.json'
 
@@ -48,6 +50,7 @@ function routeFor(relativePath: string) {
 
 function descriptionFor(relativePath: string, title: string) {
   if (descriptions[relativePath]) return descriptions[relativePath]
+  if (relativePath === '404.md') return 'This address does not point to a Glade page. Browse the documentation or return to the home page.'
   const sentence = /[.?!]$/.test(title) ? title : `${title}.`
   if (relativePath.startsWith('help/')) {
     return relativePath === 'help/troubleshooting.md'
@@ -71,6 +74,18 @@ function resolvedDescription(pageData: { relativePath: string; title: string; fr
   return typeof explicit === 'string' && explicit.trim()
     ? explicit.trim()
     : descriptionFor(pageData.relativePath, pageData.title)
+}
+
+// PNG stores its pixel size in the IHDR chunk. Fixed image dimensions reserve
+// the layout box before a lazy screenshot loads.
+function pngSize(publicPath: string) {
+  try {
+    const header = readFileSync(fileURLToPath(new URL(`../docs-src/public${publicPath}`, import.meta.url))).subarray(0, 24)
+    if (header.toString('latin1', 1, 4) !== 'PNG') return null
+    return { width: header.readUInt32BE(16), height: header.readUInt32BE(20) }
+  } catch {
+    return null
+  }
 }
 
 export default defineConfig({
@@ -110,7 +125,28 @@ export default defineConfig({
     }
     return head
   },
+  // VitePress fills the 404 page's own description with "Not Found".
+  transformHtml(code, id) {
+    if (!id.endsWith('404.html')) return
+    return code.replace('<meta name="description" content="Not Found">', `<meta name="description" content="${descriptionFor('404.md', '')}">`)
+  },
   lastUpdated: false,
+  markdown: {
+    config(md) {
+      const image = md.renderer.rules.image!
+      md.renderer.rules.image = (tokens, index, options, env, self) => {
+        const token = tokens[index]
+        const size = pngSize(token.attrGet('src') || '')
+        if (size) {
+          token.attrSet('width', String(size.width))
+          token.attrSet('height', String(size.height))
+        }
+        token.attrSet('loading', 'lazy')
+        token.attrSet('decoding', 'async')
+        return image(tokens, index, options, env, self)
+      }
+    }
+  },
   vite: {
     server: {
       allowedHosts: tunnelAllowedHosts

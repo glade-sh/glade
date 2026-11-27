@@ -408,7 +408,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   justify-content: center;
   background: transparent;
   color: var(--glade-code-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   padding: 0;
 }

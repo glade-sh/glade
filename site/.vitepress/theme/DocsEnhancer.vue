@@ -48,6 +48,12 @@ function repairSidebarDisclosureControls() {
   })
 }
 
+// The article footer holds the edit link and previous/next links. Outside <main> a
+// <footer> is a second contentinfo landmark beside the site footer, so drop the role.
+function demoteArticleFooter() {
+  document.querySelectorAll('footer.VPDocFooter').forEach((footer) => footer.setAttribute('role', 'presentation'))
+}
+
 function closeMobileNavigationOnEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
   const button = document.querySelector<HTMLButtonElement>('.VPNavBarHamburger[aria-expanded="true"]')
@@ -224,6 +230,7 @@ async function enhanceDocs() {
   nextTick(() => {
     if (revision !== enhancementRevision) return
     repairSidebarDisclosureControls()
+    demoteArticleFooter()
     updateSidebarCurrent()
     setupCommandFilter()
     setupCommandLookup()

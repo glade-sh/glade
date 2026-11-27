@@ -322,7 +322,9 @@ test('hero terrain returns to the static map when it stops while offscreen', asy
       const check = () => node.hasAttribute('data-terrain') ? resolve(true) : Date.now() - started > 6000 ? resolve(false) : setTimeout(check, 50)
       check()
     }))
-    test.skip(!live, 'WebGL is not available in this browser.')
+    // CI browsers render WebGL in software, so a missing live map there is a failure, not a skip.
+    test.skip(!live && !process.env.CI, 'WebGL is not available in this browser.')
+    expect(live, 'live terrain starts').toBe(true)
     // Scroll the hero out of view so the terrain is already paused when it has to stop for good.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
     await page.waitForTimeout(400)
