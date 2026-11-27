@@ -6,9 +6,8 @@ import vm from "node:vm";
 import { renderBrandAssets } from "../scripts/render-brand-assets.mjs";
 
 const baseCss = await readFile(new URL("../.vitepress/theme/custom.css", import.meta.url), "utf8");
-const homeCss = await readFile(new URL("../docs-src/public/css/home.css", import.meta.url), "utf8");
 const workbenchCss = await readFile(new URL("../docs-src/public/css/workbench.css", import.meta.url), "utf8");
-const css = [baseCss, homeCss, workbenchCss].join("\n");
+const css = [baseCss, workbenchCss].join("\n");
 const tokensCss = await readFile(new URL("../.vitepress/theme/styles/tokens.css", import.meta.url), "utf8");
 const index = await readFile(new URL("../.vitepress/theme/home/GladeHome.vue", import.meta.url), "utf8");
 const theme = await readFile(new URL("../.vitepress/theme/index.ts", import.meta.url), "utf8");
@@ -1186,61 +1185,21 @@ test("homepage layout uses the shared responsive design system", () => {
   assert.match(css, /--radius-card: 16px;/);
   assert.match(css, /--radius-panel: 12px;/);
   assert.match(css, /:where\(a, button, \[tabindex\]\):focus-visible\s*\{[\s\S]*outline: 2px solid var\(--glade-focus-ring\);[\s\S]*outline-offset: 3px;/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*grid-template-columns: minmax\(500px, 1fr\) minmax\(360px, 560px\);/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*gap: var\(--space-14\);/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*padding: 42px 0 20px;/);
-  assert.match(css, /\.home-hero-shell\s*\{[\s\S]*width: var\(--glade-shell-width\);/);
-  assert.match(css, /\.vp-doc \.home-cta,[\s\S]*text-decoration-line: none !important;/);
-  assert.match(css, /\.vp-doc \.home-cta\.primary:hover,\s*\n\.vp-doc \.home-cta\.primary:focus-visible\s*\{[\s\S]*background: var\(--glade-strong\);[\s\S]*color: var\(--text-inverse\) !important;/);
-  assert.match(css, /\.home-hero-shell h1\s*\{[\s\S]*font-size: var\(--text-hero\);[\s\S]*letter-spacing: var\(--heading-track\);[\s\S]*line-height: 0\.96;/);
   assert.doesNotMatch(css, /\.home-proof-strip\s*\{/);
   assert.match(css, /\.vp-doc \.home-h2\s*\{[\s\S]*margin: 0;[\s\S]*border-top: 0;[\s\S]*padding-top: 0;/);
-  assert.match(css, /\.home-loop-visual\s*\{[\s\S]*max-width: 560px;[\s\S]*min-height: 300px;[\s\S]*max-height: 380px;[\s\S]*padding: 20px;[\s\S]*overflow: hidden;/);
-  assert.match(css, /\.home-loop-command\s*\{[\s\S]*margin-top: 16px;[\s\S]*padding: 14px 16px;[\s\S]*border-radius: 12px;/);
-  assert.match(css, /\.home-loop-command code\s*\{[\s\S]*overflow-wrap: anywhere;/);
-  assert.match(css, /\.home-loop-result\s*\{[\s\S]*margin-top: 12px;[\s\S]*gap: 8px;[\s\S]*padding: 16px;[\s\S]*border: 1px solid var\(--line\);/);
-  assert.match(css, /\.home-loop-result-status\s*\{[\s\S]*grid-template-columns: 42px minmax\(0, 1fr\);[\s\S]*gap: 12px;/);
-  assert.match(css, /\.home-loop-state-label\s*\{[\s\S]*font-size: 12px;[\s\S]*text-transform: uppercase;/);
-  assert.match(css, /\.home-loop-metrics\s*\{[\s\S]*margin-top: 16px;[\s\S]*padding-top: 14px;[\s\S]*border-top: 1px solid var\(--line\);/);
   assert.doesNotMatch(css, /\.home-loop-stage|\.home-loop-trace|@keyframes home-loop-trace/);
   assert.doesNotMatch(css, /\.home-loop-tabs|\.home-loop-badge-row|\.home-loop-terminal|\.home-loop-state\s*\{/);
-  assert.match(css, /\.home-command-grid\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
-  assert.match(css, /\.home-command-card\s*\{[\s\S]*padding: 20px;[\s\S]*border-radius: 12px;/);
-  assert.match(css, /\.home-command-card code\s*\{[\s\S]*overflow-wrap: anywhere;/);
-  assert.match(css, /\.home-command-block pre\s*\{[\s\S]*margin: 0;[\s\S]*overflow-x: auto;[\s\S]*padding: 16px;/);
-  assert.match(css, /\.home-command-block code\s*\{[\s\S]*font-family: var\(--vp-font-family-mono\);/);
-  assert.match(css, /@media \(any-pointer: coarse\)\s*\{[\s\S]*\.home-cta,[\s\S]*\.home-support-preview a,[\s\S]*\.home-install-strip button\s*\{[\s\S]*min-height: 44px;/);
   assert.doesNotMatch(css, /\.home-editor-demo/);
   assert.doesNotMatch(css, /\.home-static-editor/);
   assert.doesNotMatch(css, /\.home-static-completion/);
   assert.doesNotMatch(css, /\.home-apex-textarea/);
   assert.doesNotMatch(css, /\.home-completion-menu/);
-  assert.match(css, /\.home-capability-line\s*\{[\s\S]*display: flex;/);
-  assert.match(css, /\.home-support-preview\s*\{/);
-  assert.match(css, /\.home-support-preview-header\s*\{[\s\S]*display: grid;[\s\S]*gap: 8px;/);
-  assert.match(css, /\.home-capability-list\s*\{[\s\S]*display: grid;[\s\S]*gap: 10px;[\s\S]*margin-top: 4px;/);
-  assert.match(css, /\.home-capability-row\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*gap: 16px;[\s\S]*min-height: 36px;[\s\S]*padding: 8px 0;/);
   assert.match(css, /\.home-completion-status-supported\s*\{/);
   assert.match(css, /\.home-completion-status-limited\s*\{/);
   assert.match(css, /\.home-completion-status-salesforce\s*\{/);
-  assert.match(css, /\.home-install-strip code\s*\{[\s\S]*overflow-wrap: anywhere;/);
   assert.doesNotMatch(css, /body:has\(\.VPHome\) \.VPNavBarSearch\s*\{[\s\S]*display: none;[\s\S]*pointer-events: none;/);
   assert.match(css, /\.VPNavBarSearch\s*\{[\s\S]*opacity: 0\.92;/);
   assert.match(tokensCss, /--glade-action-bg: var\(--glade-action\);/);
-  assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-hero-shell\s*\{[\s\S]*grid-template-columns: 1fr;[\s\S]*gap: 24px;[\s\S]*padding-bottom: 12px;/);
-  assert.match(css, /@media \(max-width: 1120px\)\s*\{[\s\S]*\.home-command-grid\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-hero-shell,[\s\S]*\.home-support-preview,[\s\S]*\.home-capability-section,[\s\S]*\.home-install-strip\s*\{[\s\S]*width: 100%;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-hero-shell\s*\{[\s\S]*gap: 12px;[\s\S]*padding-top: 20px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc \.home-type-eyebrow\s*\{[\s\S]*margin-bottom: 10px;[\s\S]*font-size: 12px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-hero-shell h1\s*\{[\s\S]*max-width: 320px;[\s\S]*font-size: 31px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc \.home-deck\s*\{[\s\S]*margin-top: 10px;[\s\S]*font-size: 15px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc \.home-local-line\s*\{[\s\S]*margin-top: 8px;[\s\S]*font-size: 14px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-visual\s*\{[\s\S]*min-height: 0;[\s\S]*max-height: none;[\s\S]*padding: 12px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-command\s*\{[\s\S]*margin-top: 12px;[\s\S]*padding: 12px 14px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-result\s*\{[\s\S]*margin-top: 10px;[\s\S]*padding: 12px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-command-grid\s*\{[\s\S]*grid-template-columns: 1fr;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-metrics\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);[\s\S]*margin-top: 12px;[\s\S]*padding-top: 10px;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-loop-metrics span\s*\{[\s\S]*font-size: 12px;[\s\S]*padding: 5px;/);
   assert.doesNotMatch(css, /margin-inline: calc\(var\(--glade-page-gutter\) \* -0\.5\);/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*transition-duration: 0\.001ms !important;/);
   assert.match(css, /\.workbench-page \.home-workbench\s*\{[\s\S]*width: 100%;[\s\S]*max-width: 100%;/);
@@ -1252,8 +1211,6 @@ test("homepage layout uses the shared responsive design system", () => {
 });
 
 test("home mobile sections do not let command samples widen the page", () => {
-  assert.match(css, /\.home-capability-section > \*\s*\{[\s\S]*min-width: 0;/);
-  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-command-block code\s*\{[\s\S]*white-space: pre-wrap;[\s\S]*overflow-wrap: anywhere;/);
 });
 
 test("apex highlighter calls out platform and qualified types", () => {
@@ -1403,9 +1360,9 @@ test("workbench page mounts a real CodeMirror editor", () => {
 test("docs code blocks and tables fill their content lane cleanly", () => {
   assert.match(css, /\.vp-doc div\[class\*='language-'\] pre\s*\{[\s\S]*padding: 58px 24px 22px;/);
   assert.match(css, /\.vp-doc div\[class\*='language-'\] code\s*\{[\s\S]*font-size: max\(13\.5px, var\(--fs-code\)\);[\s\S]*line-height: 1\.55;/);
-  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*top: 8px;[\s\S]*left: 18px;[\s\S]*right: auto;[\s\S]*height: 44px;/);
+  assert.match(css, /\.vp-doc div\[class\*='language-'\] > span\.lang\s*\{[\s\S]*left: 18px;[\s\S]*right: auto;[\s\S]*height: 44px;/);
   assert.match(css, /\.vp-doc div\[class\*='language-'\] > button\.copy\s*\{[\s\S]*width: 44px;[\s\S]*height: 44px;[\s\S]*opacity: 1;/);
-  assert.match(css, /\.vp-doc table\s*\{[\s\S]*width: 100%;[\s\S]*margin: 20px 0 28px;[\s\S]*border-radius: 12px;/);
+  assert.match(css, /\.vp-doc table\s*\{[\s\S]*margin: 20px 0 28px;/);
   assert.match(css, /\.vp-doc th,\s*\n\.vp-doc td\s*\{[\s\S]*padding: 14px 18px;/);
   assert.match(css, /\.vp-doc tbody tr:nth-child\(even\)\s*\{[\s\S]*background:/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.vp-doc table\s*\{[\s\S]*display: block;[\s\S]*overflow-x: auto;/);

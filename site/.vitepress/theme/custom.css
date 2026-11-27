@@ -187,7 +187,6 @@ body {
   top: var(--vp-nav-height) !important;
   height: calc(100vh - var(--vp-nav-height)) !important;
   padding-top: 0 !important;
-  border-right: 1px solid var(--glade-border);
   background-color: var(--glade-nav-bg) !important;
   backdrop-filter: none;
   box-shadow: none !important;
@@ -220,24 +219,15 @@ body {
   margin-left: -10px;
   padding-left: 10px;
   border-radius: 6px;
-  background: var(--glade-active);
   color: var(--glade-strong);
-  font-weight: 700;
 }
 
 .VPSidebarItem.is-active > .item > .link .text {
   color: var(--glade-strong) !important;
-  font-weight: 700;
-}
-
-.VPNavBarMenu {
-  gap: 8px;
 }
 
 .VPNavBarMenuLink {
-  font-size: var(--fs-ui);
   line-height: var(--lh-ui);
-  padding-inline: 8px;
 }
 
 .VPNavBarMenuLink[href="/guide/installation"] {
@@ -246,14 +236,10 @@ body {
   min-height: 38px;
   padding-inline: 14px;
   border: 1px solid var(--glade-strong);
-  border-radius: 10px;
-  background: var(--glade);
-  color: var(--text-inverse);
   font-weight: 700;
 }
 
 .VPNavBarMenuLink[href="/guide/installation"]:hover {
-  background: var(--glade-strong);
   color: var(--text-inverse);
 }
 
@@ -288,23 +274,14 @@ body:not(:has(.VPHome)) .VPNavBar > .wrapper > .container > .title {
   display: inline-flex;
   gap: 8px;
   height: 38px !important;
-  min-height: 38px;
   align-items: center;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--vp-c-text-1);
   box-shadow: none;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: var(--body-track);
   line-height: 1;
   padding: 0;
-}
-
-.VPNavBarTitle .logo {
-  width: 20px;
-  height: 20px;
 }
 
 .VPNavBarTitle {
@@ -312,11 +289,6 @@ body:not(:has(.VPHome)) .VPNavBar > .wrapper > .container > .title {
   height: var(--vp-nav-height);
   align-items: center;
   margin-right: 24px;
-}
-
-body:has(.VPHome) .VPNavBarTitle {
-  margin-left: 0;
-  margin-right: clamp(40px, 6vw, 84px);
 }
 
 body:not(:has(.VPHome)) .VPNavBarTitle .title {
@@ -352,10 +324,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   max-width: calc(var(--vp-layout-max-width) - var(--vp-sidebar-width));
 }
 
-.VPDoc.has-aside .content-container {
-  max-width: 880px;
-}
-
 .VPDoc.has-sidebar {
   padding-top: 40px;
 }
@@ -367,11 +335,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .vp-doc h1 {
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-base);
-  font-size: clamp(2.25rem, 3vw, 3rem);
   font-style: normal;
-  font-weight: 520;
-  letter-spacing: 0;
-  line-height: 1.04;
 }
 
 .vp-doc h2,
@@ -381,38 +345,21 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 
 .vp-doc h2 {
   border-top-color: var(--glade-border);
-  font-size: 1.55rem;
-  line-height: 1.18;
-  margin-top: 2.8em;
 }
 
 .vp-doc h3 {
-  font-size: 1.15rem;
-  line-height: 1.3;
   margin-top: 2em;
-}
-
-.vp-doc p,
-.vp-doc li {
-  font-size: var(--fs-body);
-  line-height: 1.7;
 }
 
 .vp-doc > div > :where(p, li) {
   max-width: var(--glade-reading-width);
 }
 
-.vp-doc .docs-wide,
 .vp-doc :where(table, .coverage-workbench, .glade-cm-workbench) {
   max-width: none;
 }
 
-.vp-doc a {
-  text-underline-offset: 3px;
-}
-
 .vp-doc code {
-  color: var(--glade-accent);
   background: var(--glade-accent-soft);
   border-radius: 4px;
   padding: 0.12em 0.32em;
@@ -420,9 +367,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 
 .vp-doc div[class*='language-'] {
   margin-inline: 0;
-  border: 1px solid var(--glade-code-border);
-  border-radius: 8px;
-  box-shadow: var(--glade-shadow-soft);
   background: var(--glade-code-bg);
   overflow: hidden;
 }
@@ -456,7 +400,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 }
 
 .vp-doc div[class*='language-'] > span.lang {
-  top: 8px;
   left: 18px;
   right: auto;
   display: inline-flex;
@@ -466,26 +409,18 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   background: transparent;
   color: var(--glade-code-muted);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
   line-height: 1;
   padding: 0;
 }
 
 .vp-doc div[class*='language-'] > button.copy {
-  top: 8px;
-  right: 8px;
   width: 44px;
   height: 44px;
   opacity: 1;
-  border: 1px solid var(--glade-code-border);
-  border-radius: 8px;
-  background-color: var(--glade-code-header);
 }
 
 .vp-doc div[class*='language-']:hover > button.copy + span.lang,
 .vp-doc div[class*='language-'] > button.copy:focus + span.lang { opacity: 1; }
-.vp-doc div[class*='language-'] > button.copy.copied::before { height: 44px; }
 
 .custom-block {
   border: 1px solid var(--glade-border);
@@ -494,15 +429,8 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 }
 
 .vp-doc table {
-  display: table;
-  width: 100%;
   margin: 20px 0 28px;
-  border: 1px solid var(--glade-border);
-  border-collapse: separate;
-  border-radius: 12px;
-  border-spacing: 0;
   box-shadow: none;
-  overflow: hidden;
 }
 
 .vp-doc tbody tr:nth-child(even) {
@@ -518,7 +446,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .vp-doc th {
   background-color: var(--glade-surface);
   color: var(--vp-c-text-2);
-  font-weight: 700;
 }
 
 .VPDocAsideOutline.has-outline:has(.VPDocOutlineItem.root > li:only-child) {
@@ -533,10 +460,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 
 .docs-intro {
   margin: 0 0 2rem;
-  padding: 1.125rem 1.25rem;
-  border: 1px solid var(--glade-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
 }
 
 .docs-intro-eyebrow,
@@ -675,14 +598,10 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .docs-status-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 1.65rem;
-  padding: 0.12rem 0.5rem;
   border: 1px solid var(--chip-line, var(--glade-border));
   border-radius: 999px;
   background: var(--chip-bg, rgba(255,255,255,0.04));
   color: var(--chip-text, var(--vp-c-text-1));
-  font-size: 0.8125rem;
-  font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -693,8 +612,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   --chip-text: var(--success-text);
 }
 
-.docs-status-partial,
-.docs-status-config {
+.docs-status-partial {
   --chip-line: color-mix(in srgb, var(--glade-state-partial) 64%, transparent);
   --chip-bg: color-mix(in srgb, var(--glade-state-partial) 16%, transparent);
   --chip-text: var(--warning-text);
@@ -706,8 +624,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
   --chip-text: var(--info);
 }
 
-.docs-status-unknown,
-.docs-status-org {
+.docs-status-unknown {
   --chip-line: color-mix(in srgb, var(--info) 64%, transparent);
   --chip-bg: color-mix(in srgb, var(--info) 16%, transparent);
   --chip-text: var(--info);
@@ -897,8 +814,7 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
     min-width: 44px;
   }
 
-  .VPNavBarTitle,
-  body:has(.VPHome) .VPNavBarTitle {
+  .VPNavBarTitle {
     margin-right: 8px;
   }
 
@@ -943,18 +859,6 @@ body:not(:has(.VPHome)) .VPNavBarTitle .title {
 .VPButton.alt:hover {
   border-color: var(--glade-border-strong) !important;
   background: var(--glade-surface-solid) !important;
-}
-
-.VPHero .actions .action:nth-child(3) .VPButton.alt {
-  border-color: transparent !important;
-  background: transparent !important;
-  color: var(--glade-accent) !important;
-  padding-left: 8px !important;
-  padding-right: 8px !important;
-}
-
-.VPHero .actions .action:nth-child(3) .VPButton.alt:hover {
-  color: var(--vp-c-text-1) !important;
 }
 
 /* --- syntax tokens --- */
@@ -1015,19 +919,6 @@ html:not(.dark) .vp-doc .shiki span[style*="--shiki-light:#6A737D"] {
 
 .token.identifier {
   color: inherit;
-}
-
-.home-code-block .line {
-  display: block;
-}
-
-.home-code-block .line-number {
-  display: inline-block;
-  min-width: 1.5em;
-  margin-right: 0.75em;
-  color: var(--glade-code-line);
-  text-align: right;
-  user-select: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

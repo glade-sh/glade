@@ -6,9 +6,6 @@ aside: false
 head:
   - - link
     - rel: stylesheet
-      href: /css/home.css
-  - - link
-    - rel: stylesheet
       href: /css/workbench.css
 ---
 

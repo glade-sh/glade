@@ -35,7 +35,7 @@ html.dark .glade-docs { --gd-contour: .26; }
 .glade-docs .vp-doc tr:nth-child(2n) { background: var(--glade-surface); }
 .glade-docs .VPSidebarItem.is-active > .item > .link { background: var(--glade-active); border-color: var(--glade-link); font-weight: 550; }
 .glade-docs .VPSidebarItem.is-active > .item > .link .text { font-weight: 550; }
-.glade-docs :is(.docs-card, .docs-command-card, .docs-proof-card, .docs-workflow-card) { background: var(--glade-surface); box-shadow: none; border-radius: 12px; transition: border-color .2s, box-shadow .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
+.glade-docs :is(.docs-command-card, .docs-proof-card, .docs-workflow-card) { background: var(--glade-surface); box-shadow: none; border-radius: 12px; transition: border-color .2s, box-shadow .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
 .glade-docs :is(input, select) { border-color: var(--glade-control); }
 .glade-article-context { margin-bottom: 12px; }
 .glade-article-context nav { color: var(--glade-muted); font-size: 12px; line-height: 1.6; margin-bottom: 24px; overflow-wrap: anywhere; }
@@ -149,7 +149,7 @@ html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness
 .glade-docs .vp-doc .header-anchor { transition: opacity .18s; }
 
 /* Cards and pager lift a little toward the pointer, as on the home page. */
-.glade-docs :is(a.docs-card, a.docs-command-card, a.docs-workflow-card, .docs-card:has(a)):hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }
+.glade-docs :is(a.docs-command-card, a.docs-workflow-card):hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }
 .glade-docs .VPDocFooter .pager-link { border-radius: 12px; transition: border-color .2s, box-shadow .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
 .glade-docs .VPDocFooter .pager-link:hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }
 .glade-docs .VPButton { border-radius: 9px; transition: background-color .18s, border-color .18s, box-shadow .25s; }
@@ -164,7 +164,7 @@ html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness
 .glade-docs .VPFooter .message { max-width: 78ch; margin-inline: auto; text-wrap: balance; }
 .glade-docs .VPFooter::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: var(--gd-hairline); }
 
-@media (prefers-reduced-motion: reduce) { .glade-docs :is(a.docs-card, a.docs-command-card, a.docs-workflow-card, .docs-card:has(a), .pager-link):hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .glade-docs :is(a.docs-command-card, a.docs-workflow-card, .pager-link):hover { transform: none; } }
 @media (forced-colors: active) { .glade-docs .VPContent::before, .glade-docs .VPContent::after { display: none; } }
 
 /* Header search: a field-shaped button. The 44px target stays; the drawn field is 36px. */
