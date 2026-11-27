@@ -144,6 +144,9 @@ export default defineConfig({
     return code.replace('<meta name="description" content="Not Found">', `<meta name="description" content="${descriptionFor('404.md', '')}">`)
   },
   lastUpdated: false,
+  // Emit the page hash map and site data as a hashed asset, not an inline script,
+  // so the Content-Security-Policy can name the remaining inline scripts by hash.
+  metaChunk: true,
   markdown: {
     config(md) {
       const image = md.renderer.rules.image!

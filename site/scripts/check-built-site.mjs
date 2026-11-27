@@ -1,4 +1,5 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -213,6 +214,33 @@ for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintai
   if (!/max-age=0, must-revalidate/.test(rule?.headers.get('cache-control') || '')) {
     failures.push(`_headers: ${routePrefix} does not revalidate`)
   }
+}
+
+// The Content-Security-Policy names every inline script by hash. A built page
+// with any other inline script would be blocked in production, so fail here.
+const csp = globalRule?.headers.get('content-security-policy') || ''
+const scriptSrc = csp.split(';').map((part) => part.trim()).find((part) => part.startsWith('script-src ')) || ''
+const allowedHashes = new Set([...scriptSrc.matchAll(/'sha256-([^']+)'/g)].map((match) => match[1]))
+if (!csp) failures.push('_headers: global rule is missing Content-Security-Policy')
+if (/'unsafe-inline'|'unsafe-eval'/.test(scriptSrc)) failures.push('_headers: script-src must not allow unsafe-inline or unsafe-eval')
+for (const directive of ["default-src 'self'", "base-uri 'self'", "object-src 'none'", "form-action 'self'", "frame-ancestors 'none'", 'upgrade-insecure-requests']) {
+  if (!csp.split(';').some((part) => part.trim() === directive)) failures.push(`_headers: Content-Security-Policy is missing ${directive}`)
+}
+const usedHashes = new Set()
+for (const file of pages) {
+  const html = await readFile(file, 'utf8')
+  const relative = path.relative(distRoot, file)
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+    if (/\bsrc=/.test(match[1])) continue
+    const type = match[1].match(/\btype="([^"]*)"/)?.[1]
+    if (type && !/^(?:module|text\/javascript|application\/javascript)$/i.test(type)) continue
+    const hash = createHash('sha256').update(match[2]).digest('base64')
+    usedHashes.add(hash)
+    if (!allowedHashes.has(hash)) failures.push(`${relative}: inline script sha256-${hash} is not in the Content-Security-Policy`)
+  }
+}
+for (const hash of allowedHashes) {
+  if (!usedHashes.has(hash)) failures.push(`_headers: Content-Security-Policy hash sha256-${hash} matches no built inline script`)
 }
 
 if (failures.length > 0) {

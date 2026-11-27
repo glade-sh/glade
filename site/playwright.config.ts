@@ -28,12 +28,12 @@ export default defineConfig({
     },
     {
       name: 'desktop-1024',
-      testIgnore: ['**/performance.spec.ts', '**/mobile.spec.ts'],
+      testIgnore: ['**/performance.spec.ts', '**/mobile.spec.ts', '**/csp.spec.ts'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } }
     },
     {
       name: 'tablet-768',
-      testIgnore: ['**/performance.spec.ts', '**/mobile.spec.ts'],
+      testIgnore: ['**/performance.spec.ts', '**/mobile.spec.ts', '**/csp.spec.ts'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } }
     },
     {
@@ -43,7 +43,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-320-reflow',
-      testIgnore: ['**/performance.spec.ts'],
+      testIgnore: ['**/performance.spec.ts', '**/csp.spec.ts'],
       use: {
         browserName: 'chromium',
         viewport: { width: 320, height: 800 },
