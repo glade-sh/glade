@@ -106,11 +106,12 @@ export function startHeroTerrain(hero: HTMLElement, canvas: HTMLCanvasElement): 
   }
   function sync() {
     const want = !lost && visible && !document.hidden && fine.matches && !still.matches && window.innerWidth > 760
+    // Narrow, coarse-pointer, reduced-motion and lost-context states go back to the static image. This runs
+    // before the early return: the map may already be paused offscreen when one of them begins.
+    if (!want && (lost || !fine.matches || still.matches || window.innerWidth <= 760)) { shown = false; delete canvas.dataset.live; delete hero.dataset.terrain }
     if (want === running) return
     running = want
     if (running) { last = 0; layout(); frame = requestAnimationFrame(draw) } else { cancelAnimationFrame(frame); frame = 0 }
-    // Narrow, coarse-pointer and reduced-motion states go back to the static image.
-    if (!want && (lost || !fine.matches || still.matches || window.innerWidth <= 760)) { shown = false; delete canvas.dataset.live; delete hero.dataset.terrain }
   }
   function move(event: PointerEvent) { const box = hero.getBoundingClientRect(); px = event.clientX - box.left; py = event.clientY - box.top }
   function leave() { px = py = -1 }
