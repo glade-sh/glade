@@ -8,6 +8,14 @@
 # .github/leak-scan-allow.txt skip the denylist entries only. The output identifies
 # the file by ordinal, line and pattern class, never filenames or matched text.
 #
+# A binary change cannot be scanned, so it fails, with one narrow exception:
+# .github/leak-scan-binary-allow.txt names paths where a human has reviewed the
+# binary (for example image files). An entry ending in "/" is a directory
+# prefix; any other entry is one exact file. A binary change at a listed path
+# passes and is reported as "binary change accepted by allow list: <path>".
+# Both allow lists are read from the scanner checkout, which CI takes from the
+# base commit, so a change cannot add itself to either list.
+#
 # A LEAK_SCAN_DENYLIST with no entries (unset, empty, or comments only) fails
 # the scan, so a missing secret cannot silently disable the private-name check.
 # LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 opts out deliberately: the scan then prints
@@ -45,8 +53,10 @@ allowempty=0
 if [ "${LEAK_SCAN_ALLOW_EMPTY_DENYLIST:-}" = "1" ]; then allowempty=1; fi
 allow="$root/.github/leak-scan-allow.txt"
 [ -f "$allow" ] || allow=/dev/null
+binallow="$root/.github/leak-scan-binary-allow.txt"
+[ -f "$binallow" ] || binallow=/dev/null
 
-awk -v denyfile="$work/deny" -v allowfile="$allow" -v allowempty="$allowempty" '
+awk -v denyfile="$work/deny" -v allowfile="$allow" -v binallowfile="$binallow" -v allowempty="$allowempty" '
 BEGIN {
   nd = 0
   while ((getline line < denyfile) > 0) {
@@ -62,6 +72,13 @@ BEGIN {
     allow[++na] = line
   }
   close(allowfile)
+  nb = 0
+  while ((getline line < binallowfile) > 0) {
+    sub(/\r$/, "", line); gsub(/^[ \t]+|[ \t]+$/, "", line)
+    if (line == "" || line ~ /^#/) continue
+    binallow[++nb] = line
+  }
+  close(binallowfile)
   file = ""; lineno = 0; added = 0; findings = 0; fileid = 0; in_hunk = 0
 }
 # Hunk counts determine when metadata resumes. Added lines can look exactly
@@ -92,12 +109,43 @@ in_hunk {
   if (oldleft <= 0 && newleft <= 0) in_hunk = 0
   next
 }
-/^diff --git / { fileid++; file = ""; allowed = 0; deleted = 0; next }
+/^diff --git / {
+  fileid++; file = ""; allowed = 0; deleted = 0; hdrpath = ""
+  # Without a rename the header is "a/P b/P", so P is the middle of the line.
+  hdr = substr($0, 12); n = length(hdr)
+  if (n > 5 && (n - 5) % 2 == 0) {
+    p = (n - 5) / 2
+    if (substr(hdr, 1, 2) == "a/" && substr(hdr, p + 3, 1) == " " && substr(hdr, p + 4, 2) == "b/" && substr(hdr, 3, p) == substr(hdr, p + 6, p)) hdrpath = substr(hdr, 3, p)
+  }
+  next
+}
 /^deleted file mode / { deleted = 1; next }
 /^Binary files .* differ$/ || /^GIT binary patch$/ {
   if (!deleted) {
-    findings++; files[fileid] = 1
-    printf "file %d: binary change cannot be scanned\n", fileid
+    bpath = hdrpath
+    if ($0 ~ /^Binary files /) {
+      line = $0; sub(/ differ$/, "", line); at = 0
+      for (i = 1; i <= length(line) - 6; i++) if (substr(line, i, 7) == " and b/") at = i
+      if (at > 0) bpath = substr(line, at + 7)
+    }
+    ok = 0
+    # Quoted paths (special characters) and unparsed paths are never accepted.
+    if (bpath != "" && bpath !~ /^"/) {
+      for (i = 1; i <= nb; i++) {
+        if (substr(binallow[i], length(binallow[i])) == "/") { if (index(bpath, binallow[i]) == 1) ok = 1 }
+        else if (bpath == binallow[i]) ok = 1
+      }
+    }
+    if (ok) {
+      lower = tolower(bpath)
+      for (i = 1; i <= nd; i++) if (index(lower, deny[i]) > 0) ok = 0
+      if (bpath ~ /\/Users\/[^\/]/ || bpath ~ /\/Volumes\// || bpath ~ /\/private\/tmp\// || bpath ~ /\/home\/[^\/]+\//) ok = 0
+    }
+    if (ok) printf "binary change accepted by allow list: %s\n", bpath
+    else {
+      findings++; files[fileid] = 1
+      printf "file %d: binary change cannot be scanned\n", fileid
+    }
   }
   next
 }
