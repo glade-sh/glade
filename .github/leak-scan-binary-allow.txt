@@ -1,0 +1,7 @@
+# leak-scan binary allow list: one repository path per line.
+# A binary change at a listed path passes the scan and is printed for the reviewer.
+# An entry ending in "/" is a directory prefix. Any other entry is one exact file.
+# Only list images that a human reviews in the pull request. The scanner reads
+# this file from the base commit, so a pull request cannot add itself here.
+site/docs-src/public/help/screenshots/
+site/docs-src/public/playground-overview.png

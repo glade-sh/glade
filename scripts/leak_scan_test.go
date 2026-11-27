@@ -277,6 +277,89 @@ func TestLeakScanAdversarialDiffs(t *testing.T) {
 	})
 }
 
+// TestLeakScanBinaryAllowList covers .github/leak-scan-binary-allow.txt: a
+// binary change under a listed directory prefix or at a listed exact file
+// passes and is printed; any other binary change still fails; a prefix never
+// matches a sibling path; a listed path that names a denylist term still fails.
+func TestLeakScanBinaryAllowList(t *testing.T) {
+	script, err := filepath.Abs("leak-scan.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	git := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.invalid", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.invalid")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %s: %v", args, out, err)
+		}
+	}
+	write := func(name, content string) {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run := func() (string, error) {
+		t.Helper()
+		cmd := exec.Command("bash", script, "--range", "HEAD~1..HEAD")
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "LEAK_SCAN_DENYLIST=synthetic-token")
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	git("init", "-q")
+	write(".github/leak-scan-binary-allow.txt", "# reviewed images\nassets/shots/\nassets/overview.png\n")
+	write("assets/overview.png", "\x00before")
+	write("base", "base\n")
+	git("add", "-A")
+	git("commit", "-qm", "base")
+	for _, tc := range []struct {
+		name, file string
+		accepted   bool
+	}{
+		{"directory prefix", "assets/shots/one.png", true},
+		{"nested under prefix", "assets/shots/deep/two.png", true},
+		{"exact file", "assets/overview.png", true},
+		{"outside the list", "assets/other.png", false},
+		{"sibling of a prefix", "assets/shots-old/one.png", false},
+		{"sibling of an exact file", "assets/overview.png.bak", false},
+		{"listed path with a denylist term", "assets/shots/synthetic-token.png", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			write(tc.file, "\x00"+tc.name)
+			git("add", "-A")
+			git("commit", "-qm", tc.name)
+			out, err := run()
+			if tc.accepted {
+				if err != nil || !strings.Contains(out, "binary change accepted by allow list: "+tc.file+"\n") || !strings.Contains(out, "leak-scan: clean") {
+					t.Fatalf("expected accepted binary: %v: %s", err, out)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(out, "binary change cannot be scanned") || strings.Contains(out, "accepted by allow list") || strings.Contains(out, "synthetic-token") {
+				t.Fatalf("expected binary finding: %v: %s", err, out)
+			}
+		})
+	}
+	t.Run("accepted binary does not hide a text finding", func(t *testing.T) {
+		write("assets/shots/three.png", "\x00three")
+		write("notes.txt", "/Us"+"ers/person/private\n")
+		git("add", "-A")
+		git("commit", "-qm", "mixed")
+		out, err := run()
+		if err == nil || !strings.Contains(out, "personal-path") || !strings.Contains(out, "accepted by allow list: assets/shots/three.png") {
+			t.Fatalf("expected one text finding beside an accepted binary: %v: %s", err, out)
+		}
+	})
+}
+
 // TestLeakScanCommits exercises scripts/leak-scan-commits.sh on throwaway
 // repositories: a denylist finding names the commit that introduced it and no
 // clean commit; a clean range passes; an empty denylist fails the range, and
@@ -538,6 +621,7 @@ func TestLeakScanUsesTrustedTree(t *testing.T) {
 		write("scripts/"+file, content)
 	}
 	write(".github/leak-scan-allow.txt", []byte("docs/safe/\n"))
+	write(".github/leak-scan-binary-allow.txt", []byte("docs/safe/img/\n"))
 	git("add", "-A")
 	git("commit", "-qm", "trusted base")
 	base := git("rev-parse", "HEAD")
@@ -548,6 +632,10 @@ func TestLeakScanUsesTrustedTree(t *testing.T) {
 	const deny = "synthetic-guard-term"
 	write("docs/added.txt", []byte(deny+"\n"))
 	write("docs/safe/allowed.txt", []byte(deny+"\n"))
+	// The candidate lists its own binary path; only the base list counts.
+	write(".github/leak-scan-binary-allow.txt", []byte("docs/\n"))
+	write("docs/added.bin", []byte("\x00candidate"))
+	write("docs/safe/img/ok.bin", []byte("\x00listed in the base"))
 	git("add", "-A")
 	git("commit", "-qm", "candidate")
 	git("checkout", "-q", "main")
@@ -579,8 +667,8 @@ func TestLeakScanUsesTrustedTree(t *testing.T) {
 			scan.Dir = workspace
 			scan.Env = append(os.Environ(), "SCAN_RANGE="+strings.TrimPrefix(rangeBinding, "range="), "LEAK_SCAN_DENYLIST="+deny, "LEAK_SCAN_ALLOW_EMPTY_DENYLIST=0")
 			out, err := scan.CombinedOutput()
-			if err == nil || !strings.Contains(string(out), "1 finding(s) in 1 file(s)") || !strings.Contains(string(out), "denylist") || strings.Contains(string(out), deny) {
-				t.Fatalf("trusted scan must reject and redact one candidate finding: %v: %s", err, out)
+			if err == nil || !strings.Contains(string(out), "2 finding(s) in 2 file(s)") || !strings.Contains(string(out), "denylist") || !strings.Contains(string(out), "binary change cannot be scanned") || !strings.Contains(string(out), "accepted by allow list: docs/safe/img/ok.bin") || strings.Contains(string(out), "accepted by allow list: docs/added.bin") || strings.Contains(string(out), deny) {
+				t.Fatalf("trusted scan must reject and redact the candidate findings: %v: %s", err, out)
 			}
 		})
 	}
