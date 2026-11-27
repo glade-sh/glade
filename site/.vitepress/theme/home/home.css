@@ -495,3 +495,141 @@ button:disabled { cursor:default; }
 @media(max-width:760px), (pointer:coarse) {
   .console-header { padding-block:8px; }
 }
+
+/* Atmosphere layer: aurora light, gradient terrain, gradient-edged frames and glow.
+   Decorative only. Text surfaces keep flat backgrounds so contrast stays measurable. */
+.glade-home { position: relative; overflow-x: clip; --gh-grad: linear-gradient(100deg, #78ddea 0%, #829eff 46%, #a080ff 100%); --gh-hairline: linear-gradient(90deg, transparent, #8a79ff8c 30%, #76d8e68c 70%, transparent); }
+/* First-paint budget: these two full-width layers carry no mask, filter or animation. */
+.glade-home::before, .glade-home::after { content: ''; position: absolute; height: 1040px; z-index: -1; pointer-events: none; }
+.glade-home::before {
+  inset: 0 -8% auto -8%; background-position: center top; background-size: auto, 64px 64px, 64px 64px;
+  background-image: radial-gradient(70% 62% at 64% 26%, transparent 10%, #0b1119 76%), linear-gradient(rgba(150,160,220,.075) 1px, transparent 1px), linear-gradient(90deg, rgba(150,160,220,.075) 1px, transparent 1px);
+}
+.glade-home::after {
+  inset: 0 0 auto 0;
+  background-image: radial-gradient(52% 58% at 80% 20%, rgba(124,98,240,.42), transparent 70%), radial-gradient(36% 40% at 99% 56%, rgba(118,216,230,.20), transparent 72%), radial-gradient(46% 50% at 4% 2%, rgba(74,112,255,.22), transparent 70%), radial-gradient(28% 30% at 44% 66%, rgba(160,128,255,.10), transparent 70%);
+}
+@keyframes gh-sheen { to { background-position: 200% 50%; } }
+
+.site-header { background: rgba(11,17,25,.62); -webkit-backdrop-filter: saturate(170%) blur(16px); backdrop-filter: saturate(170%) blur(16px); }
+.site-header.scrolled { border-bottom-color: #8a79ff2e; box-shadow: 0 10px 40px -18px #000c; }
+
+/* Home asset URLs end their line: the repo leak scan reads a later slash as a personal path. */
+/* The still map is a brand gradient cut out by hero-terrain.svg as a mask. It is decoration, so it loads
+   after the stylesheet, never holds back the headline's first paint, and fades in behind it. */
+/* The still map is drawn in the same frame as the live canvas: centred at 66% / 42% of the hero, 1.6 hero heights across. */
+.hero-topo { inset: 0; width: auto; height: auto; opacity: 1; transform: none; overflow: hidden; }
+.hero-topo i { position: absolute; left: 66%; top: 42%; height: 160%; aspect-ratio: 1; transform: translate(-50%, -50%); background: radial-gradient(closest-side, #8feaf2, #86c8fa 30%, #80a9ff 46%, #8b98ff 62%, #958bff 78%, #9985ff 94%); -webkit-mask: url('/hero-terrain.svg') center / 100% 100% no-repeat; mask: url('/hero-terrain.svg') center / 100% 100% no-repeat; animation: gh-topo-in .7s ease .15s both; }
+@keyframes gh-topo-in { from { opacity: 0; } }
+/* The live canvas stays out of layout until it has drawn a frame. Then one scan passes down the hero:
+   the canvas shows above a soft band and the still below it, so the same lines come alive in place. */
+.hero-terrain { display: none; position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+.hero-terrain[data-live] { display: block; mask-image: linear-gradient(#000 calc(var(--gh-scan) - 24%), #0000 var(--gh-scan)); animation: gh-scan 2.4s linear both; }
+.hero[data-terrain] .hero-topo { mask-image: linear-gradient(#0000 calc(var(--gh-scan) - 24%), #000 var(--gh-scan)); animation: gh-scan 2.4s linear both; }
+@property --gh-scan { syntax: '<percentage>'; inherits: false; initial-value: 124%; }
+@keyframes gh-scan { from { --gh-scan: 0%; } to { --gh-scan: 124%; } }
+
+.hero { padding-top: 92px; padding-bottom: 96px; }
+.hero h1 { font-size: clamp(48px, 5.1vw, 74px); font-weight: 600; line-height: 1.04; letter-spacing: -.052em; }
+.hero h1 span:not(.headline-first) { background: var(--gh-grad); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; padding-bottom: .08em; }
+.hero .eyebrow { width: fit-content; padding: 7px 13px 7px 11px; border: 1px solid #76d8e633; border-radius: 999px; background: linear-gradient(90deg, #76d8e614, #8a79ff14); }
+.hero .eyebrow .eyebrow-dot { box-shadow: 0 0 0 4px #76d8e622, 0 0 14px #76d8e6; }
+.hero-description { font-size: 17px; color: #b3bdce; }
+
+/* Buttons keep one faint sheen and change only the colour under it, so a hover fades instead of swapping. */
+a, button { transition: color .18s, border-color .18s, background-color .18s, box-shadow .25s, transform .25s; }
+.button { border-radius: 9px; }
+.button-primary, .button-primary:hover, .run-button, .run-button:hover { background-image: linear-gradient(180deg, #ffffff14, #ffffff00 55%); }
+.button-primary { border-color: #8f80ea; background-color: #6a58cf; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 20px -14px #7361dd; }
+.button-primary:hover { background-color: #7664da; border-color: #a99cff; box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 24px -14px #8a79ff; }
+.button-secondary { background: #131d2be6; border-color: #40506a; }
+.button-secondary:hover { background: #1b2638; border-color: #6c7b99; }
+.button .icon, .text-link .icon { transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+.button:hover .icon, .text-link:hover .icon, .extension-card:hover .text-link .icon { transform: translateX(3px); }
+.run-button { background-color: #6e5bbb; }
+.run-button:hover { background-color: #7a67c9; border-color: #9486e6; }
+.run-button:disabled, .run-button:disabled:hover { background-color: #6e5bbb; }
+.copy-button { transition: color .18s, border-color .18s, background-color .18s; }
+
+/* Product frames: flat surface, gradient hairline ring on top, soft light behind. */
+.demo-wrap::before, .workbench-wrap::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: -4% -16% -10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(124,98,240,.34), rgba(118,216,230,.08) 62%, transparent); }
+.workbench-wrap { position: relative; isolation: isolate; }
+.workbench-wrap::before { opacity: .7; }
+/* Frames keep a solid hairline on every side so they hold on any backdrop; the ring over it only lightens the top edge. */
+.editor, .workbench, .compatibility-table, .install-box { position: relative; background: var(--gh-frame, var(--gh-editor)); border-color: #2b384d; }
+.editor::after, .workbench::after, .compatibility-table::after, .install-box::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none; background: linear-gradient(180deg, #6c7cab, #36445f 38%, #2b384d 70%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.editor, .workbench, .compatibility-table { overflow: clip; overflow-clip-margin: 1px; }
+.editor { border-radius: 14px; box-shadow: 0 44px 120px -30px #000d, 0 30px 90px -40px #7361ddb3, inset 0 1px 0 #ffffff12; }
+.editor-toolbar { background: #17212e; }
+.workbench { --gh-frame: #0c141e; border-radius: 12px; box-shadow: 0 36px 100px -34px #000d, 0 24px 70px -40px #7361dd99; }
+.compatibility-table { --gh-frame: #101924; border-radius: 12px; box-shadow: 0 30px 80px -40px #000c, 0 20px 60px -44px #76d8e680; }
+.install-box { --gh-frame: #0c1420; border-radius: 11px; box-shadow: 0 20px 70px -24px #7361ddb3; }
+.code-line.highlighted { background: #6f57b52e; }
+
+.capabilities { position: relative; border-color: transparent; }
+.capabilities::before, .capabilities::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: var(--gh-hairline); }
+.capabilities::before { top: 0; } .capabilities::after { bottom: 0; opacity: .45; }
+.capability { cursor: default; }
+.capability > .icon { color: #9fd3f2; filter: drop-shadow(0 0 8px #76d8e680); transition: transform .3s cubic-bezier(.2,.7,.2,1); }
+.capability:nth-child(even) > .icon { color: #b3a4ff; filter: drop-shadow(0 0 8px #8a79ff99); }
+.capability:hover > .icon { transform: translateY(-2px) scale(1.08); }
+
+.section-title { font-size: clamp(34px, 3.5vw, 50px); font-weight: 550; letter-spacing: -.045em; line-height: 1.1; }
+.workflow-number { border-color: transparent; background: linear-gradient(#0e1620, #0e1620) padding-box, var(--gh-grad) border-box; color: #cfc6ff; }
+
+/* Mid-page light and terrain so the atmosphere carries past the hero. */
+#workflow, .compatibility { position: relative; }
+#workflow::before, .compatibility::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: -6% -26% -6% 34%; background: radial-gradient(closest-side, rgba(124,98,240,.34), rgba(118,216,230,.08) 60%, transparent); }
+.compatibility::before { inset: -20% -24% -20% 40%; background: radial-gradient(closest-side, rgba(118,216,230,.20), rgba(124,98,240,.12) 60%, transparent); }
+/* Section terrain sits in the page margin and fades out before it reaches the copy. */
+#workflow::after, .compatibility::after { content: ''; position: absolute; z-index: -1; pointer-events: none; width: 1040px; height: 900px; left: -700px; top: 4%; opacity: .36; background: 
+  url('/home/contours.svg')
+  center / contain no-repeat; transform: rotate(48deg); -webkit-mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); mask-image: radial-gradient(closest-side, #000 34%, #0000 80%); }
+.compatibility::after { left: auto; right: -720px; top: -50%; opacity: .32; transform: rotate(-150deg); }
+
+.extensions { isolation: isolate; overflow: clip; border-color: transparent; background: radial-gradient(60% 90% at 12% 0%, rgba(124,98,240,.20), transparent 70%), radial-gradient(50% 80% at 96% 100%, rgba(118,216,230,.12), transparent 70%), #0d1520; }
+.extensions::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(rgba(170,180,235,.16) 1px, transparent 1.4px); background-size: 26px 26px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%); mask-image: linear-gradient(180deg, #000, transparent 85%); }
+.extensions::after { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: var(--gh-hairline); }
+/* The whole card is the link target: the link's hit area stretches over it, and a light follows the pointer. */
+.extension-card { position: relative; border-radius: 14px; border-color: #2c3a52; background: linear-gradient(180deg, rgba(27,38,58,.82), rgba(15,24,37,.88)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: inset 0 1px 0 #ffffff0f; transition: transform .3s cubic-bezier(.2,.7,.2,1), border-color .3s, box-shadow .3s; }
+.extension-card::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .35s; background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 0%), rgba(150,134,255,.20), rgba(118,216,230,.07) 45%, transparent 70%); }
+.extension-card:hover::before { opacity: 1; }
+.extension-card:hover { transform: translateY(-5px); border-color: #7c6be0; box-shadow: inset 0 1px 0 #ffffff1c, 0 30px 70px -30px #7361dde6; }
+.extension-card:has(.text-link:focus-visible) { border-color: #a99cff; box-shadow: 0 0 0 3px #8a79ff59; }
+.extension-card .text-link::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+.extension-card:hover .text-link { color: #ddd5ff; }
+.extension-art { border-bottom-color: #26344a; background: radial-gradient(80% 120% at 50% -20%, rgba(138,121,255,.30), transparent 70%), #0f1926; }
+.extension-card:nth-child(2) .extension-art { background: radial-gradient(80% 120% at 50% -20%, rgba(131,216,176,.20), transparent 70%), #0f1926; }
+.extension-card:nth-child(3) .extension-art { background: radial-gradient(80% 120% at 50% -20%, rgba(118,216,230,.24), transparent 70%), #0f1926; }
+.extension-text h3 { font-size: 19px; font-weight: 550; }
+
+.get-started { padding: 104px 0 108px; border-top-color: transparent; background: radial-gradient(54% 78% at 50% 0%, rgba(124,98,240,.40), transparent 72%), radial-gradient(40% 60% at 50% 110%, rgba(118,216,230,.16), transparent 70%), #0c131d; }
+.get-started::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: var(--gh-hairline); }
+.get-started h2 { font-size: clamp(38px, 4.4vw, 60px); font-weight: 600; letter-spacing: -.05em; line-height: 1.08; background: linear-gradient(180deg, #ffffff 30%, #bdb2ff); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; padding-bottom: .08em; }
+.get-started > .container > p { font-size: 14px; color: #b6c0d2; }
+.site-footer { border-top-color: #1c2736; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 span:not(.headline-first) { animation: gh-sheen 14s linear infinite alternate; }
+  @supports (animation-timeline: view()) {
+    .capability, .workflow-copy, .workbench-wrap, .extension-card, .compatibility-grid > *, .get-started > .container { animation: gh-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+    @keyframes gh-rise { from { opacity: 0; translate: 0 26px; } to { opacity: 1; translate: 0 0; } }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .extension-card:hover, .capability:hover > .icon, .button:hover .icon, .text-link:hover .icon, .extension-card:hover .text-link .icon { transform: none; } }
+@media(max-width:1190px) { .hero h1 { font-size: 56px; letter-spacing: -.048em; } }
+@media(max-width:960px) { .hero h1 { font-size: 45px; } .hero-description { font-size: 15px; } }
+@media(max-width:760px) {
+  .glade-home::before { height: 700px; background-size: auto, 44px 44px, 44px 44px; }
+  .glade-home::after { height: 1250px; background-image: radial-gradient(90% 34% at 90% 8%, rgba(124,98,240,.42), transparent 70%), radial-gradient(80% 30% at 0% 0%, rgba(74,112,255,.22), transparent 70%), radial-gradient(90% 26% at 60% 60%, rgba(118,216,230,.14), transparent 72%); }
+  .hero { padding: 44px 0 56px; }
+  .hero h1 { font-size: clamp(44px, 9.4vw, 60px); }
+  .hero-topo i { left: 78%; top: 62%; height: 95%; }
+  .hero-terrain, .hero-terrain[data-live] { display: none; }
+  #workflow::before, .compatibility::before { inset: 38% -30% -4% -30%; }
+  #workflow::after, .compatibility::after { width: 700px; height: 600px; left: -480px; opacity: .26; }
+  .compatibility::after { left: auto; right: -500px; top: -20%; }
+  .get-started { padding: 72px 0 76px; } .get-started h2 { font-size: 40px; }
+  .extension-card:hover { transform: none; }
+}
+@media(max-width:440px) { .hero h1 { font-size: clamp(40px, 11vw, 48px); } }

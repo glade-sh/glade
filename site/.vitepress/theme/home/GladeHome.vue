@@ -16,6 +16,10 @@ const scrolled = ref(false)
 const header = ref<HTMLElement>()
 const menuToggle = ref<HTMLButtonElement>()
 const installCommand = ref<HTMLElement>()
+const hero = ref<HTMLElement>()
+const terrain = ref<HTMLCanvasElement>()
+let stopTerrain: (() => void) | undefined
+let terrainTimer: ReturnType<typeof setTimeout> | undefined
 const copied = ref(false)
 const toast = ref('')
 let runTimer: ReturnType<typeof setTimeout> | undefined
@@ -33,6 +37,16 @@ const code = computed(() => scenario.value === 'tests' ? [
  'public class AccountService {', '  public static String accountName() {', "    String name = 'Acme';",
  `    return ${state.fixed ? 'name' : 'acountName'};`, '  }', '}', '', '// Local feedback, before a deploy.'
 ])
+const debugSource = [
+ 'public class AccountService {', '  public static Account create() {', '    Account acc = new Account(',
+ "      Name = 'Acme');", '    insert acc;', '    return acc;', '  }', '}'
+]
+function cardLight(event: PointerEvent) {
+ const card = (event.target as Element).closest<HTMLElement>('.extension-card')
+ if (!card) return
+ const box = card.getBoundingClientRect()
+ card.style.setProperty('--mx', `${event.clientX - box.left}px`); card.style.setProperty('--my', `${event.clientY - box.top}px`)
+}
 function lineClass(index: number) {
  if (scenario.value === 'tests') return index === 5 && state.failing ? 'line-error' : ''
  if (scenario.value === 'debug') return index === 4 && !state.debugCompleted ? 'highlighted' : ''
@@ -120,9 +134,15 @@ onMounted(() => {
  wide = window.matchMedia('(min-width:761px)'); wide.addEventListener('change', onWide)
  window.addEventListener('scroll', onScroll, { passive: true }); onScroll()
  document.addEventListener('keydown', onKey); document.addEventListener('click', outside)
+ // The hero backdrop is decoration: fetch and start it after the page has settled.
+ terrainTimer = setTimeout(async () => {
+  const { startHeroTerrain } = await import('./hero-terrain')
+  if (alive && hero.value && terrain.value) stopTerrain = startHeroTerrain(hero.value, terrain.value)
+ }, 1200)
 })
 onUnmounted(() => {
  alive = false
+ clearTimeout(terrainTimer); stopTerrain?.(); stopTerrain = undefined
  clearTimeout(runTimer); clearTimeout(copyTimer); clearTimeout(toastTimer)
  wide?.removeEventListener('change', onWide)
  window.removeEventListener('scroll', onScroll)
@@ -151,8 +171,9 @@ onUnmounted(() => {
  </nav>
 </header>
 <main id="main" tabindex="-1">
- <section class="hero" aria-labelledby="hero-title">
-  <div class="hero-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
+ <section ref="hero" class="hero" aria-labelledby="hero-title">
+  <div class="hero-topo" aria-hidden="true"><i></i></div>
+  <canvas ref="terrain" class="hero-terrain" aria-hidden="true"></canvas>
   <div class="container hero-grid">
    <div class="hero-copy">
     <p class="eyebrow"><span class="eyebrow-dot"></span>Local Apex runtime</p>
@@ -230,14 +251,7 @@ onUnmounted(() => {
        <div class="workbench-content">
         <div class="workbench-file"><svg class="icon " aria-hidden="true"><use href="#i-file"/></svg> AccountService.cls</div>
         <div class="debug-code" role="region" aria-label="Illustrative debug source" tabindex="0">
-         <div class="code-line"><span class="line-no" aria-hidden="true">1</span><span class="line-code"><span class="t-key">public class</span> <span class="t-type">AccountService</span> {</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">2</span><span class="line-code">  <span class="t-key">public static</span> <span class="t-type">Account</span> <span class="t-fn">create</span>() {</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">3</span><span class="line-code">    <span class="t-type">Account</span> acc = <span class="t-key">new</span> <span class="t-type">Account</span>(</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">4</span><span class="line-code">      Name = <span class="t-string">'Acme'</span>);</span></div>
-         <div class="code-line breakpoint-row"><span class="line-no" aria-hidden="true"><span class="breakpoint-dot"></span>5</span><span class="line-code">    <span class="t-key">insert</span> acc;</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">6</span><span class="line-code">    <span class="t-key">return</span> acc;</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">7</span><span class="line-code">  }</span></div>
-         <div class="code-line"><span class="line-no" aria-hidden="true">8</span><span class="line-code">}</span></div>
+         <div v-for="(line, index) in debugSource" :key="index" class="code-line" :class="{ 'breakpoint-row': index === 4 }"><span class="line-no" aria-hidden="true"><span v-if="index === 4" class="breakpoint-dot"></span>{{ index + 1 }}</span><span class="line-code"><span v-for="(token, i) in tokenize(line)" :key="i" :class="token.kind">{{ token.text }}</span></span></div>
         </div>
         <div class="inspector"><div class="inspector-head"><svg class="icon " aria-hidden="true"><use href="#i-pause"/></svg> Paused at breakpoint · line 5</div><div class="variable">acc.Name <span>"Acme"</span></div></div>
        </div>
@@ -271,7 +285,7 @@ onUnmounted(() => {
  <section class="extensions" id="extend" tabindex="-1" aria-labelledby="extend-title">
   <div class="container">
    <div class="section-heading-row"><div><p class="eyebrow">A small tool. Room to grow.</p><h2 class="section-title" id="extend-title">Make the workflow yours.</h2></div><p>Start with the local runtime. Connect it to the tools and workflows that help you build.</p></div>
-   <div class="extension-grid">
+   <div class="extension-grid" @pointermove.passive="cardLight">
     <article class="extension-card">
      <div class="extension-art" aria-hidden="true"><div class="agent-flow"><div class="flow-node"><svg class="icon " aria-hidden="true"><use href="#i-spark"/></svg>Agent</div><div class="flow-arrow"></div><div class="flow-node"><svg class="icon " aria-hidden="true"><use href="#i-code"/></svg>Glade</div><div class="flow-arrow"></div><div class="flow-node"><svg class="icon " aria-hidden="true"><use href="#i-check"/></svg>Feedback</div></div></div>
      <div class="extension-text"><h3>Give your agent a feedback loop.</h3><p>Let your coding agent check its work with local tests and concrete diagnostics—not guesswork.</p><a class="text-link" :href="withBase('/guide/ai-assisted-apex')">Build an AI-assisted workflow<svg class="icon " aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
@@ -299,7 +313,12 @@ onUnmounted(() => {
   </div>
  </section>
  <section class="get-started" id="get-started" tabindex="-1" aria-labelledby="start-title">
-  <div class="footer-topo" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div><div class="footer-topo right" aria-hidden="true"><img :src="withBase('/home/contours.svg')" alt=""></div>
+  <div class="footer-topo" aria-hidden="true">
+   <img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async">
+  </div>
+  <div class="footer-topo right" aria-hidden="true">
+   <img :src="withBase('/home/contours.svg')" alt="" loading="lazy" decoding="async">
+  </div>
   <div class="container">
    <p class="eyebrow">Install Glade</p>
    <h2 id="start-title">Start with one local test.</h2>
