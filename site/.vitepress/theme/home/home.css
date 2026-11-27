@@ -504,7 +504,7 @@ button:disabled { cursor:default; }
 @keyframes gh-sheen { to { background-position: 200% 50%; } }
 
 .site-header { background: rgba(11,17,25,.62); -webkit-backdrop-filter: saturate(170%) blur(16px); backdrop-filter: saturate(170%) blur(16px); }
-.site-header.scrolled { background: rgba(11,17,25,.9); border-bottom-color: #8a79ff2e; box-shadow: 0 10px 40px -18px #000c; }
+.site-header.scrolled { background: var(--gh-bg); border-bottom-color: #8a79ff2e; box-shadow: 0 10px 40px -18px #000c; }
 
 /* Home asset URLs end their line: the repo leak scan reads a later slash as a personal path. */
 /* The still map is a brand gradient cut out by hero-terrain.svg as a mask. It is decoration, so it loads

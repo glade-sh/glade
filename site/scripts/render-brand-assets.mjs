@@ -18,14 +18,17 @@ for (const name of cardFonts) {
 }
 
 export async function renderBrandAssets() {
-  const [cardSVG, cardMarkSVG, iconSVG] = await Promise.all(
-    ['social-card.svg', 'logo-mark.svg', 'logo-mark-topo.svg']
+  const [cardSVG, iconSVG] = await Promise.all(
+    ['social-card.svg', 'logo-mark-topo.svg']
       .map(name => readFile(new URL(name, publicDir)))
   )
   // Resolve the source SVG's relative logo reference for the raster renderer.
-  const cardMark = renderIcon(cardMarkSVG, 138).toString('base64')
+  // The mark is drawn at 72px; render it at three times that so it stays sharp.
+  const cardMark = renderIcon(iconSVG, 216).toString('base64')
+  const markRef = 'href="logo-mark-topo.svg"'
+  if (!cardSVG.includes(markRef)) throw new Error('social-card.svg no longer references logo-mark-topo.svg')
   const card = cardSVG.toString('utf8').replace(
-    'href="logo-mark.svg"', `href="data:image/png;base64,${cardMark}"`
+    markRef, `href="data:image/png;base64,${cardMark}"`
   )
 
   return {

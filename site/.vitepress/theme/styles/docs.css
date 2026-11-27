@@ -112,7 +112,7 @@ html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness
 .glade-docs .VPNavBar .divider-line { background: var(--gd-hairline); }
 @media (min-width: 960px) {
   .glade-docs .VPNavBar.has-sidebar { background: transparent; }
-  .glade-docs .VPNavBar.has-sidebar .content-body { background: color-mix(in srgb, var(--glade-canvas) 78%, transparent); -webkit-backdrop-filter: saturate(150%) blur(14px); backdrop-filter: saturate(150%) blur(14px); }
+  .glade-docs .VPNavBar.has-sidebar .content-body { background: color-mix(in srgb, var(--glade-canvas) 92%, transparent); -webkit-backdrop-filter: saturate(150%) blur(14px); backdrop-filter: saturate(150%) blur(14px); }
 }
 
 /* Sidebar and outline. Every row shares one padded box, so hover and active states line up and never touch. */

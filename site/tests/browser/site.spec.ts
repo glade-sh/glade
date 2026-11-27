@@ -226,25 +226,26 @@ test('light appearance preserves normal-text contrast on the approved command an
   for (const scenario of ['tests', 'debug', 'check']) {
     await page.locator(`[data-demo="${scenario}"]`).click()
     for (const selector of ['.editor-title', '.demo-tab', '#demo-code .line-code > span', '#console-title', '#demo-command', '.output-line > span', '.output-note', '.capability h2', '.capability p', '.compatibility-table [role="cell"]']) {
-      const elements = page.locator(selector)
-      expect(await elements.count(), selector).toBeGreaterThan(0)
-      for (const element of await elements.all()) {
-        const colors = await element.evaluate((node) => {
-          const layers: number[][] = []
-          let current: Element | null = node
-          while (current) {
-            const style = getComputedStyle(current)
-            if (style.backgroundImage !== 'none') throw new Error('Contrast test requires flat command/workflow surfaces')
-            const channels = style.backgroundColor.match(/[\d.]+/g)!.map(Number)
-            const rgba = [...channels.slice(0, 3), channels[3] ?? 1]
-            layers.push(rgba)
-            if (rgba[3] === 1) break
-            current = current.parentElement
-          }
-          if (layers.at(-1)?.[3] !== 1) throw new Error('No opaque surface behind text')
-          const background = layers.reverse().reduce((back, front) => front.slice(0, 3).map((value, index) => value * front[3] + back[index] * (1 - front[3])), [0, 0, 0])
-          return { foreground: getComputedStyle(node).color, background: `rgb(${background.join(', ')})` }
-        })
+      // Read every match in one page call. The demo replaces its code and
+      // output rows while it plays, so a handle per element can go stale.
+      const samples = await page.locator(selector).evaluateAll((nodes) => nodes.map((node) => {
+        const layers: number[][] = []
+        let current: Element | null = node
+        while (current) {
+          const style = getComputedStyle(current)
+          if (style.backgroundImage !== 'none') throw new Error('Contrast test requires flat command/workflow surfaces')
+          const channels = style.backgroundColor.match(/[\d.]+/g)!.map(Number)
+          const rgba = [...channels.slice(0, 3), channels[3] ?? 1]
+          layers.push(rgba)
+          if (rgba[3] === 1) break
+          current = current.parentElement
+        }
+        if (layers.at(-1)?.[3] !== 1) throw new Error('No opaque surface behind text')
+        const background = layers.reverse().reduce((back, front) => front.slice(0, 3).map((value, index) => value * front[3] + back[index] * (1 - front[3])), [0, 0, 0])
+        return { foreground: getComputedStyle(node).color, background: `rgb(${background.join(', ')})` }
+      }))
+      expect(samples.length, selector).toBeGreaterThan(0)
+      for (const colors of samples) {
         expect(contrastRatio(colors.foreground, colors.background), `${scenario}: ${selector}`).toBeGreaterThanOrEqual(4.5)
       }
     }
