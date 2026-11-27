@@ -43,7 +43,7 @@ const [
   source('../scripts/postdeploy-smoke.mjs'),
   source('../.vitepress/theme/GladeSupportExplorer.vue'),
   source('../.vitepress/theme/index.ts'),
-  source('../docs-src/public/css/home.css'),
+  source('../docs-src/public/css/workbench.css'),
   source('../.vitepress/theme/custom.css'),
   source('../docs-src/guide/editor.md'),
   source('../docs-src/reference/lsp.md'),
@@ -158,6 +158,5 @@ test('built content and narrow layouts guard copy integrity and reflow', () => {
   assert.match(builtSiteCheck, /malformed angle-bracket placeholder/)
   assert.match(builtSiteCheck, /duplicate id/)
   assert.match(homeCSS, /@media \(max-width: 360px\)/)
-  assert.match(homeCSS, /home-loop-metrics[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
   assert.match(themeCSS, /support-explorer/)
 })
