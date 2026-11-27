@@ -309,3 +309,29 @@ test('light preference survives the dark home and forced-color content remains a
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Test your Apex before you deploy it.')
   await expect(page.getByRole('link', { name: 'Installation options' })).toBeVisible()
 })
+
+test('hero terrain returns to the static map when it stops while offscreen', async ({ page }) => {
+  test.skip(page.viewportSize()!.width <= 760, 'The live terrain runs on wide, fine-pointer screens only.')
+  for (const stop of ['reduced motion', 'context loss']) {
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto('/')
+    const hero = page.locator('.hero')
+    const canvas = page.locator('canvas.hero-terrain')
+    const live = await hero.evaluate((node) => new Promise<boolean>((resolve) => {
+      const started = Date.now()
+      const check = () => node.hasAttribute('data-terrain') ? resolve(true) : Date.now() - started > 6000 ? resolve(false) : setTimeout(check, 50)
+      check()
+    }))
+    test.skip(!live, 'WebGL is not available in this browser.')
+    // Scroll the hero out of view so the terrain is already paused when it has to stop for good.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await page.waitForTimeout(400)
+    if (stop === 'reduced motion') await page.emulateMedia({ reducedMotion: 'reduce' })
+    else await canvas.evaluate((node: HTMLCanvasElement) => node.getContext('webgl')!.getExtension('WEBGL_lose_context')!.loseContext())
+    await expect(hero, stop).not.toHaveAttribute('data-terrain')
+    await expect(canvas, stop).not.toHaveAttribute('data-live')
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(canvas, stop).toBeHidden()
+    expect(await page.locator('.hero-topo').evaluate((node) => getComputedStyle(node).maskImage), stop).toBe('none')
+  }
+})
