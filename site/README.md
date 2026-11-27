@@ -140,8 +140,8 @@ Help, and contributor pages. Article `pageType` and `canonicalTask` frontmatter
 record the reading role and primary task without moving public URLs.
 
 Shared light/dark colors and font roles live in
-`.vitepress/theme/styles/tokens.css`; `styles/reading.css` maps reading density
-to VitePress components. Inter and IBM Plex Mono are self-hosted dependencies.
+`.vitepress/theme/styles/tokens.css`; `styles/docs.css` styles everything under
+the docs layout: reading density, VitePress components, header, sidebar and footer. Inter and IBM Plex Mono are self-hosted dependencies.
 The home uses its own dark tokens and does not write the docs appearance
 preference. Large catalogs and demo modules load on demand; automatic link
 prefetch is disabled so ordinary articles do not fetch them.
