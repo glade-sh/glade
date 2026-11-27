@@ -1,3 +1,14 @@
+/* Arial scaled to Inter's metrics. Text set in it before Inter loads wraps at
+   the same places, so the page does not move when the web font arrives. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  size-adjust: 107.06%;
+  ascent-override: 90.49%;
+  descent-override: 22.56%;
+  line-gap-override: 0%;
+}
+
 /* Shared semantic color source; bridges VitePress and retained workbench consumers. */
 :root {
   color-scheme: light;
@@ -63,7 +74,7 @@ html.dark, .glade-home {
   --vp-sidebar-width: 248px;
   --vp-layout-max-width: 1440px;
   --glade-reading-width: 72ch;
-  --vp-font-family-base: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-base: 'Inter Variable', Inter, 'Inter Fallback', ui-sans-serif, system-ui, sans-serif;
   --vp-font-family-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
   --glade-font-sans: var(--vp-font-family-base);
   --glade-font-mono: var(--vp-font-family-mono);

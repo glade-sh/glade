@@ -39,8 +39,8 @@ html.dark .glade-docs { --gd-contour: .26; }
 .glade-docs :is(input, select) { border-color: var(--glade-control); }
 .glade-article-context { margin-bottom: 12px; }
 .glade-article-context nav { color: var(--glade-muted); font-size: 12px; line-height: 1.6; margin-bottom: 24px; overflow-wrap: anywhere; }
-.glade-article-context nav a { color: var(--glade-muted); }
-.glade-page-type { color: var(--glade-accent); font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; }
+.glade-article-context nav a { display: inline-block; min-width: 24px; padding-block: 4px; color: var(--glade-muted); }
+.glade-page-type { color: var(--glade-accent); font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; }
 .glade-docs .VPDocFooter { margin-top: 48px; }
 .glade-docs .VPFooter { display: block !important; background: var(--glade-rail); position: relative; border-top: 0; }
 @media (min-width: 960px) { .glade-docs .VPFooter.has-sidebar { padding-left: calc(var(--vp-sidebar-width) + 32px); } }
@@ -146,7 +146,7 @@ html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness
 .glade-docs .vp-doc tr:last-child td { border-bottom: 0; }
 .glade-docs .vp-doc .custom-block { border-radius: 12px; box-shadow: var(--gd-edge); }
 .glade-docs .vp-doc hr { height: 1px; border: 0; background: var(--gd-hairline); }
-.glade-docs .vp-doc .header-anchor { transition: opacity .18s; }
+.glade-docs .vp-doc .header-anchor { width: 24px; margin-left: -24px; text-align: center; transition: opacity .18s; }
 
 /* Cards and pager lift a little toward the pointer, as on the home page. */
 .glade-docs :is(a.docs-command-card, a.docs-workflow-card):hover { border-color: color-mix(in srgb, var(--glade-action) 60%, var(--glade-border)); box-shadow: var(--gd-lift); transform: translateY(-2px); }

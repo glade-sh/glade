@@ -204,7 +204,8 @@ if (!assetRule || !/max-age=31536000, immutable/.test(assetRule.headers.get('cac
 }
 if (/must-revalidate/.test(assetRule?.headers.get('cache-control') || '')) failures.push('_headers: assets also revalidate')
 if (!globalRule || globalRule.headers.has('cache-control')) failures.push('_headers: global rule must not set a cache policy')
-if (globalRule?.headers.get('x-frame-options') !== 'DENY' || !globalRule?.headers.has('permissions-policy')) {
+if (globalRule?.headers.get('x-frame-options') !== 'DENY' || !globalRule?.headers.has('permissions-policy') ||
+    globalRule?.headers.get('x-content-type-options') !== 'nosniff' || !globalRule?.headers.has('referrer-policy')) {
   failures.push('_headers: global security headers are missing')
 }
 for (const routePrefix of ['/', '/guide/*', '/reference/*', '/help/*', '/maintainer/*', '/private-corpus-assurance.html', '/install.sh']) {

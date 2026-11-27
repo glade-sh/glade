@@ -15,8 +15,8 @@ const pageType = computed(() => frontmatter.value.pageType || (section.value.lab
 </script>
 
 <template>
-  <div class="glade-article-context" v-if="!page.isNotFound">
+  <section class="glade-article-context" aria-label="Page context" v-if="!page.isNotFound">
     <nav aria-label="Breadcrumb"><a :href="withBase(section.href)">{{ section.label }}</a><template v-if="page.title !== section.label"><span aria-hidden="true"> / </span><span>{{ page.title }}</span></template></nav>
     <p class="glade-page-type">{{ pageType }}</p>
-  </div>
+  </section>
 </template>
