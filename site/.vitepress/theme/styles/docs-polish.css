@@ -15,9 +15,12 @@ html.dark .glade-docs { --gd-contour: .26; }
 /* Atmosphere: a soft glow behind the top of the article and terrain in the right margin. */
 .glade-docs .VPContent { position: relative; isolation: isolate; overflow-x: clip; }
 .glade-docs .VPContent::before { content: ''; position: absolute; z-index: -1; inset: 0 0 auto; height: 620px; pointer-events: none; background: radial-gradient(52% 100% at 82% 0%, var(--gd-tint), transparent 72%), radial-gradient(44% 80% at 38% 0%, var(--gd-tint-cool), transparent 72%); }
-.glade-docs .VPContent::after { content: ''; position: absolute; z-index: -1; width: 980px; height: 850px; right: -470px; top: -360px; pointer-events: none; opacity: var(--gd-contour); background: 
+.glade-docs .VPContent::after { content: ''; position: absolute; z-index: -1; width: 980px; height: 850px; right: -470px; top: -360px; pointer-events: none; opacity: var(--gd-contour); border-image:
   url('/home/contours.svg')
-  center / contain no-repeat; transform: rotate(24deg); -webkit-mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); }
+  0 fill; transform: rotate(24deg); -webkit-mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); mask-image: radial-gradient(closest-side, #000 30%, #0000 78%); }
+/* The contours are a border-image, not a background: Chrome counts a large background image as the page's largest paint, which put this decoration ahead of the text in the LCP measurement. They fade in after the text. */
+.glade-docs .VPContent::after { animation: gd-contour-in .7s ease .1s both; }
+@keyframes gd-contour-in { from { opacity: 0; } }
 html:not(.dark) .glade-docs .VPContent::after { filter: saturate(1.5) brightness(.62); }
 @media (max-width: 959px) { .glade-docs .VPContent::after { width: 620px; height: 540px; right: -330px; top: -230px; } }
 

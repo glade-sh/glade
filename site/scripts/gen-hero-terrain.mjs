@@ -1,4 +1,4 @@
-// Draws docs-src/public/home/hero-terrain.svg, the still first paint of the hero contour map.
+// Draws docs-src/public/hero-terrain.svg, the still first paint of the hero contour map.
 // home.css uses the file as a mask over a CSS gradient, so only the alpha of each stroke reaches the page.
 // The height field here must stay identical to the one in .vitepress/theme/home/hero-terrain.ts
 // at time zero, so the live canvas takes over from the image without the lines moving.
@@ -85,5 +85,5 @@ let thin = '', index = ''
 for (let level = Math.ceil(lo); level <= Math.floor(hi); level++) { if (level % 4 === 0) index += trace(level); else thin += trace(level) }
 const size = 2 * R * UNIT
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" fill="none" stroke="url(#g)" stroke-linejoin="round" stroke-linecap="round"><defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="${size / 2}"><stop offset="0" stop-color="#8feaf2"/><stop offset=".3" stop-color="#86c8fa"/><stop offset=".46" stop-color="#80a9ff" stop-opacity=".84"/><stop offset=".62" stop-color="#8b98ff" stop-opacity=".5"/><stop offset=".78" stop-color="#958bff" stop-opacity=".16"/><stop offset=".94" stop-color="#9985ff" stop-opacity="0"/></radialGradient></defs><path stroke-width="1.4" stroke-opacity=".3" d="${thin}"/><path stroke-width="2.1" stroke-opacity=".43" d="${index}"/></svg>\n`
-writeFileSync(new URL('../docs-src/public/home/hero-terrain.svg', import.meta.url), svg)
+writeFileSync(new URL('../docs-src/public/hero-terrain.svg', import.meta.url), svg)
 console.log(svg.length, 'bytes')
