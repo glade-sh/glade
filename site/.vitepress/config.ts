@@ -88,6 +88,19 @@ function pngSize(publicPath: string) {
   }
 }
 
+// VitePress throttles the outline's scroll handler, so one call can land after
+// the docs page unmounts and read a marker that is gone. Return early instead.
+const outlineGuard = {
+  name: 'glade-outline-unmount-guard',
+  enforce: 'pre' as const,
+  transform(code: string, id: string) {
+    if (!id.includes('/theme-default/composables/outline.js')) return
+    const head = 'function activateLink(hash) {'
+    if (!code.includes(head)) throw new Error('VitePress outline changed; review the unmount guard in .vitepress/config.ts')
+    return code.replace(head, `${head}\n        if (!container.value || !marker.value) return;`)
+  }
+}
+
 export default defineConfig({
   title: 'Glade',
   description: homeDescription,
@@ -148,6 +161,7 @@ export default defineConfig({
     }
   },
   vite: {
+    plugins: [outlineGuard],
     server: {
       allowedHosts: tunnelAllowedHosts
     },
