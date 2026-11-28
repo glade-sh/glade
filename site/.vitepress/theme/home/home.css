@@ -208,9 +208,10 @@ button svg, a svg { pointer-events: none; }
 .agent-body { padding: 22px; min-height: 307px; }
 .agent-instruction { border: 1px solid #324058; background: #162234; padding: 12px 16px; border-radius: 7px; font-size: 11px; color: #d1d9e9; }
 .agent-step { display: flex; gap: 11px; margin-top: 20px; }
-.agent-step .icon { width: 14px; height: 14px; color: var(--gh-green); margin-top: 2px; }
-.agent-step strong { font-size: 11px; font-weight: 500; }
-.agent-step p { font: 10px/1.7 var(--gh-mono); color: #92a2bc; margin-top: 4px; }
+/* The icon box and the title line share one 18px line box, so the check centres on the title. */
+.agent-step .icon { flex: none; width: 14px; height: 14px; color: var(--gh-green); margin-top: 2px; }
+.agent-step strong { display: block; font-size: 11px; line-height: 18px; font-weight: 500; }
+.agent-step p { font: 10px/1.7 var(--gh-mono); color: #92a2bc; margin-top: 2px; }
 /* Extension cards use diagrammatic details in place of stock imagery. */
 .extensions { position: relative; background: #0e1722; border-top: 1px solid #1c2939; border-bottom: 1px solid #1c2939; padding-block: 84px; }
 .section-heading-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 35px; margin-bottom: 33px; }
@@ -277,9 +278,14 @@ button svg, a svg { pointer-events: none; }
 .site-footer .brand { font-size: 23px; gap: 9px; }
 .site-footer .brand-mark { width: 31px; height: 31px; }
 .footer-tagline { color: #8796ad; font-size: 14px; margin-top: 10px; }
-.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; padding-top: 9px; font-size: 14px; color: #a9b5c8; }
+.footer-links { display: grid; grid-template-columns: repeat(3, auto); gap: 28px clamp(40px, 6vw, 88px); padding-top: 6px; font-size: 14px; color: #a9b5c8; }
+.footer-label { margin-bottom: 8px; color: var(--gh-quiet); font: 500 11px/1.5 var(--gh-mono); letter-spacing: .09em; text-transform: uppercase; }
+.footer-group ul { list-style: none; margin: 0; padding: 0; }
+.footer-group li a { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; }
 .footer-links a:hover { color: #dfd7ff; }
-.footer-links .icon { width: 17px; height: 17px; }
+.footer-links .icon { width: 16px; height: 16px; }
+.footer-links .home-release-version { min-height: 26px; margin: 3px 0; padding: 0 10px; border: 1px solid #3a3470; border-radius: 999px; background: #17163a; color: #cfc6ff; font: 500 12px var(--gh-mono); }
+.footer-links .home-release-version:hover { border-color: #6a5fd0; color: #ffffff; }
 .footer-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 38px; margin-top: 37px; padding-top: 19px; border-top: 1px solid #1c2736; color: #7f8ea4; font-size: 12px; }
 .footer-bottom p { max-width: 660px; }
 .footer-bottom a { white-space: nowrap; }
@@ -402,8 +408,12 @@ button svg, a svg { pointer-events: none; }
   .copy-button { min-width: 38px; padding-inline: 9px; }
   .copy-button .copy-label { display: none; }
   .install-links { flex-wrap: wrap; gap: 12px; }
-  .footer-main { flex-direction: column; gap: 20px; }
-  .footer-links { gap: 21px; }
+  .footer-main { flex-direction: column; gap: 28px; }
+  .footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 24px; width: 100%; padding-top: 0; }
+  .footer-release { grid-column: 1 / -1; }
+  .footer-group li a { min-height: 40px; }
+  .footer-links .home-release-version { min-height: 28px; margin: 6px 0; }
+  .workbench-note { text-align: left; }
   .footer-bottom { flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 26px; }
   .footer-topo { left: -450px; opacity: .22; } .footer-topo.right { right: -480px; opacity: .2; }
 }
@@ -440,7 +450,7 @@ button svg, a svg { pointer-events: none; }
   .plugin-item > .icon { width: 18px; height: 18px; }
   .compat-row { padding: 14px; gap: 10px; }
   .compatibility-table-head { padding-inline: 14px; } .install-box { gap: 7px; }
-  .footer-links { gap: 18px; }
+  .workbench-foot { flex-wrap: wrap; gap: 2px 14px; padding-block: 6px; } .workbench-foot span { white-space: nowrap; }
 }
 @media (max-width: 359px) {
   .brand { font-size: 20px; gap: 6px; } .brand-mark { width: 30px; height: 30px; }
@@ -476,7 +486,6 @@ button svg, a svg { pointer-events: none; }
 button { border-style:solid; }
 button:disabled { cursor:default; }
 .demo-change { min-height:36px; }
-.home-trust-links { display:flex; flex-wrap:wrap; gap:14px 22px; color:var(--gh-muted); font-size:13px; margin-top:24px; }
 .no-script { padding:20px; text-align:center; background:#172334; }
 .no-script a { text-decoration:underline; }
 @media(max-width:760px) { .menu-toggle, .nav-actions .button-small, .copy-button, .run-button, .tool-tab, .demo-change { min-height:44px; } .demo-caption { flex-wrap:wrap; gap:4px 12px; } .demo-change { padding:8px 0; } }
